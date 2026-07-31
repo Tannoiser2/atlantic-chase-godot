@@ -1,0 +1,109 @@
+{
+ "_source": "Valori letti direttamente dalle tabelle stampate sulla mappa (Atlantic Chase Map120.jpg) a risoluzione nativa, non dall'estrazione testuale dei PDF che perde le celle.",
+ "_verified": "tools/reports/tab_timelapse.png, tools/reports/tab_interruption.png",
+
+ "time_lapse": {
+  "_rule": "RB p.19-20. Con meteo Buono si usa la colonna 'good'. Con meteo Cattivo si tira 1d6 e si rimuove quel numero di segmenti (tiro separato per ciascuna TF). Il Limite di Informazioni si applica in entrambi i casi.",
+  "_intel_limit": "RB p.20. Invocando il Limite di Informazioni si puo' rimuovere UN segmento con segnalino Informazioni, ma il totale rimosso e' limitato al valore 'intel_limit'. Non si puo' invocare se non si rimuove davvero un segmento con Informazioni.",
+  "speeds": {
+   "very_slow": {"good": 2, "bad": "d6", "intel_limit": 1, "label": "molto lenta"},
+   "slow":      {"good": 2, "bad": "d6", "intel_limit": 1, "label": "lenta"},
+   "medium":    {"good": 3, "bad": "d6", "intel_limit": 2, "label": "media"},
+   "fast":      {"good": 4, "bad": "d6", "intel_limit": 2, "label": "veloce"}
+  }
+ },
+
+ "interruption": {
+  "_rule": "RB p.22. Tirare 2d6, nessun modificatore. Riga = somma. Colonna = numero totale di segnalini Informazioni su TUTTE le TF designate del giocatore Attivo (Attiva + Coordinatrice + Supporto Aereo). I segnalini del giocatore Inattivo si ignorano.",
+  "columns": [1, 2, 3, 4],
+  "_columns_note": "l'ultima colonna e' '4+'",
+  "rows": [
+   {"min": 2,  "max": 4,  "results": ["ALERT_0", "ALERT_1", "ALERT_2", "SLIP_AWAY"]},
+   {"min": 5,  "max": 7,  "results": ["ALERT_1", "ALERT_2", "SLIP_AWAY", "VIE_FOR_INITIATIVE"]},
+   {"min": 8,  "max": 8,  "results": ["ALERT_2", "SLIP_AWAY", "VIE_FOR_INITIATIVE", "INITIATIVE_CHANGE"]},
+   {"min": 9,  "max": 9,  "results": ["SLIP_AWAY", "VIE_FOR_INITIATIVE", "INITIATIVE_CHANGE", "INITIATIVE_CHANGE"]},
+   {"min": 10, "max": 12, "results": ["VIE_FOR_INITIATIVE", "INITIATIVE_CHANGE", "INITIATIVE_CHANGE", "INITIATIVE_CHANGE"]}
+  ],
+  "results": {
+   "ALERT_0": {
+    "label": "Allerta -0",
+    "modifier": 0,
+    "effect": "Riprendete l'Azione interrotta, senza modificatore alla somma del tiro del giocatore Attivo."
+   },
+   "ALERT_1": {
+    "label": "Allerta -1",
+    "modifier": -1,
+    "effect": "Riprendete l'Azione interrotta, modificando di -1 la somma del tiro del giocatore Attivo."
+   },
+   "ALERT_2": {
+    "label": "Allerta -2",
+    "modifier": -2,
+    "effect": "Riprendete l'Azione interrotta, modificando di -2 la somma del tiro del giocatore Attivo."
+   },
+   "SLIP_AWAY": {
+    "label": "Sfuggire",
+    "effect": "Il giocatore Inattivo sceglie: effettuare una azione Segnalazione (bersaglio la TF Attiva o una TF Coordinatrice del giocatore Attivo), oppure assegnare un segnalino Manovre Evasive alla TF Bersaglio. Poi l'Azione corrente e' annullata e i giocatori Cercano l'Iniziativa."
+   },
+   "VIE_FOR_INITIATIVE": {
+    "label": "Cercare l'Iniziativa",
+    "effect": "Ciascun giocatore tira 1d6. Il giocatore Inattivo somma il Conto dell'Iniziativa e/o il modificatore Manovre Evasive. Vince chi ottiene il numero piu' alto; in caso di parita' l'Iniziativa resta al giocatore Attivo. Se l'Inattivo vince, azzerate il Conto dell'Iniziativa ed effettuate una Verifica delle Condizioni Meteo. Altrimenti incrementate il Conto di uno."
+   },
+   "INITIATIVE_CHANGE": {
+    "label": "Cambio di Iniziativa",
+    "effect": "L'Azione interrotta e' annullata e il giocatore Inattivo ottiene immediatamente l'Iniziativa. Effettuate una Verifica delle Condizioni Meteo."
+   }
+  }
+ },
+
+ "trajectory_total": {
+  "_rule": "RB p.17-18. Tre passi: (1) Traiettoria piu' Lunga fra TF Attiva, Coordinatrice e Supporto Aereo del giocatore Attivo; (2) Numero Base = quella lunghezza + lunghezza della TF Bersaglio; (3) Sottrazioni = lunghezze della TF Coordinatrice e Supporto Aereo del giocatore Inattivo. Minimo zero.",
+  "columns": [
+   {"label": "0",     "min": 0,  "max": 0},
+   {"label": "1-4",   "min": 1,  "max": 4},
+   {"label": "5-9",   "min": 5,  "max": 9},
+   {"label": "10-15", "min": 10, "max": 15},
+   {"label": "16+",   "min": 16, "max": 999}
+  ],
+  "_columns_note": "Naval Search usa 0-4 / 5-9 / 10-15 / 16+; Engage e Air Strike usano 0 / 1-4 / 5-9 / 10-13 / 14+. Le colonne per azione stanno nei rispettivi file tabella (M4)."
+ },
+
+ "trajectory": {
+  "_rule": "RB p.15-16",
+  "max_segments": 15,
+  "min_segments": 1,
+  "one_segment_per_hex": true,
+  "segments_forbidden_in_port_boxes": true,
+  "station_allowed_in_port_box": true,
+  "shape": "linea singola, due capi, niente buchi, niente biforcazioni",
+  "add_remove": "solo dai capi, uno o entrambi"
+ },
+
+ "info_markers": {
+  "_rule": "RB p.21",
+  "max_per_segment": 1,
+  "allowed_on_station": false,
+  "triggers": [
+   "porre un segmento in un esagono con un porto nemico",
+   "porre un segmento in un esagono con una base aerea nemica",
+   "porre un segmento in un esagono con una Stazione TF nemica",
+   "porre un segmento in un esagono con una forza Furtiva nemica",
+   "l'avversario pone una forza Sottomarini/U-Boat in un esagono con un vostro segmento (Ricognizione Furtiva)"
+  ],
+  "not_a_trigger": "porre un segmento in un esagono che contiene solo un segmento Traiettoria nemico",
+  "effects": [
+   "consente all'avversario di bersagliarlo con una azione Segnalazione",
+   "puo' limitare lo Scorrere del Tempo (Limite di Informazioni)",
+   "impedisce alla sua Task Force di effettuare una azione Completamento",
+   "causa Interruzione quando la TF viene designata in Attacco Aereo, Ingaggiare, Ricerca Navale o Attacco Furtivo"
+  ],
+  "removal": "automatica quando il segmento cui e' assegnato viene rimosso; tutti rimossi se la Traiettoria diventa Stazione"
+ },
+
+ "contact_markers": {
+  "_rule": "RB p.23",
+  "max_per_segment_or_station": 1,
+  "sources": ["Ricerca Navale", "Ingaggiare", "Attacco Aereo", "fine della Battaglia (uno per TF)"],
+  "persistence": "sopravvive alla conversione segmento<->Stazione nello stesso esagono; si rimuove solo quando la TF non ha piu' segmento ne' Stazione in quell'esagono",
+  "removed_by": "risultato PERDERE IL CONTATTO di un Attacco Furtivo (solo il segnalino nell'esagono dell'azione)"
+ }
+}

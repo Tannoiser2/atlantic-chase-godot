@@ -1,0 +1,388 @@
+{
+ "name": "Op4 Berlin",
+ "source": "Op4 Berlin.vsav (modulo VASSAL Atlantic Chase v2.1)",
+ "weather": 0,
+ "initiative": 0,
+ "round": 1,
+ "task_forces": [
+  {
+   "id": 1,
+   "side": 1,
+   "color": "Brown",
+   "slot": 0,
+   "name": "RN Brown-0",
+   "ships": [],
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 13,
+    "station_r": -7,
+    "station_contact": false,
+    "station_port": ""
+   }
+  },
+  {
+   "id": 2,
+   "side": 1,
+   "color": "Brown",
+   "slot": 1,
+   "name": "RN Brown-1",
+   "ships": [],
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 14,
+    "station_r": -6,
+    "station_contact": false,
+    "station_port": ""
+   }
+  },
+  {
+   "id": 3,
+   "side": 1,
+   "color": "Brown",
+   "slot": 2,
+   "name": "RN Brown-2",
+   "ships": [],
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 15,
+    "station_r": -5,
+    "station_contact": false,
+    "station_port": ""
+   }
+  },
+  {
+   "id": 4,
+   "side": 0,
+   "color": "GE",
+   "slot": 0,
+   "name": "KM GE-0",
+   "ships": [],
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 6,
+    "station_r": 8,
+    "station_contact": false,
+    "station_port": ""
+   }
+  },
+  {
+   "id": 5,
+   "side": 0,
+   "color": "GE",
+   "slot": 1,
+   "name": "KM GE-1",
+   "ships": [],
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 7,
+    "station_r": 8,
+    "station_contact": false,
+    "station_port": ""
+   }
+  },
+  {
+   "id": 6,
+   "side": 0,
+   "color": "GE",
+   "slot": 2,
+   "name": "KM GE-2",
+   "ships": [],
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 18,
+    "station_r": -6,
+    "station_contact": false,
+    "station_port": ""
+   }
+  },
+  {
+   "id": 7,
+   "side": 1,
+   "color": "Red",
+   "slot": 0,
+   "name": "RN Red-0",
+   "ships": [],
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 14,
+    "station_r": -5,
+    "station_contact": false,
+    "station_port": ""
+   }
+  },
+  {
+   "id": 8,
+   "side": 1,
+   "color": "Red",
+   "slot": 1,
+   "name": "RN Red-1",
+   "ships": [],
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 2,
+    "station_r": 1,
+    "station_contact": false,
+    "station_port": ""
+   }
+  },
+  {
+   "id": 9,
+   "side": 1,
+   "color": "Tan",
+   "slot": 0,
+   "name": "RN Tan-0",
+   "ships": [],
+   "speed": 2,
+   "trajectory": {
+    "segments": [
+     {
+      "q": 4,
+      "r": 5,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 5,
+      "r": 4,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 6,
+      "r": 3,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 7,
+      "r": 2,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 8,
+      "r": 1,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 9,
+      "r": 0,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 10,
+      "r": -1,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 11,
+      "r": -2,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 12,
+      "r": -3,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 13,
+      "r": -3,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 14,
+      "r": -4,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 15,
+      "r": -4,
+      "info": false,
+      "contact": false
+     }
+    ],
+    "station_q": 4,
+    "station_r": 5,
+    "station_contact": false,
+    "station_port": ""
+   }
+  },
+  {
+   "id": 10,
+   "side": 1,
+   "color": "Tan",
+   "slot": 1,
+   "name": "RN Tan-1",
+   "ships": [],
+   "speed": 2,
+   "trajectory": {
+    "segments": [
+     {
+      "q": 12,
+      "r": 4,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 12,
+      "r": 3,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 12,
+      "r": 2,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 12,
+      "r": 1,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 12,
+      "r": 0,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 12,
+      "r": -1,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 13,
+      "r": -2,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 13,
+      "r": -3,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 14,
+      "r": -4,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 15,
+      "r": -4,
+      "info": false,
+      "contact": false
+     }
+    ],
+    "station_q": 12,
+    "station_r": 4,
+    "station_contact": false,
+    "station_port": ""
+   }
+  },
+  {
+   "id": 11,
+   "side": 1,
+   "color": "Tan",
+   "slot": 2,
+   "name": "RN Tan-2",
+   "ships": [],
+   "speed": 2,
+   "trajectory": {
+    "segments": [
+     {
+      "q": 5,
+      "r": 4,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 6,
+      "r": 3,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 7,
+      "r": 2,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 8,
+      "r": 1,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 9,
+      "r": 0,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 10,
+      "r": -1,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 11,
+      "r": -2,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 12,
+      "r": -3,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 13,
+      "r": -3,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 14,
+      "r": -4,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 15,
+      "r": -4,
+      "info": false,
+      "contact": false
+     }
+    ],
+    "station_q": 5,
+    "station_r": 4,
+    "station_contact": false,
+    "station_port": ""
+   }
+  }
+ ],
+ "info_triggers": [],
+ "import_warnings": []
+}

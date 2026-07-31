@@ -1,0 +1,91 @@
+{
+ "name": "Op1 Homecoming",
+ "source": "Op1 Homecoming.vsav (modulo VASSAL Atlantic Chase v2.1)",
+ "weather": 0,
+ "initiative": 0,
+ "round": 1,
+ "task_forces": [
+  {
+   "id": 1,
+   "side": 1,
+   "color": "Brown",
+   "slot": 0,
+   "name": "RN Brown-0",
+   "ships": [],
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 15,
+    "station_r": -4,
+    "station_contact": false,
+    "station_port": ""
+   }
+  },
+  {
+   "id": 2,
+   "side": 1,
+   "color": "Brown",
+   "slot": 1,
+   "name": "RN Brown-1",
+   "ships": [],
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 16,
+    "station_r": -4,
+    "station_contact": false,
+    "station_port": ""
+   }
+  },
+  {
+   "id": 3,
+   "side": 1,
+   "color": "Brown",
+   "slot": 2,
+   "name": "RN Brown-2",
+   "ships": [],
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 16,
+    "station_r": -5,
+    "station_contact": false,
+    "station_port": ""
+   }
+  },
+  {
+   "id": 4,
+   "side": 0,
+   "color": "GE",
+   "slot": 0,
+   "name": "KM GE-0",
+   "ships": [],
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 4,
+    "station_r": 5,
+    "station_contact": false,
+    "station_port": ""
+   }
+  },
+  {
+   "id": 5,
+   "side": 0,
+   "color": "GE",
+   "slot": 1,
+   "name": "KM GE-1",
+   "ships": [],
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 17,
+    "station_r": -5,
+    "station_contact": false,
+    "station_port": ""
+   }
+  }
+ ],
+ "info_triggers": [],
+ "import_warnings": []
+}

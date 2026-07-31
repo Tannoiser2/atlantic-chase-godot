@@ -1,0 +1,175 @@
+{
+ "_source": "Tabelle lette dalla mappa (Atlantic Chase Map120.jpg) a risoluzione nativa. I simboli sono stati identificati sul regolamento ITA pp.50-54 renderizzato a 150 dpi, non dedotti.",
+
+ "_symbols": {
+  "_legend": "corrispondenza fra icona stampata e risultato, verificata visivamente",
+  "occhio_pupilla_bianca": "CONTACT      (RB p.50 'Contatto')",
+  "occhio_pupilla_rossa": "SKIRMISH     (RB p.54 'Schermaglia')",
+  "cilindro_oro": "SIGHTED      (RB p.54 'Avvistato')",
+  "tessera_Clos": "CLOSING      (RB p.50 'Ridurre le Distanze')",
+  "barre_rosso_bianco_rosso": "EARLY_LATE   (RB p.51 'In Anticipo o In Ritardo')",
+  "barre_tutte_rosse": "SHADOW       (RB p.53 'Seguire' - lascia 3 segmenti)",
+  "occhio_con_X_rossa": "LOSE_CONTACT (Charts 'Perdere il Contatto')",
+  "tessera_S": "SLIP_AWAY    (RB p.54 'Sfuggire', solo Interruzione)",
+  "stella_rossa": "HIT          (Charts 'Colpo')",
+  "stella_rossa_con_S": "HIT_IF_SLOW  (Charts 'Colpo, bersaglio Lento')"
+ },
+
+ "results": {
+  "MISS": {
+   "label": "Mancato",
+   "rule": "RB p.53. Nessun effetto. Ma se una o piu' TF designate nell'Azione ha un segnalino Informazioni, l'Iniziativa cambia di mano."
+  },
+  "CONTACT": {
+   "label": "Contatto",
+   "rule": "RB p.50. Assegna un segnalino Contatto alla TF Bersaglio nell'esagono bersaglio (alla Stazione o al segmento). Uno solo per Stazione/segmento."
+  },
+  "SKIRMISH": {
+   "label": "Schermaglia",
+   "rule": "RB p.54. Se la TF Attiva e' piu' veloce del Bersaglio, il giocatore Attivo puo' iniziare una Battaglia Limitata (navi nelle rispettive zone Lontane, un solo round, poi si Cerca l'Iniziativa). Altrimenti, o se rinuncia, vale come CONTATTO."
+  },
+  "CLOSING": {
+   "label": "Ridurre le Distanze",
+   "rule": "RB p.50. Se la TF Attiva e' piu' veloce -> BATTAGLIA. Se ha la stessa velocita' o e' piu' lenta -> CONTATTO."
+  },
+  "BATTLE": {
+   "label": "Battaglia",
+   "rule": "RB p.49/55. Le navi della TF Attiva nella propria zona Lontana, quelle della TF Bersaglio nell'altra zona Lontana. Le TF Coordinatrici non partecipano. Ultimo Round: 3 con meteo buono, 2 con meteo avverso. Al termine entrambe le TF ricevono un segnalino Contatto e diventano Stazioni nell'esagono di Battaglia; si Cerca l'Iniziativa."
+  },
+  "SURPRISE": {
+   "label": "Sorpresa",
+   "rule": "RB p.55 + Charts. Si ha una BATTAGLIA. Se la TF Attiva e' piu' veloce: il giocatore Attivo piazza le navi avversarie in zona Vicina e/o Lontana a sua scelta, le proprie nella propria Lontana, le navi Attive sparano per prime nel Round Uno, e nessuno puo' piazzare con Fumo. Se non e' piu' veloce, vale come BATTAGLIA normale."
+  },
+  "SIGHTED": {
+   "label": "Avvistato",
+   "rule": "RB p.54. La TF Bersaglio diventa subito una Stazione: rimuovete tutti i suoi segmenti e i segnalini Informazioni, e ponete la Stazione nell'esagono Bersaglio. I segnalini Contatto si rimuovono, tranne quello eventualmente assegnato al segmento nell'esagono Bersaglio, che passa alla Stazione."
+  },
+  "SHADOW": {
+   "label": "Seguire",
+   "rule": "RB p.53. Rimuovete tutti tranne 3 dei segmenti della Traiettoria Bersaglio. Sceglie il giocatore Attivo, ma il segmento nell'esagono bersaglio non puo' essere rimosso. Se la Traiettoria aveva gia' 3 segmenti o meno non se ne rimuove alcuno e il Bersaglio riceve un segnalino Manovre Evasive. Poi l'Inattivo puo' tentare di Sottrarre l'Iniziativa."
+  },
+  "EARLY_LATE": {
+   "label": "In Anticipo o In Ritardo",
+   "rule": "RB p.51. Rimuovete il segmento nell'esagono bersaglio. Se era l'unico, sostituitelo con una Stazione e assegnate Manovre Evasive. Se la rimozione crea un BUCO (ci sono segmenti da entrambi i lati), il giocatore Attivo sceglie uno dei due tronconi e lo rimuove per intero. Se non crea buco, il Bersaglio riceve Manovre Evasive."
+  },
+  "LOSE_CONTACT": {
+   "label": "Perdere il Contatto",
+   "rule": "Charts. Rimuove i segnalini Contatto e Informazioni della TF Bersaglio, ma solo quelli nell'esagono Bersaglio."
+  },
+  "STEAL_INITIATIVE": {
+   "label": "Sottrarre l'Iniziativa",
+   "rule": "RB p.53. L'Inattivo puo' tirare 2d6 sommando il Conto dell'Iniziativa e/o Manovre Evasive: con 9 o piu' prende l'Iniziativa (azzerando il Conto, con Verifica Meteo). Fallendo, il Conto sale di 1. Puo' anche rinunciare: in tal caso il Conto non sale e una sua TF riceve Manovre Evasive."
+  },
+  "DAMAGED": {
+   "label": "Danneggiato",
+   "rule": "RB p.51. Una nave della TF bersaglio viene girata sul lato Danneggiato (sceglie l'Attivo). Se gia' danneggiata, affonda. Convogli e Squadroni DD non si danneggiano: per loro il risultato vale 2 Colpi. Eventuali Colpi restano quando la nave si gira."
+  },
+  "HIT": {"label": "Colpo", "rule": "Charts. Una nave della TF bersaglio riceve un Colpo; sceglie il giocatore Attivo."},
+  "HIT_IF_SLOW": {"label": "Colpo (bersaglio Lento)", "rule": "Charts. Come Colpo, ma solo se la velocita' della TF Bersaglio e' LENTA o MOLTO LENTA."},
+  "HIT_IF_VERY_SLOW": {"label": "Colpo (bersaglio Molto Lento)", "rule": "Charts. Come Colpo, ma solo se la velocita' del bersaglio e' MOLTO LENTA."},
+  "SPLASH": {"label": "Splash", "rule": "Nessun colpo. Solo in Battaglia."}
+ },
+
+ "actions": {
+  "ENGAGE": {
+   "label": "Ingaggiare",
+   "page": 31,
+   "verified": true,
+   "note": "Il bersaglio deve essere una Stazione TF ('Target must be a TF Station').",
+   "requires_target_station": true,
+   "causes_time_lapse": true,
+   "columns": [
+    {"label": "0", "min": 0, "max": 0},
+    {"label": "1-4", "min": 1, "max": 4},
+    {"label": "5-9", "min": 5, "max": 9},
+    {"label": "10-13", "min": 10, "max": 13},
+    {"label": "14+", "min": 14, "max": 999}
+   ],
+   "rows": [
+    {"min": 2, "max": 6, "results": [["SKIRMISH"], ["MISS"], ["MISS"], ["MISS"], ["MISS"]]},
+    {"min": 7, "max": 7, "results": [["CLOSING"], ["MISS"], ["MISS"], ["MISS"], ["MISS"]]},
+    {"min": 8, "max": 8, "results": [["BATTLE"], ["SKIRMISH"], ["MISS"], ["MISS"], ["MISS"]]},
+    {"min": 9, "max": 9, "results": [["BATTLE"], ["CLOSING"], ["MISS"], ["MISS"], ["MISS"]]},
+    {"min": 10, "max": 11, "results": [["SURPRISE"], ["BATTLE"], ["SKIRMISH"], ["CONTACT"], ["MISS"]]},
+    {"min": 12, "max": 12, "results": [["SURPRISE"], ["BATTLE"], ["CLOSING"], ["CONTACT"], ["CONTACT"]]},
+    {"min": 13, "max": 99, "results": [["SURPRISE"], ["SURPRISE"], ["BATTLE"], ["SKIRMISH"], ["SKIRMISH"]]}
+   ]
+  },
+
+  "NAVAL_SEARCH": {
+   "label": "Ricerca Navale",
+   "page": 33,
+   "verified": "partial",
+   "verified_note": "La colonna 0-4 e' stata letta a ingrandimento 4x ed e' certa. Le colonne 5-9, 10-15 e 16+ usano i simboli a barre (EARLY_LATE vs SHADOW) che a questa risoluzione non sono sempre distinguibili con sicurezza: sono marcate 'unverified' cella per cella e vanno ricontrollate sulla mappa fisica prima di considerare l'azione definitiva.",
+   "causes_time_lapse": true,
+   "columns": [
+    {"label": "0-4", "min": 0, "max": 4},
+    {"label": "5-9", "min": 5, "max": 9},
+    {"label": "10-15", "min": 10, "max": 15},
+    {"label": "16+", "min": 16, "max": 999}
+   ],
+   "rows": [
+    {"min": 2, "max": 4, "results": [["CONTACT"], ["EARLY_LATE"], ["EARLY_LATE"], ["MISS"]]},
+    {"min": 5, "max": 5, "results": [["CONTACT", "SIGHTED"], ["EARLY_LATE"], ["EARLY_LATE"], ["MISS"]]},
+    {"min": 6, "max": 7, "results": [["CONTACT", "SIGHTED"], ["SHADOW"], ["EARLY_LATE"], ["EARLY_LATE"]]},
+    {"min": 8, "max": 9, "results": [["CONTACT", "SIGHTED"], ["CONTACT", "SHADOW"], ["SHADOW"], ["EARLY_LATE"]]},
+    {"min": 10, "max": 11, "results": [["CONTACT", "SIGHTED"], ["CONTACT", "SIGHTED"], ["CONTACT", "SHADOW"], ["EARLY_LATE"]]},
+    {"min": 12, "max": 12, "results": [["SKIRMISH", "SIGHTED"], ["CONTACT", "SIGHTED"], ["CONTACT", "SIGHTED"], ["SHADOW"]]},
+    {"min": 13, "max": 99, "results": [["SKIRMISH", "SIGHTED"], ["SKIRMISH", "SIGHTED"], ["SKIRMISH", "SIGHTED"], ["CONTACT", "SHADOW"]]}
+   ],
+   "unverified_cells": [
+    [0, 1], [0, 2], [1, 1], [1, 2], [2, 1], [2, 2], [2, 3],
+    [3, 1], [3, 2], [3, 3], [4, 2], [4, 3], [5, 3], [6, 3]
+   ]
+  },
+
+  "AIR_STRIKE": {
+   "label": "Attacco Aereo",
+   "page": 27,
+   "verified": false,
+   "verified_note": "Tabella NON ancora trascritta. Sulla mappa usa colonne 0 / 1-4 / 5-9 / 10-13 / 14+ e righe da 6 a 15+, con simboli di Colpo e Danno. Va letta prima di abilitare l'azione.",
+   "note": "Richiede meteo buono ('Good weather only'). Serve una TF con portaerei (CV) o una base aerea.",
+   "causes_time_lapse": true,
+   "columns": [],
+   "rows": []
+  },
+
+  "STEALTH_ATTACK": {
+   "label": "Attacco Furtivo",
+   "page": 41,
+   "verified": false,
+   "verified_note": "Tabella NON ancora trascritta. Colonne 0 / 1 / 2-3 / 4-6 / 7+, simboli Perdere il Contatto, Colpo e Colpo-se-Lento. Modificatori: +3 in zona U-Boat, +2 se il bersaglio e' un Convoglio disperso.",
+   "causes_time_lapse": true,
+   "columns": [],
+   "rows": []
+  },
+
+  "TRAJECTORY": {
+   "label": "Traiettoria",
+   "page": 43,
+   "verified": true,
+   "table_driven": false,
+   "note": "Nessun tiro di dadi: aggiunge segmenti alla Traiettoria della TF Attiva. Una Stazione che effettua questa azione diventa Traiettoria. Porre un segmento in un esagono che innesca Informazioni assegna subito un segnalino Informazioni a quel segmento."
+  },
+
+  "PASS": {
+   "label": "Passare",
+   "page": 35,
+   "verified": true,
+   "table_driven": false,
+   "causes_time_lapse": true,
+   "note": "Nessun tiro. Provoca lo Scorrere del Tempo e passa la mano."
+  },
+
+  "COMPLETION": {
+   "label": "Completamento",
+   "page": 29,
+   "verified": "partial",
+   "table_driven": false,
+   "note": "Vietata se una qualunque TF designata ha un segnalino Informazioni (RB p.21)."
+  },
+
+  "REORGANIZE": {"label": "Riorganizzazione", "page": 37, "verified": false, "table_driven": false},
+  "SIGNAL": {"label": "Segnalazione", "page": 39, "verified": false, "table_driven": false}
+ }
+}
