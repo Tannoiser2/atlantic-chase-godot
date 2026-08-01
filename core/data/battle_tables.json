@@ -1,0 +1,109 @@
+{
+ "_source": "Tabelle lette dalla mappa a ingrandimento 3-4x; regole da RB pp.55-62 (Battaglia, Sequenza & Raggio, Fuoco di Cannoni, Siluri, Manovra, Fuga, Uscita).",
+
+ "zones": {
+  "_model": "Ogni lato ha tre zone in linea: LONTANA - VICINA - RAVVICINATA. Una nave sta in una delle tre zone del PROPRIO lato. Il raggio fra due navi dipende dalla coppia non ordinata delle loro zone.",
+  "order": ["FAR", "NEAR", "CLOSE"],
+  "labels": {"FAR": "Lontana", "NEAR": "Vicina", "CLOSE": "Ravvicinata"},
+  "adjacency": "FAR <-> NEAR <-> CLOSE (la Manovra sposta di una zona)"
+ },
+
+ "gunnery_ranges": {
+  "_rule": "RB p.56. Il raggio dipende dalla coppia di zone. A raggio Estremo o Bruciapelo si tirano TRE dadi e se ne scelgono due: i due minori a Estremo, i due maggiori a Bruciapelo. A Lungo o Corto si tirano due dadi.",
+  "pairs": [
+   {"a": "FAR", "b": "FAR", "range": "EXTREME", "dice": 3, "pick": "lowest2"},
+   {"a": "FAR", "b": "NEAR", "range": "LONG", "dice": 2, "pick": "both"},
+   {"a": "FAR", "b": "CLOSE", "range": "LONG", "dice": 2, "pick": "both"},
+   {"a": "NEAR", "b": "NEAR", "range": "SHORT", "dice": 2, "pick": "both"},
+   {"a": "NEAR", "b": "CLOSE", "range": "POINT_BLANK", "dice": 3, "pick": "highest2"},
+   {"a": "CLOSE", "b": "CLOSE", "range": "POINT_BLANK", "dice": 3, "pick": "highest2"}
+  ],
+  "range_labels": {
+   "EXTREME": "Estremo", "LONG": "Lungo", "SHORT": "Corto", "POINT_BLANK": "Bruciapelo"
+  },
+  "gun_value_band": {
+   "_rule": "Ogni pedina riporta due valori dei cannoni: uno per bruciapelo & corto, uno per lungo & estremo.",
+   "POINT_BLANK": "close", "SHORT": "close", "LONG": "far", "EXTREME": "far"
+  }
+ },
+
+ "gunnery_table": {
+  "_rule": "RB p.57. Somma di due dadi, modificata.",
+  "rows": [
+   {"max": 8, "hits": 0, "label": "Splash"},
+   {"min": 9, "max": 12, "hits": 1, "label": "un Colpo"},
+   {"min": 13, "hits": 2, "label": "due Colpi"}
+  ],
+  "modifiers": [
+   {"when": "target_very_slow", "gunnery": 2, "torpedo": 2, "label": "bersaglio molto lento"},
+   {"when": "target_slow", "gunnery": 1, "torpedo": 1, "label": "bersaglio lento"},
+   {"when": "smoke", "gunnery": -1, "torpedo": 0, "label": "fumo"},
+   {"when": "attacker_gun_value", "gunnery": "GV", "torpedo": 0, "label": "valore dei cannoni dell'attaccante"}
+  ],
+  "_gun_value_na": "Il Fuoco di Cannoni e' consentito anche con GV zero o negativo, ma NON se la pedina indica 'na'.",
+  "_simultaneity": "Gli effetti si applicano dopo che TUTTE le navi hanno attaccato. Eccezione: nel Round Uno dopo un risultato SORPRESA con TF Attiva piu' veloce, le navi Attive attaccano per prime e i loro effetti si applicano subito."
+ },
+
+ "torpedo": {
+  "_rule": "RB p.59 + tabella sulla mappa. Attacco dalla zona Ravvicinata, contro bersagli in zona Ravvicinata o Vicina.",
+  "attacker_zone": "CLOSE",
+  "target_zones": ["CLOSE", "NEAR"],
+  "rows": [
+   {"max": 10, "hits": 0, "label": "nessun effetto"},
+   {"min": 11, "hits": 2, "label": "due Colpi"}
+  ],
+  "_smoke": "Il Fumo NON modifica gli attacchi con Siluri."
+ },
+
+ "maneuver": {
+  "_rule": "RB p.60. Ogni nave puo' muovere di una zona; muovono prima le navi piu' lente, alternando i giocatori. A parita' di velocita' muove prima il giocatore Inattivo. Muovere e' opzionale.",
+  "smoke": {
+   "_rule": "Eccetto Convogli e navi Danneggiate, ogni nave puo' creare Fumo durante la Manovra; puo' muovere e creare Fumo, o restare ferma e creare Fumo. Si smette di creare Fumo solo durante una fase di Manovra.",
+   "obscures_others": 2,
+   "modifier_target_obscured": -1,
+   "modifier_firer_obscured": -1,
+   "modifier_both_obscured": -2,
+   "affects_torpedo": false
+  }
+ },
+
+ "break_away": {
+  "_rule": "RB p.61. Se entrambi i giocatori dichiarano di uscire, la Battaglia finisce subito. Se lo dichiara uno solo, tira 2d6 con i modificatori: con 9 o piu' tutte le sue navi escono e la Battaglia termina.",
+  "target": 9,
+  "modifiers": [
+   {"when": "enemy_in_near_or_close", "value": -1,
+    "label": "una o piu' navi avversarie in zona Vicina o Ravvicinata",
+    "note": "resta -1 anche se le navi avversarie sono piu' di una"},
+   {"when": "enemy_ship_faster", "value": -1, "label": "una nave avversaria e' piu' veloce"},
+   {"when": "all_own_ships_far", "value": 2,
+    "label": "tutte le proprie navi sono in zona Lontana e in nessun'altra"}
+  ],
+  "evasive": "Se il tentativo fallisce si puo' spendere un segnalino Manovre Evasive assegnato alla TF: una nave nella zona Lontana esce comunque, le altre restano e la Battaglia continua."
+ },
+
+ "duration": {
+  "_rule": "RB p.62. La Battaglia finisce alla fine dell'Ultimo Round, oppure quando un giocatore non ha piu' navi sulla Mappa di Battaglia (affondate o Fuggite).",
+  "last_round_good_weather": 3,
+  "last_round_bad_weather": 2,
+  "limited_battle_rounds": 1,
+  "_advanced": "Con le Regole di Battaglia Avanzate e' possibile un quarto round."
+ },
+
+ "deployment": {
+  "_rule": "RB p.55.",
+  "BATTLE": "Tutte le navi nella zona Lontana del rispettivo giocatore. Le navi possono piazzarsi con Fumo. Le TF Coordinatrici e Supporto Aereo NON partecipano.",
+  "SURPRISE": "Se la TF Attiva NON e' piu' veloce, come BATTAGLIA. Se e' piu' veloce: le navi Attive nella propria zona Lontana, quelle Bersaglio piazzate dal giocatore Attivo in zona Vicina e/o Lontana a sua scelta, le navi Attive sparano per prime nel Round Uno, e nessuno puo' piazzarsi con Fumo.",
+  "LIMITED": "Da un risultato SCHERMAGLIA con TF Attiva piu' veloce: entrambe nelle rispettive zone Lontane, un solo round, poi si Cerca l'Iniziativa."
+ },
+
+ "exit": {
+  "_rule": "RB p.62. Al termine le navi rimaste tornano nella Casella Task Force da cui provenivano. Poi entrambe le TF ricevono un segnalino Contatto (se non l'hanno gia') e diventano Stazioni nell'esagono di Battaglia; i giocatori Cercano l'Iniziativa."
+ },
+
+ "damage": {
+  "_rule": "RB p.58. Ogni nave ha un numero di Difesa. Quando i Colpi accumulati raggiungono la Difesa, la nave e' Danneggiata: si rimuovono i segnalini Colpo, si gira la pedina, e i Colpi eccedenti vengono assegnati subito sul lato Danneggiato. Se una nave gia' Danneggiata subisce Colpi pari alla Difesa del lato Danneggiato, affonda.",
+  "_convoy": "Convogli e Squadroni DD non sono MAI Danneggiati. Le istruzioni dello scenario possono indicare un limite di Colpi; raggiunto quello, sono distrutti. Il fascicolo Scenari usa 4 come valore consueto.",
+  "convoy_default_hit_limit": 4,
+  "_leader": "Se un Comandante e' assegnato a una nave affondata, passa subito a un'altra nave sulla Mappa di Battaglia; se restano solo navi nemiche, il Comandante e' ucciso."
+ }
+}

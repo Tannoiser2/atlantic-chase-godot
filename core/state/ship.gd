@@ -29,6 +29,33 @@ var damaged: bool = false
 var sunk: bool = false
 var hits: int = 0
 
+# --- statistiche di Battaglia (stampate sulle pedine) ------------------------
+# Numero di Difesa: quando i Colpi accumulati lo raggiungono, la nave si gira
+# sul lato Danneggiato. Sul lato Danneggiato vale defense_damaged e, raggiunto
+# quello, la nave affonda (RB p.58).
+#
+# ZERO significa "non ancora trascritto": in quel caso i Colpi si accumulano
+# senza girare la pedina, e chi legge il log lo vede scritto. Meglio che
+# inventare un valore e falsare ogni battaglia.
+var defense: int = 0
+var defense_damaged: int = 0
+
+# Valore dei cannoni, distinto per banda di raggio (RB p.56): uno per
+# bruciapelo & corto, uno per lungo & estremo. `null` significa "na" sulla
+# pedina, cioe' la nave non puo' sparare a quel raggio.
+var gun_close: Variant = null
+var gun_far: Variant = null
+
+var has_torpedo: bool = false
+
+## Limite di Colpi per Convogli e Squadroni DD (le istruzioni dello scenario
+## possono cambiarlo; il fascicolo Scenari usa 4).
+var hit_limit: int = HITS_TO_DESTROY_UNARMORED
+
+# --- stato transitorio, valido solo durante una Battaglia --------------------
+var battle_zone: int = 0        ## indice in BattleState.Zone
+var smoke: bool = false
+
 
 func _init(p_name: String = "", p_speed: int = TimeLapse.Speed.MEDIUM,
 		p_kind: int = Kind.WARSHIP) -> void:
@@ -47,8 +74,7 @@ func apply_damage() -> String:
 		return "%s e' gia' affondata" % name
 	if not can_be_damaged():
 		# RB p.51: per Convogli e Squadroni DD un Danno vale 2 Colpi
-		var a := apply_hit()
-		var b := apply_hit()
+		var b := apply_hits(2)
 		return "%s non puo' essere danneggiata: vale 2 Colpi (%s)" % [name, b]
 	if damaged:
 		sunk = true
@@ -60,13 +86,61 @@ func apply_damage() -> String:
 
 ## Applica un COLPO. Ritorna la descrizione.
 func apply_hit() -> String:
+	return apply_hits(1)
+
+
+## Applica `n` Colpi seguendo la regola di Battaglia (RB p.58):
+## raggiunta la Difesa la nave si gira, i Colpi eccedenti finiscono subito sul
+## lato Danneggiato, e raggiunta la Difesa del lato Danneggiato la nave affonda.
+func apply_hits(n: int) -> String:
 	if sunk:
 		return "%s e' gia' affondata" % name
-	hits += 1
-	if not can_be_damaged() and hits >= HITS_TO_DESTROY_UNARMORED:
-		sunk = true
-		return "%s ha subito %d Colpi: DISTRUTTA" % [name, hits]
-	return "%s ha subito un Colpo (totale %d)" % [name, hits]
+	if n <= 0:
+		return "nessun Colpo su %s" % name
+	var parts: Array[String] = []
+
+	if not can_be_damaged():
+		hits += n
+		if hits >= hit_limit:
+			sunk = true
+			return "%s ha raggiunto il limite di %d Colpi: DISTRUTTA" % [name, hit_limit]
+		return "%s ha subito %d Colpi (totale %d di %d)" % [name, n, hits, hit_limit]
+
+	var remaining := n
+	while remaining > 0 and not sunk:
+		hits += 1
+		remaining -= 1
+		var threshold := defense_damaged if damaged else defense
+		if threshold <= 0:
+			continue  # statistiche non trascritte: si accumula e basta
+		if hits >= threshold:
+			if damaged:
+				sunk = true
+				parts.append("AFFONDATA")
+			else:
+				damaged = true
+				hits = 0
+				parts.append("Danneggiata")
+	var txt := "%s ha subito %d Colpi" % [name, n]
+	if not parts.is_empty():
+		txt += " -> " + ", ".join(parts)
+	if not sunk:
+		var threshold := defense_damaged if damaged else defense
+		if threshold > 0:
+			txt += " (%d/%d)" % [hits, threshold]
+		else:
+			txt += " (totale %d; Difesa non trascritta)" % hits
+	return txt
+
+
+## Valore dei cannoni per la banda di raggio. `null` = "na" sulla pedina:
+## la nave non puo' sparare a quel raggio (RB p.56).
+func gun_value(band: String) -> Variant:
+	return gun_close if band == "close" else gun_far
+
+
+func can_fire(band: String) -> bool:
+	return gun_value(band) != null
 
 
 ## Il bersaglio e' abbastanza lento perche' il risultato lo colpisca?
@@ -93,7 +167,10 @@ func display() -> String:
 
 func to_dict() -> Dictionary:
 	return {"name": name, "nation": nation, "type": type_code, "kind": kind,
-		"speed": speed, "damaged": damaged, "sunk": sunk, "hits": hits}
+		"speed": speed, "damaged": damaged, "sunk": sunk, "hits": hits,
+		"defense": defense, "defense_damaged": defense_damaged,
+		"gun_close": gun_close, "gun_far": gun_far,
+		"has_torpedo": has_torpedo, "hit_limit": hit_limit}
 
 
 static func from_dict(d: Dictionary) -> Ship:
@@ -105,6 +182,12 @@ static func from_dict(d: Dictionary) -> Ship:
 	s.damaged = bool(d.get("damaged", false))
 	s.sunk = bool(d.get("sunk", false))
 	s.hits = int(d.get("hits", 0))
+	s.defense = int(d.get("defense", 0))
+	s.defense_damaged = int(d.get("defense_damaged", 0))
+	s.gun_close = d.get("gun_close", null)
+	s.gun_far = d.get("gun_far", null)
+	s.has_torpedo = bool(d.get("has_torpedo", false))
+	s.hit_limit = int(d.get("hit_limit", HITS_TO_DESTROY_UNARMORED))
 	return s
 
 
