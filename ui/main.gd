@@ -28,8 +28,9 @@ var mode: int = Mode.PLAY
 var selected_tf: TaskForce = null
 var active_end: int = 1            ## capo su cui si estende: 0 testa, 1 coda
 var edit_anchor: Vector2i = Vector2i.MAX
-var scenario_files: Array[String] = []
+var scenario_ids: Array[String] = []
 var scenario_index: int = 0
+var scenario: Scenario = null
 
 var _messages: Array[String] = []
 
@@ -60,7 +61,7 @@ func _ready() -> void:
 
 	_build_hud()
 
-	scenario_files = _list_scenarios()
+	scenario_ids = Scenario.list_ids()
 	_load_scenario_at(_default_scenario_index())
 
 	log = CommandLog.new(state)
@@ -69,53 +70,32 @@ func _ready() -> void:
 
 # ------------------------------------------------------------------ scenari --
 
-func _list_scenarios() -> Array[String]:
-	var out: Array[String] = []
-	var d := DirAccess.open(SCENARIO_DIR)
-	if d == null:
-		return out
-	for f in d.get_files():
-		if f.ends_with(".json"):
-			out.append(f)
-	out.sort()
-	return out
-
-
 func _default_scenario_index() -> int:
-	for i in scenario_files.size():
-		if scenario_files[i].begins_with("Op5"):
+	for i in scenario_ids.size():
+		if scenario_ids[i].begins_with("Op5"):
 			return i
 	return 0
 
 
 func _load_scenario_at(idx: int) -> void:
-	if scenario_files.is_empty():
-		_msg("nessuno scenario in %s (esegui tools/import_scenarios.py)" % SCENARIO_DIR)
+	if scenario_ids.is_empty():
+		_msg("nessuno scenario (esegui tools/import_scenarios.py)")
 		return
-	scenario_index = wrapi(idx, 0, scenario_files.size())
-	var path := SCENARIO_DIR + scenario_files[scenario_index]
-	var f := FileAccess.open(path, FileAccess.READ)
-	if f == null:
-		_msg("impossibile aprire %s" % path)
+	scenario_index = wrapi(idx, 0, scenario_ids.size())
+	scenario = Scenario.load_by_id(scenario_ids[scenario_index])
+	if scenario.load_error != "":
+		_msg(scenario.load_error)
 		return
-	var d: Variant = JSON.parse_string(f.get_as_text())
-	f.close()
-	if typeof(d) != TYPE_DICTIONARY:
-		_msg("scenario illeggibile: %s" % path)
-		return
-	var doc: Dictionary = d
-	state.apply_dict({
-		"scenario": doc.get("name", ""),
-		"weather": doc.get("weather", 0),
-		"initiative": doc.get("initiative", 0),
-		"round": doc.get("round", 1),
-		"task_forces": doc.get("task_forces", []),
-		"info_triggers": doc.get("info_triggers", []),
-	})
+	state.apply_dict(scenario.to_state_dict())
 	selected_tf = state.task_forces[0] if not state.task_forces.is_empty() else null
 	traj_layer.selected_tf_id = selected_tf.id if selected_tf else -1
 	log = CommandLog.new(state)
-	_msg("Scenario: %s  (%d TF)" % [doc.get("name", "?"), state.task_forces.size()])
+	_msg("Scenario: %s  -  %d Task Force, %d navi"
+		% [scenario.title, state.task_forces.size(), scenario.ship_count()])
+	if scenario.has_import_warnings():
+		for w_v: Variant in scenario.import_warnings:
+			_msg("  [avviso di import] %s" % String(w_v))
+	_update_briefing()
 	_focus_selected()
 	_refresh()
 
@@ -194,6 +174,8 @@ func _on_key(k: InputEventKey) -> void:
 			_declare_action("AIR_STRIKE")
 		KEY_4:
 			_declare_action("STEALTH_ATTACK")
+		KEY_B:
+			_briefing_panel.visible = not _briefing_panel.visible
 		KEY_F1:
 			_toggle_help()
 		KEY_HOME:
@@ -467,6 +449,8 @@ var _lbl_title: Label
 var _lbl_info: RichTextLabel
 var _lbl_log: RichTextLabel
 var _help: PanelContainer
+var _briefing_panel: PanelContainer
+var _lbl_briefing: RichTextLabel
 
 
 func _build_hud() -> void:
@@ -517,6 +501,7 @@ func _build_hud() -> void:
 	_lbl_log.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	logpanel.add_child(_lbl_log)
 
+	_build_briefing(hud)
 	_build_help(hud)
 
 
@@ -533,6 +518,33 @@ func _panel_style() -> StyleBoxFlat:
 	sb.content_margin_top = 8
 	sb.content_margin_bottom = 8
 	return sb
+
+
+## Pannello del briefing: iniziativa, meteo, fine partita e condizioni di
+## vittoria dal fascicolo. Le condizioni di vittoria restano testo, applicate
+## dai giocatori: in Atlantic Chase sono discorsive e piene di eccezioni.
+func _build_briefing(root: Control) -> void:
+	_briefing_panel = PanelContainer.new()
+	_briefing_panel.set_anchors_preset(Control.PRESET_CENTER_RIGHT)
+	_briefing_panel.position = Vector2(-560, -300)
+	_briefing_panel.visible = false
+	_briefing_panel.add_theme_stylebox_override("panel", _panel_style())
+	root.add_child(_briefing_panel)
+	_lbl_briefing = RichTextLabel.new()
+	_lbl_briefing.bbcode_enabled = true
+	_lbl_briefing.custom_minimum_size = Vector2(520, 600)
+	_briefing_panel.add_child(_lbl_briefing)
+
+
+func _update_briefing() -> void:
+	if _lbl_briefing == null or scenario == null:
+		return
+	var txt := scenario.briefing_text()
+	if scenario.has_import_warnings():
+		txt += "\n\n[color=#ff9a3c][b]Avvisi di import[/b][/color]"
+		for w_v: Variant in scenario.import_warnings:
+			txt += "\n  " + String(w_v)
+	_lbl_briefing.text = txt
 
 
 func _build_help(root: Control) -> void:
@@ -565,6 +577,7 @@ func _build_help(root: Control) -> void:
   Ctrl+W                                      alterna meteo buono/cattivo
   Ctrl+Z / Ctrl+Shift+Z                       annulla / ripristina
   [ e ]                                       scenario precedente / successivo
+  B                                           mostra/nasconde il briefing
 
 [b]Editor del grafo (E)[/b]
   clic destro                                 imposta l'ancora
@@ -589,14 +602,16 @@ func _msg(s: String) -> void:
 func _refresh() -> void:
 	if _lbl_title == null:
 		return
-	var sc := scenario_files[scenario_index] if not scenario_files.is_empty() else "-"
-	_lbl_title.text = "%s   [%s]" % [state.scenario_name if state.scenario_name != ""
-		else sc, "EDITOR" if mode == Mode.EDITOR else "gioco"]
+	var sc := scenario.title if scenario != null else "-"
+	_lbl_title.text = "%s   [%s]" % [sc, "EDITOR" if mode == Mode.EDITOR else "gioco"]
 
 	var lines: Array[String] = []
-	lines.append("Meteo: [b]%s[/b]  Esagoni: %d  Lati negati: %d  Riservati: %d"
-		% ["cattivo" if state.weather == 1 else "buono", graph.hex_count(),
-			graph.blocked_edge_count(), graph.restricted_edge_count()])
+	lines.append("Meteo: [b]%s[/b]    Iniziativa: [b]%s[/b]"
+		% ["cattivo" if state.weather == 1 else "buono",
+			"Kriegsmarine" if state.initiative == 0 else "Royal Navy"])
+	lines.append("Punti Vittoria - KM [b]%d[/b]   RN [b]%d[/b]"
+		% [state.vp_of(TaskForce.Side.KRIEGSMARINE),
+			state.vp_of(TaskForce.Side.ROYAL_NAVY)])
 	if selected_tf != null:
 		var t := selected_tf.trajectory
 		var kind := "Stazione" if t.is_station() else "Traiettoria"
@@ -609,6 +624,13 @@ func _refresh() -> void:
 				"testa" if active_end == 0 else "coda"])
 		lines.append("  Informazioni: [b]%d[/b]    Contatto: %d"
 			% [t.info_count(), t.contact_count()])
+		if not selected_tf.ships.is_empty():
+			var names: Array[String] = []
+			for sh in selected_tf.ships:
+				names.append(sh.display())
+			lines.append("  Navi: %s" % ", ".join(names))
+		if selected_tf.leader != "":
+			lines.append("  Comandante: [b]%s[/b]" % selected_tf.leader)
 		if t.info_count() > 0:
 			lines.append("  [color=#ff9a3c]Completamento impedito; vulnerabile a Interruzione[/color]")
 		# Totale Traiettoria contro la prima TF avversaria

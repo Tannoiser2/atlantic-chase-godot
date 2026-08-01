@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **797 verifiche, 7 suite, headless.**
+Tutti i test passano: **847 verifiche, 8 suite, headless.**
 
 ---
 
@@ -17,7 +17,7 @@ Tutti i test passano: **797 verifiche, 7 suite, headless.**
 | **M3** Mappa interattiva | ✅ **completo** | Selezione, costruzione traiettoria, anteprima, undo, HUD, log |
 | **M4** Motore azioni | ✅ **completo** | Tutte e 4 le tabelle trascritte e verificate; danno alle navi |
 | **M5** Battaglia | ✅ **completo** | 5 zone, cannoni, siluri, manovra, fumo, fuga, uscita |
-| **M6** Scenari | 🟡 **parziale** | 22 scenari importati e caricabili; mancano obiettivi, navi, condizioni di vittoria |
+| **M6** Scenari | 🟡 **quasi completo** | 22 scenari con navi, comandanti, rinforzi e briefing; le condizioni di vittoria sono testo, non regole |
 
 ### Cosa è cambiato nell'ultima sessione
 
@@ -157,11 +157,16 @@ dal metodo con cui il reticolo è stato ricavato.
 
 ## Cosa manca, in ordine di importanza
 
-### 1. M6 — obiettivi e condizioni di vittoria
+### 1. Condizioni di vittoria eseguibili
 
-I 22 scenari si caricano con traiettorie e stazioni reali, ma sono gusci: mancano
-obiettivi, rinforzi, punteggi VP e condizioni di vittoria, che stanno nei
-fascicoli Scenari e vanno trascritti.
+Gli scenari hanno ora navi, comandanti, rinforzi, iniziativa, meteo e il testo
+completo di fine partita e vittoria, e i Punti Vittoria si contano.
+
+Quello che manca è renderle **automatiche**. In Atlantic Chase sono discorsive e
+piene di eccezioni per scenario — *"il tedesco vince se il Bismarck è in un porto
+francese; altrimenti vince il britannico"* — quindi ogni scenario è quasi un
+caso a sé. Oggi il testo è mostrato nel briefing (tasto **B**) e i giocatori lo
+applicano; automatizzarlo è un lavoro scenario per scenario.
 
 ### 2. Interfaccia della Battaglia
 

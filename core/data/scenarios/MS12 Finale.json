@@ -1,10 +1,20 @@
 {
  "name": "MS12 Finale",
+ "reinforcements": {},
  "source": "MS12 Finale.vsav (modulo VASSAL Atlantic Chase v2.1)",
  "weather": 0,
- "initiative": 0,
+ "initiative": 1,
  "round": 1,
  "task_forces": [],
  "info_triggers": [],
- "import_warnings": []
+ "import_warnings": [],
+ "briefing": {
+  "title": "Finale",
+  "initiative": "britannica) (p. 55) Forze per effettuare le scelte (nelle tabelle di aiuto al",
+  "weather": "Sfavorevoli.",
+  "end": "",
+  "victory": "Decisiva Marginale\n Danneggiare gravemente il Scharnhorst e meno di 3",
+  "historical": "Gli inglesi intendevano attirare la nave\n tedesca al confronto col il Duke of York, cosa Regole Avanzate di Battaglia:\n che infine accadde. Lo scontro iniziale dello Verifiche Snafu & Verifiche del Disingaggio:"
+ },
+ "initiative_label": "ROYAL_NAVY"
 }

@@ -104,9 +104,16 @@ static func from_dict(d: Dictionary) -> TaskForce:
 	tf.color = String(d.get("color", "GE"))
 	tf.slot = int(d.get("slot", 0))
 	tf.name = String(d.get("name", ""))
+	# Gli scenari elencano le navi per NOME: le statistiche si prendono dal
+	# ruolino (core/data/ships.json). Un nome sconosciuto produce comunque una
+	# nave, ma senza statistiche, e il log lo dira' al primo Colpo.
 	var ss: Array[Ship] = []
 	for s_v: Variant in d.get("ships", []):
-		ss.append(Ship.from_variant(s_v))
+		if typeof(s_v) == TYPE_STRING:
+			var from_roster := ShipRoster.shared().make(String(s_v))
+			ss.append(from_roster if from_roster != null else Ship.new(String(s_v)))
+		else:
+			ss.append(Ship.from_variant(s_v))
 	tf.ships = ss
 	tf.speed = int(d.get("speed", TimeLapse.Speed.MEDIUM))
 	if not ss.is_empty():

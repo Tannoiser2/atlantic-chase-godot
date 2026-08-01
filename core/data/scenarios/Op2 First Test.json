@@ -1,5 +1,15 @@
 {
  "name": "Op2 First Test",
+ "reinforcements": {
+  "KM Reinforcement A": [
+   "Koln",
+   "Leipzig",
+   "Lutzow"
+  ],
+  "RN Reinforcement A": [
+   "Sheffield"
+  ]
+ },
  "source": "Op2 First Test.vsav (modulo VASSAL Atlantic Chase v2.1)",
  "weather": 0,
  "initiative": 0,
@@ -11,7 +21,10 @@
    "color": "Brown",
    "slot": 0,
    "name": "RN Brown-0",
-   "ships": [],
+   "ships": [
+    "Convoy x3"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -27,7 +40,11 @@
    "color": "Brown",
    "slot": 1,
    "name": "RN Brown-1",
-   "ships": [],
+   "ships": [
+    "Norfolk",
+    "Suffolk"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -43,7 +60,12 @@
    "color": "Brown",
    "slot": 2,
    "name": "RN Brown-2",
-   "ships": [],
+   "ships": [
+    "Furious",
+    "Repulse",
+    "Warspite"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -59,7 +81,10 @@
    "color": "GE",
    "slot": 0,
    "name": "KM GE-0",
-   "ships": [],
+   "ships": [
+    "Graf Spee"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -75,7 +100,11 @@
    "color": "GE",
    "slot": 1,
    "name": "KM GE-1",
-   "ships": [],
+   "ships": [
+    "Gneisenau",
+    "Scharnhorst"
+   ],
+   "leader": "Marschall",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -91,7 +120,10 @@
    "color": "Red",
    "slot": 0,
    "name": "RN Red-0",
-   "ships": [],
+   "ships": [
+    "Newcastle"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -107,7 +139,10 @@
    "color": "Red",
    "slot": 1,
    "name": "RN Red-1",
-   "ships": [],
+   "ships": [
+    "Hood"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -123,7 +158,12 @@
    "color": "Red",
    "slot": 2,
    "name": "RN Red-2",
-   "ships": [],
+   "ships": [
+    "Dunkerque",
+    "G Leygues",
+    "Montcalm"
+   ],
+   "leader": "Gensoul",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -139,7 +179,12 @@
    "color": "Tan",
    "slot": 0,
    "name": "RN Tan-0",
-   "ships": [],
+   "ships": [
+    "Dorsetshire",
+    "Nelson",
+    "Rodney"
+   ],
+   "leader": "Forbes",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -155,7 +200,12 @@
    "color": "Tan",
    "slot": 1,
    "name": "RN Tan-1",
-   "ships": [],
+   "ships": [
+    "Aurora",
+    "Edinburgh",
+    "Southampton"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -171,7 +221,10 @@
    "color": "Tan",
    "slot": 2,
    "name": "RN Tan-2",
-   "ships": [],
+   "ships": [
+    "Glasgow"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -182,12 +235,15 @@
    }
   },
   {
-   "id": 12,
+   "id": 11,
    "side": 1,
    "color": "Tan",
    "slot": 3,
    "name": "RN Tan-3",
-   "ships": [],
+   "ships": [
+    "Convoy x3"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [
@@ -272,5 +328,14 @@
   }
  ],
  "info_triggers": [],
- "import_warnings": []
+ "import_warnings": [],
+ "briefing": {
+  "title": "Prima Prova: novembre 1939",
+  "initiative": "Germania.",
+  "weather": "",
+  "end": "Questo scenario termina",
+  "victory": "Quando lo scenario termina,\nregistrate i Punti Vittoria (VP)\ndi ciascun giocatore. Il\ngiocatore che ha più VP vince,\ned in caso di pareggio, vince il",
+  "historical": "I due incrociatori da battaglia tedeschi fecero una sortita, ma con ordini di non causare uno scontro generale, fu solo un\nallenamento. Affondarono un mercantile armato che navigava da solo, ma non riuscirono mai ad uscire nell’Atlantico. Nel\nfrattempo la Graf Spee, che necessitava della revisione dei motori e temendo la cattura, non riuscì mai a passare il\nblocco. Si rifornì in mare e si diresse ancora verso sud. Settimane dopo, alla fine di questo scenario, gli incrociatori\nbritannici la avrebbero costretta alla battaglia del River Plate in Sud America, dove venne autoaffondata (vedere scenari\nMS1 ed MS2)."
+ },
+ "initiative_label": "KRIEGSMARINE"
 }

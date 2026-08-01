@@ -1,5 +1,6 @@
 {
  "name": "Campaign",
+ "reinforcements": {},
  "source": "Campaign.vsav (modulo VASSAL Atlantic Chase v2.1)",
  "weather": 0,
  "initiative": 0,

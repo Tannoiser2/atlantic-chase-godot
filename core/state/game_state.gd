@@ -30,6 +30,32 @@ var port_boxes: Dictionary = {}
 
 var scenario_name: String = ""
 
+## Punti Vittoria. La traccia VP e' stampata sulla mappa; come si guadagnano
+## dipende dallo scenario (RB e fascicolo Scenari), quindi qui si tiene solo il
+## conteggio e chi lo incrementa e' il codice dell'azione o il giocatore.
+var vp: Dictionary = {
+	TaskForce.Side.KRIEGSMARINE: 0,
+	TaskForce.Side.ROYAL_NAVY: 0,
+}
+
+
+func add_vp(side: int, amount: int, reason: String = "") -> void:
+	vp[side] = int(vp.get(side, 0)) + amount
+	changed.emit()
+
+
+func vp_of(side: int) -> int:
+	return int(vp.get(side, 0))
+
+
+## Chi conduce ai punti. -1 in caso di parita'.
+func vp_leader() -> int:
+	var a := vp_of(TaskForce.Side.KRIEGSMARINE)
+	var b := vp_of(TaskForce.Side.ROYAL_NAVY)
+	if a == b:
+		return -1
+	return TaskForce.Side.KRIEGSMARINE if a > b else TaskForce.Side.ROYAL_NAVY
+
 
 func _init(p_graph: MapGraph = null, p_seed: int = 0) -> void:
 	graph = p_graph if p_graph != null else MapGraph.load_default()
@@ -138,6 +164,8 @@ func to_dict() -> Dictionary:
 		"round": round_number,
 		"task_forces": tfs,
 		"info_triggers": trig,
+		"vp_km": vp_of(TaskForce.Side.KRIEGSMARINE),
+		"vp_rn": vp_of(TaskForce.Side.ROYAL_NAVY),
 		"rng": rng.to_dict(),
 	}
 
@@ -148,6 +176,8 @@ func apply_dict(d: Dictionary) -> void:
 	initiative = int(d.get("initiative", 0))
 	initiative_count = int(d.get("initiative_count", 0))
 	round_number = int(d.get("round", 1))
+	vp[TaskForce.Side.KRIEGSMARINE] = int(d.get("vp_km", 0))
+	vp[TaskForce.Side.ROYAL_NAVY] = int(d.get("vp_rn", 0))
 	task_forces.clear()
 	_by_id.clear()
 	_next_id = 1

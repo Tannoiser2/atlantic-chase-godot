@@ -1,10 +1,20 @@
 {
  "name": "MS4 Chance Encounter",
+ "reinforcements": {},
  "source": "MS4 Chance Encounter.vsav (modulo VASSAL Atlantic Chase v2.1)",
  "weather": 0,
  "initiative": 0,
  "round": 1,
  "task_forces": [],
  "info_triggers": [],
- "import_warnings": []
+ "import_warnings": [],
+ "briefing": {
+  "title": "Incontro Casuale",
+  "initiative": "",
+  "weather": "Buone.",
+  "end": "",
+  "victory": "Decisiva Marginale\n La Glorious fugge (non danneggiata La Glorious fugge danneggiata",
+  "historical": "Mentre davano supporto al\n convoglio al largo di Harstad, i due"
+ },
+ "weather_label": "GOOD"
 }

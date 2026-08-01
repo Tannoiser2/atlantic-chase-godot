@@ -1,5 +1,27 @@
 {
  "name": "Op5 Rheinubung",
+ "reinforcements": {
+  "KM Reinforcement B": [
+   "Scheer"
+  ],
+  "KM Reinforcement A": [
+   "Hipper",
+   "Scharnhorst"
+  ],
+  "RN Reinforcement C": [
+   "Convoy x3"
+  ],
+  "RN Reinforcement B": [
+   "Kgv",
+   "Repulse",
+   "Victorious"
+  ],
+  "RN Reinforcement A": [
+   "Ark Royal",
+   "Renown",
+   "Sheffield"
+  ]
+ },
  "source": "Op5 Rheinubung.vsav (modulo VASSAL Atlantic Chase v2.1)",
  "weather": 0,
  "initiative": 0,
@@ -11,7 +33,11 @@
    "color": "Brown",
    "slot": 0,
    "name": "RN Brown-0",
-   "ships": [],
+   "ships": [
+    "Hood",
+    "Pow"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -27,7 +53,19 @@
    "color": "Brown",
    "slot": 1,
    "name": "RN Brown-1",
-   "ships": [],
+   "ships": [
+    "Aurora",
+    "Dorsetshire",
+    "Edinburgh",
+    "Galatea",
+    "Hermione",
+    "Kenya",
+    "London",
+    "Neptune",
+    "Ramilles",
+    "Rodney"
+   ],
+   "leader": "Tovey",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -43,7 +81,11 @@
    "color": "GE",
    "slot": 0,
    "name": "KM GE-0",
-   "ships": [],
+   "ships": [
+    "Bismarck",
+    "Preugen"
+   ],
+   "leader": "Lutjens",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -59,7 +101,11 @@
    "color": "Red",
    "slot": 0,
    "name": "RN Red-0",
-   "ships": [],
+   "ships": [
+    "Birmingham",
+    "Suffolk"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -75,7 +121,11 @@
    "color": "Red",
    "slot": 1,
    "name": "RN Red-1",
-   "ships": [],
+   "ships": [
+    "Arethusa",
+    "Manchester"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -91,7 +141,10 @@
    "color": "Red",
    "slot": 2,
    "name": "RN Red-2",
-   "ships": [],
+   "ships": [
+    "Norfolk"
+   ],
+   "leader": "Walker",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -102,12 +155,15 @@
    }
   },
   {
-   "id": 7,
+   "id": 10,
    "side": 1,
    "color": "Tan",
    "slot": 0,
    "name": "RN Tan-0",
-   "ships": [],
+   "ships": [
+    "Convoy x3"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [
@@ -190,7 +246,10 @@
    "color": "Tan",
    "slot": 1,
    "name": "RN Tan-1",
-   "ships": [],
+   "ships": [
+    "Convoy x3"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -202,5 +261,14 @@
   }
  ],
  "info_triggers": [],
- "import_warnings": []
+ "import_warnings": [],
+ "briefing": {
+  "title": "Rheinübung - maggio 1941",
+  "initiative": "Germania.",
+  "weather": "",
+  "end": "Questo scenario termina quando il tedesco non ha più Task\nForce in gioco (tutte affondate o che hanno Completato).\nQuando tre Convogli hanno Completato, il tedesco può\nsolamente effettuare azioni di Attacco Aereo, Completamento,\nPassare e Traiettoria (comunque, se una TF tedesca può\neffettuare il Completamento, lo deve fare).\n\nVARIANTE ‘JUTLAND’ (Battaglia Decisiva?):\nCon mutuo accordo, i giocatori possono scegliere di giocare\nusando più navi tedesche. Questo probabilmente aumenterà la Convoglio\ndurata dello scenario, e sposterà il bilanciamento a favore del\ntedesco. Per usarla, il tedesco riceve i Gruppi di Rinforzi A e B.\nQuando uno entra in gioco (azione Riorganizzazione), sottraete\n1 VP dal punteggio tedesco (cioè, 1 VP per Gruppo di Rinforzi).",
+  "victory": "Quando termina lo scenario, calcolate i Punti Vittoria (VP) di\nciascun giocatore. Il giocatore che ha più VP vince.\nPARITA’: Il tedesco vince se il Bismarck è in un porto francese\n(completato). Altrimenti il britannico vince in caso di parità.",
+  "historical": "L’operazione non andò bene per il tedesco. Identificata anche prima di aver raggiunto la Norvegia, la Task Force del"
+ },
+ "initiative_label": "KRIEGSMARINE"
 }

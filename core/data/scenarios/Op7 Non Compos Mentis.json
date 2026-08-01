@@ -1,5 +1,14 @@
 {
  "name": "Op7 Non Compos Mentis",
+ "reinforcements": {
+  "RN Reinforcement A": [
+   "Doy"
+  ],
+  "RN Reinforcement B": [
+   "Norfolk",
+   "Trinidad"
+  ]
+ },
  "source": "Op7 Non Compos Mentis.vsav (modulo VASSAL Atlantic Chase v2.1)",
  "weather": 0,
  "initiative": 0,
@@ -11,7 +20,11 @@
    "color": "Brown",
    "slot": 0,
    "name": "RN Brown-0",
-   "ships": [],
+   "ships": [
+    "Birmingham",
+    "Devonshire"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -27,7 +40,19 @@
    "color": "Brown",
    "slot": 1,
    "name": "RN Brown-1",
-   "ships": [],
+   "ships": [
+    "Belfast",
+    "Berwick",
+    "Edinburgh",
+    "Kenya",
+    "Kgv",
+    "Nigeria",
+    "Renown",
+    "Rodney",
+    "Sheffield",
+    "Victorious"
+   ],
+   "leader": "Tovey",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -43,7 +68,13 @@
    "color": "Brown",
    "slot": 2,
    "name": "RN Brown-2",
-   "ships": [],
+   "ships": [
+    "Dorsetshire",
+    "Hermione",
+    "Malaya",
+    "Neptune"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -59,7 +90,11 @@
    "color": "GE",
    "slot": 0,
    "name": "KM GE-0",
-   "ships": [],
+   "ships": [
+    "Scheer",
+    "Tirpitz"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -75,7 +110,12 @@
    "color": "GE",
    "slot": 1,
    "name": "KM GE-1",
-   "ships": [],
+   "ships": [
+    "Gneisenau",
+    "Preugen",
+    "Scharnhorst"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -91,7 +131,11 @@
    "color": "Red",
    "slot": 0,
    "name": "RN Red-0",
-   "ships": [],
+   "ships": [
+    "Arethusa",
+    "Manchester"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -107,7 +151,10 @@
    "color": "Red",
    "slot": 1,
    "name": "RN Red-1",
-   "ships": [],
+   "ships": [
+    "Suffolk"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -123,7 +170,11 @@
    "color": "Red",
    "slot": 2,
    "name": "RN Red-2",
-   "ships": [],
+   "ships": [
+    "Tuscaloosa",
+    "Wichita"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -134,12 +185,15 @@
    }
   },
   {
-   "id": 9,
+   "id": 11,
    "side": 1,
    "color": "Tan",
    "slot": 0,
    "name": "RN Tan-0",
-   "ships": [],
+   "ships": [
+    "Convoy x3"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [
@@ -223,12 +277,15 @@
    }
   },
   {
-   "id": 10,
+   "id": 9,
    "side": 1,
    "color": "Tan",
    "slot": 1,
    "name": "RN Tan-1",
-   "ships": [],
+   "ships": [
+    "Convoy x3"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [
@@ -300,12 +357,15 @@
    }
   },
   {
-   "id": 11,
+   "id": 9,
    "side": 1,
    "color": "Tan",
    "slot": 2,
    "name": "RN Tan-2",
-   "ships": [],
+   "ships": [
+    "Convoy x3"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [
@@ -378,5 +438,16 @@
   }
  ],
  "info_triggers": [],
- "import_warnings": []
+ "import_warnings": [
+  "Tan-2: la rotta attraversa il lato negato (13, -6)-(13, -7) (piazzamento impreciso nel .vsav)"
+ ],
+ "briefing": {
+  "title": "Non Compos Mentis – febbraio 1942",
+  "initiative": "Germania.",
+  "weather": "",
+  "end": "Questo scenario termina quando il tedesco non ha più Task Force in\ngioco (tutte affondate o che hanno Completato). Quando tre Convogli\nhanno Completato, il tedesco può solamente effettuare azioni di Da New York a\nAttacco Aereo, Completamento, Passare e Traiettoria (comunque, se Clyde/Liverpool\nuna TF tedesca può effettuare il Completamento, lo deve fare). 12 segmenti Convoglio",
+  "victory": "Quando termina lo scenario, calcolate i Punti Vittoria (VP) di ciascun\ngiocatore. Il giocatore che ha più VP vince. In caso di parità, vince il\nbritannico. Se non si causano Colpi contro Convogli ed il tedesco ha vinto per un margine di 5 VP o meno, è davvero\nuna vittoria molto marginale.",
+  "historical": "L’Ammiragliato aveva anticipato questo stesso scenario mesi prima, aspettandosi una corsa attraverso la Manica da parte dei due\nincrociatori da battaglia. In effetti, dopo che il Comando Costiero aveva osservato queste navi che si addestravano entro le vie di\nBrest, una tale operazione sembrava imminente. L’ammiraglio Sommerville a Gibilterra venne messo in allarme, comunque, nel caso\nin cui i tedeschi avessero pianificato invece un raid contro i convogli (ed in questo scenario, il giocatore tedesco può fare proprio\nquesto). Infine, equipaggi inesperti degli aerei e la sfortuna consentirono ai due incrociatori da battaglia ed al Prinz Eugen di\nattraversare la Manica subendo solamente danni minori."
+ },
+ "initiative_label": "KRIEGSMARINE"
 }

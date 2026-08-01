@@ -27,6 +27,16 @@ const KINDS := {
 }
 
 
+## Istanza condivisa: il ruolino e' immutabile e si carica una volta sola.
+static var _shared: ShipRoster = null
+
+
+static func shared() -> ShipRoster:
+	if _shared == null:
+		_shared = load_default()
+	return _shared
+
+
 static func load_default() -> ShipRoster:
 	var r := ShipRoster.new()
 	r.load_from(DATA_PATH)

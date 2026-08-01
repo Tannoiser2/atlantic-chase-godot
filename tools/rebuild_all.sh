@@ -35,6 +35,7 @@ $PY tools/apply_annotations.py
 
 echo "== 9. scenari =========================================================="
 $PY tools/import_scenarios.py
+$PY tools/extract_briefings.py
 
 echo "== 10. asset ==========================================================="
 $PY tools/prepare_assets.py

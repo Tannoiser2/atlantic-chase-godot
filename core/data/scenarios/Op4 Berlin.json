@@ -1,5 +1,22 @@
 {
  "name": "Op4 Berlin",
+ "reinforcements": {
+  "RN Reinforcement B": [
+   "Hood"
+  ],
+  "RN Reinforcement A": [
+   "Dorsetshire",
+   "Edinburgh"
+  ],
+  "RN Reinforcement D": [
+   "Ark Royal",
+   "Renown",
+   "Sheffield"
+  ],
+  "RN Reinforcement C": [
+   "Kgv"
+  ]
+ },
  "source": "Op4 Berlin.vsav (modulo VASSAL Atlantic Chase v2.1)",
  "weather": 0,
  "initiative": 0,
@@ -11,7 +28,11 @@
    "color": "Brown",
    "slot": 0,
    "name": "RN Brown-0",
-   "ships": [],
+   "ships": [
+    "Norfolk",
+    "Suffolk"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -27,7 +48,11 @@
    "color": "Brown",
    "slot": 1,
    "name": "RN Brown-1",
-   "ships": [],
+   "ships": [
+    "Arethusa",
+    "Naiad"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -43,7 +68,17 @@
    "color": "Brown",
    "slot": 2,
    "name": "RN Brown-2",
-   "ships": [],
+   "ships": [
+    "Fiji",
+    "Galatea",
+    "Kenya",
+    "Nelson",
+    "Nigeria",
+    "Ramilles",
+    "Repulse",
+    "Rodney"
+   ],
+   "leader": "Tovey",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -59,7 +94,10 @@
    "color": "GE",
    "slot": 0,
    "name": "KM GE-0",
-   "ships": [],
+   "ships": [
+    "Hipper"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -75,7 +113,10 @@
    "color": "GE",
    "slot": 1,
    "name": "KM GE-1",
-   "ships": [],
+   "ships": [
+    "Scheer"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -91,7 +132,11 @@
    "color": "GE",
    "slot": 2,
    "name": "KM GE-2",
-   "ships": [],
+   "ships": [
+    "Gneisenau",
+    "Scharnhorst"
+   ],
+   "leader": "Lutjens",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -107,7 +152,10 @@
    "color": "Red",
    "slot": 0,
    "name": "RN Red-0",
-   "ships": [],
+   "ships": [
+    "Hermione"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -123,7 +171,10 @@
    "color": "Red",
    "slot": 1,
    "name": "RN Red-1",
-   "ships": [],
+   "ships": [
+    "Malaya"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -134,12 +185,15 @@
    }
   },
   {
-   "id": 9,
+   "id": 11,
    "side": 1,
    "color": "Tan",
    "slot": 0,
    "name": "RN Tan-0",
-   "ships": [],
+   "ships": [
+    "Convoy x3"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [
@@ -223,12 +277,15 @@
    }
   },
   {
-   "id": 10,
+   "id": 9,
    "side": 1,
    "color": "Tan",
    "slot": 1,
    "name": "RN Tan-1",
-   "ships": [],
+   "ships": [
+    "Convoy x3"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [
@@ -300,12 +357,15 @@
    }
   },
   {
-   "id": 11,
+   "id": 10,
    "side": 1,
    "color": "Tan",
    "slot": 2,
    "name": "RN Tan-2",
-   "ships": [],
+   "ships": [
+    "Convoy x3"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [
@@ -384,5 +444,15 @@
   }
  ],
  "info_triggers": [],
- "import_warnings": []
+ "import_warnings": [],
+ "briefing": {
+  "title": "Berlino: gennaio – marzo 1941",
+  "initiative": "Germania.",
+  "weather": "Buone.",
+  "end": "Questo scenario termina quando il tedesco non ha più alcuna Casella\nTask Force in gioco (tutte affondate o hanno Completato). U-Boat\nQuando hanno Completato tre Convogli, il tedesco può\neffettuare solamente azioni di Attacco Aereo, Completamento,\nPassare, e Traiettoria (comunque, se una TF può effettuare il\nCompletamento, deve farlo).",
+  "victory": "Quando termina lo scenario, calcolate i Punti Vittoria (VP) di\nciascun giocatore. Il giocatore che ha più VP vince. Il britannico\nvince in caso di parità.",
+  "historical": "Attaccata dall’aria e dalle profondità dei mari, la linea vitale britannica alle proprie colonie ed alleati era logorata al punto\ndi rottura. Questa sortita da parte di due incrociatori da battaglia portò all’affondamento di oltre 100.000 tonnellate di\nnaviglio, logorando ancora di più le risorse britanniche. Questi incrociatori da battaglia lasciarono il porto il 23 gennaio,\npassando vicino al Naiad, ma cambiando poi rotta attraverso lo Stretto di Danimarca. Rifornendosi in mare, razziarono\nl’Atlantico per molte settimane, fuggendo infine a Brest il 22 marzo. L’Operazione Berlino fu il punto più alto della flotta di\nsuperficie tedesca."
+ },
+ "initiative_label": "KRIEGSMARINE",
+ "weather_label": "GOOD"
 }

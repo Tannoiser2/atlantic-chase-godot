@@ -1,10 +1,20 @@
 {
  "name": "MS7 Clash on the High Sea",
+ "reinforcements": {},
  "source": "MS7 Clash on the High Sea.vsav (modulo VASSAL Atlantic Chase v2.1)",
  "weather": 0,
  "initiative": 0,
  "round": 1,
  "task_forces": [],
  "info_triggers": [],
- "import_warnings": []
+ "import_warnings": [],
+ "briefing": {
+  "title": "Scontro in Alto Mare?",
+  "initiative": "",
+  "weather": "Buone.",
+  "end": "",
+  "victory": "Decisiva Marginale\n Danneggiare gravemente 2 BC nemici o Danneggiare gravemente 1 BC",
+  "historical": "L’ammiraglio Lutjens, in comando dei due\ncacciatori tedeschi, aveva ordini di distruggere le"
+ },
+ "weather_label": "GOOD"
 }

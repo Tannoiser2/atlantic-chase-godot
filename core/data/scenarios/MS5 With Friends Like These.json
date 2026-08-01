@@ -1,10 +1,20 @@
 {
  "name": "MS5 With Friends Like These",
+ "reinforcements": {},
  "source": "MS5 With Friends Like These.vsav (modulo VASSAL Atlantic Chase v2.1)",
  "weather": 0,
  "initiative": 0,
  "round": 1,
  "task_forces": [],
  "info_triggers": [],
- "import_warnings": []
+ "import_warnings": [],
+ "briefing": {
+  "title": "Con Amici Come Questi",
+  "initiative": "",
+  "weather": "Buone.",
+  "end": "",
+  "victory": "Decisiva Marginale\n Affondare entrambi i BC francesi, e Affondare 1 BC francese e\n Britannico danneggiare gravemente o affondare 2 danneggiare gravemente o affondare\n BB francesi. 1 altra nave francese.\n Nessuna nave francese affondata,",
+  "historical": "costieri francesi. Trattatela come"
+ },
+ "weather_label": "GOOD"
 }

@@ -1,5 +1,11 @@
 {
  "name": "Op1 Homecoming",
+ "reinforcements": {
+  "KM Reinforcement A": [
+   "Koln",
+   "Konigsberg"
+  ]
+ },
  "source": "Op1 Homecoming.vsav (modulo VASSAL Atlantic Chase v2.1)",
  "weather": 0,
  "initiative": 0,
@@ -11,7 +17,15 @@
    "color": "Brown",
    "slot": 0,
    "name": "RN Brown-0",
-   "ships": [],
+   "ships": [
+    "Aurora",
+    "Dorsetshire",
+    "Hermione",
+    "Nelson",
+    "Norfolk",
+    "Royal Oak"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -27,7 +41,11 @@
    "color": "Brown",
    "slot": 1,
    "name": "RN Brown-1",
-   "ships": [],
+   "ships": [
+    "Berwick",
+    "Norfolk"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -43,7 +61,11 @@
    "color": "Brown",
    "slot": 2,
    "name": "RN Brown-2",
-   "ships": [],
+   "ships": [
+    "Glasgow",
+    "Southampton"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -59,7 +81,10 @@
    "color": "GE",
    "slot": 0,
    "name": "KM GE-0",
-   "ships": [],
+   "ships": [
+    ""
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -75,7 +100,10 @@
    "color": "GE",
    "slot": 1,
    "name": "KM GE-1",
-   "ships": [],
+   "ships": [
+    "Graf Spee"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -87,5 +115,14 @@
   }
  ],
  "info_triggers": [],
- "import_warnings": []
+ "import_warnings": [],
+ "briefing": {
+  "title": "Ritorno a Casa: agosto 1939",
+  "initiative": "Germania.",
+  "weather": "Ogni volta che viene effetti sul gioco (non causa",
+  "end": "Questo scenario termina quando il Bremen viene catturato o effettua un’azione Completamento a Kiel, Wilhelmshaven, o\nMurmansk. Viene catturato con una azione Ingaggiare. Se completa a Murmansk, il Bremen può essere confiscato 8vedi\npag. 3). Lo scenario termina anche se il giocatore britannico provoca la guerra in un esagono di porto tedesco (vedere la\nregola speciale sulla Provocazione, Caso 2).",
+  "victory": "Se il Bremen complete a Kiel, Wilhelmshaven, o Murmansk (e non viene confiscata in quest’ultimo porto), il Tedesco\nvince. Se il britannico cattura il Bremen, vince. Se il britannico provoca la guerra o vince il britannico (Provocazione,\nCaso 1), o vince il tedesco (Provocazione, Caso 2). Infine, se una nave tedesca viene danneggiata o affondata, il\nbritannico vince indipendentemente dal destino del Bremen (questo è possibile solo dopo che è stata dichiarata guerra).\n\n\f\n\nRitorno a Casa: Navi Britanniche\n\n\f\n\nRitorno a Casa: Navi Tedesche\n\nQuesto è un buon scenario per imparare le regole. Dal momento che limita le Battaglie e gli Attacchi Aerei, e le decisioni\nsono limitate considerata la situazione peculiare ma interessante e la limitatezza delle forze disponibili, un giocatore\nesperto può usare questo scenario per insegnare il gioco ad un novellino.",
+  "historical": "Storicamente, il Bremen fu quasi raggiunto dagli incrociatori britannici, ma il capitano tedesco cambiò rotta verso nord,\ntrovando infine un porto sicuro a Murmansk. Presto sarebbe partito verso sud all’inizio della guerra, prendendo parte a\nvarie operazioni come trasporto truppe e nave ospedale."
+ },
+ "initiative_label": "KRIEGSMARINE"
 }

@@ -1,5 +1,26 @@
 {
  "name": "Op6 New Friends",
+ "reinforcements": {
+  "KM Reinforcement C": [
+   "Lutzow"
+  ],
+  "KM Reinforcement B": [
+   "Scharnhorst"
+  ],
+  "KM Reinforcement A": [
+   "Tirpitz"
+  ],
+  "RN Reinforcement B": [
+   "Ark Royal",
+   "Malaya",
+   "Renown",
+   "Sheffield"
+  ],
+  "RN Reinforcement A": [
+   "Aurora",
+   "Nelson"
+  ]
+ },
  "source": "Op6 New Friends.vsav (modulo VASSAL Atlantic Chase v2.1)",
  "weather": 0,
  "initiative": 0,
@@ -11,7 +32,20 @@
    "color": "Brown",
    "slot": 1,
    "name": "RN Brown-1",
-   "ships": [],
+   "ships": [
+    "Belfast",
+    "Berwick",
+    "Birmingham",
+    "Cumberland",
+    "Devonshire",
+    "Edinburgh",
+    "Kgv",
+    "Ramilles",
+    "Southampton",
+    "Suffolk",
+    "Victorious"
+   ],
+   "leader": "Tovey",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -27,7 +61,10 @@
    "color": "Brown",
    "slot": 2,
    "name": "RN Brown-2",
-   "ships": [],
+   "ships": [
+    "Norfolk"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -43,7 +80,10 @@
    "color": "GE",
    "slot": 0,
    "name": "KM GE-0",
-   "ships": [],
+   "ships": [
+    "Scheer"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -59,7 +99,10 @@
    "color": "GE",
    "slot": 1,
    "name": "KM GE-1",
-   "ships": [],
+   "ships": [
+    "Preugen"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -75,7 +118,10 @@
    "color": "GE",
    "slot": 2,
    "name": "KM GE-2",
-   "ships": [],
+   "ships": [
+    "Leipzig"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -91,7 +137,10 @@
    "color": "Red",
    "slot": 0,
    "name": "RN Red-0",
-   "ships": [],
+   "ships": [
+    "London"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -107,7 +156,10 @@
    "color": "Red",
    "slot": 1,
    "name": "RN Red-1",
-   "ships": [],
+   "ships": [
+    "Cornwall"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -123,7 +175,11 @@
    "color": "Red",
    "slot": 2,
    "name": "RN Red-2",
-   "ships": [],
+   "ships": [
+    "Arethusa",
+    "Manchester"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -139,7 +195,10 @@
    "color": "Tan",
    "slot": 0,
    "name": "RN Tan-0",
-   "ships": [],
+   "ships": [
+    "Convoy x3"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -150,12 +209,15 @@
    }
   },
   {
-   "id": 10,
+   "id": 9,
    "side": 1,
    "color": "Tan",
    "slot": 1,
    "name": "RN Tan-1",
-   "ships": [],
+   "ships": [
+    "Convoy x3"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [
@@ -227,12 +289,15 @@
    }
   },
   {
-   "id": 11,
+   "id": 9,
    "side": 1,
    "color": "Tan",
    "slot": 2,
    "name": "RN Tan-2",
-   "ships": [],
+   "ships": [
+    "Convoy x3"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [
@@ -305,5 +370,14 @@
   }
  ],
  "info_triggers": [],
- "import_warnings": []
+ "import_warnings": [],
+ "briefing": {
+  "title": "Vecchi Amici - autunno 1941",
+  "initiative": "Germania.",
+  "weather": "",
+  "end": "Questo scenario termina quando il tedesco non ha più Task\nForce in gioco (tutte affondate o che hanno Completato).\nQuando tre Convogli hanno Completato, il tedesco può\nsolamente effettuare azioni di Attacco Aereo, Completamento,\nPassare e Traiettoria (comunque, se una TF tedesca può\neffettuare il Completamento, lo deve fare).",
+  "victory": "Quando termina lo scenario, calcolate i Punti Vittoria (VP) di\nciascun giocatore. Il giocatore che ha più VP vince. In caso di",
+  "historical": "I primi quattro convogli P.Q. riuscirono a trasportare rifornimenti all’Unione Sovietica con relativamente scarsa interferenza. Il timore\ndell’ammiraglio Tovey, che il Tirpitz avrebbe sfidato i convogli, non si materializzò mai, cosa che fu un sollievo in quanto aveva\ndovuto trasferire molte corazzate ed incrociatori nella baia di bengala e nel perimetro del Pacifico Meridionale, in quanto le tensioni\ntra la Gran Bretagna e l’Impero del Giappone stavano incrementando. Per la seconda settimana di dicembre, questi due precedenti\nalleati sarebbero entrati in guerra."
+ },
+ "initiative_label": "KRIEGSMARINE"
 }

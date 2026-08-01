@@ -1,10 +1,19 @@
 {
  "name": "MS11 Skirmish on the Barents Sea",
+ "reinforcements": {},
  "source": "MS11 Skirmish on the Barents Sea.vsav (modulo VASSAL Atlantic Chase v2.1)",
  "weather": 0,
  "initiative": 0,
  "round": 1,
  "task_forces": [],
  "info_triggers": [],
- "import_warnings": []
+ "import_warnings": [],
+ "briefing": {
+  "title": "Schermaglia nel Mare di Barents",
+  "initiative": "",
+  "weather": "Sfavorevoli.",
+  "end": "",
+  "victory": "Decisiva Marginale\n Britannico Affondare 1 nave tedesca Danneggiare gravemente 1 nave tedesca\n Tedesco Ottenere 6 Colpi o più contro il Convoglio Ottenere 4 o 5 Colpi contro il Convoglio\n\n Lontana: qualsiasi attitudine\n\n Entrano nella fase di Fuga: zona\n Lontana, in Avvicinamento\n\n Vicina: Avvicinamento",
+  "historical": "Le scorte britanniche erano aggressive ed i"
+ }
 }

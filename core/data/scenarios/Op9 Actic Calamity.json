@@ -1,5 +1,20 @@
 {
  "name": "Op9 Actic Calamity",
+ "reinforcements": {
+  "KM Reinforcement A": [
+   "Scharnhorst"
+  ],
+  "RN Reinforcement A": [
+   "Kenya",
+   "Kgv"
+  ],
+  "RN Reinforcement B": [
+   "Achilles",
+   "Ajax",
+   "Liverpool",
+   "Malaya"
+  ]
+ },
  "source": "Op9 Actic Calamity.vsav (modulo VASSAL Atlantic Chase v2.1)",
  "weather": 0,
  "initiative": 0,
@@ -11,7 +26,16 @@
    "color": "Brown",
    "slot": 0,
    "name": "RN Brown-0",
-   "ships": [],
+   "ships": [
+    "Belfast",
+    "Berwick",
+    "Cumberland",
+    "Doy",
+    "Manchester",
+    "Victorious",
+    "Washington"
+   ],
+   "leader": "Tovey",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -27,7 +51,11 @@
    "color": "GE",
    "slot": 0,
    "name": "KM GE-0",
-   "ships": [],
+   "ships": [
+    "Koln",
+    "Nurnburg"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -43,7 +71,11 @@
    "color": "GE",
    "slot": 1,
    "name": "KM GE-1",
-   "ships": [],
+   "ships": [
+    "Hipper",
+    "Tirpitz"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -59,7 +91,10 @@
    "color": "GE",
    "slot": 2,
    "name": "KM GE-2",
-   "ships": [],
+   "ships": [
+    "Lutzow"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -75,7 +110,10 @@
    "color": "Red",
    "slot": 0,
    "name": "RN Red-0",
-   "ships": [],
+   "ships": [
+    "Kent"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -91,7 +129,10 @@
    "color": "Red",
    "slot": 1,
    "name": "RN Red-1",
-   "ships": [],
+   "ships": [
+    "Renown"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -107,7 +148,13 @@
    "color": "Red",
    "slot": 2,
    "name": "RN Red-2",
-   "ships": [],
+   "ships": [
+    "London",
+    "Newcastle",
+    "Tuscaloosa",
+    "Wichita"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [],
@@ -118,12 +165,15 @@
    }
   },
   {
-   "id": 8,
+   "id": 10,
    "side": 1,
    "color": "Tan",
    "slot": 0,
    "name": "RN Tan-0",
-   "ships": [],
+   "ships": [
+    "Convoy x3"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [
@@ -206,7 +256,10 @@
    "color": "Tan",
    "slot": 1,
    "name": "RN Tan-1",
-   "ships": [],
+   "ships": [
+    "Convoy x3"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [
@@ -278,12 +331,15 @@
    }
   },
   {
-   "id": 10,
+   "id": 9,
    "side": 1,
    "color": "Tan",
    "slot": 2,
    "name": "RN Tan-2",
-   "ships": [],
+   "ships": [
+    "Convoy x3"
+   ],
+   "leader": "",
    "speed": 2,
    "trajectory": {
     "segments": [
@@ -356,5 +412,16 @@
   }
  ],
  "info_triggers": [],
- "import_warnings": []
+ "import_warnings": [
+  "Tan-2: la rotta attraversa il lato negato (13, -6)-(13, -7) (piazzamento impreciso nel .vsav)"
+ ],
+ "briefing": {
+  "title": "Calamità Artica – luglio 1942",
+  "initiative": "Germania.",
+  "weather": "Determina il numero di",
+  "end": "Questo scenario termina quando il tedesco non ha più Task Force\nin gioco (tutte affondate o che hanno Completato). Quando tre\nConvogli hanno Completato, il tedesco può solamente effettuare\nazioni di Attacco Aereo, Completamento, Passare e Traiettoria\n(comunque, se una TF tedesca può effettuare il Completamento, lo\ndeve fare). Da Halifax a\n Clyde/Liverpool\n 11 segmenti Convoglio",
+  "victory": "Quando termina lo scenario, calcolate i Punti Vittoria (VP) di ciascun\ngiocatore. Il giocatore che ha più VP vince. In caso di parità, vince il britannico.",
+  "historical": "Assieme allo Scheer, il Tirpitz fu assegnato ad Altenfjord a nord di Narvik, entro il raggio del PQ-17. Temendo la sua perdita, Hitler\nnon ne autorizzò l’impiego, quindi quella task force non uscì mai dal porto. La sua mera presenza, comunque, causò la dispersione\ndel convoglio, consentendo agli U-Boat ed ai bombardieri di causare disastri. Diciassette mercantili furono affondati e solo undici\nsopravvissero. Per lo sforzo bellico sovietico, questo significò che 3.350 veicoli andarono a fondo nell’oceano, assieme a 430 carri\narmati, 210 aerei e quasi 100.000 tonnellate di altri rifornimenti. Ogni mercantile aveva un equipaggio di oltre quaranta uomini.\n\n\f \n\n Mini-Scenari"
+ },
+ "initiative_label": "KRIEGSMARINE"
 }

@@ -1,10 +1,20 @@
 {
  "name": "MS8 Another Opportunity",
+ "reinforcements": {},
  "source": "MS8 Another Opportunity.vsav (modulo VASSAL Atlantic Chase v2.1)",
  "weather": 0,
  "initiative": 0,
  "round": 1,
  "task_forces": [],
  "info_triggers": [],
- "import_warnings": []
+ "import_warnings": [],
+ "briefing": {
+  "title": "Un’Altra Opportunità?",
+  "initiative": "",
+  "weather": "Buone.",
+  "end": "",
+  "victory": "Decisiva Marginale\n Britannico MS 8 MS 8\n Danneggiare gravemente 2 BC nemici o Danneggiare gravemente 1 BC",
+  "historical": "la presenza del Malaya portò l’ammiraglio Lutjens\na ritirarsi prima di sparare un colpo. Questo mini\nscenario lo mantiene entro il raggio un po’ di più,\ncadendo in tentazione."
+ },
+ "weather_label": "GOOD"
 }
