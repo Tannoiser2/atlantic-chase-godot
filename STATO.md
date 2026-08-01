@@ -154,53 +154,53 @@ dal metodo con cui il reticolo è stato ricavato.
 
 ## Cosa manca, in ordine di importanza
 
-### 1. Le navi — *l'ultimo dato mancante*
+### 1. Le statistiche delle navi — *l'ultimo dato mancante*
 
-Il metodo è già pronto e richiede solo di ripeterlo per regione:
+Il modello `Ship` c'è ed è completo: Difesa, Difesa sul lato Danneggiato, valore
+dei cannoni per banda di raggio (con `na` che impedisce il fuoco), siluri,
+limite di Colpi per Convogli. Le regole di danno sono implementate e testate.
 
-```bash
-tools/.venv/bin/python tools/label_hexes.py <x0> <y0> <x1> <y1> out.png 2.4
-```
+Quello che manca è un `ships.json` con i valori reali: sono stampati sulle
+pedine e l'OCR su quelle immagini non è affidabile. Vanno trascritti a mano dai
+fascicoli Scenari — circa 90 navi.
 
-produce un ritaglio della mappa con le coordinate `q,r` stampate sui centri;
-si legge in quale esagono cade il pallino del porto e si aggiunge la voce a
-`core/data/map_annotations.json`, poi `tools/apply_annotations.py` valida e
-applica. Due avvertenze, entrambe imparate sbagliando:
+Finché mancano, il codice **lo dichiara invece di fingere**: una nave con Difesa
+zero accumula Colpi senza girare la pedina e il log scrive "Difesa non
+trascritta"; un risultato di Colpo su una TF senza elenco navi scrive "la TF non
+ha ancora un elenco navi". Nessun valore inventato.
 
-- **usare sempre `--all`**, che etichetta tutto il reticolo e non solo gli
-  esagoni giocabili: altrimenti un esagono di terraferma assente dal grafo fa
-  attribuire frecce e porti al vicino sbagliato;
-- per i pallini vicini a un lato va guardato **da che parte del confine
-  cadono**, non solo la distanza dal centro (è il caso di Methil, a 105 px dal
-  centro contro un apotema di 107).
+### 2. M6 — obiettivi e condizioni di vittoria
 
-Attenzione anche al tipo: Kiel, Archangel, Africa, South America e New York
-sono **strisce porto**, non pallini — la legenda dice *"Port Strip (each hex is
-a port)"*, quindi vanno calcolati gli esagoni che la striscia tocca.
+I 22 scenari si caricano con traiettorie e stazioni reali, ma sono gusci: mancano
+obiettivi, rinforzi, punteggi VP e condizioni di vittoria, che stanno nei
+fascicoli Scenari e vanno trascritti.
 
-### 2. Le navi
-Il modello `Ship` esiste e le regole di danno sono implementate e testate, ma
-non c'è un `ships.json`: le statistiche (velocità, cannoni) sono stampate sulle
-pedine e non sono estraibili in modo affidabile via OCR. Vanno trascritte a mano
-dai fascicoli Scenari. Finché mancano, ogni TF ha velocità "media" di default e
-i risultati di Colpo dicono esplicitamente "la TF non ha ancora un elenco navi"
-invece di fingere un effetto.
+### 3. Interfaccia della Battaglia
 
-### 3. M5 Battaglia
-Nessun codice. Le regole però sono già studiate e annotate in `actions.json`:
-5 zone (Lontano/Vicino/Close/Vicino/Lontano), 3 round con meteo buono e 2 con
-avverso, 1 round per la Battaglia Limitata, e le regole di piazzamento per
-Battaglia e Sorpresa.
+Il motore di M5 è completo e testato, ma non ha ancora una vista: la Mappa di
+Battaglia (`assets/boards/map_north_sea.jpg` e `map_norwegian_sea.jpg`) non è
+disegnata a schermo e le fasi si possono guidare solo da codice. Premendo **1**
+sulla mappa operazionale, un risultato BATTAGLIA scrive ancora "non ancora
+implementata".
+
+### 4. Controlli touch
+
+Servono per giocare da iPad: tap per selezionare ed estendere, pinch per lo
+zoom, pulsanti a schermo per azioni, undo e Scorrere del Tempo. Oggi tutto passa
+da tasto destro, tasto centrale e tastiera.
 
 ---
 
 ## Una nota sull'ambito
 
-M0–M4 sono chiusi e testati. Il timore della sessione precedente — che le
-tabelle stampate non fossero leggibili a 120 dpi — si è rivelato infondato:
-bastava ingrandire di 5–6× e ritagliare cella per cella invece di leggere la
-tabella intera. Nessuna cella è stata indovinata.
+**M0–M5 sono chiusi e testati.** Rispetto al piano iniziale è un mese e mezzo
+di lavoro stimato, con 726 verifiche automatiche a copertura.
 
-Restano M5 (Battaglia) e il completamento di M6, che sono lavoro vero
-nell'ordine di grandezza già indicato dal piano, più le due liste di dati da
-trascrivere a mano (porti rimanenti, statistiche delle navi).
+Quello che resta non è più ricerca ma trascrizione e interfaccia: le statistiche
+delle navi, gli obiettivi degli scenari, la vista della Mappa di Battaglia, i
+controlli touch. Le due paure iniziali — che il modulo VASSAL non contenesse la
+griglia, e che le tabelle stampate fossero illeggibili a 120 dpi — si sono
+rivelate entrambe superabili, la prima ricostruendo il reticolo e validandolo
+contro le pedine ufficiali, la seconda ingrandendo cella per cella.
+
+Nessuna tabella è stata indovinata. Dove un dato manca, il codice lo dichiara.
