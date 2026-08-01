@@ -3,12 +3,40 @@
 Implementazione digitale di *Atlantic Chase* (GMT Games, 2020), a partire dal
 modulo VASSAL v2.1 e dai regolamenti in italiano.
 
-> **Uso strettamente personale.** Mappa, pedine, tabelle e testi sono
-> © 2020 GMT Games LLC; la traduzione italiana è di G. Sorio e riporta
-> *"PER SOLO USO PERSONALE – vietata la vendita"*. Questo progetto è uno
-> strumento privato, come un modulo VASSAL personale. **Non è distribuibile**
-> senza licenza GMT. Per questo il repository **non contiene alcun asset
-> grafico**: si rigenerano in locale dal proprio modulo (vedi sotto).
+---
+
+## ⚠️ Attribuzione e limiti d'uso — leggere prima di tutto
+
+**Atlantic Chase è un gioco di GMT Games LLC. Design: Jeremy White.
+Copyright © 2020 GMT Games LLC. Tutti i diritti riservati.**
+
+Questo repository non è affiliato a GMT Games, non è autorizzato da GMT Games,
+e **non sostituisce l'acquisto del gioco**. È un progetto amatoriale e senza
+scopo di lucro, nato come strumento personale per giocare a una copia del gioco
+posseduta.
+
+Cosa **non** è contenuto qui:
+
+- nessuna immagine della mappa, delle pedine o delle tavole (© GMT Games) —
+  vanno rigenerate in locale dal proprio modulo VASSAL, vedi sotto;
+- nessun regolamento, né in inglese né la traduzione italiana di G. Sorio, che
+  riporta *"PER SOLO USO PERSONALE – vietata la vendita"*.
+
+Cosa **è** contenuto qui: codice sorgente, e i valori delle tabelle di gioco
+trascritti perché il codice possa funzionare. Quei valori restano proprietà
+intellettuale di GMT Games e sono riprodotti a fini di interoperabilità con una
+copia legittima del gioco.
+
+**Se GMT Games chiede la rimozione di questo repository o di parte del suo
+contenuto, va rimosso senza discutere.** Per giocare ad Atlantic Chase,
+comprate il gioco: <https://www.gmtgames.com>
+
+---
+
+> **Uso strettamente personale.** Questo progetto è uno strumento privato, come
+> un modulo VASSAL personale, e non è pensato per la distribuzione come
+> prodotto. Il repository **non contiene alcun asset grafico**: si rigenerano
+> in locale dal proprio modulo (vedi sotto).
 
 ---
 
