@@ -1,13 +1,8 @@
-# --- Materiale protetto da copyright: MAI nel repository ---------------------
-# Mappa, pedine e tavole sono (c) 2020 GMT Games LLC. Si rigenerano in locale
-# dal proprio modulo VASSAL con:  tools/.venv/bin/python tools/prepare_assets.py
-assets/map/
-assets/counters/
-assets/boards/
-
-# Immagini diagnostiche: contengono ritagli della mappa GMT
-reports/*.png
-reports/*.jpg
+# --- Materiale (c) 2020 GMT Games LLC ----------------------------------------
+# Il repository e' PRIVATO, quindi asset e regolamenti sono inclusi per comodita'
+# d'uso personale. Se un giorno lo rendi pubblico, rimetti queste righe:
+#   assets/map/  assets/counters/  assets/boards/  reports/*.png  docs/regolamento/
+# perche' un repo pubblico e' distribuzione a chiunque, e quella e' opera di GMT.
 
 # --- Ambienti e cache --------------------------------------------------------
 tools/.venv/
