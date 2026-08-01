@@ -132,7 +132,7 @@ func test_real_not_adjacent_arrows() -> void:
 		[Vector2i(15, -3), Vector2i(16, -4), "Inghilterra centrale"],
 		[Vector2i(14, -3), Vector2i(15, -4), "Canale del Nord"],
 		[Vector2i(14, -3), Vector2i(15, -3), "Irlanda sud"],
-		[Vector2i(15, -2), Vector2i(16, -3), "Bretagna"],
+		[Vector2i(16, -3), Vector2i(16, -2), "Bretagna"],
 		[Vector2i(13, -7), Vector2i(13, -6), "Islanda nord"],
 		[Vector2i(13, -6), Vector2i(14, -7), "Islanda est"],
 	]
@@ -191,6 +191,9 @@ func test_ports() -> void:
 		"Portsmouth": Vector2i(16, -3),
 		"Wilhelmshaven": Vector2i(17, -5),
 		"Trondheim": Vector2i(17, -8),
+		"Brest": Vector2i(15, -2),
+		"St. Nazaire": Vector2i(16, -2),
+		"Bordeaux": Vector2i(16, -2),
 	}
 	for name_v: Variant in expected.keys():
 		var name := String(name_v)
@@ -203,6 +206,18 @@ func test_ports() -> void:
 	var shared := graph.ports_in(Vector2i(15, -4))
 	true_(shared.has("Clyde") and shared.has("Liverpool"),
 		"Clyde e Liverpool condividono l'esagono 15,-4")
+	var biscay := graph.ports_in(Vector2i(16, -2))
+	true_(biscay.has("St. Nazaire") and biscay.has("Bordeaux"),
+		"St. Nazaire e Bordeaux condividono l'esagono 16,-2")
+
+	# 16,-2 e' interamente terraferma: e' giocabile SOLO perche' contiene un
+	# porto (RB p.13). Senza questa eccezione i due porti sarebbero irraggiungibili.
+	true_(graph.has_hex(Vector2i(16, -2)), "l'esagono dei porti di Biscaglia esiste")
+	true_(graph.land_fraction(Vector2i(16, -2)) > 0.5, "ed e' quasi tutto terraferma")
+	true_(graph.is_adjacent(Vector2i(15, -2), Vector2i(16, -2)),
+		"vi si arriva dal mare al largo di Brest")
+	false_(graph.is_adjacent(Vector2i(16, -3), Vector2i(16, -2)),
+		"ma non dalla Manica: la freccia della Bretagna obbliga a girare al largo")
 	eq(graph.port_hex("Porto Inesistente"), Vector2i.MAX, "porto sconosciuto")
 
 	# RB p.15: un segmento non puo' stare in una Casella Porto (una Stazione si')

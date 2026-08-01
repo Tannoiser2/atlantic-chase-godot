@@ -36,6 +36,7 @@ SRC = os.path.dirname(ROOT)
 MAP = os.path.join(SRC, "images", "Atlantic Chase Map120.jpg")
 REP = os.path.join(ROOT, "reports")
 GRAPH = os.path.join(ROOT, "core", "data", "map_graph.json")
+ANNOT = os.path.join(ROOT, "core", "data", "map_annotations.json")
 
 DIRS = [(1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1), (0, 1)]
 
@@ -66,6 +67,17 @@ def main():
 
     val = json.load(open(os.path.join(REP, "lattice_validation.json")))
     used = {(h["q"], h["r"]) for h in val["used_hexes"]}
+
+    # Esagoni che devono restare giocabili anche se sono tutta terraferma,
+    # perche' contengono un porto (RB p.13: il porto appartiene al suo esagono).
+    forced = set()
+    if os.path.exists(ANNOT):
+        ann = json.load(open(ANNOT))
+        for h in ann.get("force_playable", {}).get("hexes", []):
+            forced.add((h["q"], h["r"]))
+    if forced:
+        print("[refine] esagoni forzati giocabili (porti su terraferma): %s"
+              % sorted(forced))
 
     im = Image.open(MAP).convert("RGB")
     W, H = im.size
@@ -125,7 +137,7 @@ def main():
         if key in MANUAL_EXCLUDE:
             h["_why"] = "escluso a mano (verificato: nessun reticolo stampato)"
             drop.append(h)
-        elif key in used or frac >= MIN_SEA_FRACTION:
+        elif key in forced or key in used or frac >= MIN_SEA_FRACTION:
             keep.append(h)
         else:
             h["_why"] = "troppo poco mare"

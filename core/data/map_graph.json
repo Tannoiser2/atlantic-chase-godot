@@ -55,7 +55,7 @@
    "dr": 1
   }
  ],
- "hex_count": 156,
+ "hex_count": 157,
  "hexes": [
   {
    "q": 3,
@@ -4883,6 +4883,11 @@
    "coastal": true,
    "neighbors": [
     {
+     "dir": 0,
+     "q": 16,
+     "r": -2
+    },
+    {
      "dir": 1,
      "q": 16,
      "r": -3
@@ -4919,6 +4924,11 @@
    "land_frac": 0.002,
    "coastal": false,
    "neighbors": [
+    {
+     "dir": 1,
+     "q": 16,
+     "r": -2
+    },
     {
      "dir": 2,
      "q": 15,
@@ -5229,9 +5239,41 @@
      "dir": 4,
      "q": 15,
      "r": -2
+    },
+    {
+     "dir": 5,
+     "q": 16,
+     "r": -2
     }
    ],
    "sea_frac": 0.503,
+   "outside_frac": 0.0
+  },
+  {
+   "q": 16,
+   "r": -2,
+   "cx": 2461.73,
+   "cy": 1874.43,
+   "land_frac": 0.837,
+   "coastal": true,
+   "neighbors": [
+    {
+     "dir": 2,
+     "q": 16,
+     "r": -3
+    },
+    {
+     "dir": 3,
+     "q": 15,
+     "r": -2
+    },
+    {
+     "dir": 4,
+     "q": 15,
+     "r": -1
+    }
+   ],
+   "sea_frac": 0.062,
    "outside_frac": 0.0
   },
   {
@@ -5894,10 +5936,10 @@
    "where": "Irlanda meridionale"
   },
   {
-   "aq": 15,
-   "ar": -2,
+   "aq": 16,
+   "ar": -3,
    "bq": 16,
-   "br": -3,
+   "br": -2,
    "where": "Bretagna"
   },
   {
@@ -5995,6 +6037,42 @@
     843
    ],
    "note": "neutrale nel 1939 e in alcuni scenari del 1940, poi tedesco"
+  },
+  {
+   "name": "Brest",
+   "box": "Brest Box",
+   "nation": "FR",
+   "q": 15,
+   "r": -2,
+   "dot_px": [
+    2298,
+    1729
+   ],
+   "note": "britannico nel 1939 e in alcuni scenari del 1940, poi tedesco"
+  },
+  {
+   "name": "St. Nazaire",
+   "box": "St. Nazaire/Bordeaux Box",
+   "nation": "FR",
+   "q": 16,
+   "r": -2,
+   "dot_px": [
+    2391,
+    1823
+   ],
+   "note": "esagono di sola terraferma, giocabile perche' contiene il porto"
+  },
+  {
+   "name": "Bordeaux",
+   "box": "St. Nazaire/Bordeaux Box",
+   "nation": "FR",
+   "q": 16,
+   "r": -2,
+   "dot_px": [
+    2408,
+    1960
+   ],
+   "note": "condivide esagono e Casella con St. Nazaire"
   }
  ],
  "notes": [

@@ -37,12 +37,23 @@ DIRS = [(1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1), (0, 1)]
 
 def main():
     lat = json.load(open(os.path.join(REP, "lattice.json")))
+    # esagoni di sola terraferma che devono comunque restare giocabili perche'
+    # contengono un porto (vedi core/data/map_annotations.json)
+    forced = set()
+    ann_path = os.path.join(DATA, "map_annotations.json")
+    if os.path.exists(ann_path):
+        for h in json.load(open(ann_path)).get("force_playable", {}).get("hexes", []):
+            forced.add((h["q"], h["r"]))
     pl = json.load(open(os.path.join(REP, "playable.json")))
     hexes = {(h["q"], h["r"]): h for h in pl["hexes"]}
 
     # ---- 1. terra piena ----
     for h in hexes.values():
         h["auto"] = h["playable"]
+        if (h["q"], h["r"]) in forced:
+            h["playable"] = True
+            h["reason"] = "forzato: contiene un porto"
+            continue
         if h["land"] >= 0.55 and h["sea"] <= 0.25:
             h["playable"] = False
             h["reason"] = "terra piena"
