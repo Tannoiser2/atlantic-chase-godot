@@ -1,0 +1,200 @@
+{
+ "_scenario": "Op5 Rheinubung",
+ "_source": "Fascicolo Scenari per 2 Giocatori, pp.19-20, tabelle 'VP Britannici' e 'VP Tedeschi' lette a 300 dpi.",
+ "awards": [
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CONVOY_COMPLETED",
+   "points": 3,
+   "label": "Convoglio che ha Completato (non disperso)"
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "SHIP_DAMAGED",
+   "match": {
+    "names": [
+     "Bismarck"
+    ],
+    "nations": [
+     "GE"
+    ]
+   },
+   "points": 3,
+   "label": "Bismarck danneggiata"
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "SHIP_SUNK",
+   "match": {
+    "names": [
+     "Bismarck"
+    ],
+    "nations": [
+     "GE"
+    ]
+   },
+   "points": 7,
+   "label": "Bismarck affondata"
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "SHIP_DAMAGED",
+   "match": {
+    "types": [
+     "CA",
+     "CL"
+    ],
+    "exclude_names": [
+     "Bismarck"
+    ],
+    "nations": [
+     "GE"
+    ]
+   },
+   "points": 1,
+   "label": "incrociatore tedesco danneggiato"
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "SHIP_SUNK",
+   "match": {
+    "types": [
+     "CA",
+     "CL"
+    ],
+    "exclude_names": [
+     "Bismarck"
+    ],
+    "nations": [
+     "GE"
+    ]
+   },
+   "points": 2,
+   "label": "incrociatore tedesco affondato"
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "SHIP_DAMAGED",
+   "match": {
+    "types": [
+     "BB",
+     "BC",
+     "PB"
+    ],
+    "exclude_names": [
+     "Bismarck"
+    ],
+    "nations": [
+     "GE"
+    ]
+   },
+   "points": 1,
+   "label": "BB/BC/PB tedesca danneggiata"
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "SHIP_SUNK",
+   "match": {
+    "types": [
+     "BB",
+     "BC",
+     "PB"
+    ],
+    "exclude_names": [
+     "Bismarck"
+    ],
+    "nations": [
+     "GE"
+    ]
+   },
+   "points": 4,
+   "label": "BB/BC/PB tedesca affondata"
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_DAMAGED",
+   "match": {
+    "types": [
+     "BB",
+     "BC"
+    ],
+    "nations": [
+     "UK",
+     "FR",
+     "US"
+    ]
+   },
+   "points": 1,
+   "label": "BB o BC britannica danneggiata"
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_SUNK",
+   "match": {
+    "types": [
+     "BB",
+     "BC"
+    ],
+    "nations": [
+     "UK",
+     "FR",
+     "US"
+    ]
+   },
+   "points": 2,
+   "label": "BB o BC britannica affondata"
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_DAMAGED",
+   "match": {
+    "types": [
+     "CV"
+    ],
+    "nations": [
+     "UK",
+     "FR",
+     "US"
+    ]
+   },
+   "points": 2,
+   "label": "portaerei britannica danneggiata"
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_SUNK",
+   "match": {
+    "types": [
+     "CV"
+    ],
+    "nations": [
+     "UK",
+     "FR",
+     "US"
+    ]
+   },
+   "points": 3,
+   "label": "portaerei britannica affondata"
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "HIT_ON_CONVOY",
+   "points": 1,
+   "label": "ogni Colpo contro un Convoglio"
+  }
+ ],
+ "tiebreak": {
+  "side": "KRIEGSMARINE",
+  "auto": false,
+  "condition": "Il tedesco vince se il Bismarck e' in un porto francese (ha Completato). Altrimenti in caso di parita' vince il britannico."
+ },
+ "notes": [
+  "Convoglio disperso che Completa: 2 VP invece di 3.",
+  "Ogni premio filtra anche la NAZIONALITA' della nave: senza, il premio tedesco per una corazzata britannica affondata scatterebbe anche sul Bismarck, che e' una corazzata.",
+  "Le righe generiche del britannico escludono il Bismarck: la tabella lo dice esplicitamente ('Navi tedesche o francesi controllate dal tedesco (non il Bismarck)').",
+  "Incrociatore britannico (CA o CL) affondato: 0,5 VP al tedesco. Mezzo punto: il motore lavora con interi, quindi va contato a mano o a coppie.",
+  "NON TRASCRITTO - Completamento delle navi tedesche: la tabella 'VP Tedeschi' ha tre colonne per 'Il Bismarck completa in ...' (3/0/0, danneggiato 2/2/3) e 'Il Pr. Eugen completa in ...' (2/0/0, danneggiato 1/1/2), ma nella traduzione italiana LE TRE COLONNE NON HANNO INTESTAZIONE: non e' possibile sapere a quali porti si riferiscono. Serve il regolamento inglese o il gioco fisico. Finche' manca, quei VP vanno assegnati a mano.",
+  "Rinforzi: quando un Gruppo di Rinforzi entra in gioco nella variante 'Jutland', sottrarre 1 VP al tedesco per gruppo. Con la Variante Francese, sottrarre 1 o 2 VP (2 se include un BC francese).",
+  "Pool Scorte: il britannico puo' cambiare il risultato della Tabella delle Scorte assegnando 1 VP al tedesco."
+ ]
+}

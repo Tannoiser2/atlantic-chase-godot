@@ -16,6 +16,7 @@ func run() -> void:
 	test_rheinubung_setup()
 	test_briefings()
 	test_victory_points()
+	test_victory_table()
 
 
 func test_list() -> void:
@@ -136,3 +137,49 @@ func test_victory_points() -> void:
 	var st2 := GameState.new(graph, 1)
 	st2.apply_dict(st.to_dict())
 	eq(st2.vp_of(TaskForce.Side.ROYAL_NAVY), 5, "VP conservati nel salvataggio")
+
+
+## Tabella dei Punti Vittoria. E' un dato per scenario, non del regolamento:
+## nella Rheinubung affondare il Bismarck vale 7 VP, un incrociatore 2.
+func test_victory_table() -> void:
+	_begin("tabella VP dello scenario")
+	var sc := Scenario.load_by_id("Op5 Rheinubung")
+	true_(sc.has_victory_table(), "Rheinubung ha la tabella VP trascritta")
+	var v := Victory.from_scenario(sc)
+	true_(v.has_table, "il motore la carica")
+
+	var st := GameState.new(graph, 1)
+	st.apply_dict(sc.to_state_dict())
+
+	# il Bismarck vale molto piu' di un incrociatore
+	var bismarck := ShipRoster.shared().make("Bismarck")
+	var eugen := ShipRoster.shared().make("Preugen")
+	var a_sunk := v.awards_for(Victory.Event.SHIP_SUNK, bismarck)
+	eq(a_sunk.size(), 1, "una sola voce per il Bismarck affondato")
+	eq(int(a_sunk[0]["points"]), 7, "vale 7 VP")
+	eq(int(a_sunk[0]["side"]), TaskForce.Side.ROYAL_NAVY, "al britannico")
+
+	var e_sunk := v.awards_for(Victory.Event.SHIP_SUNK, eugen)
+	eq(int(e_sunk[0]["points"]), 2, "il Prinz Eugen affondato ne vale 2")
+
+	# applicazione allo stato
+	v.apply_event(st, Victory.Event.SHIP_SUNK, bismarck)
+	eq(st.vp_of(TaskForce.Side.ROYAL_NAVY), 7, "i VP finiscono nello stato")
+	var o := v.outcome(st)
+	eq(int(o["winner"]), TaskForce.Side.ROYAL_NAVY, "con 7 a 0 vince il britannico")
+	false_(o["tie"], "non e' parita'")
+
+	# parita': la clausola di questo scenario NON e' valutabile in automatico
+	var st2 := GameState.new(graph, 1)
+	var o2 := v.outcome(st2)
+	true_(o2["tie"], "0 a 0 e' parita'")
+	false_(o2["resolved"], "la clausola va verificata dai giocatori")
+	true_(String(o2["tiebreak_text"]).contains("Bismarck"),
+		"e viene mostrata: " + String(o2["tiebreak_text"]))
+
+	# uno scenario senza tabella lo dichiara invece di inventare punteggi
+	var ms := Scenario.load_by_id("MS1 Cornered")
+	false_(ms.has_victory_table(), "i mini-scenari non hanno ancora la tabella")
+	var v2 := Victory.from_scenario(ms)
+	true_(v2.describe(GameState.new(graph, 1)).contains("non trascritta"),
+		"e il motore lo dice")

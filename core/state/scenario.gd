@@ -14,6 +14,7 @@ extends RefCounted
 ## onesto e utile subito.
 
 const DIR := "res://core/data/scenarios/"
+const VICTORY_DIR := "res://core/data/victory/"
 
 var id: String = ""
 var title: String = ""
@@ -32,6 +33,11 @@ var briefing: Dictionary = {}
 ## che attraversa un lato negato, perche' nel modulo VASSAL le pedine sono
 ## piazzate a mano su una mappa senza griglia.
 var import_warnings: Array = []
+
+## Tabella dei Punti Vittoria, se trascritta. Sta in un file separato perche'
+## e' un dato letto a mano dal fascicolo, mentre lo scenario e' generato dal
+## .vsav: tenerli distinti evita che una rigenerazione la cancelli.
+var victory_data: Dictionary = {}
 
 var load_error: String = ""
 
@@ -75,7 +81,23 @@ func load_from(path: String) -> bool:
 	briefing = d.get("briefing", {})
 	import_warnings = d.get("import_warnings", [])
 	title = String(briefing.get("title", id))
+	_load_victory()
 	return true
+
+
+func _load_victory() -> void:
+	victory_data = {}
+	var f := FileAccess.open(VICTORY_DIR + id + ".json", FileAccess.READ)
+	if f == null:
+		return
+	var d: Variant = JSON.parse_string(f.get_as_text())
+	f.close()
+	if typeof(d) == TYPE_DICTIONARY:
+		victory_data = d
+
+
+func has_victory_table() -> bool:
+	return not (victory_data.get("awards", []) as Array).is_empty()
 
 
 ## Numero di navi schierate, utile per un controllo rapido.
