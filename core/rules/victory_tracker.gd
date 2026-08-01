@@ -80,6 +80,13 @@ func ship_completed(ship: Ship, destination: String,
 
 
 ## Un Convoglio che ha eseguito il Completamento.
+## Il conteggio dei Convogli arrivati si tiene SEMPRE, anche senza tabella VP:
+## non serve solo a segnare punti, e' la condizione che chiude lo scenario.
+func count_convoy_completed() -> void:
+	if state != null:
+		state.convoys_completed += 1
+
+
 func convoy_completed(destination: String, dispersed: bool,
 		owner_side: int) -> Array[String]:
 	if not active():

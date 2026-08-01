@@ -149,21 +149,28 @@ static func resolve(tf: TaskForce, port: Dictionary,
 
 	# I punti si assegnano PRIMA di svuotare la Task Force: dopo, le navi non
 	# ci sono piu' e non c'e' piu' niente da valutare.
-	if tracker != null and tracker.active():
-		for s_v: Variant in tf.ships:
-			var s: Ship = s_v
-			if s.kind == Ship.Kind.CONVOY:
-				lines.append_array(tracker.convoy_completed(pname,
+	#
+	# Il CONTEGGIO dei Convogli arrivati si tiene sempre, anche in uno scenario
+	# senza tabella VP: non serve a segnare punti, e' la condizione che chiude
+	# la partita ("quando tre Convogli hanno Completato...").
+	for s_v: Variant in tf.ships:
+		var s: Ship = s_v
+		var is_convoy := s.kind == Ship.Kind.CONVOY
+		if is_convoy and tracker != null:
+			tracker.count_convoy_completed()
+		if tracker == null or not tracker.active():
+			continue
+		if is_convoy:
+			lines.append_array(tracker.convoy_completed(pname,
+				s.dispersed, tf.side))
+			# la tabella puo' nominare il paese invece del porto
+			if country != pname:
+				lines.append_array(tracker.convoy_completed(country,
 					s.dispersed, tf.side))
-				# la tabella puo' nominare il paese invece del porto
-				if country != pname:
-					lines.append_array(tracker.convoy_completed(country,
-						s.dispersed, tf.side))
-			else:
-				lines.append_array(tracker.ship_completed(s, pname, tf.side))
-				if country != pname:
-					lines.append_array(tracker.ship_completed(s, country,
-						tf.side))
+		else:
+			lines.append_array(tracker.ship_completed(s, pname, tf.side))
+			if country != pname:
+				lines.append_array(tracker.ship_completed(s, country, tf.side))
 
 	var names: Array[String] = []
 	for s_v2: Variant in tf.ships:

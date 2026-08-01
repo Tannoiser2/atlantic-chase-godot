@@ -152,6 +152,25 @@ func port_control() -> Dictionary:
 	return victory_data.get("port_control", {})
 
 
+## Regole che cambiano da scenario a scenario, lette a mano dal fascicolo.
+## Una voce assente NON vuol dire "no": vuol dire "non trascritta", e chi
+## chiama deve saper distinguere i due casi.
+func rules() -> Dictionary:
+	return victory_data.get("rules", {})
+
+
+## I Convogli possono disperdersi in questo scenario? La dispersione non e' un
+## diritto, e' un permesso che danno le istruzioni.
+func convoy_dispersal_allowed() -> bool:
+	return bool(rules().get("convoy_dispersal", false))
+
+
+## "Se una Task Force puo' effettuare il Completamento, deve farlo": e' la
+## clausola che impedisce di tenere una nave al sicuro in porto senza entrarci.
+func completion_is_mandatory() -> bool:
+	return bool(rules().get("completion_mandatory", false))
+
+
 ## In quale porto entra ciascun Gruppo di Rinforzi.
 ##
 ## Il salvataggio VASSAL non lo dice - i Gruppi stanno in caselle del Display

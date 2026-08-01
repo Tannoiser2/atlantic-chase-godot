@@ -49,6 +49,14 @@ var vp: Dictionary = {
 ## motore dei VP, se no un salvataggio ricaricato li pagherebbe di nuovo.
 var vp_once: Array[String] = []
 
+## Quanti Convogli hanno gia' Completato. Non e' una statistica: e' la
+## condizione che chiude gli scenari. Quasi tutte le Operazioni dicono "quando
+## tre Convogli hanno Completato, il tedesco puo' solo fare Attacco Aereo,
+## Completamento, Passare e Traiettoria - e se puo' Completare, deve farlo".
+## Da quel momento la partita cambia natura: non si caccia piu', si torna a
+## casa.
+var convoys_completed: int = 0
+
 
 func add_vp(side: int, amount: float, reason: String = "") -> void:
 	vp[side] = float(vp.get(side, 0.0)) + amount
@@ -194,6 +202,7 @@ func to_dict() -> Dictionary:
 		"vp_km": vp_of(TaskForce.Side.KRIEGSMARINE),
 		"vp_rn": vp_of(TaskForce.Side.ROYAL_NAVY),
 		"vp_once": vp_once.duplicate(),
+		"convoys_completed": convoys_completed,
 		"rng": rng.to_dict(),
 	}
 
@@ -206,6 +215,7 @@ func apply_dict(d: Dictionary) -> void:
 	round_number = int(d.get("round", 1))
 	vp[TaskForce.Side.KRIEGSMARINE] = float(d.get("vp_km", 0.0))
 	vp[TaskForce.Side.ROYAL_NAVY] = float(d.get("vp_rn", 0.0))
+	convoys_completed = int(d.get("convoys_completed", 0))
 	vp_once.clear()
 	for k_v: Variant in d.get("vp_once", []):
 		vp_once.append(String(k_v))

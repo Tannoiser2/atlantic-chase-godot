@@ -108,10 +108,16 @@ func _apply_hits(results: Array[Dictionary]) -> void:
 		# sull'altra Task Force e i punti andrebbero al giocatore sbagliato.
 		var before := VictoryTracker.snapshot(target)
 		var owner_tf := state.own_tf_of(target)
-		state.note("    " + target.apply_hits(int(a["hits"])))
+		# un Convoglio disperso incassa un solo Colpo per attacco (RB p.11):
+		# e' il motivo per cui vale la pena disperderlo
+		var raw := int(a["hits"])
+		var hits := Convoy.hits_taken(target, raw)
+		if hits < raw:
+			state.note("    %s e' disperso: dei %d Colpi ne incassa %d."
+				% [target.name, raw, hits])
+		state.note("    " + target.apply_hits(hits))
 		if tracker != null and owner_tf != null:
-			for line in tracker.hits_on(target, int(a["hits"]),
-					owner_tf.side, before):
+			for line in tracker.hits_on(target, hits, owner_tf.side, before):
 				state.note("    " + line)
 
 

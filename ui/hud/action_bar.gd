@@ -13,6 +13,7 @@ extends PanelContainer
 
 signal action_requested(key: String)
 signal time_lapse_requested()
+signal disperse_requested()
 signal undo_requested()
 signal redo_requested()
 signal briefing_toggled()
@@ -70,6 +71,11 @@ func _ready() -> void:
 	_sep(row)
 	_mk(row, "Scorrere del Tempo (T)").pressed.connect(
 		func() -> void: time_lapse_requested.emit())
+	var dsp := _mk(row, "Disperdi (D)")
+	dsp.tooltip_text = ("Disperdere un Convoglio: incassa un solo Colpo per "
+		+ "attacco, ma vale un punto in meno se arriva a destinazione. "
+		+ "La scelta non si puo' disfare.")
+	dsp.pressed.connect(func() -> void: disperse_requested.emit())
 
 	_sep(row)
 	_undo_btn = _mk(row, "Annulla")

@@ -269,6 +269,8 @@ func _on_key(k: InputEventKey) -> void:
 			_declare_action("REORGANIZE")
 		KEY_9:
 			_declare_action("SIGNAL")
+		KEY_D:
+			await _do_disperse()
 		KEY_B:
 			_briefing_panel.visible = not _briefing_panel.visible
 		KEY_0:
@@ -684,6 +686,39 @@ func _resync_selection() -> void:
 
 
 # --------------------------------------------------------- Scorrere del Tempo --
+
+## Dispersione di un Convoglio (RB p.11). Non e' un'azione: e' una scelta che
+## il proprietario fa quando ha l'Iniziativa, e non si puo' disfare.
+func _do_disperse() -> void:
+	if scenario == null:
+		return
+	var allowed := scenario.convoy_dispersal_allowed()
+	var pool: Array[Ship] = []
+	for tf in state.forces_of(state.initiative):
+		for c in Convoy.convoys_in(tf):
+			if not c.dispersed:
+				pool.append(c)
+	if pool.is_empty():
+		_msg("Dispersione: nessun Convoglio da disperdere fra le Task Force "
+			+ "di chi ha l'Iniziativa.")
+		return
+	if not allowed:
+		_msg("Dispersione: le istruzioni di questo scenario non la "
+			+ "consentono (o non sono ancora trascritte).")
+		return
+	var opts: Array = []
+	for c in pool:
+		opts.append({"label": c.name,
+			"detail": "da disperso incassa un solo Colpo per attacco, "
+				+ "ma vale un punto in meno se arriva"})
+	opts.append({"label": "Annulla", "detail": ""})
+	var i: int = await Choice.ask(self, "Disperdere un Convoglio",
+		"La scelta non si puo' disfare: un Convoglio disperso resta disperso "
+		+ "per tutto lo scenario.", opts)
+	if i < 0 or i >= pool.size():
+		return
+	_report(Convoy.disperse(pool[i], allowed))
+
 
 ## Riorganizzazione (RB p.37). Con una sola dichiarazione si possono fare piu'
 ## cose, quindi il menu resta aperto finche' il giocatore non chiude - o finche'
@@ -1178,6 +1213,10 @@ func _action_unavailable_reason(key: String) -> String:
 	# tabella: porto amico raggiunto, non piu' di 6 segmenti (RB p.29)
 	if key == "COMPLETION":
 		return Completion.refusal(selected_tf, graph, _port_control())
+	var late := Endgame.action_refusal(state, scenario.rules() if scenario != null
+		else {}, selected_tf.side, key)
+	if late != "":
+		return late
 	return ""
 
 
@@ -1223,6 +1262,7 @@ func _build_action_bar(root: Control) -> void:
 	root.add_child(_bar)
 	_bar.action_requested.connect(_declare_action)
 	_bar.time_lapse_requested.connect(_do_time_lapse)
+	_bar.disperse_requested.connect(_do_disperse)
 	_bar.undo_requested.connect(func() -> void:
 		if log.undo():
 			_msg("annullato")
@@ -1355,9 +1395,17 @@ func _refresh() -> void:
 			"Kriegsmarine" if state.initiative == 0 else "Royal Navy"])
 	# %s e non %d: i VP possono valere mezzo punto (un incrociatore britannico
 	# affondato ne vale 0,5 in cinque scenari su nove)
-	lines.append("Punti Vittoria - KM [b]%s[/b]   RN [b]%s[/b]"
+	lines.append("Punti Vittoria - KM [b]%s[/b]   RN [b]%s[/b]%s"
 		% [state.vp_text(TaskForce.Side.KRIEGSMARINE),
-			state.vp_text(TaskForce.Side.ROYAL_NAVY)])
+			state.vp_text(TaskForce.Side.ROYAL_NAVY),
+			"    Convogli arrivati: [b]%d[/b]" % state.convoys_completed
+				if state.convoys_completed > 0 else ""])
+	# Il finale di partita cambia le regole, e va detto: da tre Convogli in
+	# avanti al tedesco restano quattro azioni e l'obbligo di rientrare.
+	var late := Endgame.notice(state, scenario.rules() if scenario != null
+		else {}, graph, _port_control())
+	if late != "":
+		lines.append("[color=#ff9a3c]%s[/color]" % late)
 	if selected_tf != null:
 		var t := selected_tf.trajectory
 		var kind := "Stazione" if t.is_station() else "Traiettoria"

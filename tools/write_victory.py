@@ -105,6 +105,28 @@ GERMAN_WEST = {"FR": KM, "NO": KM}   # "All French and Norwegian ports are
 # Trascritto solo dove l'ho visto davvero sulla pagina. Dove manca, il gioco
 # lo dice invece di scegliere un porto a caso: un Gruppo che entra nel porto
 # sbagliato e' peggio di un Gruppo che non entra.
+# Regole che cambiano da scenario a scenario, lette sulla pagina del
+# fascicolo. Dove non le ho viste scritte, la voce manca e il gioco lo dice
+# invece di decidere al posto dei giocatori.
+#
+#   convoy_dispersal      i Convogli possono disperdersi?
+#   completion_mandatory  "se una TF puo' Completare, DEVE farlo"
+SCENARIO_RULES = {
+    "Op2 First Test":       {"convoy_dispersal": True,
+                             "completion_mandatory": True},
+    "Op4 Berlin":           {"convoy_dispersal": True,
+                             "completion_mandatory": True},
+    "Op5 Rheinubung":       {"completion_mandatory": True},
+    "Op6 New Friends":      {"convoy_dispersal": True,
+                             "completion_mandatory": True},
+    "Op7 Non Compos Mentis": {"convoy_dispersal": True,
+                              "completion_mandatory": True},
+    "Op8 Cat and Mouse":    {"convoy_dispersal": True,
+                             "completion_mandatory": True},
+    "Op9 Actic Calamity":   {"completion_mandatory": True},
+    "BL1 Raiders of the North Atlantic": {"convoy_dispersal": False},
+}
+
 REINFORCEMENT_PORTS = {
     "Op1 Homecoming":       {"KM Reinforcement A": "Kiel"},
     "Op2 First Test":       {"KM Reinforcement A": "Kiel",
@@ -612,6 +634,8 @@ def main():
                "mode": d.pop("mode", "VP")}
         if name in REINFORCEMENT_PORTS:
             doc["reinforcement_ports"] = REINFORCEMENT_PORTS[name]
+        if name in SCENARIO_RULES:
+            doc["rules"] = SCENARIO_RULES[name]
         doc.update(d)
         path = os.path.join(OUT, name + ".json")
         json.dump(doc, open(path, "w"), indent=1, ensure_ascii=False)

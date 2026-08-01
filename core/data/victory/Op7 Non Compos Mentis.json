@@ -6,6 +6,10 @@
   "RN Reinforcement A": "Clyde",
   "RN Reinforcement B": "Clyde"
  },
+ "rules": {
+  "convoy_dispersal": true,
+  "completion_mandatory": true
+ },
  "port_control": {
   "FR": "KRIEGSMARINE",
   "NO": "KRIEGSMARINE"

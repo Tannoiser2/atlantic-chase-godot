@@ -29,28 +29,37 @@
   {
    "side": "KRIEGSMARINE",
    "event": "CONVOY_COMPLETED",
-   "match": {"owner": "ROYAL_NAVY"},
+   "match": {
+    "owner": "ROYAL_NAVY"
+   },
    "points": -2,
    "label": "ogni Convoglio britannico che ha Completato"
   },
   {
    "side": "KRIEGSMARINE",
    "event": "SHIP_SUNK",
-   "match": {"owner": "KRIEGSMARINE"},
+   "match": {
+    "owner": "KRIEGSMARINE"
+   },
    "points": -5,
    "label": "ogni nave tedesca affondata"
   },
   {
    "side": "KRIEGSMARINE",
    "event": "SHIP_DAMAGED",
-   "match": {"owner": "KRIEGSMARINE"},
+   "match": {
+    "owner": "KRIEGSMARINE"
+   },
    "points": -3,
    "label": "ogni nave tedesca danneggiata"
   },
   {
    "side": "KRIEGSMARINE",
    "event": "SHIP_COMPLETED",
-   "match": {"owner": "KRIEGSMARINE", "destination": "South America"},
+   "match": {
+    "owner": "KRIEGSMARINE",
+    "destination": "South America"
+   },
    "points": 3,
    "label": "una o piu' TF tedesche hanno Completato in South America",
    "once": true
@@ -58,14 +67,28 @@
   {
    "side": "KRIEGSMARINE",
    "event": "SHIP_DAMAGED",
-   "match": {"owner": "ROYAL_NAVY", "types": ["BC", "CA", "CL"]},
+   "match": {
+    "owner": "ROYAL_NAVY",
+    "types": [
+     "BC",
+     "CA",
+     "CL"
+    ]
+   },
    "points": 1,
    "label": "ogni BC, CA o CL britannico danneggiato"
   },
   {
    "side": "KRIEGSMARINE",
    "event": "SHIP_SUNK",
-   "match": {"owner": "ROYAL_NAVY", "types": ["BC", "CA", "CL"]},
+   "match": {
+    "owner": "ROYAL_NAVY",
+    "types": [
+     "BC",
+     "CA",
+     "CL"
+    ]
+   },
    "points": 2,
    "label": "ogni BC, CA o CL britannico affondato"
   }
@@ -99,9 +122,21 @@
  "murmansk_table": {
   "_note": "Prima del Debriefing, se una TF tedesca ha Completato a Murmansk si tira un dado. Modificatore: -1 se sono stati distrutti due o piu' Convogli.",
   "rows": [
-   {"max": 0, "points": -3, "text": "Le navi tedesche sono confiscate dall'Unione Sovietica. Perdi 3 VP."},
-   {"max": 2, "points": -1, "text": "Scoppia un incidente internazionale. Perdi 1 VP."},
-   {"max": 6, "points": 0, "text": "Le navi fanno rifornimento in silenzio e rientrano sane e salve a Kiel."}
+   {
+    "max": 0,
+    "points": -3,
+    "text": "Le navi tedesche sono confiscate dall'Unione Sovietica. Perdi 3 VP."
+   },
+   {
+    "max": 2,
+    "points": -1,
+    "text": "Scoppia un incidente internazionale. Perdi 1 VP."
+   },
+   {
+    "max": 6,
+    "points": 0,
+    "text": "Le navi fanno rifornimento in silenzio e rientrano sane e salve a Kiel."
+   }
   ]
  },
  "notes": [
@@ -111,5 +146,8 @@
   "Le righe 'Successo' e 'Incoraggiante' hanno condizioni aggiuntive scritte a parole, che possono spostare l'Esito di una riga. Sono riportate nel testo e le valuta il giocatore.",
   "La tabella Murmansk si tira PRIMA del Debriefing e modifica il punteggio. Non e' automatica: serve un tiro di dado.",
   "Questo scenario usa sistemi che il motore non ha ancora: marcatori Rendezvous e Tabella del Rifornimento, Tabella delle Azioni Britanniche per l'avversario immaginario, Tabella per Identificare la TF britannica. Sono il cuore del modo solitario e vanno implementati a parte."
- ]
+ ],
+ "rules": {
+  "convoy_dispersal": false
+ }
 }

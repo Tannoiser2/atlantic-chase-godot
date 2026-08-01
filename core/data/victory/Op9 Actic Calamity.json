@@ -7,6 +7,9 @@
   "RN Reinforcement B": "Gibilterra",
   "KM Reinforcement A": "Kiel"
  },
+ "rules": {
+  "completion_mandatory": true
+ },
  "port_control": {
   "FR": "KRIEGSMARINE",
   "NO": "KRIEGSMARINE",

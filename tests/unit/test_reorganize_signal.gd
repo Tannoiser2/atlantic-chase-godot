@@ -1,12 +1,13 @@
 extends TestCase
 
-## Riorganizzazione (RB p.37) e Segnalazione (RB p.39), le ultime due azioni.
+## Riorganizzazione (RB p.37), Segnalazione (RB p.39) e le regole speciali
+## dei Convogli (RB p.11).
 
 var graph: MapGraph
 
 
 func name() -> String:
-	return "Riorganizzazione + Segnalazione"
+	return "Riorganizzazione / Segnalazione / Convogli"
 
 
 func run() -> void:
@@ -17,6 +18,11 @@ func run() -> void:
 	test_reinforcement()
 	test_signal_targets()
 	test_signal_resolve()
+	test_convoy_rules()
+	test_convoy_dispersal()
+	test_scenario_rules()
+	test_endgame()
+	test_convoy_counter()
 
 
 func _state() -> GameState:
@@ -280,3 +286,170 @@ func test_signal_resolve() -> void:
 	true_(r2["ok"], "riesce lo stesso")
 	false_(r2["contact"], "ma il Contatto altrove si perde")
 	false_(km2.trajectory.station_contact, "e la Stazione non ce l'ha")
+
+
+# ----------------------------------------------------------------- convogli --
+
+func _convoy(nation: String = "UK") -> Ship:
+	var c := ShipRoster.shared().make(
+		"Convoy x3" if nation == "UK" else "Convoy x2")
+	if c == null:
+		c = Ship.new("Convoglio", TimeLapse.Speed.SLOW, Ship.Kind.CONVOY)
+		c.nation = nation
+	return c
+
+
+func test_convoy_rules() -> void:
+	_begin("le quattro regole speciali dei Convogli")
+	var c := _convoy()
+	eq(c.kind, Ship.Kind.CONVOY, "il Convoglio e' di tipo CONVOY")
+	true_(Convoy.is_convoy(c), "e lo si riconosce")
+
+	# 1. carico prezioso: non si danneggia
+	false_(c.can_be_damaged(), "un Convoglio non puo' essere Danneggiato")
+	# 2. niente Fumo, ma ne beneficia
+	false_(Maneuver.can_make_smoke(c), "e non puo' produrre Fumo")
+
+	# 4. azioni limitate
+	var st := _state()
+	var tf := _tf(st, TaskForce.Side.ROYAL_NAVY, [] as Array[String],
+		Vector2i(15, -5))
+	tf.ships.append(_convoy())
+	tf.ships.append(ShipRoster.shared().make("Hood"))
+	for k in ["AIR_STRIKE", "ENGAGE", "NAVAL_SEARCH"]:
+		ne(Convoy.action_refusal(tf, k), "",
+			"%s vietata a una TF con un Convoglio" % k)
+	for k in ["COMPLETION", "PASS", "TRAJECTORY", "REORGANIZE", "SIGNAL"]:
+		eq(Convoy.action_refusal(tf, k), "", "%s resta permessa" % k)
+	# una Task Force senza Convoglio non e' toccata
+	var plain := _tf(st, TaskForce.Side.ROYAL_NAVY,
+		["Renown"] as Array[String], Vector2i(15, -5))
+	eq(Convoy.action_refusal(plain, "ENGAGE"), "",
+		"senza Convoglio si Ingaggia normalmente")
+
+
+func test_convoy_dispersal() -> void:
+	_begin("dispersione dei Convogli")
+	var c := _convoy()
+	false_(c.dispersed, "si comincia sempre non dispersi")
+
+	# senza il permesso dello scenario non si disperde
+	true_(Convoy.disperse_refusal(c, false).contains("non consentono"),
+		"la dispersione e' un permesso, non un diritto")
+	eq(Convoy.disperse_refusal(c, true), "", "con il permesso si puo'")
+
+	var r := Convoy.disperse(c, true)
+	true_(r["ok"], "la dispersione riesce")
+	true_(c.dispersed, "il Convoglio e' disperso")
+	# e non si torna indietro
+	true_(Convoy.disperse_refusal(c, true).contains("non puo' tornare indietro"),
+		"una volta disperso, per sempre")
+
+	# i convogli tedeschi non si disperdono: sul retro hanno una petroliera
+	var ge := Ship.new("Convoglio tedesco", TimeLapse.Speed.SLOW,
+		Ship.Kind.CONVOY)
+	ge.nation = "GE"
+	true_(Convoy.disperse_refusal(ge, true).contains("tedeschi"),
+		"i Convogli tedeschi non hanno un lato disperso")
+
+	# una nave da guerra non si disperde
+	true_(Convoy.disperse_refusal(ShipRoster.shared().make("Hood"), true)
+		.contains("solo un Convoglio"), "e nemmeno una corazzata")
+
+	# il limite di un Colpo per attacco
+	var intact := _convoy()
+	eq(Convoy.hits_taken(intact, 3), 3, "integro incassa tutti i Colpi")
+	eq(Convoy.hits_taken(c, 3), 1, "disperso ne incassa uno solo")
+	eq(Convoy.hits_taken(c, 0), 0, "e zero resta zero")
+	# vale per attacco, non per Round: due attacchi da due Colpi fanno due
+	eq(Convoy.hits_taken(c, 2) + Convoy.hits_taken(c, 2), 2,
+		"due attacchi da due Colpi fanno due Colpi, non quattro")
+	# le navi da guerra non hanno nessun limite
+	eq(Convoy.hits_taken(ShipRoster.shared().make("Hood"), 3), 3,
+		"una nave da guerra li incassa tutti")
+
+
+## Le istruzioni di scenario che il fascicolo scrive a parole.
+func test_scenario_rules() -> void:
+	_begin("regole lette dal fascicolo")
+	var op2 := Scenario.load_by_id("Op2 First Test")
+	true_(op2.convoy_dispersal_allowed(), "in Op2 i Convogli possono disperdersi")
+	true_(op2.completion_is_mandatory(),
+		"e se una TF puo' Completare, deve farlo")
+
+	var op5 := Scenario.load_by_id("Op5 Rheinubung")
+	true_(op5.completion_is_mandatory(), "anche nella Rheinubung")
+
+	# Una voce assente vuol dire "non trascritta", non "no". La differenza
+	# conta: il gioco deve poterlo dire invece di decidere da solo.
+	var ms1 := Scenario.load_by_id("MS1 Cornered")
+	eq(ms1.rules().size(), 0, "i mini-scenari non hanno ancora queste voci")
+	false_(ms1.convoy_dispersal_allowed(),
+		"e in mancanza il motore non concede nulla")
+
+
+## Il finale di partita: "quando tre Convogli hanno Completato...".
+func test_endgame() -> void:
+	_begin("finale di partita")
+	var rules := {"completion_mandatory": true}
+	var st := _state()
+
+	false_(Endgame.restricted(st, rules), "a zero Convogli non c'e' restrizione")
+	st.convoys_completed = 2
+	false_(Endgame.restricted(st, rules), "nemmeno a due")
+	st.convoys_completed = 3
+	true_(Endgame.restricted(st, rules), "a tre scatta")
+
+	# le quattro azioni che restano, e quelle che spariscono
+	var km := TaskForce.Side.KRIEGSMARINE
+	for k in ["AIR_STRIKE", "COMPLETION", "PASS", "TRAJECTORY"]:
+		eq(Endgame.action_refusal(st, rules, km, k), "", "%s resta" % k)
+	for k in ["ENGAGE", "NAVAL_SEARCH", "STEALTH_ATTACK", "REORGANIZE",
+			"SIGNAL"]:
+		ne(Endgame.action_refusal(st, rules, km, k), "", "%s sparisce" % k)
+
+	# la restrizione colpisce un lato solo
+	eq(Endgame.action_refusal(st, rules, TaskForce.Side.ROYAL_NAVY, "ENGAGE"),
+		"", "il britannico non e' limitato")
+
+	# senza la clausola nello scenario non succede niente
+	st.convoys_completed = 9
+	eq(Endgame.action_refusal(st, {}, km, "ENGAGE"), "",
+		"uno scenario senza quella clausola non limita nessuno")
+
+	# "se puo', DEVE": serve che il Completamento sia davvero eseguibile
+	var st2 := _state()
+	st2.convoys_completed = 3
+	var far := _tf(st2, km, ["Bismarck"] as Array[String], Vector2i(10, 0))
+	eq(Endgame.must_complete(st2, rules, graph).size(), 0,
+		"in mezzo all'oceano non e' obbligata a niente")
+	far.trajectory.become_station(graph.port_hex("Kiel"))
+	var forced := Endgame.must_complete(st2, rules, graph)
+	eq(forced.size(), 1, "in porto invece deve rientrare")
+	eq(forced[0], far, "ed e' proprio quella")
+	true_(Endgame.notice(st2, rules, graph).contains("DEVE"),
+		"e il gioco lo dice a chiare lettere")
+
+
+## Il conteggio dei Convogli arrivati si tiene anche senza tabella VP.
+func test_convoy_counter() -> void:
+	_begin("contare i Convogli arrivati")
+	var st := _state()
+	var kiel := graph.port_hex("Kiel")
+	var tf := _tf(st, TaskForce.Side.ROYAL_NAVY, [] as Array[String], kiel)
+	tf.ships.append(_convoy())
+	eq(st.convoys_completed, 0, "si parte da zero")
+
+	# tracciatore SENZA tabella VP: non segna punti ma conta lo stesso
+	var mute := VictoryTracker.new(Victory.new(), st)
+	false_(mute.active(), "questo tracciatore non ha tabella")
+	Completion.resolve(tf, {"name": "Kiel", "country": "Germany", "hex": kiel},
+		mute)
+	eq(st.convoys_completed, 1,
+		"il Convoglio arrivato si conta comunque: e' la condizione di fine")
+	eq(st.vp_of(TaskForce.Side.ROYAL_NAVY), 0.0, "ma nessun punto")
+
+	# e sopravvive a un salvataggio
+	var st2 := _state()
+	st2.apply_dict(st.to_dict())
+	eq(st2.convoys_completed, 1, "il conteggio si salva")

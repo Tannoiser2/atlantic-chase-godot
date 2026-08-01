@@ -6,6 +6,10 @@
   "KM Reinforcement A": "Kiel",
   "RN Reinforcement A": "Clyde"
  },
+ "rules": {
+  "convoy_dispersal": true,
+  "completion_mandatory": true
+ },
  "awards": [
   {
    "side": "ROYAL_NAVY",

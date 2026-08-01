@@ -176,6 +176,11 @@ func legality_error(dec: Declaration, state: GameState) -> String:
 			return "il bersaglio dell'Ingaggio deve essere una Stazione Task Force"
 	if dec.action_key == "COMPLETION" and not dec.active.can_complete():
 		return "una TF con segnalino Informazioni non puo' effettuare il Completamento"
+	# una Task Force con un Convoglio ha le mani legate: niente Attacco Aereo,
+	# Ingaggiare o Ricerca Navale (RB p.11). Sta scortando, non cacciando.
+	var convoy_why := Convoy.action_refusal(dec.active, dec.action_key)
+	if convoy_why != "":
+		return convoy_why
 	return ""
 
 

@@ -7,6 +7,9 @@
   "RN Reinforcement B": "Scapa Flow",
   "RN Reinforcement C": "Clyde"
  },
+ "rules": {
+  "completion_mandatory": true
+ },
  "port_control": {
   "FR": "KRIEGSMARINE",
   "NO": "KRIEGSMARINE"
