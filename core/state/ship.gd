@@ -29,6 +29,12 @@ var damaged: bool = false
 var sunk: bool = false
 var hits: int = 0
 
+## Solo per i Convogli: un Convoglio non si affonda, si DISPERDE, e da disperso
+## vale meno. Cinque tabelle di Vittoria su nove pagano un punto in meno per un
+## convoglio disperso che arriva a destinazione, quindi non e' un dettaglio di
+## contorno: e' la differenza fra 3 punti e 2.
+var dispersed: bool = false
+
 # --- statistiche di Battaglia (stampate sulle pedine) ------------------------
 # Numero di Difesa: quando i Colpi accumulati lo raggiungono, la nave si gira
 # sul lato Danneggiato. Sul lato Danneggiato vale defense_damaged e, raggiunto
@@ -186,6 +192,7 @@ func display() -> String:
 func to_dict() -> Dictionary:
 	return {"name": name, "nation": nation, "type": type_code, "kind": kind,
 		"speed": speed, "damaged": damaged, "sunk": sunk, "hits": hits,
+		"dispersed": dispersed,
 		"defense": defense, "defense_damaged": defense_damaged,
 		"gun_close": gun_close, "gun_far": gun_far,
 		"gun_close_damaged": gun_close_damaged, "gun_far_damaged": gun_far_damaged,
@@ -202,6 +209,7 @@ static func from_dict(d: Dictionary) -> Ship:
 	s.damaged = bool(d.get("damaged", false))
 	s.sunk = bool(d.get("sunk", false))
 	s.hits = int(d.get("hits", 0))
+	s.dispersed = bool(d.get("dispersed", false))
 	s.defense = int(d.get("defense", 0))
 	s.defense_damaged = int(d.get("defense_damaged", 0))
 	s.gun_close = d.get("gun_close", null)

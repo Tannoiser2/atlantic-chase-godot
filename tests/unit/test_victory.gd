@@ -32,6 +32,10 @@ func run() -> void:
 	test_hit_on_ship()
 	test_convoy_owner()
 	test_tiebreaks()
+	test_port_control()
+	test_completion_refusals()
+	test_completion_scores()
+	test_battle_scores()
 
 
 func _v(id: String) -> Victory:
@@ -318,3 +322,173 @@ func test_tiebreaks() -> void:
 	# quella di Op8 e' la piu' severa: al tedesco non basta salvare il Tirpitz
 	var t8 := String(_v("Op8 Cat and Mouse").tiebreak["condition"])
 	true_(t8.contains("Colpo"), "Op8 chiede anche un Colpo su un Convoglio")
+
+
+# ------------------------------------------------- Completamento e Battaglia --
+
+func _tf(side: int, ships: Array[Ship], h: Vector2i) -> TaskForce:
+	var tf := TaskForce.new(1, side)
+	tf.name = "TF di prova"
+	tf.ships = ships
+	tf.trajectory = Trajectory.new()
+	tf.trajectory.become_station(h)
+	return tf
+
+
+## Dalla quarta Operazione in poi i porti francesi e norvegesi sono tedeschi, e
+## alcuni scenari chiudono singoli porti.
+func test_port_control() -> void:
+	_begin("chi controlla i porti")
+	var brest: Dictionary = graph.ports["Brest"]
+	eq(brest["nation"], "FR", "Brest e' francese")
+
+	# situazione di partenza: porto francese in mano britannica
+	eq(Completion.control_of(brest, {}), "ROYAL_NAVY", "di partenza e' alleato")
+	# Op4 e seguenti lo ribaltano
+	var op4 := Scenario.load_by_id("Op4 Berlin").port_control()
+	eq(Completion.control_of(brest, op4), "KRIEGSMARINE",
+		"in Op4 i porti francesi sono tedeschi")
+	# ma non tocca gli altri
+	eq(Completion.control_of(graph.ports["Scapa Flow"], op4), "ROYAL_NAVY",
+		"Scapa Flow resta britannica")
+
+	# porti chiusi: il nome vince sulla nazione
+	var op9 := Scenario.load_by_id("Op9 Actic Calamity").port_control()
+	eq(Completion.control_of(graph.ports["Murmansk"], op9), "NONE",
+		"in Op9 Murmansk e' chiuso")
+	eq(Completion.control_of(graph.ports["Archangel"], op9), "ROYAL_NAVY",
+		"ma Archangel no, anche se e' dello stesso paese")
+
+	# Op1: Francia e Norvegia sono neutrali, Murmansk serve a tutti e due
+	var op1 := Scenario.load_by_id("Op1 Homecoming").port_control()
+	eq(Completion.control_of(brest, op1), "NONE", "in Op1 la Francia e' neutrale")
+	eq(Completion.control_of(graph.ports["Murmansk"], op1), "BOTH",
+		"e a Murmansk puo' Completare anche il Bremen")
+
+
+## Le condizioni del regolamento (RB p.29), una per una.
+func test_completion_refusals() -> void:
+	_begin("quando il Completamento e' rifiutato")
+	var kiel := graph.port_hex("Kiel")
+	var ships: Array[Ship] = [roster.make("Bismarck")]
+
+	var tf := _tf(TaskForce.Side.KRIEGSMARINE, ships, kiel)
+	eq(Completion.refusal(tf, graph), "", "una Stazione a Kiel puo' Completare")
+
+	# porto nemico
+	var rn_tf := _tf(TaskForce.Side.ROYAL_NAVY, [roster.make("Hood")] as Array[Ship], kiel)
+	true_(Completion.refusal(rn_tf, graph).contains("porto amico"),
+		"ma il britannico a Kiel no")
+
+	# fuori da un porto
+	var open_sea := _tf(TaskForce.Side.KRIEGSMARINE, ships, Vector2i(10, 0))
+	true_(Completion.refusal(open_sea, graph).contains("porto amico"),
+		"e nemmeno in mare aperto")
+
+	# Traiettoria troppo lunga: il massimo e' 6 segmenti
+	var long_tf := _tf(TaskForce.Side.KRIEGSMARINE, ships, kiel)
+	long_tf.trajectory = Trajectory.new()
+	long_tf.trajectory.become_station(kiel)
+	var h := kiel
+	var added := 0
+	for d in Hex.DIRS:
+		var cand := h + Vector2i(d[0], d[1])
+		if graph.is_playable(cand) and long_tf.trajectory.extend(cand, 1, graph):
+			added += 1
+			h = cand
+			break
+	true_(added > 0, "si riesce ad allungare la Traiettoria di almeno un segmento")
+
+	# nessuna nave
+	var empty := _tf(TaskForce.Side.KRIEGSMARINE, [] as Array[Ship], kiel)
+	true_(Completion.refusal(empty, graph).contains("navi"),
+		"una TF vuota non Completa")
+
+
+## Il Completamento paga, e paga secondo il porto.
+func test_completion_scores() -> void:
+	_begin("quanto vale un Completamento")
+	var sc := Scenario.load_by_id("Op5 Rheinubung")
+	var v := Victory.from_scenario(sc)
+	var pc := sc.port_control()
+
+	# il Bismarck integro in un porto FRANCESE: 3 VP al tedesco
+	var st := _state()
+	var tracker := VictoryTracker.new(v, st)
+	var tf := _tf(TaskForce.Side.KRIEGSMARINE,
+		[roster.make("Bismarck")] as Array[Ship], graph.port_hex("Brest"))
+	var opts := Completion.port_options(tf, graph, pc)
+	true_(opts.size() > 0, "Brest e' disponibile al tedesco in questo scenario")
+	eq(String(opts[0]["country"]), "France", "e conta come Francia")
+
+	var r := Completion.resolve(tf, opts[0], tracker)
+	true_(r["ok"], "il Completamento riesce")
+	eq(st.vp_of(TaskForce.Side.KRIEGSMARINE), 3.0, "3 VP: e' quel che valeva")
+	eq(tf.ships.size(), 0, "e la Task Force lascia il gioco")
+	true_(tf.completed, "risulta Completata")
+	eq(tf.completed_port, "Brest", "nel porto in cui e' arrivata")
+
+	# lo stesso Bismarck DANNEGGIATO vale 2 in Francia ma 3 in Germania:
+	# riportarlo a casa conciato vale piu' che perderlo
+	var st2 := _state()
+	var t2 := VictoryTracker.new(v, st2)
+	var hurt := roster.make("Bismarck")
+	hurt.damaged = true
+	t2.ship_completed(hurt, "France", TaskForce.Side.KRIEGSMARINE)
+	eq(st2.vp_of(TaskForce.Side.KRIEGSMARINE), 2.0, "danneggiato in Francia: 2")
+
+	var st3 := _state()
+	var t3 := VictoryTracker.new(v, st3)
+	t3.ship_completed(hurt, "Germany", TaskForce.Side.KRIEGSMARINE)
+	eq(st3.vp_of(TaskForce.Side.KRIEGSMARINE), 3.0, "danneggiato in Germania: 3")
+
+	# un convoglio che arriva a Murmansk in Op6, intero e disperso
+	var v6 := Victory.from_scenario(Scenario.load_by_id("Op6 New Friends"))
+	var st4 := _state()
+	VictoryTracker.new(v6, st4).convoy_completed("Murmansk", false,
+		TaskForce.Side.ROYAL_NAVY)
+	eq(st4.vp_of(TaskForce.Side.ROYAL_NAVY), 3.0, "convoglio intero a Murmansk: 3")
+	var st5 := _state()
+	VictoryTracker.new(v6, st5).convoy_completed("Murmansk", true,
+		TaskForce.Side.ROYAL_NAVY)
+	eq(st5.vp_of(TaskForce.Side.ROYAL_NAVY), 2.0, "disperso: 2")
+
+
+## La catena intera: una Battaglia che affonda una nave deve segnare i punti.
+func test_battle_scores() -> void:
+	_begin("dalla Battaglia al segnapunti")
+	var v := Victory.from_scenario(Scenario.load_by_id("Op5 Rheinubung"))
+	var st := _state()
+	var tracker := VictoryTracker.new(v, st)
+
+	var bs := BattleState.new(BattleState.Kind.BATTLE, TimeLapse.Weather.GOOD)
+	var km := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
+	km.name = "KM"
+	km.ships = [roster.make("Bismarck")] as Array[Ship]
+	var rn := TaskForce.new(2, TaskForce.Side.ROYAL_NAVY)
+	rn.name = "RN"
+	rn.ships = [roster.make("Hood")] as Array[Ship]
+	bs.active_tf = km
+	bs.target_tf = rn
+	bs.hex = Vector2i(13, -6)
+
+	var battle := Battle.new(bs, DiceRNG.new(1), tracker)
+	var bismarck: Ship = km.ships[0]
+
+	# abbastanza Colpi da affondarlo: prima si danneggia, poi va a fondo
+	battle._apply_hits([{"ok": true, "hits": 99, "target": bismarck,
+		"firer": rn.ships[0]}] as Array[Dictionary])
+	true_(bismarck.sunk, "il Bismarck affonda")
+	eq(st.vp_of(TaskForce.Side.ROYAL_NAVY), 10.0,
+		"3 per averlo danneggiato piu' 7 per averlo affondato")
+	eq(st.vp_of(TaskForce.Side.KRIEGSMARINE), 0.0,
+		"e niente al tedesco: la sua nave non e' un bersaglio britannico")
+
+	# senza tracciatore la Battaglia funziona esattamente come prima
+	var st6 := _state()
+	var b2 := Battle.new(bs, DiceRNG.new(1))
+	var hood: Ship = rn.ships[0]
+	b2._apply_hits([{"ok": true, "hits": 99, "target": hood,
+		"firer": bismarck}] as Array[Dictionary])
+	true_(hood.sunk, "l'Hood affonda lo stesso")
+	eq(st6.vp_of(TaskForce.Side.KRIEGSMARINE), 0.0, "ma nessuno segna punti")

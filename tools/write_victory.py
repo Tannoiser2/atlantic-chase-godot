@@ -89,10 +89,19 @@ SOURCE = ("Fascicolo Scenari per 2 Giocatori, edizione INGLESE "
 
 TABLES = {}
 
+# Chi controlla i porti, quando lo scenario cambia la situazione di partenza.
+# Vale "il nome del porto ha la precedenza sulla sua nazione": gli scenari
+# chiudono singoli porti senza toccare gli altri dello stesso paese.
+# Valori: KRIEGSMARINE, ROYAL_NAVY, BOTH, NONE.
+GERMAN_WEST = {"FR": KM, "NO": KM}   # "All French and Norwegian ports are
+                                     # German controlled", da Op4 in poi
+
 # --------------------------------------------------------------------------
 # Op1 Homecoming - nessuna tabella VP: si vince per condizioni.
 # --------------------------------------------------------------------------
 TABLES["Op1 Homecoming"] = {
+    "port_control": {"FR": "NONE", "NO": "NONE", "Murmansk": "BOTH",
+                     "New York": "NONE"},
     "mode": "CONDITIONS",
     "_source": SOURCE % "pp.3-4",
     "awards": [],
@@ -240,6 +249,7 @@ TABLES["Op3 Norway"] = {
 # Op4 Berlin
 # --------------------------------------------------------------------------
 TABLES["Op4 Berlin"] = {
+    "port_control": dict(GERMAN_WEST),
     "_source": SOURCE % "pp.15-16",
     "awards": [
         convoy(RN, 3, "Convoglio che ha Completato", dispersed=False),
@@ -317,6 +327,7 @@ def completes(side, names, label, france, norway, germany,
 
 
 TABLES["Op5 Rheinubung"] = {
+    "port_control": dict(GERMAN_WEST),
     "_source": SOURCE % "pp.19-20",
     "awards": [
         convoy(RN, 3, "Convoglio che ha Completato", dispersed=False),
@@ -380,6 +391,7 @@ TABLES["Op5 Rheinubung"] = {
 # Op6 New Friends
 # --------------------------------------------------------------------------
 TABLES["Op6 New Friends"] = {
+    "port_control": dict(GERMAN_WEST, **{"South America": "NONE"}),
     "_source": SOURCE % "pp.23-24",
     "awards": [
         convoy(RN, 3, "Convoglio che ha Completato a Murmansk o Archangel",
@@ -423,6 +435,7 @@ TABLES["Op6 New Friends"] = {
 # Op7 Non Compos Mentis
 # --------------------------------------------------------------------------
 TABLES["Op7 Non Compos Mentis"] = {
+    "port_control": dict(GERMAN_WEST),
     "_source": SOURCE % "pp.27-28",
     "awards": [
         convoy(RN, 3, "Convoglio che ha Completato a Murmansk o Archangel",
@@ -474,6 +487,7 @@ TABLES["Op7 Non Compos Mentis"] = {
 # Op8 Cat and Mouse
 # --------------------------------------------------------------------------
 TABLES["Op8 Cat and Mouse"] = {
+    "port_control": dict(GERMAN_WEST, **{"South America": "NONE"}),
     "_source": SOURCE % "pp.31-32",
     "awards": [
         convoy(RN, 3, "Convoglio che ha Completato a Murmansk",
@@ -515,6 +529,8 @@ TABLES["Op8 Cat and Mouse"] = {
 # Op9 Arctic Calamity
 # --------------------------------------------------------------------------
 TABLES["Op9 Actic Calamity"] = {
+    "port_control": dict(GERMAN_WEST, **{"Murmansk": "NONE",
+                                        "South America": "NONE"}),
     "_source": SOURCE % "pp.35-36",
     "awards": [
         convoy(RN, 3, "Convoglio che ha Completato ad Archangel",

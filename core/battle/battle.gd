@@ -19,10 +19,17 @@ var state: BattleState
 var rng: DiceRNG
 var surprise_first_strike: bool = false
 
+## Chi tiene il conto dei Punti Vittoria. Opzionale: senza, la Battaglia
+## funziona esattamente come prima e nessuno segna punti. Serve perche' i
+## Colpi si contano qui e da nessun'altra parte.
+var tracker: VictoryTracker = null
 
-func _init(p_state: BattleState, p_rng: DiceRNG) -> void:
+
+func _init(p_state: BattleState, p_rng: DiceRNG,
+		p_tracker: VictoryTracker = null) -> void:
 	state = p_state
 	rng = p_rng
+	tracker = p_tracker
 
 
 func start() -> void:
@@ -93,7 +100,19 @@ func _apply_hits(results: Array[Dictionary]) -> void:
 		var target: Ship = a["target"]
 		if target.sunk:
 			continue
+		# Fotografia e proprietario si prendono PRIMA di applicare i Colpi.
+		# La fotografia perche' dopo, danneggiata e affondata sono gia'
+		# cambiate e non si distingue piu' un Colpo da un affondamento. Il
+		# proprietario perche' una nave affondata non figura piu' fra le navi
+		# a galla della sua Task Force: chiedendolo dopo, own_tf_of ricadrebbe
+		# sull'altra Task Force e i punti andrebbero al giocatore sbagliato.
+		var before := VictoryTracker.snapshot(target)
+		var owner_tf := state.own_tf_of(target)
 		state.note("    " + target.apply_hits(int(a["hits"])))
+		if tracker != null and owner_tf != null:
+			for line in tracker.hits_on(target, int(a["hits"]),
+					owner_tf.side, before):
+				state.note("    " + line)
 
 
 # ---------------------------------------------------------------- 2. Siluri --

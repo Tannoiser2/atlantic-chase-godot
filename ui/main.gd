@@ -1021,9 +1021,11 @@ func _refresh() -> void:
 	lines.append("Meteo: [b]%s[/b]    Iniziativa: [b]%s[/b]"
 		% ["cattivo" if state.weather == 1 else "buono",
 			"Kriegsmarine" if state.initiative == 0 else "Royal Navy"])
-	lines.append("Punti Vittoria - KM [b]%d[/b]   RN [b]%d[/b]"
-		% [state.vp_of(TaskForce.Side.KRIEGSMARINE),
-			state.vp_of(TaskForce.Side.ROYAL_NAVY)])
+	# %s e non %d: i VP possono valere mezzo punto (un incrociatore britannico
+	# affondato ne vale 0,5 in cinque scenari su nove)
+	lines.append("Punti Vittoria - KM [b]%s[/b]   RN [b]%s[/b]"
+		% [state.vp_text(TaskForce.Side.KRIEGSMARINE),
+			state.vp_text(TaskForce.Side.ROYAL_NAVY)])
 	if selected_tf != null:
 		var t := selected_tf.trajectory
 		var kind := "Stazione" if t.is_station() else "Traiettoria"

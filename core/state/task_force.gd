@@ -28,6 +28,12 @@ var trajectory: Trajectory = null
 
 ## Segnalini assegnati alla TF nel suo complesso (non a un segmento).
 var evasive: bool = false
+
+## La Task Force ha eseguito il Completamento e ha lasciato il gioco. Il porto
+## resta segnato perche' in una Operazione di campagna le navi possono tornare
+## in gioco piu' avanti, e da li' devono ripartire.
+var completed: bool = false
+var completed_port: String = ""
 var leader: String = ""
 
 
@@ -95,6 +101,7 @@ func to_dict() -> Dictionary:
 	return {
 		"id": id, "side": side, "color": color, "slot": slot, "name": name,
 		"ships": sh, "speed": speed, "evasive": evasive, "leader": leader,
+		"completed": completed, "completed_port": completed_port,
 		"trajectory": trajectory.to_dict(),
 	}
 
@@ -119,6 +126,8 @@ static func from_dict(d: Dictionary) -> TaskForce:
 	if not ss.is_empty():
 		tf.recompute_speed()
 	tf.evasive = bool(d.get("evasive", false))
+	tf.completed = bool(d.get("completed", false))
+	tf.completed_port = String(d.get("completed_port", ""))
 	tf.leader = String(d.get("leader", ""))
 	tf.trajectory = Trajectory.from_dict(d.get("trajectory", {}))
 	return tf

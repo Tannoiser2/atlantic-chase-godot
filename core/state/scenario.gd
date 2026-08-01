@@ -96,6 +96,14 @@ func _load_victory() -> void:
 		victory_data = d
 
 
+## Chi controlla quali porti in questo scenario. Vuoto = la situazione di
+## partenza (vedi Completion.DEFAULT_CONTROL). Dalla quarta Operazione in poi
+## "tutti i porti francesi e norvegesi sono controllati dai tedeschi", e alcuni
+## scenari chiudono singoli porti: Murmansk in Op9, South America in Op6 e Op8.
+func port_control() -> Dictionary:
+	return victory_data.get("port_control", {})
+
+
 ## Le condizioni di vittoria di questo scenario sono state trascritte?
 ## Non basta guardare i premi in punti: Op1 Homecoming non ne ha nessuno e non
 ## per questo e' incompleta - si vince per condizioni, e quelle ci sono.

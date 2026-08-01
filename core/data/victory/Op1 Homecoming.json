@@ -2,6 +2,12 @@
  "_scenario": "Op1 Homecoming",
  "_source": "Fascicolo Scenari per 2 Giocatori, edizione INGLESE (AC_TwoPlayer_Book_May_9_2021), pp.3-4. Trascritta a mano da tools/write_victory.py.",
  "mode": "CONDITIONS",
+ "port_control": {
+  "FR": "NONE",
+  "NO": "NONE",
+  "Murmansk": "BOTH",
+  "New York": "NONE"
+ },
  "awards": [],
  "conditions": [
   {
