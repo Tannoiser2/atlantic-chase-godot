@@ -25,6 +25,7 @@ func run() -> void:
 	test_deployment()
 	test_full_round()
 	test_battle_end()
+	test_real_denmark_strait()
 
 
 func _ship(n: String, spd: int, gc: Variant = 2, gf: Variant = 1,
@@ -463,3 +464,66 @@ func test_battle_end() -> void:
 		true_(tf.trajectory.is_station(), "%s e' una Stazione" % tf.display_name())
 		eq(tf.trajectory.station_hex, st3.hex, "nell'esagono di Battaglia")
 		true_(tf.trajectory.station_contact, "con segnalino Contatto")
+
+
+## Battaglia completa con le navi vere di Rheinubung: e' il test che dimostra
+## che i pezzi combaciano - ruolino, scenario, motore di battaglia.
+func test_real_denmark_strait() -> void:
+	_begin("Stretto di Danimarca: battaglia completa con navi reali")
+	var sc := Scenario.load_by_id("Op5 Rheinubung")
+	var gs := GameState.new(graph, 4242)
+	gs.apply_dict(sc.to_state_dict())
+
+	var km: TaskForce = null
+	var rn: TaskForce = null
+	for tf in gs.task_forces:
+		if tf.color == "GE" and tf.slot == 0:
+			km = tf
+		elif tf.color == "Brown" and tf.slot == 0:
+			rn = tf
+	ne(km, null, "la TF tedesca c'e'")
+	ne(rn, null, "la TF britannica c'e'")
+
+	var st := BattleState.new(BattleState.Kind.BATTLE, TimeLapse.Weather.GOOD)
+	st.active_tf = km
+	st.target_tf = rn
+	st.hex = Vector2i(14, -5)
+	var b := Battle.new(st, gs.rng)
+	b.start()
+	eq(st.last_round, 3, "tre round con meteo buono")
+	for s in st.all_ships():
+		eq(s.battle_zone, BattleState.Zone.FAR, "%s parte in zona Lontana" % s.name)
+
+	# gioca la battaglia fino alla fine: nessun round infinito, nessun errore
+	var guard := 0
+	while not st.ended and guard < 20:
+		guard += 1
+		b.gunnery_phase(b.auto_targeting())
+		if st.ended:
+			break
+		b.torpedo_phase(b.auto_torpedoes())
+		if st.ended:
+			break
+		b.maneuver_phase({})
+		b.break_away_phase(false, false)
+		b.end_round()
+	true_(st.ended, "la Battaglia termina")
+	true_(guard <= st.last_round + 1, "in non piu' round dell'Ultimo Round")
+	true_(st.log.size() > 5, "il registro racconta cosa e' successo (%d righe)"
+		% st.log.size())
+
+	# a raggio estremo con questi valori i colpi sono rari ma il sistema regge:
+	# quello che conta e' che ogni nave abbia sparato con valori reali
+	var fired := 0
+	for line in st.log:
+		if line.contains("raggio"):
+			fired += 1
+	true_(fired > 0, "ci sono stati attacchi con cannoni (%d)" % fired)
+
+	var out := b.finish()
+	eq((out["sunk"] as Array).size() + (out["survivors"] as Array).size(), 4,
+		"quattro navi in tutto fra affondate e superstiti")
+	for tf in [km, rn]:
+		true_(tf.trajectory.is_station(), "%s esce come Stazione" % tf.display_name())
+		eq(tf.trajectory.station_hex, Vector2i(14, -5), "nell'esagono di Battaglia")
+		true_(tf.trajectory.station_contact, "con un segnalino Contatto")

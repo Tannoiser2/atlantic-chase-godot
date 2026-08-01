@@ -32,7 +32,21 @@ func _process(_delta: float) -> bool:
 			var z := float(_args[2])
 			cam.zoom = Vector2(z, z)
 			cam.position = Vector2(float(_args[3]), float(_args[4]))
-	if _frames < 30:
+	# argomento 5: se vale "battle", apre una Battaglia di prova prima dello scatto
+	if _frames == 6 and _args.size() >= 6 and _args[5] == "battle":
+		var root_node: Node = _root_node
+		var tf = root_node.selected_tf
+		if tf != null:
+			var en = root_node._nearest_enemy(tf)
+			if en != null:
+				var t = tf.trajectory
+				root_node._open_battle(2, tf, en,
+					t.station_hex if t.is_station() else t.end_hex(0))
+	# Le texture salgono in VRAM al primo disegno: se lo scatto arriva subito
+	# dopo, le pedine escono bianche. Si forza un ridisegno tardivo.
+	if _frames == 26 and _root_node != null and _root_node.get("_battle_view") != null:
+		_root_node._battle_view.queue_redraw()
+	if _frames < 34:
 		return false
 	var img := root.get_texture().get_image()
 	var err := img.save_png(_out)

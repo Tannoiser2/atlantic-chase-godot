@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **847 verifiche, 8 suite, headless.**
+Tutti i test passano: **865 verifiche, 8 suite, headless.**
 
 ---
 
@@ -16,7 +16,7 @@ Tutti i test passano: **847 verifiche, 8 suite, headless.**
 | **M2** Core regole | ✅ **completo** | Traiettoria, Tempo, Totale, Interruzione, undo, RNG — tutto testato |
 | **M3** Mappa interattiva | ✅ **completo** | Selezione, costruzione traiettoria, anteprima, undo, HUD, log |
 | **M4** Motore azioni | ✅ **completo** | Tutte e 4 le tabelle trascritte e verificate; danno alle navi |
-| **M5** Battaglia | ✅ **completo** | 5 zone, cannoni, siluri, manovra, fumo, fuga, uscita |
+| **M5** Battaglia | ✅ **completo** | motore + vista: 5 zone, cannoni, siluri, manovra, fumo, fuga, uscita |
 | **M6** Scenari | 🟡 **quasi completo** | 22 scenari con navi, comandanti, rinforzi e briefing; le condizioni di vittoria sono testo, non regole |
 
 ### Cosa è cambiato nell'ultima sessione
@@ -41,6 +41,8 @@ Tutti i test passano: **847 verifiche, 8 suite, headless.**
 - **Ruolino navi completo**: 86 navi con cannoni, Difesa e velocità per
   entrambi i lati della pedina, estratte via OCR e **verificate tutte a occhio**
   una per una.
+- **Vista della Battaglia**: sei bande, pedine vere, fasi guidate. Un risultato
+  BATTAGLIA da un'azione la apre davvero; il tasto **0** ne apre una di prova.
 - **Corretta una freccia che avevo attribuito al lato sbagliato.** L'esagono
   16,-2 (St. Nazaire e Bordeaux) era stato scartato come "terra piena"; non
   essendo nel grafo, lo strumento di etichettatura non ne mostrava i lati e la
@@ -168,15 +170,7 @@ francese; altrimenti vince il britannico"* — quindi ogni scenario è quasi un
 caso a sé. Oggi il testo è mostrato nel briefing (tasto **B**) e i giocatori lo
 applicano; automatizzarlo è un lavoro scenario per scenario.
 
-### 2. Interfaccia della Battaglia
-
-Il motore di M5 è completo e testato, ma non ha ancora una vista: la Mappa di
-Battaglia (`assets/boards/map_north_sea.jpg` e `map_norwegian_sea.jpg`) non è
-disegnata a schermo e le fasi si possono guidare solo da codice. Premendo **1**
-sulla mappa operazionale, un risultato BATTAGLIA scrive ancora "non ancora
-implementata".
-
-### 3. Controlli touch
+### 2. Controlli touch
 
 Servono per giocare da iPad: tap per selezionare ed estendere, pinch per lo
 zoom, pulsanti a schermo per azioni, undo e Scorrere del Tempo. Oggi tutto passa

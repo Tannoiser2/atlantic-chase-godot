@@ -72,6 +72,23 @@ func names() -> Array:
 	return _by_name.keys()
 
 
+## Percorso della pedina, lato integro o Danneggiato. Stringa vuota se manca.
+func counter_path(name: String, damaged: bool = false) -> String:
+	var d := data(name)
+	var files: Array = d.get("files", [])
+	if files.is_empty():
+		return ""
+	var chosen := String(files[0])
+	for f_v: Variant in files:
+		var f := String(f_v)
+		# il lato Danneggiato ha il file che finisce per 'b'
+		var is_dmg := f.ends_with("b.png") or f.ends_with("_b.png")
+		if is_dmg == damaged:
+			chosen = f
+			break
+	return "res://assets/counters/" + chosen
+
+
 func data(name: String) -> Dictionary:
 	return _by_name.get(name.to_lower(), {})
 

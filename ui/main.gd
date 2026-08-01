@@ -103,6 +103,8 @@ func _load_scenario_at(idx: int) -> void:
 # --------------------------------------------------------------------- input --
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _battle_view != null:
+		return
 	if event is InputEventMouseMotion:
 		var w := cam.world_from_screen((event as InputEventMouseMotion).position)
 		var h := graph.pixel_to_hex(w)
@@ -125,6 +127,11 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	if event is InputEventKey and (event as InputEventKey).pressed \
 			and not (event as InputEventKey).echo:
+		# durante una Battaglia i tasti li gestisce la sua vista
+		if _battle_view != null:
+			if _battle_view.handle_key(event as InputEventKey):
+				get_viewport().set_input_as_handled()
+			return
 		_on_key(event as InputEventKey)
 
 
@@ -176,6 +183,16 @@ func _on_key(k: InputEventKey) -> void:
 			_declare_action("STEALTH_ATTACK")
 		KEY_B:
 			_briefing_panel.visible = not _briefing_panel.visible
+		KEY_0:
+			# scorciatoia: apre una Battaglia fra la TF selezionata e la piu'
+			# vicina avversaria, senza passare da un'azione. Serve a provare la
+			# Mappa di Battaglia senza dipendere dal tiro di dadi.
+			if selected_tf != null:
+				var en := _nearest_enemy(selected_tf)
+				if en != null:
+					var t := selected_tf.trajectory
+					_open_battle(Results.Battle.FULL, selected_tf, en,
+						t.station_hex if t.is_station() else t.end_hex(0))
 		KEY_F1:
 			_toggle_help()
 		KEY_HOME:
@@ -207,14 +224,63 @@ func _declare_action(key: String) -> void:
 		_msg("%s: %s" % [label, res["error"]])
 		return
 	_msg("%s -> %s" % [label, engine.describe(res)])
+	var pending_battle := Results.Battle.NONE
 	for code_v: Variant in res["results"] as Array:
 		var applied := Results.apply(String(code_v), selected_tf, target,
 			dec.target_hex, state)
 		_msg("    %s" % applied["text"])
 		if applied["battle"] != Results.Battle.NONE:
-			_msg("    [Mappa di Battaglia non ancora implementata (M5)]")
+			pending_battle = applied["battle"]
 	log.record("%s (%s)" % [label, selected_tf.display_name()])
 	state.changed.emit()
+	if pending_battle != Results.Battle.NONE:
+		_open_battle(pending_battle, selected_tf, target, dec.target_hex)
+
+
+## Apre la Mappa di Battaglia. RB p.55: le TF Coordinatrici e Supporto Aereo non
+## partecipano, quindi entrano solo la TF Attiva e quella Bersaglio.
+func _open_battle(kind_result: int, active: TaskForce, target: TaskForce,
+		hex: Vector2i) -> void:
+	var kind := BattleState.Kind.BATTLE
+	if kind_result == Results.Battle.SURPRISE:
+		kind = BattleState.Kind.SURPRISE
+	elif kind_result == Results.Battle.LIMITED:
+		kind = BattleState.Kind.LIMITED
+
+	if active.afloat_ships().is_empty() or target.afloat_ships().is_empty():
+		_msg("Battaglia non aperta: una delle due Task Force non ha navi "
+			+ "(lo scenario non ne elenca).")
+		return
+
+	var bstate := BattleState.new(kind, state.weather)
+	bstate.active_tf = active
+	bstate.target_tf = target
+	bstate.hex = hex
+	var b := Battle.new(bstate, state.rng)
+	b.start()
+
+	_battle_layer = CanvasLayer.new()
+	_battle_layer.layer = 20
+	add_child(_battle_layer)
+	_battle_view = BattleView.new()
+	_battle_layer.add_child(_battle_view)
+	_battle_view.setup(b)
+	_battle_view.closed.connect(_close_battle.bind(b))
+	_msg("%s aperta in %s." % [BattleState.KIND_LABELS[kind], str(hex)])
+
+
+func _close_battle(b: Battle) -> void:
+	var out := b.finish()
+	for t_v: Variant in (out["sunk"] as Array):
+		_msg("  affondata: %s" % String(t_v))
+	_msg("Battaglia conclusa: %s" % b.state.end_reason)
+	if _battle_layer != null:
+		_battle_layer.queue_free()
+		_battle_layer = null
+		_battle_view = null
+	log.record("Battaglia in %s" % str(b.state.hex))
+	state.changed.emit()
+	_refresh()
 
 
 func _nearest_enemy(tf: TaskForce) -> TaskForce:
@@ -451,6 +517,8 @@ var _lbl_log: RichTextLabel
 var _help: PanelContainer
 var _briefing_panel: PanelContainer
 var _lbl_briefing: RichTextLabel
+var _battle_layer: CanvasLayer
+var _battle_view: BattleView
 
 
 func _build_hud() -> void:
@@ -571,13 +639,15 @@ func _build_help(root: Control) -> void:
   Tab / Shift+Tab                             TF successiva / precedente
   F                                           cambia capo attivo (testa/coda)
   T                                           Scorrere del Tempo sulla TF selezionata
-  1                                           azione Ingaggiare      (tabella verificata)
+  1                                           azione Ingaggiare -> apre la Battaglia
+                                              se il risultato la causa
   2                                           azione Ricerca Navale  (verifica parziale)
   3 / 4                                       Attacco Aereo / Furtivo (tabelle da trascrivere)
   Ctrl+W                                      alterna meteo buono/cattivo
   Ctrl+Z / Ctrl+Shift+Z                       annulla / ripristina
   [ e ]                                       scenario precedente / successivo
   B                                           mostra/nasconde il briefing
+  0                                           apre una Battaglia di prova
 
 [b]Editor del grafo (E)[/b]
   clic destro                                 imposta l'ancora
