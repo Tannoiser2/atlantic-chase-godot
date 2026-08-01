@@ -1,0 +1,242 @@
+{
+ "_scenario": "Op3 Norway",
+ "_source": "Fascicolo Scenari per 2 Giocatori, edizione INGLESE (AC_TwoPlayer_Book_May_9_2021), pp.11-12. Trascritta a mano da tools/write_victory.py.",
+ "mode": "VP",
+ "awards": [
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CONVOY_COMPLETED",
+   "points": 3,
+   "label": "Convoglio che ha Completato"
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "SHIP_DAMAGED",
+   "points": 1,
+   "label": "incrociatore da battaglia tedesco danneggiata",
+   "match": {
+    "types": [
+     "BC"
+    ],
+    "nations": [
+     "GE"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "SHIP_SUNK",
+   "points": 2,
+   "label": "incrociatore da battaglia tedesco affondata",
+   "match": {
+    "types": [
+     "BC"
+    ],
+    "nations": [
+     "GE"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "SHIP_DAMAGED",
+   "points": 0,
+   "label": "Hipper danneggiata",
+   "match": {
+    "names": [
+     "Hipper"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "SHIP_SUNK",
+   "points": 1,
+   "label": "Hipper affondata",
+   "match": {
+    "names": [
+     "Hipper"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "SHIP_DAMAGED",
+   "points": 0,
+   "label": "incrociatore leggero tedesco danneggiata",
+   "match": {
+    "types": [
+     "CL"
+    ],
+    "nations": [
+     "GE"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "SHIP_SUNK",
+   "points": 1,
+   "label": "incrociatore leggero tedesco affondata",
+   "match": {
+    "types": [
+     "CL"
+    ],
+    "nations": [
+     "GE"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "HIT_ON_CONVOY",
+   "points": 1,
+   "label": "ogni Colpo su un Convoglio tedesco",
+   "match": {
+    "owner": "KRIEGSMARINE"
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "SHIP_HIT",
+   "points": 1,
+   "label": "ogni Colpo su uno Squadrone DD tedesco",
+   "match": {
+    "names": [
+     "DD Squadron"
+    ],
+    "nations": [
+     "GE"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CUSTOM",
+   "points": 3,
+   "label": "Campo minato a Narvik o Trondheim, posato PRIMA che una base aerea tedesca fosse in Norvegia",
+   "manual": true
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CUSTOM",
+   "points": 1,
+   "label": "Campo minato a Narvik o Trondheim, posato DOPO che una base aerea tedesca era in Norvegia",
+   "manual": true
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CUSTOM",
+   "points": -1,
+   "label": "Nessun campo minato a Narvik ne' a Trondheim",
+   "manual": true
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CUSTOM",
+   "points": 1,
+   "label": "Marcatore Base Aerea britannica in Norvegia",
+   "manual": true
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_COMPLETED",
+   "points": 3,
+   "label": "primo Completamento tedesco riuscito a Bergen",
+   "match": {
+    "destination": "Bergen"
+   },
+   "once": true
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_COMPLETED",
+   "points": 2,
+   "label": "primo Completamento tedesco riuscito a Trondheim",
+   "match": {
+    "destination": "Trondheim"
+   },
+   "once": true
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_COMPLETED",
+   "points": 1,
+   "label": "primo Completamento tedesco riuscito a Narvik",
+   "match": {
+    "destination": "Narvik"
+   },
+   "once": true
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_DAMAGED",
+   "points": 1,
+   "label": "BB, BC o CV britannica danneggiata",
+   "match": {
+    "types": [
+     "BB",
+     "BC",
+     "CV"
+    ],
+    "nations": [
+     "UK",
+     "FR",
+     "US"
+    ]
+   }
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_SUNK",
+   "points": 2,
+   "label": "BB, BC o CV britannica affondata",
+   "match": {
+    "types": [
+     "BB",
+     "BC",
+     "CV"
+    ],
+    "nations": [
+     "UK",
+     "FR",
+     "US"
+    ]
+   }
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "HIT_ON_CONVOY",
+   "points": 1,
+   "label": "ogni Colpo su un Convoglio britannico",
+   "match": {
+    "owner": "ROYAL_NAVY"
+   }
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "CUSTOM",
+   "points": 2,
+   "label": "Marcatore Base Aerea tedesca in Norvegia",
+   "manual": true
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "CUSTOM",
+   "points": -1,
+   "label": "Nessun marcatore Base Aerea tedesca",
+   "manual": true
+  }
+ ],
+ "tiebreak": {
+  "side": "ROYAL_NAVY",
+  "auto": true,
+  "condition": "In caso di parita' vince il britannico."
+ },
+ "notes": [
+  "I tre premi per il Completamento in Norvegia valgono UNA VOLTA SOLA ciascuno: la tabella dice 'first successful German Completion'. Il secondo Completamento nello stesso porto non porta niente.",
+  "Le mine sono tre righe che si escludono a vicenda (3, 1 oppure -1) e il -1 e' un punto TOLTO al britannico: non aver minato costa. Il motore non sa dove sono i campi minati ne' quando sono stati posati, quindi le tre righe restano da spuntare a mano - una sola delle tre.",
+  "I Colpi sui convogli filtrano il proprietario: qui il britannico guadagna colpendo convogli TEDESCHI (il traffico del ferro) e il tedesco colpendo quelli britannici.",
+  "Il fascicolo aggiunge una nota amara sul 'vincere che cosa': se una parte ha eseguito piu' Completamenti riusciti in Norvegia dell'avversario, quella parte ha vinto la Norvegia."
+ ]
+}

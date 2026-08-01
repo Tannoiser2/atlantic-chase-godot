@@ -1,7 +1,7 @@
 {
  "_source": "tools/extract_ships.py (OCR delle pedine) + core/data/ships_overrides.json (letture a occhio).",
  "_schema": "Una voce per NAVE, non per pedina: i campi *_damaged sono quelli del lato Danneggiato. gun_* a null significa 'na' sulla pedina, cioe' la nave non puo' sparare a quel raggio (tipico delle portaerei integre, che al posto dei valori stampano l'icona dell'aereo).",
- "count": 86,
+ "count": 85,
  "ships": [
   {
    "name": "Bretagne",
@@ -301,44 +301,6 @@
    "manual": true
   },
   {
-   "name": "",
-   "nation": "GE",
-   "type": "BREMEN",
-   "kind": "WARSHIP",
-   "gun_close": null,
-   "gun_far": null,
-   "gun_close_damaged": null,
-   "gun_far_damaged": null,
-   "defense": 1,
-   "defense_damaged": 1,
-   "speed": "FAST",
-   "speed_damaged": "FAST",
-   "has_damaged_side": false,
-   "files": [
-    "ship_ge_bremen.png"
-   ],
-   "manual": true
-  },
-  {
-   "name": "",
-   "nation": "GE",
-   "type": "BREMENB",
-   "kind": "WARSHIP",
-   "gun_close": null,
-   "gun_far": null,
-   "gun_close_damaged": null,
-   "gun_far_damaged": null,
-   "defense": 1,
-   "defense_damaged": 1,
-   "speed": "SLOW",
-   "speed_damaged": "SLOW",
-   "has_damaged_side": false,
-   "files": [
-    "ship_ge_bremenb.png"
-   ],
-   "manual": false
-  },
-  {
    "name": "Hipper",
    "nation": "GE",
    "type": "CA",
@@ -535,6 +497,26 @@
     "ship_ge_dd_squadron.png"
    ],
    "manual": false
+  },
+  {
+   "name": "Bremen",
+   "nation": "GE",
+   "type": "LINER",
+   "kind": "WARSHIP",
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_damaged": null,
+   "gun_far_damaged": null,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_ge_bremen.png",
+    "ship_ge_bremenb.png"
+   ],
+   "manual": true
   },
   {
    "name": "Graf Spee",

@@ -1,81 +1,87 @@
 {
  "_scenario": "Op5 Rheinubung",
- "_source": "Fascicolo Scenari per 2 Giocatori, pp.19-20, tabelle 'VP Britannici' e 'VP Tedeschi' lette a 300 dpi.",
+ "_source": "Fascicolo Scenari per 2 Giocatori, edizione INGLESE (AC_TwoPlayer_Book_May_9_2021), pp.19-20. Trascritta a mano da tools/write_victory.py.",
+ "mode": "VP",
  "awards": [
   {
    "side": "ROYAL_NAVY",
    "event": "CONVOY_COMPLETED",
    "points": 3,
-   "label": "Convoglio che ha Completato (non disperso)"
+   "label": "Convoglio che ha Completato",
+   "match": {
+    "dispersed": false
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CONVOY_COMPLETED",
+   "points": 2,
+   "label": "Convoglio disperso che ha Completato",
+   "match": {
+    "dispersed": true
+   }
   },
   {
    "side": "ROYAL_NAVY",
    "event": "SHIP_DAMAGED",
+   "points": 3,
+   "label": "Bismarck danneggiata",
    "match": {
     "names": [
      "Bismarck"
-    ],
-    "nations": [
-     "GE"
     ]
-   },
-   "points": 3,
-   "label": "Bismarck danneggiata"
+   }
   },
   {
    "side": "ROYAL_NAVY",
    "event": "SHIP_SUNK",
-   "match": {
-    "names": [
-     "Bismarck"
-    ],
-    "nations": [
-     "GE"
-    ]
-   },
    "points": 7,
-   "label": "Bismarck affondata"
+   "label": "Bismarck affondata",
+   "match": {
+    "names": [
+     "Bismarck"
+    ]
+   }
   },
   {
    "side": "ROYAL_NAVY",
    "event": "SHIP_DAMAGED",
+   "points": 1,
+   "label": "incrociatore controllato dal tedesco danneggiata",
    "match": {
+    "owner": "KRIEGSMARINE",
     "types": [
      "CA",
      "CL"
     ],
     "exclude_names": [
      "Bismarck"
-    ],
-    "nations": [
-     "GE"
     ]
-   },
-   "points": 1,
-   "label": "incrociatore tedesco danneggiato"
+   }
   },
   {
    "side": "ROYAL_NAVY",
    "event": "SHIP_SUNK",
-   "match": {
-    "types": [
-     "CA",
-     "CL"
-    ],
-    "exclude_names": [
-     "Bismarck"
-    ],
-    "nations": [
-     "GE"
-    ]
-   },
    "points": 2,
-   "label": "incrociatore tedesco affondato"
+   "label": "incrociatore controllato dal tedesco affondata",
+   "match": {
+    "owner": "KRIEGSMARINE",
+    "types": [
+     "CA",
+     "CL"
+    ],
+    "exclude_names": [
+     "Bismarck"
+    ]
+   }
   },
   {
    "side": "ROYAL_NAVY",
    "event": "SHIP_DAMAGED",
+   "points": 1,
+   "label": "BB, BC o PB controllata dal tedesco danneggiata",
    "match": {
+    "owner": "KRIEGSMARINE",
     "types": [
      "BB",
      "BC",
@@ -83,118 +89,224 @@
     ],
     "exclude_names": [
      "Bismarck"
-    ],
-    "nations": [
-     "GE"
     ]
-   },
-   "points": 1,
-   "label": "BB/BC/PB tedesca danneggiata"
+   }
   },
   {
    "side": "ROYAL_NAVY",
    "event": "SHIP_SUNK",
-   "match": {
-    "types": [
-     "BB",
-     "BC",
-     "PB"
-    ],
-    "exclude_names": [
-     "Bismarck"
-    ],
-    "nations": [
-     "GE"
-    ]
-   },
    "points": 4,
-   "label": "BB/BC/PB tedesca affondata"
-  },
-  {
-   "side": "KRIEGSMARINE",
-   "event": "SHIP_DAMAGED",
+   "label": "BB, BC o PB controllata dal tedesco affondata",
    "match": {
+    "owner": "KRIEGSMARINE",
     "types": [
      "BB",
-     "BC"
+     "BC",
+     "PB"
     ],
-    "nations": [
-     "UK",
-     "FR",
-     "US"
+    "exclude_names": [
+     "Bismarck"
     ]
-   },
-   "points": 1,
-   "label": "BB o BC britannica danneggiata"
+   }
   },
   {
    "side": "KRIEGSMARINE",
-   "event": "SHIP_SUNK",
-   "match": {
-    "types": [
-     "BB",
-     "BC"
-    ],
-    "nations": [
-     "UK",
-     "FR",
-     "US"
-    ]
-   },
-   "points": 2,
-   "label": "BB o BC britannica affondata"
-  },
-  {
-   "side": "KRIEGSMARINE",
-   "event": "SHIP_DAMAGED",
-   "match": {
-    "types": [
-     "CV"
-    ],
-    "nations": [
-     "UK",
-     "FR",
-     "US"
-    ]
-   },
-   "points": 2,
-   "label": "portaerei britannica danneggiata"
-  },
-  {
-   "side": "KRIEGSMARINE",
-   "event": "SHIP_SUNK",
-   "match": {
-    "types": [
-     "CV"
-    ],
-    "nations": [
-     "UK",
-     "FR",
-     "US"
-    ]
-   },
+   "event": "SHIP_COMPLETED",
    "points": 3,
-   "label": "portaerei britannica affondata"
+   "label": "Bismarck Completa in Francia",
+   "match": {
+    "names": [
+     "Bismarck"
+    ],
+    "destination": "France",
+    "damaged": false
+   }
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_COMPLETED",
+   "points": 2,
+   "label": "Bismarck Completa in Francia (danneggiato)",
+   "match": {
+    "names": [
+     "Bismarck"
+    ],
+    "destination": "France",
+    "damaged": true
+   }
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_COMPLETED",
+   "points": 2,
+   "label": "Bismarck Completa in Norvegia (danneggiato)",
+   "match": {
+    "names": [
+     "Bismarck"
+    ],
+    "destination": "Norway",
+    "damaged": true
+   }
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_COMPLETED",
+   "points": 3,
+   "label": "Bismarck Completa in Germania (danneggiato)",
+   "match": {
+    "names": [
+     "Bismarck"
+    ],
+    "destination": "Germany",
+    "damaged": true
+   }
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_COMPLETED",
+   "points": 2,
+   "label": "Prinz Eugen Completa in Francia",
+   "match": {
+    "names": [
+     "Preugen"
+    ],
+    "destination": "France",
+    "damaged": false
+   }
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_COMPLETED",
+   "points": 1,
+   "label": "Prinz Eugen Completa in Francia (danneggiato)",
+   "match": {
+    "names": [
+     "Preugen"
+    ],
+    "destination": "France",
+    "damaged": true
+   }
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_COMPLETED",
+   "points": 1,
+   "label": "Prinz Eugen Completa in Norvegia (danneggiato)",
+   "match": {
+    "names": [
+     "Preugen"
+    ],
+    "destination": "Norway",
+    "damaged": true
+   }
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_COMPLETED",
+   "points": 2,
+   "label": "Prinz Eugen Completa in Germania (danneggiato)",
+   "match": {
+    "names": [
+     "Preugen"
+    ],
+    "destination": "Germany",
+    "damaged": true
+   }
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_DAMAGED",
+   "points": 1,
+   "label": "BB o BC controllata dal britannico danneggiata",
+   "match": {
+    "owner": "ROYAL_NAVY",
+    "types": [
+     "BB",
+     "BC"
+    ]
+   }
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_SUNK",
+   "points": 2,
+   "label": "BB o BC controllata dal britannico affondata",
+   "match": {
+    "owner": "ROYAL_NAVY",
+    "types": [
+     "BB",
+     "BC"
+    ]
+   }
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_DAMAGED",
+   "points": 2,
+   "label": "portaerei controllata dal britannico danneggiata",
+   "match": {
+    "owner": "ROYAL_NAVY",
+    "types": [
+     "CV"
+    ]
+   }
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_SUNK",
+   "points": 3,
+   "label": "portaerei controllata dal britannico affondata",
+   "match": {
+    "owner": "ROYAL_NAVY",
+    "types": [
+     "CV"
+    ]
+   }
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_SUNK",
+   "points": 0.5,
+   "label": "incrociatore controllato dal britannico affondato",
+   "match": {
+    "owner": "ROYAL_NAVY",
+    "types": [
+     "CA",
+     "CL"
+    ]
+   }
   },
   {
    "side": "KRIEGSMARINE",
    "event": "HIT_ON_CONVOY",
    "points": 1,
-   "label": "ogni Colpo contro un Convoglio"
+   "label": "ogni Colpo su un Convoglio"
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "CUSTOM",
+   "points": -1,
+   "label": "Variante 'Jutland': -1 VP per ogni Gruppo di Rinforzi tedesco che entra in gioco",
+   "manual": true
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "CUSTOM",
+   "points": -1,
+   "label": "Variante Francese: -1 VP al giocatore il cui Gruppo di Rinforzi francese entra in gioco (-2 se comprende un BC francese)",
+   "manual": true
   }
  ],
  "tiebreak": {
   "side": "KRIEGSMARINE",
   "auto": false,
-  "condition": "Il tedesco vince se il Bismarck e' in un porto francese (ha Completato). Altrimenti in caso di parita' vince il britannico."
+  "condition": "In caso di parita' vince il tedesco se il Bismarck e' in un porto francese (ha Completato). Altrimenti vince il britannico."
  },
  "notes": [
-  "Convoglio disperso che Completa: 2 VP invece di 3.",
-  "Ogni premio filtra anche la NAZIONALITA' della nave: senza, il premio tedesco per una corazzata britannica affondata scatterebbe anche sul Bismarck, che e' una corazzata.",
-  "Le righe generiche del britannico escludono il Bismarck: la tabella lo dice esplicitamente ('Navi tedesche o francesi controllate dal tedesco (non il Bismarck)').",
-  "Incrociatore britannico (CA o CL) affondato: 0,5 VP al tedesco. Mezzo punto: il motore lavora con interi, quindi va contato a mano o a coppie.",
-  "NON TRASCRITTO - Completamento delle navi tedesche: la tabella 'VP Tedeschi' ha tre colonne per 'Il Bismarck completa in ...' (3/0/0, danneggiato 2/2/3) e 'Il Pr. Eugen completa in ...' (2/0/0, danneggiato 1/1/2), ma nella traduzione italiana LE TRE COLONNE NON HANNO INTESTAZIONE: non e' possibile sapere a quali porti si riferiscono. Serve il regolamento inglese o il gioco fisico. Finche' manca, quei VP vanno assegnati a mano.",
-  "Rinforzi: quando un Gruppo di Rinforzi entra in gioco nella variante 'Jutland', sottrarre 1 VP al tedesco per gruppo. Con la Variante Francese, sottrarre 1 o 2 VP (2 se include un BC francese).",
+  "Il Completamento vale secondo il paese del porto: Francia / Norvegia / Germania. Un Bismarck INTEGRO vale 3 solo in Francia; DANNEGGIATO vale 2 in Francia e Norvegia ma 3 in Germania, perche' riportarlo a casa conciato vale piu' che perderlo.",
+  "Le righe generiche filtrano per CONTROLLO, non per bandiera: la tabella dice 'navi tedesche o francesi controllate dal tedesco' e 'britanniche o francesi controllate dal britannico'. Con la Variante Francese le navi francesi sono in gioco su entrambi i lati, quindi filtrare per nazione assegnerebbe i punti alla parte sbagliata.",
+  "Le righe generiche del britannico escludono il Bismarck: la tabella lo scrive esplicitamente ('not the Bismarck'). Senza l'esclusione il Bismarck affondato pagherebbe due volte, 7 dalla sua riga piu' 4 da quella delle corazzate.",
+  "Le due varianti tolgono punti e si applicano a mano perche' dipendono da un accordo fra i giocatori prima della partita.",
   "Pool Scorte: il britannico puo' cambiare il risultato della Tabella delle Scorte assegnando 1 VP al tedesco."
  ]
 }

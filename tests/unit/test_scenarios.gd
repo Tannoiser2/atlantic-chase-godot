@@ -159,8 +159,18 @@ func test_victory_table() -> void:
 	eq(int(a_sunk[0]["points"]), 7, "vale 7 VP")
 	eq(int(a_sunk[0]["side"]), TaskForce.Side.ROYAL_NAVY, "al britannico")
 
-	var e_sunk := v.awards_for(Victory.Event.SHIP_SUNK, eugen)
+	# il Prinz Eugen prende punti solo se si sa CHI lo controlla: la tabella
+	# della Rheinubung ragiona per controllo, non per bandiera, perche' con la
+	# Variante Francese le navi francesi giocano su tutti e due i lati
+	var km_ctx := {"owner": "KRIEGSMARINE"}
+	var e_sunk := v.awards_for(Victory.Event.SHIP_SUNK, eugen, km_ctx)
+	eq(e_sunk.size(), 1, "una sola voce per il Prinz Eugen affondato")
 	eq(int(e_sunk[0]["points"]), 2, "il Prinz Eugen affondato ne vale 2")
+	eq(v.awards_for(Victory.Event.SHIP_SUNK, eugen).size(), 0,
+		"senza sapere chi lo controlla il motore non assegna niente")
+	var lost := v.unevaluated(Victory.Event.SHIP_SUNK, eugen)
+	true_(lost.size() > 0, "ma lo segnala invece di perderlo in silenzio")
+	true_(String(lost[0]["missing"][0]) == "owner", "e dice cosa manca")
 
 	# applicazione allo stato
 	v.apply_event(st, Victory.Event.SHIP_SUNK, bismarck)

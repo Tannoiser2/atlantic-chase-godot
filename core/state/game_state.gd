@@ -33,26 +33,53 @@ var scenario_name: String = ""
 ## Punti Vittoria. La traccia VP e' stampata sulla mappa; come si guadagnano
 ## dipende dallo scenario (RB e fascicolo Scenari), quindi qui si tiene solo il
 ## conteggio e chi lo incrementa e' il codice dell'azione o il giocatore.
+##
+## Il conteggio e' in virgola mobile perche' diverse tabelle assegnano MEZZO
+## punto: "British CA or CL sunk 0.5" compare in Op4, Op6, Op7, Op8 e Op9.
+## Arrotondare a interi cambierebbe il vincitore, quindi i mezzi punti si
+## sommano davvero e si arrotondano solo quando si stampano (vedi vp_text).
 var vp: Dictionary = {
-	TaskForce.Side.KRIEGSMARINE: 0,
-	TaskForce.Side.ROYAL_NAVY: 0,
+	TaskForce.Side.KRIEGSMARINE: 0.0,
+	TaskForce.Side.ROYAL_NAVY: 0.0,
 }
 
+## Premi "una tantum" gia' assegnati, per etichetta. Alcune tabelle pagano solo
+## la PRIMA volta ("il primo Completamento tedesco riuscito a Bergen"), quindi
+## va ricordato quali sono scattati - e va ricordato nello stato, non nel
+## motore dei VP, se no un salvataggio ricaricato li pagherebbe di nuovo.
+var vp_once: Array[String] = []
 
-func add_vp(side: int, amount: int, reason: String = "") -> void:
-	vp[side] = int(vp.get(side, 0)) + amount
+
+func add_vp(side: int, amount: float, reason: String = "") -> void:
+	vp[side] = float(vp.get(side, 0.0)) + amount
 	changed.emit()
 
 
-func vp_of(side: int) -> int:
-	return int(vp.get(side, 0))
+func vp_of(side: int) -> float:
+	return float(vp.get(side, 0.0))
+
+
+## I VP come li scrive un giocatore sul segnapunti: "3" oppure "3½".
+static func vp_str(value: float) -> String:
+	var whole := int(floor(absf(value)))
+	var half := absf(value) - float(whole) >= 0.25
+	var sign_txt := "-" if value < 0.0 else ""
+	if not half:
+		return "%s%d" % [sign_txt, whole]
+	if whole == 0:
+		return "%s½" % sign_txt
+	return "%s%d½" % [sign_txt, whole]
+
+
+func vp_text(side: int) -> String:
+	return vp_str(vp_of(side))
 
 
 ## Chi conduce ai punti. -1 in caso di parita'.
 func vp_leader() -> int:
 	var a := vp_of(TaskForce.Side.KRIEGSMARINE)
 	var b := vp_of(TaskForce.Side.ROYAL_NAVY)
-	if a == b:
+	if is_equal_approx(a, b):
 		return -1
 	return TaskForce.Side.KRIEGSMARINE if a > b else TaskForce.Side.ROYAL_NAVY
 
@@ -166,6 +193,7 @@ func to_dict() -> Dictionary:
 		"info_triggers": trig,
 		"vp_km": vp_of(TaskForce.Side.KRIEGSMARINE),
 		"vp_rn": vp_of(TaskForce.Side.ROYAL_NAVY),
+		"vp_once": vp_once.duplicate(),
 		"rng": rng.to_dict(),
 	}
 
@@ -176,8 +204,11 @@ func apply_dict(d: Dictionary) -> void:
 	initiative = int(d.get("initiative", 0))
 	initiative_count = int(d.get("initiative_count", 0))
 	round_number = int(d.get("round", 1))
-	vp[TaskForce.Side.KRIEGSMARINE] = int(d.get("vp_km", 0))
-	vp[TaskForce.Side.ROYAL_NAVY] = int(d.get("vp_rn", 0))
+	vp[TaskForce.Side.KRIEGSMARINE] = float(d.get("vp_km", 0.0))
+	vp[TaskForce.Side.ROYAL_NAVY] = float(d.get("vp_rn", 0.0))
+	vp_once.clear()
+	for k_v: Variant in d.get("vp_once", []):
+		vp_once.append(String(k_v))
 	task_forces.clear()
 	_by_id.clear()
 	_next_id = 1

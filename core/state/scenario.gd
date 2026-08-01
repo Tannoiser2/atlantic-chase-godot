@@ -96,8 +96,14 @@ func _load_victory() -> void:
 		victory_data = d
 
 
+## Le condizioni di vittoria di questo scenario sono state trascritte?
+## Non basta guardare i premi in punti: Op1 Homecoming non ne ha nessuno e non
+## per questo e' incompleta - si vince per condizioni, e quelle ci sono.
 func has_victory_table() -> bool:
-	return not (victory_data.get("awards", []) as Array).is_empty()
+	for k in ["awards", "conditions", "debriefing"]:
+		if not (victory_data.get(k, []) as Array).is_empty():
+			return true
+	return false
 
 
 ## Numero di navi schierate, utile per un controllo rapido.

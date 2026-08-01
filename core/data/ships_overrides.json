@@ -5,7 +5,8 @@
   "Lo ZERO e' disegnato come una 'o' minuscola: 'o/-1' va letto '0/-1'.",
   "Petroliere, mercantili e Convogli stampano un solo 'na', valido per entrambe le bande.",
   "Refuso nel modulo VASSAL: esistono Scheer.png, Scheerb.png e Sheerb.png. Le prime due sono ENTRAMBE il lato integro (doppione); il lato Danneggiato vero e' Sheerb.png, che sulla pedina scrive 'Scheer damaged'. Corretto qui.",
-  "Verifica completa: tutte le 161 pedine sono state confrontate a occhio con la lettura OCR (reports/verify_0..3.png, che sovrappone il valore letto alla pedina). Due difetti sistematici emersi: la Difesa '2' spesso letta '4' (o '1'/'7'), e un segno meno spurio davanti a '1/0' sugli incrociatori. Tutte le differenze sono corrette qui sotto."
+  "Verifica completa: tutte le 161 pedine sono state confrontate a occhio con la lettura OCR (reports/verify_0..3.png, che sovrappone il valore letto alla pedina). Due difetti sistematici emersi: la Difesa '2' spesso letta '4' (o '1'/'7'), e un segno meno spurio davanti a '1/0' sugli incrociatori. Tutte le differenze sono corrette qui sotto.",
+  "Il Bremen: il nome e' stampato in corsivo e l'OCR non lo ha letto, quindi il parser ha preso 'bremen' e 'bremenb' come CODICI DI TIPO e ha lasciato il nome vuoto. Risultato: due navi anonime invece di una a due facce. Guardando le pedine a 5x sono chiaramente lo stesso scafo ('Bremen' e 'Bremen damaged'). Ricomposte qui in un'unica nave. Il tipo LINER e' una convenzione di questo progetto: la pedina non stampa nessun codice di tipo, perche' il Bremen e' un transatlantico, non una nave da guerra. Serve un nome: Op1 Homecoming e' tutta costruita su questa nave e senza nome nessuna regola di vittoria puo' nominarla."
  ],
  "overrides": {
   "ship_fr_bc_dunkerque.png": {
@@ -331,6 +332,8 @@
    "gun_far": 0
   },
   "ship_ge_bremen.png": {
+   "name": "Bremen",
+   "type": "LINER",
    "speed": "FAST"
   },
   "ship_ge_cl_koln.png": {
@@ -345,6 +348,12 @@
    "gun_close": -2,
    "gun_far": null,
    "gun_far_na": true
+  },
+  "ship_ge_bremenb.png": {
+   "name": "Bremen",
+   "type": "LINER",
+   "damaged_side": true,
+   "speed": "SLOW"
   }
  },
  "exclude": {

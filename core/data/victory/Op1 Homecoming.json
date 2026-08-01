@@ -1,0 +1,33 @@
+{
+ "_scenario": "Op1 Homecoming",
+ "_source": "Fascicolo Scenari per 2 Giocatori, edizione INGLESE (AC_TwoPlayer_Book_May_9_2021), pp.3-4. Trascritta a mano da tools/write_victory.py.",
+ "mode": "CONDITIONS",
+ "awards": [],
+ "conditions": [
+  {
+   "winner": "ROYAL_NAVY",
+   "text": "Una nave tedesca e' Danneggiata o affondata (possibile solo dopo la dichiarazione di guerra). Vale comunque, qualunque sia la sorte del Bremen"
+  },
+  {
+   "winner": "KRIEGSMARINE",
+   "text": "Il Bremen Completa a Kiel, Wilhelmshaven o Murmansk, e a Murmansk non viene confiscato"
+  },
+  {
+   "winner": "ROYAL_NAVY",
+   "text": "I britannici catturano il Bremen"
+  },
+  {
+   "winner": "ROYAL_NAVY",
+   "text": "Provocazione, Caso 1: i britannici provocano la guerra"
+  },
+  {
+   "winner": "KRIEGSMARINE",
+   "text": "Provocazione, Caso 2: i britannici provocano la guerra"
+  }
+ ],
+ "notes": [
+  "Le condizioni vanno lette DALL'ALTO IN BASSO: vince la prima che si verifica. Nel fascicolo l'ultima riga e' quella sulle navi tedesche danneggiate, introdotta da 'Finally... regardless of the Bremen's fate': ha la precedenza su tutte, quindi qui e' messa per prima.",
+  "I due Casi di Provocazione portano allo stesso evento - i britannici fanno scoppiare la guerra - ma a vincitori opposti: dipende da come e' successo (Caso 1, tiro di '1' su un'azione Ingaggio; Caso 2, incidente diplomatico in un esagono con Murmansk, Kiel o Wilhelmshaven). Il fascicolo commenta il Caso 2 cosi': 'vince il governo nazista, e perde il popolo tedesco insieme al resto d'Europa'.",
+  "Nessun punto vittoria in questo scenario: il segnapunti resta a zero."
+ ]
+}

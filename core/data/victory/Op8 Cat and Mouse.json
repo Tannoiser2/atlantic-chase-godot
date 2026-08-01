@@ -1,0 +1,198 @@
+{
+ "_scenario": "Op8 Cat and Mouse",
+ "_source": "Fascicolo Scenari per 2 Giocatori, edizione INGLESE (AC_TwoPlayer_Book_May_9_2021), pp.31-32. Trascritta a mano da tools/write_victory.py.",
+ "mode": "VP",
+ "awards": [
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CONVOY_COMPLETED",
+   "points": 3,
+   "label": "Convoglio che ha Completato a Murmansk",
+   "match": {
+    "dispersed": false,
+    "destinations": [
+     "Murmansk"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CONVOY_COMPLETED",
+   "points": 2,
+   "label": "Convoglio disperso che ha Completato a Murmansk",
+   "match": {
+    "dispersed": true,
+    "destinations": [
+     "Murmansk"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CONVOY_COMPLETED",
+   "points": 2,
+   "label": "Convoglio che ha Completato in un altro porto",
+   "match": {
+    "dispersed": false,
+    "exclude_destinations": [
+     "Murmansk"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CONVOY_COMPLETED",
+   "points": 1,
+   "label": "Convoglio disperso che ha Completato in un altro porto",
+   "match": {
+    "dispersed": true,
+    "exclude_destinations": [
+     "Murmansk"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "SHIP_HIT",
+   "points": 1,
+   "label": "Tirpitz colpita",
+   "match": {
+    "names": [
+     "Tirpitz"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "SHIP_DAMAGED",
+   "points": 3,
+   "label": "Tirpitz danneggiata",
+   "match": {
+    "names": [
+     "Tirpitz"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "SHIP_SUNK",
+   "points": 7,
+   "label": "Tirpitz affondata",
+   "match": {
+    "names": [
+     "Tirpitz"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "SHIP_DAMAGED",
+   "points": 0,
+   "label": "incrociatore da battaglia tedesco danneggiata",
+   "match": {
+    "types": [
+     "BC"
+    ],
+    "nations": [
+     "GE"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "SHIP_SUNK",
+   "points": 3,
+   "label": "incrociatore da battaglia tedesco affondata",
+   "match": {
+    "types": [
+     "BC"
+    ],
+    "nations": [
+     "GE"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "SHIP_DAMAGED",
+   "points": 0,
+   "label": "incrociatore o corazzata tascabile tedesca danneggiata",
+   "match": {
+    "types": [
+     "CA",
+     "CL",
+     "PB"
+    ],
+    "nations": [
+     "GE"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "SHIP_SUNK",
+   "points": 1,
+   "label": "incrociatore o corazzata tascabile tedesca affondata",
+   "match": {
+    "types": [
+     "CA",
+     "CL",
+     "PB"
+    ],
+    "nations": [
+     "GE"
+    ]
+   }
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_SUNK",
+   "points": 2,
+   "label": "BB, BC o CV britannica affondata",
+   "match": {
+    "types": [
+     "BB",
+     "BC",
+     "CV"
+    ],
+    "nations": [
+     "UK",
+     "FR",
+     "US"
+    ]
+   }
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_SUNK",
+   "points": 0.5,
+   "label": "incrociatore britannico affondato",
+   "match": {
+    "types": [
+     "CA",
+     "CL"
+    ],
+    "nations": [
+     "UK",
+     "FR",
+     "US"
+    ]
+   }
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "HIT_ON_CONVOY",
+   "points": 1,
+   "label": "ogni Colpo su un Convoglio"
+  }
+ ],
+ "tiebreak": {
+  "side": "KRIEGSMARINE",
+  "auto": false,
+  "condition": "In caso di parita' vince il tedesco se il Tirpitz e' in un porto (ha Completato), quel porto NON e' Kiel ne' Wilhelmshaven, E almeno un Colpo e' andato a segno su un Convoglio. Altrimenti vince il britannico."
+ },
+ "notes": [
+  "Unico scenario in cui un semplice COLPO su una nave da' punti: 1 al britannico per ogni Colpo sul Tirpitz, prima ancora di danneggiarlo. Le altre navi tedesche hanno 0 in quella colonna.",
+  "La clausola di parita' e' la piu' severa delle nove: al tedesco non basta portare a casa il Tirpitz in un porto avanzato, deve anche aver colpito almeno una volta un convoglio. Sopravvivere non basta."
+ ]
+}

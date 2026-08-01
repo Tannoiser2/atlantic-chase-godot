@@ -1,0 +1,185 @@
+{
+ "_scenario": "Op9 Actic Calamity",
+ "_source": "Fascicolo Scenari per 2 Giocatori, edizione INGLESE (AC_TwoPlayer_Book_May_9_2021), pp.35-36. Trascritta a mano da tools/write_victory.py.",
+ "mode": "VP",
+ "awards": [
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CONVOY_COMPLETED",
+   "points": 3,
+   "label": "Convoglio che ha Completato ad Archangel",
+   "match": {
+    "dispersed": false,
+    "destinations": [
+     "Archangel"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CONVOY_COMPLETED",
+   "points": 2,
+   "label": "Convoglio disperso che ha Completato ad Archangel",
+   "match": {
+    "dispersed": true,
+    "destinations": [
+     "Archangel"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CONVOY_COMPLETED",
+   "points": 2,
+   "label": "Convoglio che ha Completato in un altro porto",
+   "match": {
+    "dispersed": false,
+    "exclude_destinations": [
+     "Archangel"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CONVOY_COMPLETED",
+   "points": 1,
+   "label": "Convoglio disperso che ha Completato in un altro porto",
+   "match": {
+    "dispersed": true,
+    "exclude_destinations": [
+     "Archangel"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "SHIP_DAMAGED",
+   "points": 3,
+   "label": "Tirpitz danneggiata",
+   "match": {
+    "names": [
+     "Tirpitz"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "SHIP_SUNK",
+   "points": 7,
+   "label": "Tirpitz affondata",
+   "match": {
+    "names": [
+     "Tirpitz"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "SHIP_DAMAGED",
+   "points": 1,
+   "label": "incrociatore pesante o corazzata tascabile tedesca danneggiata",
+   "match": {
+    "types": [
+     "CA",
+     "PB"
+    ],
+    "nations": [
+     "GE"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "SHIP_SUNK",
+   "points": 3,
+   "label": "incrociatore pesante o corazzata tascabile tedesca affondata",
+   "match": {
+    "types": [
+     "CA",
+     "PB"
+    ],
+    "nations": [
+     "GE"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "SHIP_DAMAGED",
+   "points": 0,
+   "label": "incrociatore leggero tedesco danneggiata",
+   "match": {
+    "types": [
+     "CL"
+    ],
+    "nations": [
+     "GE"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "SHIP_SUNK",
+   "points": 1,
+   "label": "incrociatore leggero tedesco affondata",
+   "match": {
+    "types": [
+     "CL"
+    ],
+    "nations": [
+     "GE"
+    ]
+   }
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_SUNK",
+   "points": 1,
+   "label": "BB, BC o CV britannica affondata",
+   "match": {
+    "types": [
+     "BB",
+     "BC",
+     "CV"
+    ],
+    "nations": [
+     "UK",
+     "FR",
+     "US"
+    ]
+   }
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_SUNK",
+   "points": 0.5,
+   "label": "incrociatore britannico affondato",
+   "match": {
+    "types": [
+     "CA",
+     "CL"
+    ],
+    "nations": [
+     "UK",
+     "FR",
+     "US"
+    ]
+   }
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "HIT_ON_CONVOY",
+   "points": 1,
+   "label": "ogni Colpo su un Convoglio"
+  }
+ ],
+ "tiebreak": {
+  "side": "ROYAL_NAVY",
+  "auto": true,
+  "condition": "In caso di parita' vince il britannico."
+ },
+ "notes": [
+  "Murmansk e' chiuso in questo scenario: nessuna TF puo' eseguire un Completamento li'. Il porto artico che paga 3 punti e' Archangel.",
+  "Il Tirpitz e' l'unica nave tedesca che vale davvero: 3 danneggiata, 7 affondata, contro 1/3 di un incrociatore pesante."
+ ]
+}

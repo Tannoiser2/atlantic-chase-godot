@@ -1,0 +1,234 @@
+{
+ "_scenario": "Op7 Non Compos Mentis",
+ "_source": "Fascicolo Scenari per 2 Giocatori, edizione INGLESE (AC_TwoPlayer_Book_May_9_2021), pp.27-28. Trascritta a mano da tools/write_victory.py.",
+ "mode": "VP",
+ "awards": [
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CONVOY_COMPLETED",
+   "points": 3,
+   "label": "Convoglio che ha Completato a Murmansk o Archangel",
+   "match": {
+    "dispersed": false,
+    "destinations": [
+     "Murmansk",
+     "Archangel"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CONVOY_COMPLETED",
+   "points": 2,
+   "label": "Convoglio disperso che ha Completato a Murmansk o Archangel",
+   "match": {
+    "dispersed": true,
+    "destinations": [
+     "Murmansk",
+     "Archangel"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CONVOY_COMPLETED",
+   "points": 2,
+   "label": "Convoglio che ha Completato in un altro porto",
+   "match": {
+    "dispersed": false,
+    "exclude_destinations": [
+     "Murmansk",
+     "Archangel"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CONVOY_COMPLETED",
+   "points": 1,
+   "label": "Convoglio disperso che ha Completato in un altro porto",
+   "match": {
+    "dispersed": true,
+    "exclude_destinations": [
+     "Murmansk",
+     "Archangel"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "SHIP_DAMAGED",
+   "points": 3,
+   "label": "Tirpitz danneggiata",
+   "match": {
+    "names": [
+     "Tirpitz"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "SHIP_SUNK",
+   "points": 7,
+   "label": "Tirpitz affondata",
+   "match": {
+    "names": [
+     "Tirpitz"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "SHIP_DAMAGED",
+   "points": 1,
+   "label": "incrociatore da battaglia tedesco danneggiata",
+   "match": {
+    "types": [
+     "BC"
+    ],
+    "nations": [
+     "GE"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "SHIP_SUNK",
+   "points": 3,
+   "label": "incrociatore da battaglia tedesco affondata",
+   "match": {
+    "types": [
+     "BC"
+    ],
+    "nations": [
+     "GE"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "SHIP_DAMAGED",
+   "points": 0,
+   "label": "incrociatore o corazzata tascabile tedesca danneggiata",
+   "match": {
+    "types": [
+     "CA",
+     "CL",
+     "PB"
+    ],
+    "nations": [
+     "GE"
+    ]
+   }
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "SHIP_SUNK",
+   "points": 1,
+   "label": "incrociatore o corazzata tascabile tedesca affondata",
+   "match": {
+    "types": [
+     "CA",
+     "CL",
+     "PB"
+    ],
+    "nations": [
+     "GE"
+    ]
+   }
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_COMPLETED",
+   "points": 2,
+   "label": "incrociatore da battaglia tedesco che Completa in Norvegia",
+   "match": {
+    "types": [
+     "BC"
+    ],
+    "nations": [
+     "GE"
+    ],
+    "destination": "Norway"
+   }
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_COMPLETED",
+   "points": 1,
+   "label": "incrociatore da battaglia tedesco che Completa a Kiel",
+   "match": {
+    "types": [
+     "BC"
+    ],
+    "nations": [
+     "GE"
+    ],
+    "destination": "Kiel"
+   }
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_COMPLETED",
+   "points": 1,
+   "label": "Prinz Eugen Completa in Norvegia",
+   "match": {
+    "names": [
+     "Preugen"
+    ],
+    "destination": "Norway"
+   }
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_SUNK",
+   "points": 1,
+   "label": "BB, BC o CV britannica affondata",
+   "match": {
+    "types": [
+     "BB",
+     "BC",
+     "CV"
+    ],
+    "nations": [
+     "UK",
+     "FR",
+     "US"
+    ]
+   }
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_SUNK",
+   "points": 0.5,
+   "label": "incrociatore britannico affondato",
+   "match": {
+    "types": [
+     "CA",
+     "CL"
+    ],
+    "nations": [
+     "UK",
+     "FR",
+     "US"
+    ]
+   }
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "HIT_ON_CONVOY",
+   "points": 1,
+   "label": "ogni Colpo su un Convoglio"
+  }
+ ],
+ "tiebreak": {
+  "side": "ROYAL_NAVY",
+  "auto": true,
+  "condition": "In caso di parita' vince il britannico."
+ },
+ "notes": [
+  "Il Prinz Eugen che Completa a Kiel vale ZERO: la tabella scrive 0, non lascia la casella vuota. Riportarlo in Germania non e' un risultato, e' una ritirata - il senso dell'intera operazione era portare le navi in Norvegia.",
+  "Nessun premio per le navi britanniche DANNEGGIATE in questo scenario: la tabella tedesca ha solo la colonna 'sunk'.",
+  "Il fascicolo aggiunge un giudizio che il punteggio non esprime: se nessun Colpo e' andato a segno sui convogli e il tedesco ha vinto per 5 VP o meno, e' una vittoria davvero molto marginale."
+ ]
+}
