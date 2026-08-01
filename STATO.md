@@ -79,7 +79,7 @@ numero uno del piano. È risolto:
 | passo centro-centro | 213.50 px |
 | rotazione | 44.28° |
 | origine | (1745.00, 1692.00) |
-| esagoni giocabili | 171 |
+| esagoni giocabili | 156 |
 
 Il reticolo è **ruotato di ~44°**: GMT ha inclinato la griglia per adattarla
 alla geografia, quindi le formule standard non si applicano.
@@ -113,15 +113,30 @@ dal metodo con cui il reticolo è stato ricavato.
    occhio rosso = Schermaglia, cilindro = Avvistato. La deduzione "per logica"
    mi stava portando all'accoppiamento sbagliato.
 
-5. **Il motore rifiuta le azioni non verificate** invece di indovinare. Premendo
-   **3** (Attacco Aereo) ottieni un errore esplicito, non un risultato inventato.
+5. **Il motore rifiuta le azioni non verificate** invece di indovinare. Ogni
+   azione in `actions.json` ha un campo `verified`; le quattro tabelle d'azione
+   ora lo hanno a `true`, ma Segnalazione e Riorganizzazione no, e premendo il
+   loro tasto si ottiene un errore esplicito invece di un risultato inventato.
 
-6. **Asset esclusi dal repository.** Mappa e pedine sono © GMT. Il `.gitignore`
+6. **Annotazioni manuali separate dai dati generati.** Il grafo si rigenera con
+   `tools/rebuild_all.sh`; i lati "not adjacent", il Canale di Kiel e i porti
+   stanno in `core/data/map_annotations.json` e vengono riapplicati e validati
+   in coda. Sono coperti da test proprio perché una rigenerazione non li possa
+   perdere in silenzio.
+
+7. **Esclusione manuale di due esagoni oltre la cornice.** Ho provato tre
+   criteri automatici (presenza delle linee, connessione del mare, riempimento
+   dall'esterno della cornice): nessuno separa correttamente il pannello della
+   Battaglia dall'oceano, perché la cornice stampata non è una curva chiusa
+   ovunque e il riempimento tracima. Due esagoni verificati a occhio ed esclusi
+   esplicitamente valgono più di un'euristica che sbaglia in silenzio.
+
+8. **Asset esclusi dal repository.** Mappa e pedine sono © GMT. Il `.gitignore`
    li esclude e il README spiega come rigenerarli da `tools/prepare_assets.py`.
    Se domani pubblichi su GitHub, questo evita di distribuire materiale GMT.
    *Il repository è inizializzato con un commit locale; non ho fatto push.*
 
-7. **Ordinamento dei segmenti per cammino hamiltoniano.** I `.vsav` non dicono
+9. **Ordinamento dei segmenti per cammino hamiltoniano.** I `.vsav` non dicono
    in che ordine stanno i segmenti di una traiettoria. Il primo algoritmo
    (cercare i capi di grado 1) falliva su 4 scenari, perché tre esagoni
    consecutivi in curva sono mutuamente adiacenti e formano un triangolo. Ora
