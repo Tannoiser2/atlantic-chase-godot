@@ -138,6 +138,17 @@ godot --headless --path . --script res://tests/run_tests.gd
 1113 verifiche su 9 suite. Esce con codice 1 al primo fallimento, quindi è
 usabile direttamente in CI.
 
+I test coprono il **motore**, che non sa che Godot esiste. La strada che i
+tasti fanno per arrivarci resta scoperta, ed è proprio lì che si è rotto tutto
+una volta: la Battaglia si apriva e non andava più avanti, senza nessun errore
+— i tasti non le arrivavano. Un test del motore non l'avrebbe mai preso,
+perché il motore funzionava. Per quello c'è una prova di fumo che apre il gioco
+davvero e preme i tasti:
+
+```bash
+godot --path . --script res://tools/smoke_ui.gd
+```
+
 ---
 
 ## Come è fatto

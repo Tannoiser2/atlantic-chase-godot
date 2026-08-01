@@ -55,6 +55,7 @@ var _ship_nodes: Node2D
 var _log: RichTextLabel
 var _header: RichTextLabel
 var _hint: Label
+var _buttons: HBoxContainer
 
 
 func setup(p_battle: Battle) -> void:
@@ -114,6 +115,76 @@ func _build_ui() -> void:
 	_hint.add_theme_color_override("font_color", Color(0.85, 0.9, 0.95))
 	add_child(_hint)
 
+	# Barra dei comandi della Battaglia. La sola riga di aiuto in fondo non
+	# bastava: chi apre la Battaglia per la prima volta non ha modo di sapere
+	# che il gioco aspetta un tasto, e resta fermo a guardare. I pulsanti
+	# dicono cosa si puo' fare ADESSO, e cambiano a ogni fase.
+	_buttons = HBoxContainer.new()
+	_buttons.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	_buttons.offset_left = -560
+	_buttons.offset_right = -16
+	_buttons.offset_top = 88
+	_buttons.alignment = BoxContainer.ALIGNMENT_END
+	_buttons.add_theme_constant_override("separation", 8)
+	add_child(_buttons)
+
+
+## Ricostruisce i pulsanti per la fase in corso. Il primo e' quello che fa
+## avanzare la Battaglia ed e' evidenziato: se uno non legge niente e preme
+## quello, la partita procede comunque nell'ordine giusto.
+func _rebuild_buttons() -> void:
+	if _buttons == null:
+		return
+	for c in _buttons.get_children():
+		c.queue_free()
+
+	var items: Array = []      # [testo, scorciatoia, Callable, principale]
+	if state.ended:
+		items.append(["Torna alla mappa", "ESC", func() -> void: closed.emit(), true])
+	else:
+		match state.phase:
+			BattleState.Phase.GUNNERY:
+				items.append(["Fuoco di Cannoni", "SPAZIO", _advance_phase, true])
+			BattleState.Phase.TORPEDO:
+				items.append(["Lancia i Siluri", "SPAZIO", _advance_phase, true])
+			BattleState.Phase.MANEUVER:
+				items.append(["Fine Manovra", "SPAZIO", _advance_phase, true])
+				items.append(["Fumo", "S", _smoke_selected, false])
+			BattleState.Phase.BREAK_AWAY:
+				items.append(["Nessuna Fuga", "SPAZIO", _advance_phase, true])
+				items.append(["Fuga: %s" % _side_label(true), "F",
+					func() -> void: _do_break_away(true, false), false])
+				items.append(["Fuga: %s" % _side_label(false), "G",
+					func() -> void: _do_break_away(false, true), false])
+		items.append(["Abbandona", "ESC", func() -> void: closed.emit(), false])
+
+	for it_v: Variant in items:
+		var it: Array = it_v
+		var b := Button.new()
+		b.text = "  %s (%s)  " % [it[0], it[1]]
+		b.custom_minimum_size = Vector2(0, 40)
+		b.pressed.connect(it[2])
+		if bool(it[3]):
+			b.add_theme_color_override("font_color", Color(1, 0.93, 0.72))
+			b.add_theme_color_override("font_hover_color", Color(1, 1, 0.85))
+		_buttons.add_child(b)
+
+
+func _side_label(active: bool) -> String:
+	var tf := state.active_tf if active else state.target_tf
+	if tf == null:
+		return "Attiva" if active else "Bersaglio"
+	return "Kriegsmarine" if tf.side == TaskForce.Side.KRIEGSMARINE else "Royal Navy"
+
+
+func _smoke_selected() -> void:
+	if selected == null:
+		state.note("Fumo: seleziona prima una nave.")
+	else:
+		var txt := Maneuver.apply(selected, -1, not selected.smoke)
+		state.note(txt if txt != "" else "%s non puo' creare Fumo" % selected.name)
+	refresh()
+
 
 static func _panel_style() -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
@@ -136,7 +207,7 @@ func _draw() -> void:
 	# fondo pieno: la Battaglia occupa tutto lo schermo, la mappa operazionale
 	# non deve trasparire e confondere
 	draw_rect(Rect2(Vector2.ZERO, size), Color(0.04, 0.06, 0.09, 0.97))
-	var area := Rect2(Vector2(40, 96), size - Vector2(80, 310))
+	var area := Rect2(Vector2(40, 142), size - Vector2(80, 356))
 	# la fascia Ravvicinata e' piu' stretta delle altre, come sulla mappa
 	var weights := [1.0, 1.0, 0.55, 0.55, 1.0, 1.0]
 	var total := 0.0
@@ -318,11 +389,8 @@ func handle_key(k: InputEventKey) -> bool:
 			_advance_phase()
 			return true
 		KEY_S:
-			if selected != null and state.phase == BattleState.Phase.MANEUVER:
-				var txt := Maneuver.apply(selected, -1, not selected.smoke)
-				state.note(txt if txt != "" else
-					"%s non puo' creare Fumo" % selected.name)
-				refresh()
+			if state.phase == BattleState.Phase.MANEUVER:
+				_smoke_selected()
 			return true
 		KEY_F:
 			if state.phase == BattleState.Phase.BREAK_AWAY:
@@ -406,6 +474,7 @@ func refresh() -> void:
 	_log.text = "\n".join(tail)
 
 	_hint.text = _hint_for_phase()
+	_rebuild_buttons()
 
 
 func _hint_for_phase() -> String:

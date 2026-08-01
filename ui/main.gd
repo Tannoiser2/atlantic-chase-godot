@@ -149,7 +149,15 @@ func _process(delta: float) -> void:
 # --------------------------------------------------------------------- input --
 
 func _unhandled_input(event: InputEvent) -> void:
+	# Durante una Battaglia i tasti li gestisce la sua vista, e vanno passati
+	# PRIMA di tutto il resto: c'era un `return` secco qui sopra che tagliava
+	# fuori anche il blocco della tastiera piu' in basso, e la Battaglia
+	# restava sorda a SPAZIO. Si apriva e non andava piu' avanti.
 	if _battle_view != null:
+		if event is InputEventKey and (event as InputEventKey).pressed \
+				and not (event as InputEventKey).echo:
+			if _battle_view.handle_key(event as InputEventKey):
+				get_viewport().set_input_as_handled()
 		return
 	# durante un pinch il mouse emulato dal primo dito va ignorato, altrimenti
 	# si disegnerebbe una Traiettoria mentre si zooma
@@ -206,11 +214,6 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	if event is InputEventKey and (event as InputEventKey).pressed \
 			and not (event as InputEventKey).echo:
-		# durante una Battaglia i tasti li gestisce la sua vista
-		if _battle_view != null:
-			if _battle_view.handle_key(event as InputEventKey):
-				get_viewport().set_input_as_handled()
-			return
 		_on_key(event as InputEventKey)
 
 
