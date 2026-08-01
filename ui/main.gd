@@ -28,6 +28,16 @@ var mode: int = Mode.PLAY
 var selected_tf: TaskForce = null
 var active_end: int = 1            ## capo su cui si estende: 0 testa, 1 coda
 var edit_anchor: Vector2i = Vector2i.MAX
+
+## Trascinamento per disegnare la Traiettoria: si tiene premuto su una Task
+## Force (o su un capo della sua Traiettoria) e si trascina sugli esagoni; i
+## segmenti si accumulano in anteprima e si confermano al rilascio. E' il gesto
+## naturale per tracciare una rotta, invece di un clic per esagono.
+var dragging: bool = false
+var drag_end: int = 1
+var drag_path: Array[Vector2i] = []
+var _press_hex: Vector2i = Vector2i.MAX
+var _press_shift: bool = false
 var scenario_ids: Array[String] = []
 var scenario_index: int = 0
 var scenario: Scenario = null
@@ -70,7 +80,13 @@ func _ready() -> void:
 
 # ------------------------------------------------------------------ scenari --
 
+## Lo scenario scelto nella schermata iniziale; se manca (avvio diretto della
+## scena di gioco, come nei test e negli screenshot) si parte da Rheinubung.
 func _default_scenario_index() -> int:
+	if Session.has_choice():
+		var idx := scenario_ids.find(Session.scenario_id)
+		if idx >= 0:
+			return idx
 	for i in scenario_ids.size():
 		if scenario_ids[i].begins_with("Op5"):
 			return i
@@ -109,18 +125,33 @@ func _unhandled_input(event: InputEvent) -> void:
 		var w := cam.world_from_screen((event as InputEventMouseMotion).position)
 		var h := graph.pixel_to_hex(w)
 		board.set_hover(h if graph.has_hex(h) else Vector2i.MAX)
-		_update_preview(h)
+		if dragging:
+			_extend_drag(h)
+		else:
+			_update_preview(h)
 		_refresh()
 		return
 
-	if event is InputEventMouseButton and (event as InputEventMouseButton).pressed:
+	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
 		var w := cam.world_from_screen(mb.position)
 		var h := graph.pixel_to_hex(w)
 		if mb.button_index == MOUSE_BUTTON_LEFT:
-			_on_left_click(h, mb.shift_pressed)
+			if mb.pressed:
+				_press_hex = h
+				_press_shift = mb.shift_pressed
+				_begin_drag(h)
+			else:
+				# un trascinamento senza percorso e' un clic: si comporta come
+				# prima (seleziona una TF, oppure estende di un esagono)
+				if drag_path.is_empty():
+					dragging = false
+					traj_layer.clear_preview()
+					_on_left_click(_press_hex, _press_shift)
+				else:
+					_finish_drag()
 			get_viewport().set_input_as_handled()
-		elif mb.button_index == MOUSE_BUTTON_RIGHT:
+		elif mb.button_index == MOUSE_BUTTON_RIGHT and mb.pressed:
 			_on_right_click(h)
 			get_viewport().set_input_as_handled()
 		return
@@ -152,11 +183,7 @@ func _on_key(k: InputEventKey) -> void:
 			board.set_grid_mode((board.grid_mode + 1) % 4)
 			_msg("reticolo: %s" % ["nascosto", "leggero", "pieno", "editor"][board.grid_mode])
 		KEY_E:
-			mode = Mode.EDITOR if mode == Mode.PLAY else Mode.PLAY
-			board.set_grid_mode(MapBoard.GridMode.EDITOR if mode == Mode.EDITOR
-				else MapBoard.GridMode.SUBTLE)
-			edit_anchor = Vector2i.MAX
-			_msg("modalita': %s" % ("EDITOR del grafo" if mode == Mode.EDITOR else "gioco"))
+			_toggle_editor()
 		KEY_F:
 			active_end = 1 - active_end
 			_msg("capo attivo: %s" % ("testa" if active_end == 0 else "coda"))
@@ -351,6 +378,99 @@ func _on_right_click(h: Vector2i) -> void:
 	state.changed.emit()
 
 
+## Inizia un trascinamento se il punto premuto e' una TF selezionabile o un
+## capo della Traiettoria gia' selezionata.
+func _begin_drag(h: Vector2i) -> void:
+	if mode != Mode.PLAY or selected_tf == null:
+		return
+	var t := selected_tf.trajectory
+	var on_own := t.occupies(h)
+	if not on_own and not _can_extend_to(h):
+		return
+	dragging = true
+	drag_path.clear()
+	# si estende dal capo piu' vicino al punto premuto
+	if t.is_station():
+		drag_end = 1
+	else:
+		var d0 := graph.center_of(t.end_hex(0)).distance_to(graph.center_of(h))
+		var d1 := graph.center_of(t.end_hex(1)).distance_to(graph.center_of(h))
+		drag_end = 0 if d0 <= d1 else 1
+
+
+## Aggiunge un esagono al percorso in anteprima, se e' una prosecuzione legale.
+func _extend_drag(h: Vector2i) -> void:
+	if not dragging or selected_tf == null:
+		return
+	if not drag_path.is_empty() and drag_path[-1] == h:
+		return
+	# tornare indietro sull'ultimo esagono annulla quel passo
+	if drag_path.size() >= 2 and drag_path[drag_path.size() - 2] == h:
+		drag_path.remove_at(drag_path.size() - 1)
+		_show_drag_preview(true)
+		return
+	if not _drag_step_legal(h):
+		_show_drag_preview(false)
+		return
+	drag_path.append(h)
+	_show_drag_preview(true)
+
+
+## Un passo del trascinamento e' legale se lo sarebbe la corrispondente
+## estensione, tenendo conto dei segmenti gia' accumulati in anteprima.
+func _drag_step_legal(h: Vector2i) -> bool:
+	var t := selected_tf.trajectory
+	var from := drag_path[-1] if not drag_path.is_empty() else t.end_hex(drag_end)
+	if drag_path.has(h) or t.occupies(h):
+		return false
+	if t.length() + drag_path.size() >= Trajectory.MAX_SEGMENTS:
+		return false
+	if state.port_hexes().has(h):
+		return false
+	return graph.is_adjacent_for(selected_tf.side, from, h)
+
+
+func _show_drag_preview(valid: bool) -> void:
+	var pts: Array[Vector2i] = []
+	if selected_tf != null:
+		pts.append(selected_tf.trajectory.end_hex(drag_end))
+	pts.append_array(drag_path)
+	traj_layer.set_preview(pts, valid)
+
+
+## Al rilascio i segmenti accumulati diventano una mossa sola, annullabile in
+## un colpo solo con Ctrl+Z.
+func _finish_drag() -> void:
+	if not dragging:
+		return
+	dragging = false
+	if drag_path.is_empty() or selected_tf == null:
+		traj_layer.clear_preview()
+		return
+	var t := selected_tf.trajectory
+	var ports := state.port_hexes()
+	var added := 0
+	var infos := 0
+	for h in drag_path:
+		var info := state.triggers_info(h, selected_tf.side)
+		if t.extend(h, drag_end, graph, ports, info, selected_tf.side):
+			added += 1
+			if info:
+				infos += 1
+		else:
+			break
+	drag_path.clear()
+	traj_layer.clear_preview()
+	if added > 0:
+		var extra := "" if infos == 0 else "  -> %d segnalino/i INFORMAZIONI" % infos
+		_msg("%s estesa di %d segmenti (ora %d)%s"
+			% [selected_tf.display_name(), added, t.length(), extra])
+		log.record("estensione di %d segmenti (%s)"
+			% [added, selected_tf.display_name()])
+		state.changed.emit()
+	_refresh()
+
+
 func _can_extend_to(h: Vector2i) -> bool:
 	if selected_tf == null:
 		return false
@@ -517,6 +637,7 @@ var _lbl_log: RichTextLabel
 var _help: PanelContainer
 var _briefing_panel: PanelContainer
 var _lbl_briefing: RichTextLabel
+var _bar: ActionBar
 var _battle_layer: CanvasLayer
 var _battle_view: BattleView
 
@@ -533,7 +654,7 @@ func _build_hud() -> void:
 
 	var panel := PanelContainer.new()
 	panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	panel.position = Vector2(12, 12)
+	panel.position = Vector2(12, 62)     # sotto la barra dei comandi
 	panel.custom_minimum_size = Vector2(380, 0)
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_theme_stylebox_override("panel", _panel_style())
@@ -569,12 +690,41 @@ func _build_hud() -> void:
 	_lbl_log.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	logpanel.add_child(_lbl_log)
 
+	_build_action_bar(hud)
 	_build_briefing(hud)
 	_build_help(hud)
 
 
 ## Sfondo scuro semitrasparente: senza, il testo bianco sull'azzurro della
 ## mappa e' semplicemente illeggibile.
+## Motivo per cui un'azione non e' dichiarabile ora (stringa vuota = si puo').
+func _action_unavailable_reason(key: String) -> String:
+	if mode == Mode.EDITOR:
+		return "sei in modalita' editor del grafo"
+	if selected_tf == null:
+		return "nessuna Task Force selezionata"
+	if _nearest_enemy(selected_tf) == null:
+		return "nessuna Task Force avversaria in gioco"
+	if not engine.is_verified(key):
+		return String(engine.action(key).get("verified_note",
+			"tabella non ancora trascritta"))
+	var dec := ActionEngine.Declaration.new()
+	dec.action_key = key
+	dec.active = selected_tf
+	dec.target = _nearest_enemy(selected_tf)
+	return engine.legality_error(dec, state)
+
+
+func _refresh_action_bar() -> void:
+	if _bar == null:
+		return
+	var reasons := {}
+	for a in ActionBar.ACTIONS:
+		reasons[a[0]] = _action_unavailable_reason(String(a[0]))
+	_bar.update_state(reasons, log != null and log.can_undo(),
+		log != null and log.can_redo())
+
+
 func _panel_style() -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.05, 0.07, 0.10, 0.88)
@@ -591,6 +741,48 @@ func _panel_style() -> StyleBoxFlat:
 ## Pannello del briefing: iniziativa, meteo, fine partita e condizioni di
 ## vittoria dal fascicolo. Le condizioni di vittoria restano testo, applicate
 ## dai giocatori: in Atlantic Chase sono discorsive e piene di eccezioni.
+func _build_action_bar(root: Control) -> void:
+	_bar = ActionBar.new()
+	# barra a tutta larghezza in alto, come una toolbar: cosi' non deborda
+	# quando la finestra e' stretta e resta sempre nello stesso posto
+	_bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_bar.offset_left = 10
+	_bar.offset_right = -10
+	_bar.offset_top = 8
+	root.add_child(_bar)
+	_bar.action_requested.connect(_declare_action)
+	_bar.time_lapse_requested.connect(_do_time_lapse)
+	_bar.undo_requested.connect(func() -> void:
+		if log.undo():
+			_msg("annullato")
+		_resync_selection()
+		_refresh())
+	_bar.redo_requested.connect(func() -> void:
+		if log.redo():
+			_msg("ripristinato")
+		_resync_selection()
+		_refresh())
+	_bar.briefing_toggled.connect(func() -> void:
+		_briefing_panel.visible = not _briefing_panel.visible)
+	_bar.help_toggled.connect(_toggle_help)
+	_bar.scenario_step.connect(func(d: int) -> void:
+		_load_scenario_at(scenario_index + d))
+	_bar.grid_cycled.connect(func() -> void:
+		board.set_grid_mode((board.grid_mode + 1) % 4))
+	_bar.editor_toggled.connect(_toggle_editor)
+	_bar.menu_requested.connect(func() -> void:
+		get_tree().change_scene_to_file("res://ui/splash/splash.tscn"))
+
+
+func _toggle_editor() -> void:
+	mode = Mode.EDITOR if mode == Mode.PLAY else Mode.PLAY
+	board.set_grid_mode(MapBoard.GridMode.EDITOR if mode == Mode.EDITOR
+		else MapBoard.GridMode.SUBTLE)
+	edit_anchor = Vector2i.MAX
+	_msg("modalita': %s" % ("EDITOR del grafo" if mode == Mode.EDITOR else "gioco"))
+	_refresh()
+
+
 func _build_briefing(root: Control) -> void:
 	_briefing_panel = PanelContainer.new()
 	_briefing_panel.set_anchors_preset(Control.PRESET_CENTER_RIGHT)
@@ -618,44 +810,49 @@ func _update_briefing() -> void:
 func _build_help(root: Control) -> void:
 	_help = PanelContainer.new()
 	_help.set_anchors_preset(Control.PRESET_CENTER)
-	_help.position = Vector2(-280, -240)
+	_help.position = Vector2(-360, -300)
 	_help.visible = false
 	_help.add_theme_stylebox_override("panel", _panel_style())
 	root.add_child(_help)
 	var t := RichTextLabel.new()
 	t.bbcode_enabled = true
-	t.custom_minimum_size = Vector2(520, 430)
+	t.custom_minimum_size = Vector2(700, 600)
+	t.scroll_active = true
 	t.text = """[b]Atlantic Chase - comandi[/b]
 
 [b]Mappa[/b]
-  trascina col tasto centrale, oppure WASD    sposta
+  trascina col tasto centrale, oppure WASD    sposta la vista
   rotella                                     zoom sul cursore
   Home                                        centra sulla TF selezionata
 
-[b]Gioco[/b]
-  clic sinistro su una TF                     seleziona
-  clic sinistro su un esagono adiacente       estende la Traiettoria
+[b]Traiettorie[/b]
+  clic su una Task Force                      seleziona
+  [b]trascina dalla TF sugli esagoni[/b]             disegna la rotta in un gesto solo
+  clic su un esagono adiacente                estende di un esagono
   clic destro                                 rimuove un segmento dal capo piu' vicino
   Tab / Shift+Tab                             TF successiva / precedente
   F                                           cambia capo attivo (testa/coda)
-  T                                           Scorrere del Tempo sulla TF selezionata
-  1                                           azione Ingaggiare -> apre la Battaglia
-                                              se il risultato la causa
-  2                                           azione Ricerca Navale  (verifica parziale)
-  3 / 4                                       Attacco Aereo / Furtivo (tabelle da trascrivere)
-  Ctrl+W                                      alterna meteo buono/cattivo
-  Ctrl+Z / Ctrl+Shift+Z                       annulla / ripristina
-  [ e ]                                       scenario precedente / successivo
-  B                                           mostra/nasconde il briefing
-  0                                           apre una Battaglia di prova
 
-[b]Editor del grafo (E)[/b]
-  clic destro                                 imposta l'ancora
-  Shift+clic su un vicino                     nega/ripristina il lato ("not adjacent")
-  Ctrl+S                                      salva map_graph.json
+[b]Azioni[/b]  (anche dai pulsanti in alto)
+  1  Ingaggiare      2  Ricerca Navale
+  3  Attacco Aereo   4  Attacco Furtivo
+  T   Scorrere del Tempo sulla TF selezionata
+  0   apre una Battaglia di prova
+  Ctrl+W  alterna meteo buono/cattivo
+  Ctrl+Z / Ctrl+Shift+Z   annulla / ripristina
 
-  G                                           cambia visibilita' del reticolo
-  F1                                          chiude questo pannello"""
+[b]In Battaglia[/b]
+  SPAZIO                     risolve la fase corrente
+  [b]trascina una nave[/b]          la muove di una zona
+  S                          crea o toglie il Fumo
+  F / G                      tenta la Fuga (Attivo / Bersaglio)
+  ESC                        torna alla mappa
+
+[b]Scenario e vista[/b]
+  [ e ]        scenario precedente / successivo
+  B            briefing        G   visibilita' del reticolo
+  E            editor del grafo (Ctrl+S salva)
+  F1           chiude questo pannello"""
 	_help.add_child(t)
 
 
@@ -672,6 +869,7 @@ func _msg(s: String) -> void:
 func _refresh() -> void:
 	if _lbl_title == null:
 		return
+	_refresh_action_bar()
 	var sc := scenario.title if scenario != null else "-"
 	_lbl_title.text = "%s   [%s]" % [sc, "EDITOR" if mode == Mode.EDITOR else "gioco"]
 

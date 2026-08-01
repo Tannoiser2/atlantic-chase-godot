@@ -39,6 +39,13 @@ var state: BattleState
 var roster: ShipRoster
 
 var selected: Ship = null
+
+## Trascinamento della nave fra le zone: si prende la pedina e la si porta
+## nella banda voluta. E' il gesto naturale sulla Mappa di Battaglia, dove
+## muovere significa proprio spostare la pedina di una zona.
+var _drag_ship: Ship = null
+var _drag_pos: Vector2 = Vector2.ZERO
+var _drag_target_band: int = -1
 var _bands: Array[Rect2] = []
 var _ship_rects: Array = []          ## [{rect, ship}]
 ## Le pedine sono nodi TextureRect, non disegnate in _draw(): con
@@ -152,6 +159,13 @@ func _draw() -> void:
 		var is_active: bool = pair[0] == "active"
 
 		draw_rect(r, BAND_COLORS[zone])
+		if _drag_ship != null and i == _drag_target_band:
+			var reachable := Maneuver.can_move_to(_drag_ship, zone) \
+				or _drag_ship.battle_zone == zone
+			var same_side := (String(pair[0]) == "active") \
+				== state.active_ships().has(_drag_ship)
+			draw_rect(r, Color(0.3, 1.0, 0.4, 0.22) if (reachable and same_side)
+				else Color(1.0, 0.3, 0.3, 0.18))
 		draw_rect(r, Color(1, 1, 1, 0.25), false, 2.0)
 
 		var label := "%s  -  %s" % [
@@ -237,32 +251,65 @@ func _draw_ships_in(band: Rect2, is_active: bool, zone: int) -> void:
 # ------------------------------------------------------------------- input --
 
 func _gui_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and (event as InputEventMouseButton).pressed:
-		var pos := (event as InputEventMouseButton).position
-		for e_v: Variant in _ship_rects:
-			var e: Dictionary = e_v
-			if (e["rect"] as Rect2).has_point(pos):
-				selected = e["ship"]
-				queue_redraw()
-				refresh()
-				return
-		# clic su una banda: se una nave e' selezionata, prova a manovrarla
-		if selected != null and state.phase == BattleState.Phase.MANEUVER:
-			for i in _bands.size():
-				if _bands[i].has_point(pos):
-					var pair: Array = ZONE_ORDER[i]
-					var on_active_side: bool = String(pair[0]) == "active"
-					var ship_is_active: bool = state.active_ships().has(selected)
-					var same_side: bool = on_active_side == ship_is_active
-					if same_side:
-						var txt := Maneuver.apply(selected, int(pair[1]), selected.smoke)
-						state.note(txt if txt != "" else
-							"%s non puo' raggiungere quella zona" % selected.name)
-						refresh()
-					else:
-						state.note("una nave manovra solo nelle zone del proprio lato")
-						refresh()
+	if event is InputEventMouseMotion and _drag_ship != null:
+		_drag_pos = (event as InputEventMouseMotion).position
+		_drag_target_band = _band_at(_drag_pos)
+		queue_redraw()
+		return
+
+	if event is InputEventMouseButton:
+		var mb := event as InputEventMouseButton
+		if mb.button_index != MOUSE_BUTTON_LEFT:
+			return
+		if mb.pressed:
+			for e_v: Variant in _ship_rects:
+				var e: Dictionary = e_v
+				if (e["rect"] as Rect2).has_point(mb.position):
+					selected = e["ship"]
+					if state.phase == BattleState.Phase.MANEUVER:
+						_drag_ship = selected
+						_drag_pos = mb.position
+					queue_redraw()
+					refresh()
 					return
+			# clic su una banda con una nave gia' selezionata: manovra
+			if selected != null and state.phase == BattleState.Phase.MANEUVER:
+				_move_to_band(selected, _band_at(mb.position))
+			return
+		# rilascio: se si stava trascinando, la nave va nella banda sotto il mouse
+		if _drag_ship != null:
+			var target := _drag_target_band
+			var ship := _drag_ship
+			_drag_ship = null
+			_drag_target_band = -1
+			if target >= 0:
+				_move_to_band(ship, target)
+			else:
+				queue_redraw()
+
+
+func _band_at(pos: Vector2) -> int:
+	for i in _bands.size():
+		if _bands[i].has_point(pos):
+			return i
+	return -1
+
+
+func _move_to_band(ship: Ship, band_index: int) -> void:
+	if band_index < 0:
+		return
+	var pair: Array = ZONE_ORDER[band_index]
+	var on_active_side: bool = String(pair[0]) == "active"
+	var ship_is_active: bool = state.active_ships().has(ship)
+	if on_active_side != ship_is_active:
+		state.note("una nave manovra solo nelle zone del proprio lato")
+		refresh()
+		return
+	var txt := Maneuver.apply(ship, int(pair[1]), ship.smoke)
+	state.note(txt if txt != "" else
+		"%s non puo' raggiungere quella zona (si muove di una zona per volta)"
+		% ship.name)
+	refresh()
 
 
 func handle_key(k: InputEventKey) -> bool:
@@ -371,7 +418,7 @@ func _hint_for_phase() -> String:
 		BattleState.Phase.TORPEDO:
 			return "SPAZIO: risolvi i Siluri (solo dalla zona Ravvicinata, contro Ravvicinata o Vicina)"
 		BattleState.Phase.MANEUVER:
-			return "Clic su una nave, poi su una zona adiacente del suo lato per muoverla.  S: Fumo.  SPAZIO: fine Manovra"
+			return "Trascina una nave nella zona adiacente (o clic nave + clic zona).  S: Fumo.  SPAZIO: fine Manovra"
 		BattleState.Phase.BREAK_AWAY:
 			return "F: la TF Attiva tenta la Fuga   G: la TF Bersaglio tenta la Fuga   SPAZIO: nessuno tenta"
 	return ""

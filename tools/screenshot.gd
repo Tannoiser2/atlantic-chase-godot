@@ -14,7 +14,11 @@ func _initialize() -> void:
 	var args := OS.get_cmdline_user_args()
 	if args.size() > 0:
 		_out = args[0]
-	var packed: PackedScene = load("res://ui/main.tscn")
+	# primo argomento opzionale "splash": fotografa la schermata iniziale
+	var scene_path := "res://ui/main.tscn"
+	if args.size() >= 2 and args[1] == "splash":
+		scene_path = "res://ui/splash/splash.tscn"
+	var packed: PackedScene = load(scene_path)
 	_root_node = packed.instantiate()
 	root.add_child(_root_node)
 	_args = args
@@ -24,8 +28,10 @@ func _process(_delta: float) -> bool:
 	_frames += 1
 	# la configurazione va fatta dopo _ready() della scena, non in _initialize()
 	if _frames == 2:
-		# argomenti opzionali: <reticolo 0-3> <zoom> <centro_x> <centro_y>
-		if _args.size() >= 2:
+		# argomenti opzionali: <reticolo 0-3 | "splash"> <zoom> <centro_x> <centro_y>
+		if _args.size() >= 2 and _args[1] == "splash":
+			pass
+		elif _args.size() >= 2:
 			_root_node.board.set_grid_mode(int(_args[1]))
 		if _args.size() >= 5:
 			var cam: Camera2D = _root_node.cam
@@ -44,6 +50,8 @@ func _process(_delta: float) -> bool:
 					t.station_hex if t.is_station() else t.end_hex(0))
 	# Le texture salgono in VRAM al primo disegno: se lo scatto arriva subito
 	# dopo, le pedine escono bianche. Si forza un ridisegno tardivo.
+	if _frames == 6 and _args.size() >= 6 and _args[5] == "help":
+		_root_node._toggle_help()
 	if _frames == 26 and _root_node != null and _root_node.get("_battle_view") != null:
 		_root_node._battle_view.queue_redraw()
 	if _frames < 34:

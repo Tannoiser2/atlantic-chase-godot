@@ -43,6 +43,11 @@ Tutti i test passano: **865 verifiche, 8 suite, headless.**
   una per una.
 - **Vista della Battaglia**: sei bande, pedine vere, fasi guidate. Un risultato
   BATTAGLIA da un'azione la apre davvero; il tasto **0** ne apre una di prova.
+- **Interfaccia rifatta**: schermata iniziale con copertina e scelta dello
+  scenario (con briefing prima di cominciare), barra dei comandi con pulsanti
+  che si disabilitano da soli spiegando il perché nel tooltip, e
+  **drag-and-drop**: si trascina per disegnare una rotta in un gesto solo, e si
+  trascinano le navi fra le zone in Battaglia.
 - **Corretta una freccia che avevo attribuito al lato sbagliato.** L'esagono
   16,-2 (St. Nazaire e Bordeaux) era stato scartato come "terra piena"; non
   essendo nel grafo, lo strumento di etichettatura non ne mostrava i lati e la
@@ -172,9 +177,17 @@ applicano; automatizzarlo è un lavoro scenario per scenario.
 
 ### 2. Controlli touch
 
-Servono per giocare da iPad: tap per selezionare ed estendere, pinch per lo
-zoom, pulsanti a schermo per azioni, undo e Scorrere del Tempo. Oggi tutto passa
-da tasto destro, tasto centrale e tastiera.
+Servono per giocare da iPad. La barra pulsanti e il drag-and-drop coprono già
+buona parte del percorso; mancano il pinch per lo zoom, il tap lungo al posto
+del clic destro, e il trascinamento a due dita per spostare la mappa.
+
+### 3. Scelte oggi automatiche
+
+Il motore le supporta, manca il pannello per dichiararle:
+- le designazioni delle azioni (TF Coordinatrice e Supporto Aereo);
+- quale opzione di rimozione usare nello Scorrere del Tempo (oggi prende la
+  prima senza Limite di Informazioni);
+- quale nave colpire quando un risultato lascia scegliere.
 
 ---
 
