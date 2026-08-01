@@ -199,7 +199,15 @@ func test_ports() -> void:
 		"Hvalfjordur": Vector2i(13, -6),
 		"Murmansk": Vector2i(20, -12),
 		"Archangel": Vector2i(22, -13),
+		"Narvik": Vector2i(17, -9),
+		"St. John's": Vector2i(6, 3),
+		"Halifax": Vector2i(5, 4),
+		"Gibilterra": Vector2i(14, 2),
+		"New York": Vector2i(4, 5),
+		"Africa": Vector2i(11, 5),
+		"South America": Vector2i(6, 7),
 	}
+	eq(graph.port_count(), 22, "tutti i porti della mappa sono collegati")
 	for name_v: Variant in expected.keys():
 		var name := String(name_v)
 		var h: Vector2i = expected[name]
@@ -224,6 +232,17 @@ func test_ports() -> void:
 	false_(graph.is_adjacent(Vector2i(16, -3), Vector2i(16, -2)),
 		"ma non dalla Manica: la freccia della Bretagna obbliga a girare al largo")
 	eq(graph.port_hex("Porto Inesistente"), Vector2i.MAX, "porto sconosciuto")
+
+	# Le STRISCE porto rendono porto ogni esagono che toccano ("Port Strip -
+	# each hex is a port" nella legenda), quindi occupano piu' di un esagono.
+	true_(graph.is_port_strip("Africa"), "Africa e' una striscia")
+	true_(graph.is_port_strip("Kiel"), "Kiel e' una striscia")
+	false_(graph.is_port_strip("Clyde"), "Clyde e' un pallino")
+	eq(graph.port_hexes_of("Africa").size(), 2, "la striscia Africa copre due esagoni")
+	true_(graph.ports_in(Vector2i(12, 4)).has("Africa"),
+		"anche il secondo esagono della striscia e' porto")
+	eq(graph.port_hexes_of("South America").size(), 2, "South America copre due esagoni")
+	true_(graph.ports_in(Vector2i(7, 7)).has("South America"), "idem per South America")
 
 	# RB p.15: un segmento non puo' stare in una Casella Porto (una Stazione si')
 	var t := Trajectory.new()

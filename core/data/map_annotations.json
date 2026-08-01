@@ -41,7 +41,7 @@
   "_rule": "RB p.13: 'Un porto stampato sulla Mappa Operazionale, in un esagono o sul bordo di un esagono, e' collegato a una Casella Porto; in ogni caso il porto e' considerato essere nell'esagono.' Una Stazione TF in un esagono di porto amico si trasferisce automaticamente nella Casella (e viceversa) senza costo ne' azione, se il giocatore e' Attivo e ha l'Iniziativa. La Casella e' sicura: niente Attacco Aereo, Ingaggiare o Attacco Furtivo. Ma una TF nella Casella non puo' essere designata Coordinatrice o Supporto Aereo, ne' essere TF Attiva per Attacco Aereo, Ingaggiare o Ricerca Navale.",
   "_method": "Esagono letto con tools/label_hexes.py, confrontando la posizione del pallino stampato con il centro dell'esagono e con i confini disegnati. I casi al limite (pallino vicino a un lato) sono stati decisi guardando da che parte del confine cade il pallino, non solo con la distanza dal centro.",
   "_box_names": "corrispondono ai nomi delle Zone del modulo VASSAL (reports/zones.json)",
-  "_status": "PARZIALE: 15 porti verificati. Mancano Narvik, St John's, Halifax, New York, Gibilterra, Africa, South America. Il metodo e' quello sopra e richiede un ritaglio etichettato per regione, SEMPRE con --all (vedi il commento in tools/label_hexes.py).",
+  "_status": "COMPLETO: 22 porti. Ogni voce elenca gli esagoni in `hexes`: un solo esagono per i porti a pallino, piu' di uno per le strisce, che per legenda rendono porto OGNI esagono toccato. Metodo: ritaglio etichettato per regione con tools/label_hexes.py --all per i pallini, campionamento dei pixel della banda per le strisce.",
   "entries": [
    {"name": "Scapa Flow", "box": "Scapa Flow Box", "nation": "UK", "q": 15, "r": -5,
     "dot_px": [2497, 1082]},
@@ -82,7 +82,26 @@
     "note": "neutrale nel 1939, 1940 e 1941, poi britannico. Alcuni scenari permettono comunque alle navi tedesche di Completare a Murmansk mentre e' neutrale."},
    {"name": "Archangel", "box": "Archangel Box", "nation": "USSR", "q": 22, "r": -13,
     "kind": "strip",
-    "note": "striscia porto lungo il bordo nordorientale"}
+    "note": "striscia porto lungo il bordo nordorientale"},
+   {"name": "Narvik", "box": "Narvik Box", "nation": "NO", "q": 17, "r": -9,
+    "dot_px": [3072, 547],
+    "note": "neutrale nel 1939 e in alcuni scenari del 1940, poi tedesco"},
+   {"name": "St. John's", "box": "St Johns Box", "nation": "UK", "q": 6, "r": 3,
+    "dot_px": [1118, 1342]},
+   {"name": "Halifax", "box": "Halifax Box", "nation": "UK", "q": 5, "r": 4,
+    "dot_px": [380, 1425]},
+   {"name": "Gibilterra", "box": "Gibaltar Box", "nation": "UK", "q": 14, "r": 2,
+    "dot_px": [2004, 2468],
+    "note": "il nome della Casella nel modulo VASSAL e' scritto 'Gibaltar'"},
+   {"name": "New York", "box": "New York Box", "nation": "US", "q": 4, "r": 5,
+    "kind": "strip", "extra_hexes": [],
+    "note": "striscia porto sul bordo occidentale; il 94% dei pixel cade in 4,5"},
+   {"name": "Africa", "box": "Africa Box", "nation": "UK", "q": 11, "r": 5,
+    "kind": "strip", "extra_hexes": [{"q": 12, "r": 4}],
+    "note": "striscia porto sul bordo meridionale: tocca 11,5 e 12,4, ed essendo una striscia sono porto entrambi"},
+   {"name": "South America", "box": "South America Box", "nation": "NEUTRAL",
+    "q": 6, "r": 7, "kind": "strip", "extra_hexes": [{"q": 7, "r": 7}],
+    "note": "striscia porto sul bordo sudoccidentale: tocca 6,7 e 7,7"}
   ]
  }
 }

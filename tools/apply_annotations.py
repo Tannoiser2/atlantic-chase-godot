@@ -68,7 +68,15 @@ def main():
         if zones is not None and p.get("box") and p["box"] not in zones:
             problems.append("porto %s: la Casella '%s' non esiste fra le Zone del modulo"
                             % (p["name"], p["box"]))
-        ports.append(p)
+        # una striscia porto rende porto OGNI esagono che tocca (legenda della mappa)
+        bad_extra = False
+        for e in p.get("extra_hexes", []):
+            if (e["q"], e["r"]) not in play:
+                problems.append("porto %s: l'esagono aggiuntivo %s non e' nell'area di gioco"
+                                % (p["name"], (e["q"], e["r"])))
+                bad_extra = True
+        if not bad_extra:
+            ports.append(p)
     g["ports"] = ports
 
     json.dump(g, open(GRAPH, "w"), indent=1)

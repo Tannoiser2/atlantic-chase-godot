@@ -122,7 +122,15 @@ func _apply(d: Dictionary) -> bool:
 	for p_v: Variant in d.get("ports", []):
 		var p: Dictionary = p_v
 		var rec := p.duplicate()
-		rec["hex"] = Vector2i(int(p.get("q", 0)), int(p.get("r", 0)))
+		# Un porto a pallino occupa un esagono; una STRISCIA porto rende porto
+		# ogni esagono che tocca ("Port Strip - each hex is a port" sulla mappa).
+		var hs: Array[Vector2i] = [Vector2i(int(p.get("q", 0)), int(p.get("r", 0)))]
+		for e_v: Variant in p.get("extra_hexes", []):
+			var e: Dictionary = e_v
+			hs.append(Vector2i(int(e["q"]), int(e["r"])))
+		rec["hex"] = hs[0]
+		rec["hexes"] = hs
+		rec["is_strip"] = String(p.get("kind", "")) == "strip"
 		ports[String(p["name"])] = rec
 
 	return true
@@ -140,9 +148,20 @@ func port_hex(name: String) -> Vector2i:
 func ports_in(h: Vector2i) -> Array[String]:
 	var out: Array[String] = []
 	for k_v: Variant in ports.keys():
-		if (ports[k_v] as Dictionary)["hex"] == h:
+		if ((ports[k_v] as Dictionary)["hexes"] as Array[Vector2i]).has(h):
 			out.append(String(k_v))
 	return out
+
+
+## Tutti gli esagoni di un porto (piu' di uno solo per le strisce).
+func port_hexes_of(name: String) -> Array[Vector2i]:
+	if ports.has(name):
+		return (ports[name] as Dictionary)["hexes"]
+	return [] as Array[Vector2i]
+
+
+func is_port_strip(name: String) -> bool:
+	return ports.has(name) and bool((ports[name] as Dictionary)["is_strip"])
 
 
 func port_count() -> int:

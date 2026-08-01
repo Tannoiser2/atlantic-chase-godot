@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **577 verifiche, 5 suite, headless.**
+Tutti i test passano: **726 verifiche, 6 suite, headless.**
 
 ---
 
@@ -16,7 +16,7 @@ Tutti i test passano: **577 verifiche, 5 suite, headless.**
 | **M2** Core regole | ✅ **completo** | Traiettoria, Tempo, Totale, Interruzione, undo, RNG — tutto testato |
 | **M3** Mappa interattiva | ✅ **completo** | Selezione, costruzione traiettoria, anteprima, undo, HUD, log |
 | **M4** Motore azioni | ✅ **completo** | Tutte e 4 le tabelle trascritte e verificate; danno alle navi |
-| **M5** Battaglia | ❌ **non iniziato** | Regole studiate e documentate, nessun codice |
+| **M5** Battaglia | ✅ **completo** | 5 zone, cannoni, siluri, manovra, fumo, fuga, uscita |
 | **M6** Scenari | 🟡 **parziale** | 22 scenari importati e caricabili; mancano obiettivi, navi, condizioni di vittoria |
 
 ### Cosa è cambiato nell'ultima sessione
@@ -154,9 +154,7 @@ dal metodo con cui il reticolo è stato ricavato.
 
 ## Cosa manca, in ordine di importanza
 
-### 1. I porti rimanenti — *blocca M6*
-15 porti sono collegati al loro esagono. Mancano Narvik, St John's, Halifax,
-New York, Gibilterra, Africa, South America.
+### 1. Le navi — *l'ultimo dato mancante*
 
 Il metodo è già pronto e richiede solo di ripeterlo per regione:
 
