@@ -6,6 +6,39 @@
  "initiative": 0,
  "round": 1,
  "task_forces": [],
+ "battle_setup": {
+  "_note": "Scenario di sola Battaglia: le navi partono gia' schierate sulla Mappa di Battaglia, senza Traiettorie ne' Stazioni.",
+  "ships": [
+   {
+    "ship": "Bismarck",
+    "zone": "FAR",
+    "x": 3622,
+    "y": 1764,
+    "side": 0
+   },
+   {
+    "ship": "Preugen",
+    "zone": "FAR",
+    "x": 3398,
+    "y": 1755,
+    "side": 0
+   },
+   {
+    "ship": "Hood",
+    "zone": "FAR",
+    "x": 3580,
+    "y": 985,
+    "side": 1
+   },
+   {
+    "ship": "Pow",
+    "zone": "FAR",
+    "x": 3708,
+    "y": 985,
+    "side": 1
+   }
+  ]
+ },
  "info_triggers": [],
  "import_warnings": [],
  "briefing": {

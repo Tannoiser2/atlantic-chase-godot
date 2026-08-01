@@ -49,6 +49,12 @@ var scenario_ids: Array[String] = []
 var scenario_index: int = 0
 var scenario: Scenario = null
 
+## Tabella dei Punti Vittoria dello scenario in corso, e chi ci porta gli
+## eventi. Restano null finche' lo scenario non ha una tabella trascritta: in
+## quel caso si gioca lo stesso, semplicemente nessuno segna punti.
+var victory: Victory = null
+var vp_tracker: VictoryTracker = null
+
 var _messages: Array[String] = []
 
 
@@ -113,6 +119,8 @@ func _load_scenario_at(idx: int) -> void:
 	selected_tf = state.task_forces[0] if not state.task_forces.is_empty() else null
 	traj_layer.selected_tf_id = selected_tf.id if selected_tf else -1
 	log = CommandLog.new(state)
+	victory = Victory.from_scenario(scenario)
+	vp_tracker = VictoryTracker.new(victory, state)
 	_msg("Scenario: %s  -  %d Task Force, %d navi"
 		% [scenario.title, state.task_forces.size(), scenario.ship_count()])
 	if scenario.has_import_warnings():
@@ -121,6 +129,8 @@ func _load_scenario_at(idx: int) -> void:
 	_update_briefing()
 	_focus_selected()
 	_refresh()
+	if scenario.is_battle_scenario():
+		_open_scenario_battle()
 
 
 func _process(delta: float) -> void:
@@ -246,6 +256,16 @@ func _on_key(k: InputEventKey) -> void:
 			_declare_action("AIR_STRIKE")
 		KEY_4:
 			_declare_action("STEALTH_ATTACK")
+		KEY_5:
+			_declare_action("TRAJECTORY")
+		KEY_6:
+			_declare_action("COMPLETION")
+		KEY_7:
+			_declare_action("PASS")
+		KEY_8:
+			_declare_action("REORGANIZE")
+		KEY_9:
+			_declare_action("SIGNAL")
 		KEY_B:
 			_briefing_panel.visible = not _briefing_panel.visible
 		KEY_0:
@@ -273,6 +293,21 @@ func _declare_action(key: String) -> void:
 	if why != "":
 		_msg("%s: %s" % [String(engine.action(key).get("label", key)), why])
 		return
+
+	# Azioni che non si risolvono su una tabella e non hanno un bersaglio:
+	# hanno una procedura loro e prendono strade separate.
+	match key:
+		"COMPLETION":
+			await _do_completion()
+			return
+		"PASS":
+			await _do_pass()
+			return
+		"TRAJECTORY":
+			_msg("Traiettoria: trascina dalla Task Force selezionata per "
+				+ "disegnare la rotta, oppure clicca un esagono adiacente a "
+				+ "un capo. Il tasto destro toglie l'ultimo segmento.")
+			return
 
 	var enemies := state.forces_of(1 - selected_tf.side)
 	var target := await _pick_tf(enemies, "Task Force Bersaglio",
@@ -376,7 +411,23 @@ func _open_battle(kind_result: int, active: TaskForce, target: TaskForce,
 	bstate.active_tf = active
 	bstate.target_tf = target
 	bstate.hex = hex
-	var b := Battle.new(bstate, state.rng)
+	_show_battle(bstate)
+
+
+## I dodici mini-scenari partono direttamente qui: sono Battaglie gia'
+## schierate, senza una fase sulla mappa operazionale che le preceda.
+func _open_scenario_battle() -> void:
+	var bstate := scenario.make_battle_state(state.weather)
+	if bstate == null:
+		return
+	_msg("%s: Battaglia gia' schierata (%d navi contro %d)."
+		% [scenario.title, bstate.active_tf.ships.size(),
+			bstate.target_tf.ships.size()])
+	_show_battle(bstate)
+
+
+func _show_battle(bstate: BattleState) -> void:
+	var b := Battle.new(bstate, state.rng, vp_tracker)
 	b.start()
 
 	_battle_layer = CanvasLayer.new()
@@ -386,7 +437,8 @@ func _open_battle(kind_result: int, active: TaskForce, target: TaskForce,
 	_battle_layer.add_child(_battle_view)
 	_battle_view.setup(b)
 	_battle_view.closed.connect(_close_battle.bind(b))
-	_msg("%s aperta in %s." % [BattleState.KIND_LABELS[kind], str(hex)])
+	var where := " in %s" % str(bstate.hex) if bstate.hex != Vector2i.ZERO else ""
+	_msg("%s aperta%s." % [BattleState.KIND_LABELS[bstate.kind], where])
 
 
 func _close_battle(b: Battle) -> void:
@@ -624,6 +676,58 @@ func _resync_selection() -> void:
 
 # --------------------------------------------------------- Scorrere del Tempo --
 
+## Completamento (RB p.29): le navi entrano in porto e lasciano il gioco.
+## Se la Task Force tocca piu' di un porto amico, la scelta e' del giocatore.
+func _do_completion() -> void:
+	var opts := Completion.port_options(selected_tf, graph, _port_control())
+	if opts.is_empty():
+		_msg("Completamento: nessun porto amico raggiunto")
+		return
+
+	var chosen: Dictionary = opts[0]
+	if opts.size() > 1:
+		var choices: Array = []
+		for o in opts:
+			choices.append({"label": String(o["name"]),
+				"detail": "in %s" % String(o["country"])})
+		var i: int = await Choice.ask(self, "Completamento - %s"
+			% selected_tf.display_name(),
+			"La Task Force tocca piu' di un porto amico. In quale entra?",
+			choices)
+		if i < 0:
+			_msg("Completamento annullato")
+			return
+		chosen = opts[i]
+
+	var ships := selected_tf.ships.size()
+	var res := Completion.resolve(selected_tf, chosen, vp_tracker)
+	if not res["ok"]:
+		_msg("Completamento: %s" % String(res["error"]))
+		return
+	for line_v: Variant in res["log"]:
+		_msg(String(line_v))
+	_msg("%d navi in porto a %s." % [ships, String(chosen["name"])])
+	_resync_selection()
+	_refresh()
+
+
+## Passare (RB p.35): si designa una propria Traiettoria che effettua lo
+## Scorrere del Tempo, poi l'Iniziativa passa all'avversario e il conteggio
+## torna a zero. E' l'unica azione che si dichiara per cedere il turno.
+func _do_pass() -> void:
+	if not selected_tf.trajectory.is_station():
+		await _do_time_lapse()
+	else:
+		_msg("%s e' gia' una Stazione: nessuno Scorrere del Tempo."
+			% selected_tf.display_name())
+	state.initiative = 1 - state.initiative
+	state.initiative_count = 0
+	_msg("Passo. L'Iniziativa passa a %s; il conteggio torna a zero."
+		% ("Kriegsmarine" if state.initiative == TaskForce.Side.KRIEGSMARINE
+			else "Royal Navy"))
+	_refresh()
+
+
 func _do_time_lapse() -> void:
 	if selected_tf == null:
 		return
@@ -842,7 +946,9 @@ func _action_unavailable_reason(key: String) -> String:
 		return "sei in modalita' editor del grafo"
 	if selected_tf == null:
 		return "nessuna Task Force selezionata"
-	if _nearest_enemy(selected_tf) == null:
+	# Passare, Completamento e Traiettoria si dichiarano anche senza nemici in
+	# vista: pretendere un bersaglio le renderebbe indichiarabili
+	if ActionBar.needs_enemy(key) and _nearest_enemy(selected_tf) == null:
 		return "nessuna Task Force avversaria in gioco"
 	if not engine.is_verified(key):
 		return String(engine.action(key).get("verified_note",
@@ -851,7 +957,19 @@ func _action_unavailable_reason(key: String) -> String:
 	dec.action_key = key
 	dec.active = selected_tf
 	dec.target = _nearest_enemy(selected_tf)
-	return engine.legality_error(dec, state)
+	var err := engine.legality_error(dec, state)
+	if err != "":
+		return err
+	# il Completamento ha condizioni sue, che stanno nella regola e non nella
+	# tabella: porto amico raggiunto, non piu' di 6 segmenti (RB p.29)
+	if key == "COMPLETION":
+		return Completion.refusal(selected_tf, graph, _port_control())
+	return ""
+
+
+## Chi controlla i porti nello scenario in corso.
+func _port_control() -> Dictionary:
+	return scenario.port_control() if scenario != null else {}
 
 
 func _refresh_action_bar() -> void:

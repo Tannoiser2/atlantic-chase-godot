@@ -6,6 +6,7 @@
  "initiative": 0,
  "round": 1,
  "task_forces": [],
+ "battle_setup": null,
  "info_triggers": [],
  "import_warnings": []
 }

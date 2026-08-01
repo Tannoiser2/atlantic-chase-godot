@@ -6,6 +6,67 @@
  "initiative": 1,
  "round": 1,
  "task_forces": [],
+ "battle_setup": {
+  "_note": "Scenario di sola Battaglia: le navi partono gia' schierate sulla Mappa di Battaglia, senza Traiettorie ne' Stazioni.",
+  "ships": [
+   {
+    "ship": "Scharnhorst",
+    "zone": "FAR",
+    "x": 3622,
+    "y": 1831,
+    "side": 0
+   },
+   {
+    "ship": "Belfast",
+    "zone": "FAR",
+    "x": 3458,
+    "y": 915,
+    "side": 1
+   },
+   {
+    "ship": "Convoy x3",
+    "zone": "FAR",
+    "x": 3631,
+    "y": 922,
+    "side": 1
+   },
+   {
+    "ship": "DD Squadron",
+    "zone": "FAR",
+    "x": 3631,
+    "y": 922,
+    "side": 1
+   },
+   {
+    "ship": "Doy",
+    "zone": "FAR",
+    "x": 3877,
+    "y": 914,
+    "side": 1
+   },
+   {
+    "ship": "Fiji",
+    "zone": "FAR",
+    "x": 3967,
+    "y": 925,
+    "side": 1
+   },
+   {
+    "ship": "Norfolk",
+    "zone": "FAR",
+    "x": 3458,
+    "y": 915,
+    "side": 1
+   },
+   {
+    "ship": "Sheffield",
+    "zone": "FAR",
+    "x": 3458,
+    "y": 915,
+    "side": 1
+   }
+  ]
+ },
  "info_triggers": [],
  "import_warnings": [],
  "briefing": {

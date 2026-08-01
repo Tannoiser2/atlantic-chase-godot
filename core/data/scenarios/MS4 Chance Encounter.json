@@ -6,6 +6,39 @@
  "initiative": 0,
  "round": 1,
  "task_forces": [],
+ "battle_setup": {
+  "_note": "Scenario di sola Battaglia: le navi partono gia' schierate sulla Mappa di Battaglia, senza Traiettorie ne' Stazioni.",
+  "ships": [
+   {
+    "ship": "Gneisenau",
+    "zone": "FAR",
+    "x": 3685,
+    "y": 1754,
+    "side": 0
+   },
+   {
+    "ship": "Scharnhorst",
+    "zone": "FAR",
+    "x": 3482,
+    "y": 1760,
+    "side": 0
+   },
+   {
+    "ship": "DD Squadron",
+    "zone": "FAR",
+    "x": 3715,
+    "y": 955,
+    "side": 1
+   },
+   {
+    "ship": "Glorious",
+    "zone": "FAR",
+    "x": 3594,
+    "y": 957,
+    "side": 1
+   }
+  ]
+ },
  "info_triggers": [],
  "import_warnings": [],
  "briefing": {

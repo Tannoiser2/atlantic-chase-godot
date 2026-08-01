@@ -6,6 +6,46 @@
  "initiative": 0,
  "round": 1,
  "task_forces": [],
+ "battle_setup": {
+  "_note": "Scenario di sola Battaglia: le navi partono gia' schierate sulla Mappa di Battaglia, senza Traiettorie ne' Stazioni.",
+  "ships": [
+   {
+    "ship": "Bismarck",
+    "zone": "FAR",
+    "x": 3618,
+    "y": 1802,
+    "side": 0
+   },
+   {
+    "ship": "Dorsetshire",
+    "zone": "FAR",
+    "x": 3452,
+    "y": 981,
+    "side": 1
+   },
+   {
+    "ship": "Kgv",
+    "zone": "FAR",
+    "x": 3708,
+    "y": 982,
+    "side": 1
+   },
+   {
+    "ship": "Norfolk",
+    "zone": "FAR",
+    "x": 3847,
+    "y": 981,
+    "side": 1
+   },
+   {
+    "ship": "Rodney",
+    "zone": "FAR",
+    "x": 3581,
+    "y": 984,
+    "side": 1
+   }
+  ]
+ },
  "info_triggers": [],
  "import_warnings": [],
  "briefing": {

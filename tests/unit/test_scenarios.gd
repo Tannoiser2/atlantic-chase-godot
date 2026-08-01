@@ -17,6 +17,7 @@ func run() -> void:
 	test_briefings()
 	test_victory_points()
 	test_victory_table()
+	test_battle_scenarios()
 
 
 func test_list() -> void:
@@ -193,3 +194,73 @@ func test_victory_table() -> void:
 	var v2 := Victory.from_scenario(ms)
 	true_(v2.describe(GameState.new(graph, 1)).contains("non trascritta"),
 		"e il motore lo dice")
+
+
+## I dodici mini-scenari non sono partite sulla mappa operazionale: sono
+## Battaglie gia' schierate. Le navi partono dentro il pannello della Mappa di
+## Battaglia, senza Traiettorie ne' Stazioni - ed e' per questo che a lungo
+## sono sembrati "vuoti": l'importatore cercava rotte che non esistono.
+func test_battle_scenarios() -> void:
+	_begin("mini-scenari: Battaglie gia' schierate")
+	var ids := Scenario.list_ids()
+	var battle_ids: Array[String] = []
+	for id in ids:
+		if Scenario.load_by_id(id).is_battle_scenario():
+			battle_ids.append(id)
+	eq(battle_ids.size(), 12, "dodici mini-scenari con lo schieramento")
+
+	for id in battle_ids:
+		var sc := Scenario.load_by_id(id)
+		var bs := sc.make_battle_state()
+		ne(bs, null, "%s: la Battaglia si costruisce" % id)
+		true_(bs.active_tf.ships.size() > 0, "%s: il tedesco ha navi" % id)
+		true_(bs.target_tf.ships.size() > 0, "%s: il britannico ha navi" % id)
+		false_(sc.is_battle_scenario() and not sc.task_forces.is_empty(),
+			"%s: o Battaglia o mappa operazionale, non tutt'e due" % id)
+
+	# le coppie storiche devono tornare
+	var ms9 := Scenario.load_by_id("MS9 Sink the Bismarck").make_battle_state()
+	var km9: Array[String] = []
+	for s in ms9.active_tf.ships:
+		km9.append(s.name)
+	km9.sort()
+	eq(km9, ["Bismarck", "Preugen"] as Array[String],
+		"Stretto di Danimarca: Bismarck e Prinz Eugen")
+	var rn9: Array[String] = []
+	for s in ms9.target_tf.ships:
+		rn9.append(s.name)
+	rn9.sort()
+	eq(rn9, ["Hood", "Pow"] as Array[String], "contro Hood e Prince of Wales")
+
+	# MS1 e' Rio de la Plata: il Graf Spee contro tre incrociatori
+	var ms1 := Scenario.load_by_id("MS1 Cornered").make_battle_state()
+	eq(ms1.active_tf.ships.size(), 1, "un solo corsaro tedesco")
+	eq(ms1.active_tf.ships[0].name, "Graf Spee", "ed e' il Graf Spee")
+	eq(ms1.target_tf.ships.size(), 3, "contro tre incrociatori britannici")
+
+	# MS5 e' Mers-el-Kebir: britannici contro FRANCESI, senza una sola nave
+	# tedesca. E' il caso che rompe l'euristica "cerca i tedeschi".
+	var ms5 := Scenario.load_by_id("MS5 With Friends Like These")
+	var b5 := ms5.make_battle_state()
+	var fr := 0
+	for s in b5.active_tf.ships:
+		if s.nation == "FR":
+			fr += 1
+	eq(fr, 4, "le quattro navi francesi stanno dalla parte avversaria")
+	for s in b5.target_tf.ships:
+		eq(s.nation, "UK", "e dall'altra ci sono solo britannici")
+	false_(ms5.has_import_warnings(), "senza avvisi di import")
+
+	# le bande di partenza non sono tutte Lontane: in MS3 i britannici
+	# partono gia' in zona Vicina
+	var ms3 := Scenario.load_by_id("MS3 Norwegian Patrol").make_battle_state()
+	for s in ms3.target_tf.ships:
+		eq(s.battle_zone, BattleState.Zone.NEAR,
+			"%s parte in zona Vicina" % s.name)
+	for s in ms3.active_tf.ships:
+		eq(s.battle_zone, BattleState.Zone.FAR,
+			"%s parte in zona Lontana" % s.name)
+
+	# uno scenario operazionale non e' una Battaglia
+	false_(Scenario.load_by_id("Op5 Rheinubung").is_battle_scenario(),
+		"la Rheinubung si gioca sulla mappa")

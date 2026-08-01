@@ -39,6 +39,14 @@ var import_warnings: Array = []
 ## .vsav: tenerli distinti evita che una rigenerazione la cancelli.
 var victory_data: Dictionary = {}
 
+## Schieramento sulla Mappa di Battaglia, per i dodici mini-scenari.
+##
+## Quei dodici non sono partite sulla mappa operazionale: sono BATTAGLIE gia'
+## schierate. Le navi partono nelle sei bande Lontana/Vicina/Ravvicinata dei
+## due contendenti, senza Traiettorie ne' Stazioni - ed e' per questo che a
+## lungo sono sembrati "vuoti": l'importatore cercava rotte che non esistono.
+var battle_setup: Dictionary = {}
+
 var load_error: String = ""
 
 
@@ -80,9 +88,49 @@ func load_from(path: String) -> bool:
 	info_triggers = d.get("info_triggers", [])
 	briefing = d.get("briefing", {})
 	import_warnings = d.get("import_warnings", [])
+	var bs: Variant = d.get("battle_setup", null)
+	battle_setup = bs if typeof(bs) == TYPE_DICTIONARY else {}
 	title = String(briefing.get("title", id))
 	_load_victory()
 	return true
+
+
+## Questo scenario e' una Battaglia gia' schierata invece di una partita sulla
+## mappa operazionale?
+func is_battle_scenario() -> bool:
+	return not (battle_setup.get("ships", []) as Array).is_empty()
+
+
+## Costruisce la Battaglia iniziale del mini-scenario: due Task Force con le
+## navi gia' nelle rispettive bande. Ritorna null se non e' uno scenario di
+## Battaglia.
+func make_battle_state(weather_override: int = -1) -> BattleState:
+	if not is_battle_scenario():
+		return null
+	var bs := BattleState.new(BattleState.Kind.BATTLE,
+		weather if weather_override < 0 else weather_override)
+	var km := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
+	km.name = "Kriegsmarine"
+	var rn := TaskForce.new(2, TaskForce.Side.ROYAL_NAVY)
+	rn.name = "Royal Navy"
+	var zones := {"FAR": BattleState.Zone.FAR, "NEAR": BattleState.Zone.NEAR,
+		"CLOSE": BattleState.Zone.CLOSE}
+	for e_v: Variant in battle_setup.get("ships", []):
+		var e: Dictionary = e_v
+		var sh := ShipRoster.shared().make(String(e.get("ship", "")))
+		if sh == null:
+			sh = Ship.new(String(e.get("ship", "")))
+		sh.battle_zone = int(zones.get(String(e.get("zone", "FAR")),
+			BattleState.Zone.FAR))
+		if int(e.get("side", 1)) == TaskForce.Side.KRIEGSMARINE:
+			km.ships.append(sh)
+		else:
+			rn.ships.append(sh)
+	km.recompute_speed()
+	rn.recompute_speed()
+	bs.active_tf = km
+	bs.target_tf = rn
+	return bs
 
 
 func _load_victory() -> void:

@@ -26,12 +26,33 @@ var _act_buttons: Dictionary = {}     ## chiave azione -> Button
 var _undo_btn: Button
 var _redo_btn: Button
 
+## Tutte e nove le azioni del gioco, comprese quelle che non si possono ancora
+## dichiarare. Restano visibili e disabilitate, con il motivo nel tooltip:
+## nasconderle lascerebbe il giocatore a chiedersi dove sono finite, e a
+## dubitare che il gioco sia completo. Chi conosce Atlantic Chase le cerca.
+##
+## Il quarto campo dice se l'azione ha bisogno di una Task Force avversaria.
+## Passare, Completamento e Traiettoria si dichiarano anche da soli in mezzo
+## all'oceano, e pretendere un bersaglio le renderebbe indichiarabili.
 const ACTIONS := [
-	["ENGAGE", "Ingaggia", "1"],
-	["NAVAL_SEARCH", "Ricerca", "2"],
-	["AIR_STRIKE", "Aereo", "3"],
-	["STEALTH_ATTACK", "Furtivo", "4"],
+	["ENGAGE", "Ingaggia", "1", true],
+	["NAVAL_SEARCH", "Ricerca", "2", true],
+	["AIR_STRIKE", "Aereo", "3", true],
+	["STEALTH_ATTACK", "Furtivo", "4", true],
+	["TRAJECTORY", "Traiettoria", "5", false],
+	["COMPLETION", "Completamento", "6", false],
+	["PASS", "Passare", "7", false],
+	["REORGANIZE", "Riorganizza", "8", false],
+	["SIGNAL", "Segnali", "9", false],
 ]
+
+
+## L'azione ha bisogno di una Task Force avversaria in gioco?
+static func needs_enemy(key: String) -> bool:
+	for a in ACTIONS:
+		if String(a[0]) == key:
+			return bool(a[3])
+	return true
 
 
 func _ready() -> void:

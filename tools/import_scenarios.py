@@ -90,6 +90,15 @@ def load_ship_index():
             out[orig] = by_file[norm]
     return out
 
+def load_ship_nations():
+    """nome della nave nel ruolino -> nazione."""
+    ships_path = os.path.join(ROOT, "core", "data", "ships.json")
+    if not os.path.exists(ships_path):
+        return {}
+    return {s["name"]: s["nation"]
+            for s in json.load(open(ships_path))["ships"]}
+
+
 SIDE_OF_COLOR = {"GE": 0, "Brown": 1, "Tan": 1, "Red": 1}
 
 
@@ -185,10 +194,55 @@ def order_chain(hexes):
     return best[0], None
 
 
+# --- Mappa di Battaglia ------------------------------------------------------
+#
+# I dodici mini-scenari non sono partite sulla mappa operazionale: sono
+# BATTAGLIE gia' schierate. Le loro navi non stanno sui Task Force Display ne'
+# su una Traiettoria, stanno direttamente dentro il pannello della Mappa di
+# Battaglia stampato sulla mappa, nelle sei bande Lontana/Vicina/Ravvicinata
+# dei due contendenti. Per questo l'importatore, che cercava solo Traiettorie e
+# Stazioni, li trovava vuoti.
+#
+# Le quattro y sono i bordi del rettangolo bianco della Mappa di Battaglia,
+# misurati sull'immagine della mappa a risoluzione nativa cercando le righe
+# chiare lungo una colonna centrale del pannello: 1121, 1355, 1433, 1667.
+# La riga di mezzo (1394) divide le due meta' della banda Ravvicinata.
+BB_BOX = (3300, 850, 4150, 2050)      # x0, y0, x1, y1 del pannello
+BB_NEAR_TOP = 1121
+BB_CLOSE_TOP = 1355
+BB_CLOSE_MID = 1394
+BB_CLOSE_BOT = 1433
+BB_NEAR_BOT = 1667
+
+
+def battle_band(x, y):
+    """Banda e meta' del pannello per una pedina, o None se e' fuori.
+
+    Ritorna (zona, meta') con zona in FAR/NEAR/CLOSE e meta' 0 = lato in alto,
+    1 = lato in basso. Quale delle due meta' sia il tedesco lo dice la
+    nazionalita' delle navi, non la posizione: il pannello e' simmetrico.
+    """
+    x0, y0, x1, y1 = BB_BOX
+    if not (x0 <= x <= x1 and y0 <= y <= y1):
+        return None
+    if y < BB_NEAR_TOP:
+        return ("FAR", 0)
+    if y < BB_CLOSE_TOP:
+        return ("NEAR", 0)
+    if y < BB_CLOSE_MID:
+        return ("CLOSE", 0)
+    if y < BB_CLOSE_BOT:
+        return ("CLOSE", 1)
+    if y < BB_NEAR_BOT:
+        return ("NEAR", 1)
+    return ("FAR", 1)
+
+
 def main():
     o, e1, e2, Minv, playable, blocked = load_lattice()
     display_zones = load_display_zones()
     ship_names = load_ship_index()
+    ship_nations = load_ship_nations()
     files = sorted(f for f in os.listdir(os.path.join(REP, "vsav")) if f.endswith(".csv"))
     summary = []
 
@@ -217,6 +271,25 @@ def main():
                     segs[(mt.group(1), int(mt.group(2)))].append(h)
                 else:
                     stations[(ms.group(1), int(ms.group(2)))] = h
+
+        # --- navi schierate dentro la Mappa di Battaglia ---
+        battle_ships = []
+        with open(os.path.join(REP, "vsav", fn)) as fh:
+            for row in csv.DictReader(fh):
+                if row["map"] != "Main Map" or row["kind"] != "piece":
+                    continue
+                if not SHIP_RE.match(row["image"]):
+                    continue
+                band = battle_band(int(row["x"]), int(row["y"]))
+                if band is None:
+                    continue
+                nm = ship_names.get(row["image"])
+                if nm is None:
+                    unknown_ships.append(row["image"])
+                    continue
+                battle_ships.append({"ship": nm, "zone": band[0],
+                                     "half": band[1],
+                                     "x": int(row["x"]), "y": int(row["y"])})
 
         # --- navi e comandanti sui Task Force Display ---
         with open(os.path.join(REP, "vsav", fn)) as fh:
@@ -298,6 +371,45 @@ def main():
             problems.append("pedine nave non riconosciute: %s"
                             % ", ".join(sorted(set(unknown_ships))))
 
+        # Quale meta' del pannello sia di chi lo decide la NAZIONALITA' delle
+        # navi, non la posizione: il pannello e' simmetrico e il modulo mette
+        # i due contendenti ora sopra ora sotto.
+        #
+        # Il criterio e' "dove stanno i britannici", non "dove stanno i
+        # tedeschi": MS5 With Friends Like These e' Mers-el-Kebir, britannici
+        # contro FRANCESI, e non ha una sola nave tedesca. Cercando i tedeschi
+        # si finisce a tirare a indovinare; le navi con la bandiera britannica
+        # invece ci sono in tutti e dodici i mini-scenari.
+        battle_setup = None
+        if battle_ships and not tfs:
+            rn_score = {}
+            for b in battle_ships:
+                nat = ship_nations.get(b["ship"], "")
+                rn_score.setdefault(b["half"], 0)
+                if nat in ("UK", "US"):
+                    rn_score[b["half"]] += 1
+                elif nat == "GE":
+                    rn_score[b["half"]] -= 1
+            rn_half = max(rn_score, key=lambda h: rn_score[h]) if rn_score else 0
+            for b in battle_ships:
+                b["side"] = 1 if b["half"] == rn_half else 0
+                del b["half"]
+            if len(rn_score) < 2:
+                problems.append(
+                    "sulla Mappa di Battaglia tutte le navi stanno dalla "
+                    "stessa parte: schieramento da verificare a mano")
+            elif max(rn_score.values()) <= 0:
+                problems.append(
+                    "sulla Mappa di Battaglia non ci sono navi britanniche "
+                    "in nessuna delle due meta': lati assegnati a occhio")
+            battle_setup = {
+                "_note": "Scenario di sola Battaglia: le navi partono gia' "
+                         "schierate sulla Mappa di Battaglia, senza "
+                         "Traiettorie ne' Stazioni.",
+                "ships": sorted(battle_ships,
+                                key=lambda b: (b["side"], b["zone"], b["ship"])),
+            }
+
         doc = {
             "name": stem,
             "reinforcements": {k: sorted(v) for k, v in reinforcements.items()},
@@ -306,12 +418,15 @@ def main():
             "initiative": 0,
             "round": 1,
             "task_forces": tfs,
+            "battle_setup": battle_setup,
             "info_triggers": [],
             "import_warnings": problems,
         }
         json.dump(doc, open(os.path.join(OUT, stem + ".json"), "w"), indent=1)
         n_seg = sum(len(v) for v in segs.values())
         n_ships = sum(len(v) for v in tf_ships.values())
+        if battle_setup:
+            n_ships = len(battle_setup["ships"])
         summary.append({"scenario": stem, "task_forces": len(tfs),
                         "segments": n_seg, "ships": n_ships, "off_map": off_map,
                         "warnings": problems})

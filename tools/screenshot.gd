@@ -18,6 +18,12 @@ func _initialize() -> void:
 	var scene_path := "res://ui/main.tscn"
 	if args.size() >= 2 and args[1] == "splash":
 		scene_path = "res://ui/splash/splash.tscn"
+	# "scen:<id>" sceglie lo scenario da fotografare, come farebbe la
+	# schermata iniziale: serve per verificare i mini-scenari, che aprono
+	# subito la Mappa di Battaglia
+	for a in args:
+		if a.begins_with("scen:"):
+			Session.scenario_id = a.substr(5)
 	var packed: PackedScene = load(scene_path)
 	_root_node = packed.instantiate()
 	root.add_child(_root_node)
