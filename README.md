@@ -15,15 +15,26 @@ e **non sostituisce l'acquisto del gioco**. È un progetto amatoriale e senza
 scopo di lucro, nato come strumento personale per giocare a una copia del gioco
 posseduta.
 
-**Questo repository è PRIVATO**, e per questo contiene anche la mappa, le
-pedine e i regolamenti tradotti, per comodità d'uso personale. Sono tutti
-materiale © GMT Games (la traduzione italiana di G. Sorio riporta *"PER SOLO
-USO PERSONALE – vietata la vendita"*).
+### ⚠️ Questo repository contiene materiale © GMT Games
 
-**Se un giorno lo rendi pubblico**, rimetti prima le righe indicate in
-`.gitignore` per escludere `assets/`, `docs/regolamento/` e `reports/*.png`: un
-repository pubblico è distribuzione a chiunque, a prescindere dall'uso che ne
-fa il proprietario.
+Oltre al codice ci sono la **mappa**, le **pedine** e i **regolamenti**:
+
+| cartella | contenuto | |
+|---|---|---|
+| `assets/boards`, `assets/counters` | mappa e pedine estratte dal modulo VASSAL | © GMT Games |
+| `docs/regolamento` | 2 fascicoli scenari GMT in inglese, integrali | © GMT Games |
+| `docs/regolamento` | 6 traduzioni italiane di G. Sorio | *"PER SOLO USO PERSONALE – vietata la vendita"* |
+
+Le sole immagini **non** di GMT sono quelle in `assets/art/`, generate in
+locale con Stable Diffusion (vedi *Illustrazioni degli scenari*).
+
+**Se il repository è pubblico, quel materiale è distribuito a chiunque**, a
+prescindere dall'uso che ne fa il proprietario — e le traduzioni dicono
+esplicitamente il contrario. Per tornare a un repository di solo codice:
+rimettere in `.gitignore` le righe per `assets/boards`, `assets/counters`,
+`docs/regolamento/` e `reports/*.png`, e ripulire la storia con
+`git filter-repo`. Chi possiede il gioco si rigenera mappa e pedine dal
+proprio modulo VASSAL con `tools/rebuild_all.sh`.
 
 **Se GMT Games chiede la rimozione di questo repository o di parte del suo
 contenuto, va rimosso senza discutere.** Per giocare ad Atlantic Chase,
@@ -55,6 +66,20 @@ sh tools/rebuild_all.sh
 Rifà l'intera catena: calibrazione del reticolo, decodifica dei 22 salvataggi,
 grafo della mappa, scenari, asset e ruolino navi. Serve la cartella `images/`
 del modulo VASSAL nella directory **superiore** a questa.
+
+### Illustrazioni degli scenari
+
+Le miniature del briefing e le icone delle azioni sono **generate in locale**
+con ComfyUI (SDXL), non ritagliate dal materiale GMT:
+
+```bash
+tools/.venv/bin/python tools/make_art.py
+```
+
+Serve ComfyUI avviato su `127.0.0.1:8188`. Ogni immagine ha un **seme fisso**
+derivato dal suo nome: rigenerando si riottiene la stessa immagine, e cambiare
+il prompt di uno scenario non ridisegna gli altri. Le immagini già presenti
+non vengono rifatte; per rigenerarne una, si cancella il suo file.
 
 ### App per macOS
 
@@ -110,7 +135,7 @@ gli header di cross-origin isolation e basta un server statico banale.
 godot --headless --path . --script res://tests/run_tests.gd
 ```
 
-1048 verifiche su 9 suite. Esce con codice 1 al primo fallimento, quindi è
+1113 verifiche su 9 suite. Esce con codice 1 al primo fallimento, quindi è
 usabile direttamente in CI.
 
 ---

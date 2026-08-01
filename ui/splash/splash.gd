@@ -11,6 +11,10 @@ const GAME_SCENE := "res://ui/main.tscn"
 
 var _list: ItemList
 var _brief: RichTextLabel
+
+## Miniatura dello scenario. Manca per gli scenari senza illustrazione
+## generata, e in quel caso sparisce invece di lasciare un riquadro vuoto.
+var _art: TextureRect
 var _start_btn: Button
 var _ids: Array[String] = []
 
@@ -70,11 +74,25 @@ func _build() -> void:
 	_list.item_activated.connect(func(_i: int) -> void: _start())
 	body.add_child(_list)
 
+	# colonna del briefing: miniatura in cima, testo sotto
+	var briefcol := VBoxContainer.new()
+	briefcol.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	briefcol.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	briefcol.add_theme_constant_override("separation", 10)
+	body.add_child(briefcol)
+
+	_art = TextureRect.new()
+	_art.custom_minimum_size = Vector2(0, 200)
+	_art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	_art.visible = false
+	briefcol.add_child(_art)
+
 	var briefpanel := PanelContainer.new()
 	briefpanel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	briefpanel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	briefpanel.add_theme_stylebox_override("panel", _panel_style())
-	body.add_child(briefpanel)
+	briefcol.add_child(briefpanel)
 	_brief = RichTextLabel.new()
 	_brief.bbcode_enabled = true
 	briefpanel.add_child(_brief)
@@ -139,6 +157,7 @@ func _on_selected(index: int) -> void:
 	if index < 0 or index >= _ids.size():
 		return
 	var sc := Scenario.load_by_id(_ids[index])
+	_show_art(_ids[index])
 	var txt := sc.briefing_text()
 	txt += "\n\n[b]SCHIERAMENTO[/b]\n%d Task Force, %d navi" % [
 		sc.task_forces.size(), sc.ship_count()]
@@ -149,6 +168,20 @@ func _on_selected(index: int) -> void:
 		for w_v: Variant in sc.import_warnings:
 			txt += "\n  " + String(w_v)
 	_brief.text = txt
+
+
+const ART_DIR := "res://assets/art/scenarios/"
+
+
+func _show_art(scenario_id: String) -> void:
+	if _art == null:
+		return
+	var path := ART_DIR + scenario_id.replace(" ", "_") + ".png"
+	if not ResourceLoader.exists(path):
+		_art.visible = false
+		return
+	_art.texture = load(path)
+	_art.visible = true
 
 
 func _start() -> void:

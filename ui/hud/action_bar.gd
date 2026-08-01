@@ -63,6 +63,7 @@ func _ready() -> void:
 
 	for a in ACTIONS:
 		var b := _mk(row, "%s (%s)" % [a[1], a[2]])
+		_set_icon(b, String(a[0]))
 		b.pressed.connect(func() -> void: action_requested.emit(String(a[0])))
 		_act_buttons[a[0]] = b
 
@@ -90,6 +91,22 @@ func _ready() -> void:
 	h.tooltip_text = "Elenco dei comandi (F1)"
 	h.pressed.connect(func() -> void: help_toggled.emit())
 	_mk(row, "Menu").pressed.connect(func() -> void: menu_requested.emit())
+
+
+const ICON_DIR := "res://assets/art/actions/"
+
+
+## Icona dell'azione, se e' stata generata. Il testo resta: l'icona lo
+## accompagna, non lo sostituisce. Un pulsante con la sola immagine costringe
+## a indovinare, e queste nove azioni non si indovinano.
+func _set_icon(b: Button, key: String) -> void:
+	var path := ICON_DIR + key + ".png"
+	if not ResourceLoader.exists(path):
+		return
+	b.icon = load(path)
+	b.expand_icon = true
+	b.add_theme_constant_override("icon_max_width", 22)
+	b.add_theme_constant_override("h_separation", 6)
 
 
 func _mk(parent: Control, text: String) -> Button:

@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **1048 verifiche, 9 suite, headless.**
+Tutti i test passano: **1113 verifiche, 9 suite, headless.**
 
 ---
 
@@ -21,6 +21,30 @@ Tutti i test passano: **1048 verifiche, 9 suite, headless.**
 | **M7** Vittoria | 🟡 **quasi completo** | Le 9 Operazioni hanno la tabella eseguibile e i punti arrivano al segnapunti; mancano i 12 mini-scenari e i 15 solitari |
 
 ### Cosa è cambiato nell'ultima sessione
+
+- **I dodici mini-scenari non erano vuoti: erano Battaglie.** Sembravano tutti
+  *"0 TF, 0 navi"*, e la spiegazione comoda era che il modulo VASSAL non li
+  avesse schierati. Falso: le navi ci sono, ma piazzate **dentro il pannello
+  della Mappa di Battaglia** stampato sulla mappa. Non sono partite sulla mappa
+  operazionale, sono battaglie già schierate — non hanno Traiettorie né
+  Stazioni perché non ne hanno bisogno, e l'importatore cercava rotte che non
+  esistono. Le coppie che ne escono sono quelle storiche: Graf Spee contro
+  Achilles, Ajax ed Exeter; Bismarck e Prinz Eugen contro Hood e Prince of
+  Wales; Scharnhorst contro Duke of York.
+- **Tutte e nove le azioni nella barra.** Se ne vedevano quattro: le altre
+  cinque non erano nascoste di proposito, non erano state messe. Ora ci sono
+  tutte, e quelle non ancora dichiarabili restano **visibili e disabilitate**
+  con il motivo nel tooltip. *Completamento* e *Passare* funzionano;
+  *Riorganizza* e *Segnali* aspettano che le loro regole siano trascritte.
+- **Il tracciatore dei VP è collegato all'interfaccia**: fino a ieri i punti si
+  segnavano solo nei test.
+- **App nativa per macOS** (`tools/build_macos.sh`), universale e firmata, con
+  la quarantena tolta automaticamente.
+- **Illustrazioni generate in locale** con ComfyUI/SDXL: una miniatura per
+  scenario nel briefing, un'icona per azione sui pulsanti. Seme fisso per
+  nome, così rigenerare non ridisegna quello che non è cambiato.
+
+### Cosa era cambiato nella sessione precedente
 
 - **Tutte e nove le tabelle di Vittoria delle Operazioni**, trascritte
   dall'edizione **inglese** del fascicolo per 2 giocatori. L'italiana perde le
