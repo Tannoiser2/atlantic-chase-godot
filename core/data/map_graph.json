@@ -5915,7 +5915,88 @@
    "where": "Islanda, versante est"
   }
  ],
- "ports": [],
+ "ports": [
+  {
+   "name": "Scapa Flow",
+   "box": "Scapa Flow Box",
+   "nation": "UK",
+   "q": 15,
+   "r": -5,
+   "dot_px": [
+    2497,
+    1082
+   ]
+  },
+  {
+   "name": "Methil",
+   "box": "Methil Box",
+   "nation": "UK",
+   "q": 15,
+   "r": -5,
+   "dot_px": [
+    2496,
+    1208
+   ],
+   "note": "il pallino e' vicino al confine 15,-5 | 15,-4; cade sopra la freccia 'not adjacent', quindi appartiene a 15,-5"
+  },
+  {
+   "name": "Clyde",
+   "box": "Clyde/Liverpool Box",
+   "nation": "UK",
+   "q": 15,
+   "r": -4,
+   "dot_px": [
+    2392,
+    1286
+   ]
+  },
+  {
+   "name": "Liverpool",
+   "box": "Clyde/Liverpool Box",
+   "nation": "UK",
+   "q": 15,
+   "r": -4,
+   "dot_px": [
+    2417,
+    1405
+   ],
+   "note": "condivide la Casella con Clyde, ed entrambi stanno nello stesso esagono"
+  },
+  {
+   "name": "Portsmouth",
+   "box": "Portsmouth Box",
+   "nation": "UK",
+   "q": 16,
+   "r": -3,
+   "dot_px": [
+    2454,
+    1604
+   ]
+  },
+  {
+   "name": "Wilhelmshaven",
+   "box": "Wilhelmshaven Box",
+   "nation": "GE",
+   "q": 17,
+   "r": -5,
+   "dot_px": [
+    2844,
+    1464
+   ]
+  },
+  {
+   "name": "Trondheim",
+   "box": "Trondheim Box",
+   "nation": "NO",
+   "q": 17,
+   "r": -8,
+   "dot_px": [
+    2930,
+    843
+   ],
+   "note": "neutrale nel 1939 e in alcuni scenari del 1940, poi tedesco"
+  }
+ ],
  "notes": [
   "blocked_edges e ports sono vuoti: vanno completati con tools/map_editor",
   "le frecce 'not adjacent' sulla mappa negano l'adiacenza attraverso la terra"

@@ -53,7 +53,23 @@ def main():
             restricted.append(e)
     g["restricted_edges"] = restricted
 
-    g["ports"] = a.get("ports", {}).get("entries", [])
+    zones = None
+    zpath = os.path.join(ROOT, "reports", "zones.json")
+    if os.path.exists(zpath):
+        zones = {z["name"] for z in json.load(open(zpath)) if z["map"] == "Main Map"}
+
+    ports = []
+    for p in a.get("ports", {}).get("entries", []):
+        key = (p["q"], p["r"])
+        if key not in play:
+            problems.append("porto %s: esagono %s non e' nell'area di gioco"
+                            % (p["name"], key))
+            continue
+        if zones is not None and p.get("box") and p["box"] not in zones:
+            problems.append("porto %s: la Casella '%s' non esiste fra le Zone del modulo"
+                            % (p["name"], p["box"]))
+        ports.append(p)
+    g["ports"] = ports
 
     json.dump(g, open(GRAPH, "w"), indent=1)
 

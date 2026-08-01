@@ -1,7 +1,7 @@
-# Stato del lavoro — sessione notturna
+# Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **442 verifiche, 5 suite, headless.**
+Tutti i test passano: **556 verifiche, 5 suite, headless.**
 
 ---
 
@@ -12,12 +12,32 @@ Tutti i test passano: **442 verifiche, 5 suite, headless.**
 | **M0** Fondamenta | ✅ **completo** | Progetto Godot 4.7, mappa in 15 tile, camera, pipeline asset, runner di test |
 | **M1a** Calibrazione reticolo | ✅ **completo** | Validato al 100% contro le pedine ufficiali |
 | **M1b** Estrazione dati | ✅ **completo** | 22 `.vsav` decodificati, 70 zone, terreno classificato |
-| **M1c** Grafo + editor | 🟡 **quasi completo** | Grafo generato e funzionante; editor operativo; mancano i lati "not adjacent" e i porti |
+| **M1c** Grafo + editor | ✅ **completo** | 156 esagoni, 9 lati "not adjacent", Canale di Kiel; editor operativo |
 | **M2** Core regole | ✅ **completo** | Traiettoria, Tempo, Totale, Interruzione, undo, RNG — tutto testato |
 | **M3** Mappa interattiva | ✅ **completo** | Selezione, costruzione traiettoria, anteprima, undo, HUD, log |
-| **M4** Motore azioni | 🟡 **parziale** | Pipeline completa; 1 tabella su 4 verificata, 1 parziale, 2 da trascrivere |
+| **M4** Motore azioni | ✅ **completo** | Tutte e 4 le tabelle trascritte e verificate; danno alle navi |
 | **M5** Battaglia | ❌ **non iniziato** | Regole studiate e documentate, nessun codice |
 | **M6** Scenari | 🟡 **parziale** | 22 scenari importati e caricabili; mancano obiettivi, navi, condizioni di vittoria |
+
+### Cosa è cambiato nell'ultima sessione
+
+- **M4 chiuso.** Le quattro tabelle azione (Ingaggiare, Ricerca Navale, Attacco
+  Aereo, Attacco Furtivo) sono state lette dalla mappa a ingrandimento 5–6× e
+  trascritte per intero: 128 celle. Le 21 celle della Ricerca Navale che avevo
+  lasciato dubbie sono confermate — a quell'ingrandimento la barra centrale
+  bianca di *In Anticipo o In Ritardo* si distingue nettamente dalle tre barre
+  rosse di *Seguire*.
+- **Modello nave** (`core/state/ship.gd`): *Danneggiato* gira la pedina e
+  affonda alla seconda volta, i Colpi restano, Convogli e Squadroni DD non si
+  danneggiano (un Danno = 2 Colpi) e sono distrutti a 4 Colpi.
+- **9 frecce "not adjacent"** trascritte (Isole Britanniche, Irlanda, Bretagna,
+  Islanda) più il **Canale di Kiel** riservato alla Kriegsmarine. Ora una Task
+  Force non può più attraversare la Gran Bretagna.
+- **Area giocabile corretta**: rimossi 15 esagoni oltre la cornice stampata,
+  incluso il caso che il criterio automatico sbagliava (a est di Kiel, sul
+  pannello della Battaglia). Da 171 a **156 esagoni**.
+- **7 porti** collegati al loro esagono, con i nomi delle Caselle verificati
+  contro le Zone del modulo VASSAL.
 
 ---
 
@@ -112,33 +132,32 @@ dal metodo con cui il reticolo è stato ricavato.
 
 ## Cosa manca, in ordine di importanza
 
-### 1. Le tabelle azione mancanti — *blocca M4*
-`Attacco Aereo` e `Attacco Furtivo` non sono trascritte; della `Ricerca Navale`
-è certa solo la colonna 0-4. Il problema sono i simboli a barre
-(In Anticipo/In Ritardo contro Seguire), che a 120 dpi non sempre si contano con
-sicurezza. **Serve la mappa fisica o una scansione migliore.** Le celle dubbie
-sono elencate una per una in `actions.json → NAVAL_SEARCH.unverified_cells`, e
-il motore le segnala quando le usa.
+### 1. I porti rimanenti — *blocca M6*
+7 porti su ~20 sono collegati al loro esagono. Mancano Kiel, Brest,
+St Nazaire/Bordeaux, Bergen, Narvik, Hvalfjordur, St John's, Halifax, New York,
+Gibilterra, Murmansk, Archangel, Africa, South America.
 
-### 2. I lati "not adjacent" — *correttezza del grafo*
-La mappa stampa frecce "not adjacent" che negano il passaggio attraverso la
-terraferma (Firth of Forth, Irlanda, Galles, Bristol Channel, e altre). Senza di
-esse una Task Force può attraversare la Gran Bretagna. `blocked_edges` è
-**vuoto**. L'editor c'è ed è pronto: premi **E**, clic destro su un esagono,
-Shift+clic sul vicino, **Ctrl+S**. Stimo 20-30 minuti guardando la mappa.
+Il metodo è già pronto e richiede solo di ripeterlo per regione:
 
-### 3. I porti — *blocca M6*
-I 20 box porto sono estratti con i loro poligoni esatti dal modulo, ma manca il
-collegamento box → esagono di sbocco. Senza, le regole "un segmento non può
-stare in una Casella Porto" e il Completamento non sono verificabili.
+```bash
+tools/.venv/bin/python tools/label_hexes.py <x0> <y0> <x1> <y1> out.png 2.4
+```
 
-### 4. Le navi
-`ships.json` non esiste. Le statistiche (velocità, cannoni, colpi) sono stampate
-sulle pedine e non sono estraibili in modo affidabile via OCR. Vanno trascritte
-a mano dal fascicolo Scenari, oppure lette dai libretti. Per ora ogni TF ha
-velocità "media" di default.
+produce un ritaglio della mappa con le coordinate `q,r` stampate sui centri;
+si legge in quale esagono cade il pallino del porto e si aggiunge la voce a
+`core/data/map_annotations.json`, poi `tools/apply_annotations.py` valida e
+applica. Attenzione ai pallini vicini a un lato: va guardato da che parte del
+confine cadono, non solo la distanza dal centro (è il caso di Methil).
 
-### 5. M5 Battaglia
+### 2. Le navi
+Il modello `Ship` esiste e le regole di danno sono implementate e testate, ma
+non c'è un `ships.json`: le statistiche (velocità, cannoni) sono stampate sulle
+pedine e non sono estraibili in modo affidabile via OCR. Vanno trascritte a mano
+dai fascicoli Scenari. Finché mancano, ogni TF ha velocità "media" di default e
+i risultati di Colpo dicono esplicitamente "la TF non ha ancora un elenco navi"
+invece di fingere un effetto.
+
+### 3. M5 Battaglia
 Nessun codice. Le regole però sono già studiate e annotate in `actions.json`:
 5 zone (Lontano/Vicino/Close/Vicino/Lontano), 3 round con meteo buono e 2 con
 avverso, 1 round per la Battaglia Limitata, e le regole di piazzamento per
@@ -148,12 +167,11 @@ Battaglia e Sorpresa.
 
 ## Una nota sull'ambito
 
-Ieri sera avevi chiesto M1–M3, poi M4–M6. M1–M3 sono sostanzialmente fatti e
-testati. M4 ha l'impalcatura completa ma è alimentato da dati incompleti, e il
-collo di bottiglia non è il codice: è la **leggibilità delle tabelle stampate**.
-Con una scansione decente della mappa, o con la mappa fisica davanti, si
-completa in un paio d'ore. M5 e M6 restano lavoro vero, nell'ordine di grandezza
-già indicato dal piano.
+M0–M4 sono chiusi e testati. Il timore della sessione precedente — che le
+tabelle stampate non fossero leggibili a 120 dpi — si è rivelato infondato:
+bastava ingrandire di 5–6× e ritagliare cella per cella invece di leggere la
+tabella intera. Nessuna cella è stata indovinata.
 
-Preferisco dirtelo così, piuttosto che consegnarti quattro tabelle indovinate
-che sembrano funzionare e falsano ogni partita.
+Restano M5 (Battaglia) e il completamento di M6, che sono lavoro vero
+nell'ordine di grandezza già indicato dal piano, più le due liste di dati da
+trascrivere a mano (porti rimanenti, statistiche delle navi).

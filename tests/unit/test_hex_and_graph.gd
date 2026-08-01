@@ -23,6 +23,7 @@ func run() -> void:
 	test_blocked_edges()
 	test_real_not_adjacent_arrows()
 	test_kiel_canal()
+	test_ports()
 
 
 func test_graph_loads() -> void:
@@ -176,3 +177,42 @@ func test_kiel_canal() -> void:
 		.contains("riservato"), "una TF britannica no")
 	eq(t.extend_error(b, 1, graph, {}), "",
 		"senza indicare la nazione il vincolo non si applica (usato dall'editor)")
+
+
+## Porti trascritti finora. RB p.13: un porto stampato appartiene a un esagono
+## ed e' collegato a una Casella Porto.
+func test_ports() -> void:
+	_begin("porti collegati agli esagoni")
+	var expected := {
+		"Scapa Flow": Vector2i(15, -5),
+		"Methil": Vector2i(15, -5),
+		"Clyde": Vector2i(15, -4),
+		"Liverpool": Vector2i(15, -4),
+		"Portsmouth": Vector2i(16, -3),
+		"Wilhelmshaven": Vector2i(17, -5),
+		"Trondheim": Vector2i(17, -8),
+	}
+	for name_v: Variant in expected.keys():
+		var name := String(name_v)
+		var h: Vector2i = expected[name]
+		eq(graph.port_hex(name), h, "%s sta in %s" % [name, str(h)])
+		true_(graph.has_hex(h), "%s: l'esagono e' giocabile" % name)
+
+	# piu' porti possono condividere un esagono: Clyde e Liverpool hanno
+	# perfino la stessa Casella nel modulo VASSAL
+	var shared := graph.ports_in(Vector2i(15, -4))
+	true_(shared.has("Clyde") and shared.has("Liverpool"),
+		"Clyde e Liverpool condividono l'esagono 15,-4")
+	eq(graph.port_hex("Porto Inesistente"), Vector2i.MAX, "porto sconosciuto")
+
+	# RB p.15: un segmento non puo' stare in una Casella Porto (una Stazione si')
+	var t := Trajectory.new()
+	t.station_hex = Vector2i(15, -5)
+	var nb := graph.adjacent_hexes(Vector2i(15, -5))
+	if nb.is_empty():
+		return
+	var ports := {nb[0]: "Scapa Flow Box"}
+	true_(t.extend_error(nb[0], 1, graph, ports).contains("Porto"),
+		"il segmento e' rifiutato nella Casella Porto")
+	eq(t.extend_error(nb[0], 1, graph, {}), "",
+		"lo stesso esagono e' legale fuori dalla Casella")

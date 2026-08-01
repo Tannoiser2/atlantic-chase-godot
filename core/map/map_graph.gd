@@ -121,9 +121,32 @@ func _apply(d: Dictionary) -> bool:
 	ports.clear()
 	for p_v: Variant in d.get("ports", []):
 		var p: Dictionary = p_v
-		ports[String(p["name"])] = p
+		var rec := p.duplicate()
+		rec["hex"] = Vector2i(int(p.get("q", 0)), int(p.get("r", 0)))
+		ports[String(p["name"])] = rec
 
 	return true
+
+
+## L'esagono di un porto, o Vector2i.MAX se sconosciuto.
+func port_hex(name: String) -> Vector2i:
+	if ports.has(name):
+		return (ports[name] as Dictionary)["hex"]
+	return Vector2i.MAX
+
+
+## Tutti i porti che stanno in un esagono (piu' porti possono condividerlo:
+## Clyde e Liverpool stanno entrambi in 15,-4).
+func ports_in(h: Vector2i) -> Array[String]:
+	var out: Array[String] = []
+	for k_v: Variant in ports.keys():
+		if (ports[k_v] as Dictionary)["hex"] == h:
+			out.append(String(k_v))
+	return out
+
+
+func port_count() -> int:
+	return ports.size()
 
 
 func _compute_inverse() -> void:
