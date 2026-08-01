@@ -194,6 +194,11 @@ func test_ports() -> void:
 		"Brest": Vector2i(15, -2),
 		"St. Nazaire": Vector2i(16, -2),
 		"Bordeaux": Vector2i(16, -2),
+		"Kiel": Vector2i(18, -6),
+		"Bergen": Vector2i(17, -6),
+		"Hvalfjordur": Vector2i(13, -6),
+		"Murmansk": Vector2i(20, -12),
+		"Archangel": Vector2i(22, -13),
 	}
 	for name_v: Variant in expected.keys():
 		var name := String(name_v)

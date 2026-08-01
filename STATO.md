@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **556 verifiche, 5 suite, headless.**
+Tutti i test passano: **577 verifiche, 5 suite, headless.**
 
 ---
 
@@ -36,8 +36,15 @@ Tutti i test passano: **556 verifiche, 5 suite, headless.**
 - **Area giocabile corretta**: rimossi 15 esagoni oltre la cornice stampata,
   incluso il caso che il criterio automatico sbagliava (a est di Kiel, sul
   pannello della Battaglia). Da 171 a **156 esagoni**.
-- **7 porti** collegati al loro esagono, con i nomi delle Caselle verificati
+- **15 porti** collegati al loro esagono, con i nomi delle Caselle verificati
   contro le Zone del modulo VASSAL.
+- **Corretta una freccia che avevo attribuito al lato sbagliato.** L'esagono
+  16,-2 (St. Nazaire e Bordeaux) era stato scartato come "terra piena"; non
+  essendo nel grafo, lo strumento di etichettatura non ne mostrava i lati e la
+  freccia della Bretagna era finita sul lato etichettato più vicino. Ora
+  `label_hexes.py --all` etichetta tutto il reticolo, e la freccia è sul lato
+  giusto: `16,-3 | 16,-2`, che impedisce di tagliare la Bretagna obbligando a
+  girare al largo di Brest.
 
 ---
 
@@ -79,7 +86,7 @@ numero uno del piano. È risolto:
 | passo centro-centro | 213.50 px |
 | rotazione | 44.28° |
 | origine | (1745.00, 1692.00) |
-| esagoni giocabili | 156 |
+| esagoni giocabili | 157 |
 
 Il reticolo è **ruotato di ~44°**: GMT ha inclinato la griglia per adattarla
 alla geografia, quindi le formule standard non si applicano.
@@ -148,9 +155,8 @@ dal metodo con cui il reticolo è stato ricavato.
 ## Cosa manca, in ordine di importanza
 
 ### 1. I porti rimanenti — *blocca M6*
-7 porti su ~20 sono collegati al loro esagono. Mancano Kiel, Brest,
-St Nazaire/Bordeaux, Bergen, Narvik, Hvalfjordur, St John's, Halifax, New York,
-Gibilterra, Murmansk, Archangel, Africa, South America.
+15 porti sono collegati al loro esagono. Mancano Narvik, St John's, Halifax,
+New York, Gibilterra, Africa, South America.
 
 Il metodo è già pronto e richiede solo di ripeterlo per regione:
 
@@ -161,8 +167,18 @@ tools/.venv/bin/python tools/label_hexes.py <x0> <y0> <x1> <y1> out.png 2.4
 produce un ritaglio della mappa con le coordinate `q,r` stampate sui centri;
 si legge in quale esagono cade il pallino del porto e si aggiunge la voce a
 `core/data/map_annotations.json`, poi `tools/apply_annotations.py` valida e
-applica. Attenzione ai pallini vicini a un lato: va guardato da che parte del
-confine cadono, non solo la distanza dal centro (è il caso di Methil).
+applica. Due avvertenze, entrambe imparate sbagliando:
+
+- **usare sempre `--all`**, che etichetta tutto il reticolo e non solo gli
+  esagoni giocabili: altrimenti un esagono di terraferma assente dal grafo fa
+  attribuire frecce e porti al vicino sbagliato;
+- per i pallini vicini a un lato va guardato **da che parte del confine
+  cadono**, non solo la distanza dal centro (è il caso di Methil, a 105 px dal
+  centro contro un apotema di 107).
+
+Attenzione anche al tipo: Kiel, Archangel, Africa, South America e New York
+sono **strisce porto**, non pallini — la legenda dice *"Port Strip (each hex is
+a port)"*, quindi vanno calcolati gli esagoni che la striscia tocca.
 
 ### 2. Le navi
 Il modello `Ship` esiste e le regole di danno sono implementate e testate, ma

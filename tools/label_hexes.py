@@ -6,7 +6,13 @@ Serve per trascrivere a mano i dati che solo un occhio puo' leggere: le frecce
 "not adjacent" stampate sulla mappa, e i porti. Con le etichette q,r visibili
 si legge direttamente quale coppia di esagoni va negata.
 
-    python tools/label_hexes.py <x0> <y0> <x1> <y1> <output.png> [scala]
+    python tools/label_hexes.py <x0> <y0> <x1> <y1> <output.png> [scala] [--all]
+
+--all etichetta TUTTI gli esagoni del reticolo, non solo quelli giocabili.
+Serve sempre quando si lavora vicino alla terraferma: se un esagono non e' nel
+grafo i suoi lati non compaiono, e una freccia "not adjacent" finisce
+attribuita al lato etichettato piu' vicino invece che a quello giusto. E'
+esattamente l'errore che ha colpito la freccia della Bretagna.
 """
 import json
 import math
@@ -38,10 +44,17 @@ def main():
         return 1
     x0, y0, x1, y1 = (int(v) for v in sys.argv[1:5])
     out = sys.argv[5]
-    scale = float(sys.argv[6]) if len(sys.argv) > 6 else 2.0
+    scale = float(sys.argv[6]) if len(sys.argv) > 6 and not sys.argv[6].startswith("--") else 2.0
 
-    g = json.load(open(os.path.join(ROOT, "core", "data", "map_graph.json")))
-    lat = g["lattice"]
+    use_all = "--all" in sys.argv
+    if use_all:
+        g = json.load(open(os.path.join(ROOT, "reports", "lattice.json")))
+        lat = g
+        g["hexes"] = [dict(h, neighbors=[]) for h in g["hexes"]]
+        g["blocked_edges"] = []
+    else:
+        g = json.load(open(os.path.join(ROOT, "core", "data", "map_graph.json")))
+        lat = g["lattice"]
     e1, e2 = lat["basis_e1"], lat["basis_e2"]
     ox, oy = lat["origin_px"]
     R = lat["circumradius_px"]

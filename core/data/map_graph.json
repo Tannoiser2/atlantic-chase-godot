@@ -6073,6 +6073,59 @@
     1960
    ],
    "note": "condivide esagono e Casella con St. Nazaire"
+  },
+  {
+   "name": "Kiel",
+   "box": "Kiel Box",
+   "nation": "GE",
+   "q": 18,
+   "r": -6,
+   "kind": "strip",
+   "note": "striscia porto, non pallino: la legenda dice 'Port Strip (each hex is a port)'. La striscia tocca solo 18,-6. Coerente col Canale di Kiel, che collega Wilhelmshaven (17,-5, Mare del Nord) a Kiel (18,-6, Baltico)."
+  },
+  {
+   "name": "Bergen",
+   "box": "Bergen Box",
+   "nation": "NO",
+   "q": 17,
+   "r": -6,
+   "dot_px": [
+    2774,
+    1126
+   ],
+   "note": "neutrale nel 1939 e in alcuni scenari del 1940, poi tedesco"
+  },
+  {
+   "name": "Hvalfjordur",
+   "box": "Hvalfjordur Box",
+   "nation": "UK",
+   "q": 13,
+   "r": -6,
+   "dot_px": [
+    2124,
+    566
+   ]
+  },
+  {
+   "name": "Murmansk",
+   "box": "Murmansk Box",
+   "nation": "USSR",
+   "q": 20,
+   "r": -12,
+   "dot_px": [
+    3658,
+    462
+   ],
+   "note": "neutrale nel 1939, 1940 e 1941, poi britannico. Alcuni scenari permettono comunque alle navi tedesche di Completare a Murmansk mentre e' neutrale."
+  },
+  {
+   "name": "Archangel",
+   "box": "Archangel Box",
+   "nation": "USSR",
+   "q": 22,
+   "r": -13,
+   "kind": "strip",
+   "note": "striscia porto lungo il bordo nordorientale"
   }
  ],
  "notes": [

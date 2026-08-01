@@ -41,7 +41,7 @@
   "_rule": "RB p.13: 'Un porto stampato sulla Mappa Operazionale, in un esagono o sul bordo di un esagono, e' collegato a una Casella Porto; in ogni caso il porto e' considerato essere nell'esagono.' Una Stazione TF in un esagono di porto amico si trasferisce automaticamente nella Casella (e viceversa) senza costo ne' azione, se il giocatore e' Attivo e ha l'Iniziativa. La Casella e' sicura: niente Attacco Aereo, Ingaggiare o Attacco Furtivo. Ma una TF nella Casella non puo' essere designata Coordinatrice o Supporto Aereo, ne' essere TF Attiva per Attacco Aereo, Ingaggiare o Ricerca Navale.",
   "_method": "Esagono letto con tools/label_hexes.py, confrontando la posizione del pallino stampato con il centro dell'esagono e con i confini disegnati. I casi al limite (pallino vicino a un lato) sono stati decisi guardando da che parte del confine cade il pallino, non solo con la distanza dal centro.",
   "_box_names": "corrispondono ai nomi delle Zone del modulo VASSAL (reports/zones.json)",
-  "_status": "PARZIALE: 6 porti su ~20 verificati. Mancano Kiel, Brest, St Nazaire/Bordeaux, Bergen, Narvik, Hvalfjordur, St John's, Halifax, New York, Gibilterra, Murmansk, Archangel, Africa, South America. Il metodo e' quello sopra e richiede un ritaglio etichettato per regione.",
+  "_status": "PARZIALE: 15 porti verificati. Mancano Narvik, St John's, Halifax, New York, Gibilterra, Africa, South America. Il metodo e' quello sopra e richiede un ritaglio etichettato per regione, SEMPRE con --all (vedi il commento in tools/label_hexes.py).",
   "entries": [
    {"name": "Scapa Flow", "box": "Scapa Flow Box", "nation": "UK", "q": 15, "r": -5,
     "dot_px": [2497, 1082]},
@@ -68,7 +68,21 @@
     "note": "esagono di sola terraferma, giocabile perche' contiene il porto"},
    {"name": "Bordeaux", "box": "St. Nazaire/Bordeaux Box", "nation": "FR",
     "q": 16, "r": -2, "dot_px": [2408, 1960],
-    "note": "condivide esagono e Casella con St. Nazaire"}
+    "note": "condivide esagono e Casella con St. Nazaire"},
+   {"name": "Kiel", "box": "Kiel Box", "nation": "GE", "q": 18, "r": -6,
+    "kind": "strip",
+    "note": "striscia porto, non pallino: la legenda dice 'Port Strip (each hex is a port)'. La striscia tocca solo 18,-6. Coerente col Canale di Kiel, che collega Wilhelmshaven (17,-5, Mare del Nord) a Kiel (18,-6, Baltico)."},
+   {"name": "Bergen", "box": "Bergen Box", "nation": "NO", "q": 17, "r": -6,
+    "dot_px": [2774, 1126],
+    "note": "neutrale nel 1939 e in alcuni scenari del 1940, poi tedesco"},
+   {"name": "Hvalfjordur", "box": "Hvalfjordur Box", "nation": "UK", "q": 13, "r": -6,
+    "dot_px": [2124, 566]},
+   {"name": "Murmansk", "box": "Murmansk Box", "nation": "USSR", "q": 20, "r": -12,
+    "dot_px": [3658, 462],
+    "note": "neutrale nel 1939, 1940 e 1941, poi britannico. Alcuni scenari permettono comunque alle navi tedesche di Completare a Murmansk mentre e' neutrale."},
+   {"name": "Archangel", "box": "Archangel Box", "nation": "USSR", "q": 22, "r": -13,
+    "kind": "strip",
+    "note": "striscia porto lungo il bordo nordorientale"}
   ]
  }
 }
