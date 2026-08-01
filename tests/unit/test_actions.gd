@@ -183,16 +183,28 @@ func test_unverified_actions_refused() -> void:
 		"Ricerca Navale non ha piu' celle dubbie")
 	false_(eng.is_cell_unverified("NAVAL_SEARCH", 4, 7), "nessuna cella da riverificare")
 
-	# le azioni ancora non trascritte devono essere rifiutate con un motivo
+	# Ora tutte e nove le azioni sono trascritte, quindi non ce n'e' piu' una
+	# vera da usare come esempio. Il meccanismo pero' deve restare, e va
+	# provato lo stesso: si finge un'azione non verificata e si verifica che
+	# il motore la rifiuti invece di inventarsi un risultato.
+	for k in ["ENGAGE", "NAVAL_SEARCH", "AIR_STRIKE", "STEALTH_ATTACK",
+			"TRAJECTORY", "PASS", "COMPLETION", "REORGANIZE", "SIGNAL"]:
+		true_(eng.is_verified(k), "%s e' trascritta" % k)
+
 	var st := GameState.new(graph, 5)
 	var a := st.add_task_force(_tf(TaskForce.Side.KRIEGSMARINE, 2))
+	var fake := ActionEngine.load_default()
+	(fake.data["actions"] as Dictionary)["MIRAGGIO"] = {
+		"label": "Miraggio", "verified": false,
+		"verified_note": "tabella mai letta", "table_driven": false}
+	false_(fake.is_verified("MIRAGGIO"), "un'azione non verificata si riconosce")
 	var dec := ActionEngine.Declaration.new()
-	dec.action_key = "SIGNAL"
+	dec.action_key = "MIRAGGIO"
 	dec.active = a
-	var res := eng.resolve(dec, st)
-	false_(res["ok"], "Segnalazione non risolta")
-	ne(String(res["error"]), "", "il motivo e' esplicito: " + String(res["error"]))
-	false_(eng.is_verified("SIGNAL"), "Segnalazione non verificata")
+	var res := fake.resolve(dec, st)
+	false_(res["ok"], "e non viene risolta")
+	true_(String(res["error"]).contains("tabella non ancora trascritta"),
+		"con un motivo esplicito: " + String(res["error"]))
 
 
 func test_air_strike_table() -> void:

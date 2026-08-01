@@ -1,6 +1,5 @@
 {
  "_source": "Tabelle lette dalla mappa (Atlantic Chase Map120.jpg) a risoluzione nativa. I simboli sono stati identificati sul regolamento ITA pp.50-54 renderizzato a 150 dpi, non dedotti.",
-
  "_symbols": {
   "_legend": "corrispondenza fra icona stampata e risultato, verificata visivamente",
   "occhio_pupilla_bianca": "CONTACT      (RB p.50 'Contatto')",
@@ -14,7 +13,6 @@
   "stella_rossa": "HIT          (Charts 'Colpo')",
   "stella_rossa_con_S": "HIT_IF_SLOW  (Charts 'Colpo, bersaglio Lento')"
  },
-
  "results": {
   "MISS": {
    "label": "Mancato",
@@ -64,12 +62,23 @@
    "label": "Danneggiato",
    "rule": "RB p.51. Una nave della TF bersaglio viene girata sul lato Danneggiato (sceglie l'Attivo). Se gia' danneggiata, affonda. Convogli e Squadroni DD non si danneggiano: per loro il risultato vale 2 Colpi. Eventuali Colpi restano quando la nave si gira."
   },
-  "HIT": {"label": "Colpo", "rule": "Charts. Una nave della TF bersaglio riceve un Colpo; sceglie il giocatore Attivo."},
-  "HIT_IF_SLOW": {"label": "Colpo (bersaglio Lento)", "rule": "Charts. Come Colpo, ma solo se la velocita' della TF Bersaglio e' LENTA o MOLTO LENTA."},
-  "HIT_IF_VERY_SLOW": {"label": "Colpo (bersaglio Molto Lento)", "rule": "Charts. Come Colpo, ma solo se la velocita' del bersaglio e' MOLTO LENTA."},
-  "SPLASH": {"label": "Splash", "rule": "Nessun colpo. Solo in Battaglia."}
+  "HIT": {
+   "label": "Colpo",
+   "rule": "Charts. Una nave della TF bersaglio riceve un Colpo; sceglie il giocatore Attivo."
+  },
+  "HIT_IF_SLOW": {
+   "label": "Colpo (bersaglio Lento)",
+   "rule": "Charts. Come Colpo, ma solo se la velocita' della TF Bersaglio e' LENTA o MOLTO LENTA."
+  },
+  "HIT_IF_VERY_SLOW": {
+   "label": "Colpo (bersaglio Molto Lento)",
+   "rule": "Charts. Come Colpo, ma solo se la velocita' del bersaglio e' MOLTO LENTA."
+  },
+  "SPLASH": {
+   "label": "Splash",
+   "rule": "Nessun colpo. Solo in Battaglia."
+  }
  },
-
  "actions": {
   "ENGAGE": {
    "label": "Ingaggiare",
@@ -79,23 +88,182 @@
    "requires_target_station": true,
    "causes_time_lapse": true,
    "columns": [
-    {"label": "0", "min": 0, "max": 0},
-    {"label": "1-4", "min": 1, "max": 4},
-    {"label": "5-9", "min": 5, "max": 9},
-    {"label": "10-13", "min": 10, "max": 13},
-    {"label": "14+", "min": 14, "max": 999}
+    {
+     "label": "0",
+     "min": 0,
+     "max": 0
+    },
+    {
+     "label": "1-4",
+     "min": 1,
+     "max": 4
+    },
+    {
+     "label": "5-9",
+     "min": 5,
+     "max": 9
+    },
+    {
+     "label": "10-13",
+     "min": 10,
+     "max": 13
+    },
+    {
+     "label": "14+",
+     "min": 14,
+     "max": 999
+    }
    ],
    "rows": [
-    {"min": 2, "max": 6, "results": [["SKIRMISH"], ["MISS"], ["MISS"], ["MISS"], ["MISS"]]},
-    {"min": 7, "max": 7, "results": [["CLOSING"], ["MISS"], ["MISS"], ["MISS"], ["MISS"]]},
-    {"min": 8, "max": 8, "results": [["BATTLE"], ["SKIRMISH"], ["MISS"], ["MISS"], ["MISS"]]},
-    {"min": 9, "max": 9, "results": [["BATTLE"], ["CLOSING"], ["MISS"], ["MISS"], ["MISS"]]},
-    {"min": 10, "max": 11, "results": [["SURPRISE"], ["BATTLE"], ["SKIRMISH"], ["CONTACT"], ["MISS"]]},
-    {"min": 12, "max": 12, "results": [["SURPRISE"], ["BATTLE"], ["CLOSING"], ["CONTACT"], ["CONTACT"]]},
-    {"min": 13, "max": 99, "results": [["SURPRISE"], ["SURPRISE"], ["BATTLE"], ["SKIRMISH"], ["SKIRMISH"]]}
+    {
+     "min": 2,
+     "max": 6,
+     "results": [
+      [
+       "SKIRMISH"
+      ],
+      [
+       "MISS"
+      ],
+      [
+       "MISS"
+      ],
+      [
+       "MISS"
+      ],
+      [
+       "MISS"
+      ]
+     ]
+    },
+    {
+     "min": 7,
+     "max": 7,
+     "results": [
+      [
+       "CLOSING"
+      ],
+      [
+       "MISS"
+      ],
+      [
+       "MISS"
+      ],
+      [
+       "MISS"
+      ],
+      [
+       "MISS"
+      ]
+     ]
+    },
+    {
+     "min": 8,
+     "max": 8,
+     "results": [
+      [
+       "BATTLE"
+      ],
+      [
+       "SKIRMISH"
+      ],
+      [
+       "MISS"
+      ],
+      [
+       "MISS"
+      ],
+      [
+       "MISS"
+      ]
+     ]
+    },
+    {
+     "min": 9,
+     "max": 9,
+     "results": [
+      [
+       "BATTLE"
+      ],
+      [
+       "CLOSING"
+      ],
+      [
+       "MISS"
+      ],
+      [
+       "MISS"
+      ],
+      [
+       "MISS"
+      ]
+     ]
+    },
+    {
+     "min": 10,
+     "max": 11,
+     "results": [
+      [
+       "SURPRISE"
+      ],
+      [
+       "BATTLE"
+      ],
+      [
+       "SKIRMISH"
+      ],
+      [
+       "CONTACT"
+      ],
+      [
+       "MISS"
+      ]
+     ]
+    },
+    {
+     "min": 12,
+     "max": 12,
+     "results": [
+      [
+       "SURPRISE"
+      ],
+      [
+       "BATTLE"
+      ],
+      [
+       "CLOSING"
+      ],
+      [
+       "CONTACT"
+      ],
+      [
+       "CONTACT"
+      ]
+     ]
+    },
+    {
+     "min": 13,
+     "max": 99,
+     "results": [
+      [
+       "SURPRISE"
+      ],
+      [
+       "SURPRISE"
+      ],
+      [
+       "BATTLE"
+      ],
+      [
+       "SKIRMISH"
+      ],
+      [
+       "SKIRMISH"
+      ]
+     ]
+    }
    ]
   },
-
   "NAVAL_SEARCH": {
    "label": "Ricerca Navale",
    "page": 33,
@@ -103,22 +271,170 @@
    "verified_note": "Tutte e 28 le celle lette a ingrandimento 5-6x. La distinzione fra 'In Anticipo o In Ritardo' (barre rosso-BIANCO-rosso) e 'Seguire' (tre barre tutte rosse) e' netta a questo ingrandimento.",
    "causes_time_lapse": true,
    "columns": [
-    {"label": "0-4", "min": 0, "max": 4},
-    {"label": "5-9", "min": 5, "max": 9},
-    {"label": "10-15", "min": 10, "max": 15},
-    {"label": "16+", "min": 16, "max": 999}
+    {
+     "label": "0-4",
+     "min": 0,
+     "max": 4
+    },
+    {
+     "label": "5-9",
+     "min": 5,
+     "max": 9
+    },
+    {
+     "label": "10-15",
+     "min": 10,
+     "max": 15
+    },
+    {
+     "label": "16+",
+     "min": 16,
+     "max": 999
+    }
    ],
    "rows": [
-    {"min": 2, "max": 4, "results": [["CONTACT"], ["EARLY_LATE"], ["EARLY_LATE"], ["MISS"]]},
-    {"min": 5, "max": 5, "results": [["CONTACT", "SIGHTED"], ["EARLY_LATE"], ["EARLY_LATE"], ["MISS"]]},
-    {"min": 6, "max": 7, "results": [["CONTACT", "SIGHTED"], ["SHADOW"], ["EARLY_LATE"], ["EARLY_LATE"]]},
-    {"min": 8, "max": 9, "results": [["CONTACT", "SIGHTED"], ["CONTACT", "SHADOW"], ["SHADOW"], ["EARLY_LATE"]]},
-    {"min": 10, "max": 11, "results": [["CONTACT", "SIGHTED"], ["CONTACT", "SIGHTED"], ["CONTACT", "SHADOW"], ["EARLY_LATE"]]},
-    {"min": 12, "max": 12, "results": [["SKIRMISH", "SIGHTED"], ["CONTACT", "SIGHTED"], ["CONTACT", "SIGHTED"], ["SHADOW"]]},
-    {"min": 13, "max": 99, "results": [["SKIRMISH", "SIGHTED"], ["SKIRMISH", "SIGHTED"], ["SKIRMISH", "SIGHTED"], ["CONTACT", "SHADOW"]]}
+    {
+     "min": 2,
+     "max": 4,
+     "results": [
+      [
+       "CONTACT"
+      ],
+      [
+       "EARLY_LATE"
+      ],
+      [
+       "EARLY_LATE"
+      ],
+      [
+       "MISS"
+      ]
+     ]
+    },
+    {
+     "min": 5,
+     "max": 5,
+     "results": [
+      [
+       "CONTACT",
+       "SIGHTED"
+      ],
+      [
+       "EARLY_LATE"
+      ],
+      [
+       "EARLY_LATE"
+      ],
+      [
+       "MISS"
+      ]
+     ]
+    },
+    {
+     "min": 6,
+     "max": 7,
+     "results": [
+      [
+       "CONTACT",
+       "SIGHTED"
+      ],
+      [
+       "SHADOW"
+      ],
+      [
+       "EARLY_LATE"
+      ],
+      [
+       "EARLY_LATE"
+      ]
+     ]
+    },
+    {
+     "min": 8,
+     "max": 9,
+     "results": [
+      [
+       "CONTACT",
+       "SIGHTED"
+      ],
+      [
+       "CONTACT",
+       "SHADOW"
+      ],
+      [
+       "SHADOW"
+      ],
+      [
+       "EARLY_LATE"
+      ]
+     ]
+    },
+    {
+     "min": 10,
+     "max": 11,
+     "results": [
+      [
+       "CONTACT",
+       "SIGHTED"
+      ],
+      [
+       "CONTACT",
+       "SIGHTED"
+      ],
+      [
+       "CONTACT",
+       "SHADOW"
+      ],
+      [
+       "EARLY_LATE"
+      ]
+     ]
+    },
+    {
+     "min": 12,
+     "max": 12,
+     "results": [
+      [
+       "SKIRMISH",
+       "SIGHTED"
+      ],
+      [
+       "CONTACT",
+       "SIGHTED"
+      ],
+      [
+       "CONTACT",
+       "SIGHTED"
+      ],
+      [
+       "SHADOW"
+      ]
+     ]
+    },
+    {
+     "min": 13,
+     "max": 99,
+     "results": [
+      [
+       "SKIRMISH",
+       "SIGHTED"
+      ],
+      [
+       "SKIRMISH",
+       "SIGHTED"
+      ],
+      [
+       "SKIRMISH",
+       "SIGHTED"
+      ],
+      [
+       "CONTACT",
+       "SHADOW"
+      ]
+     ]
+    }
    ]
   },
-
   "AIR_STRIKE": {
    "label": "Attacco Aereo",
    "page": 27,
@@ -128,23 +444,208 @@
    "requires_good_weather": true,
    "causes_time_lapse": true,
    "columns": [
-    {"label": "0", "min": 0, "max": 0},
-    {"label": "1-4", "min": 1, "max": 4},
-    {"label": "5-9", "min": 5, "max": 9},
-    {"label": "10-15", "min": 10, "max": 15},
-    {"label": "16+", "min": 16, "max": 999}
+    {
+     "label": "0",
+     "min": 0,
+     "max": 0
+    },
+    {
+     "label": "1-4",
+     "min": 1,
+     "max": 4
+    },
+    {
+     "label": "5-9",
+     "min": 5,
+     "max": 9
+    },
+    {
+     "label": "10-15",
+     "min": 10,
+     "max": 15
+    },
+    {
+     "label": "16+",
+     "min": 16,
+     "max": 999
+    }
    ],
    "rows": [
-    {"min": 2, "max": 6, "results": [["MISS"], ["MISS"], ["MISS"], ["MISS"], ["MISS"]]},
-    {"min": 7, "max": 7, "results": [["CONTACT", "HIT_IF_SLOW"], ["CONTACT", "HIT_IF_SLOW"], ["HIT_IF_VERY_SLOW"], ["HIT_IF_VERY_SLOW"], ["MISS"]]},
-    {"min": 8, "max": 8, "results": [["CONTACT", "HIT_IF_SLOW"], ["CONTACT", "HIT_IF_SLOW"], ["CONTACT", "HIT_IF_SLOW"], ["CONTACT", "HIT_IF_VERY_SLOW"], ["HIT_IF_VERY_SLOW"]]},
-    {"min": 9, "max": 10, "results": [["CONTACT", "HIT"], ["CONTACT", "HIT_IF_SLOW"], ["CONTACT", "HIT_IF_SLOW"], ["CONTACT", "HIT_IF_SLOW"], ["CONTACT", "HIT_IF_VERY_SLOW"]]},
-    {"min": 11, "max": 12, "results": [["CONTACT", "DAMAGED"], ["CONTACT", "HIT"], ["CONTACT", "HIT_IF_SLOW"], ["CONTACT", "HIT_IF_SLOW"], ["CONTACT", "HIT_IF_SLOW"]]},
-    {"min": 13, "max": 14, "results": [["CONTACT", "DAMAGED"], ["CONTACT", "DAMAGED"], ["CONTACT", "HIT"], ["CONTACT", "HIT_IF_SLOW"], ["CONTACT", "HIT_IF_SLOW"]]},
-    {"min": 15, "max": 99, "results": [["CONTACT", "DAMAGED"], ["CONTACT", "DAMAGED"], ["CONTACT", "DAMAGED"], ["CONTACT", "HIT"], ["CONTACT", "HIT"]]}
+    {
+     "min": 2,
+     "max": 6,
+     "results": [
+      [
+       "MISS"
+      ],
+      [
+       "MISS"
+      ],
+      [
+       "MISS"
+      ],
+      [
+       "MISS"
+      ],
+      [
+       "MISS"
+      ]
+     ]
+    },
+    {
+     "min": 7,
+     "max": 7,
+     "results": [
+      [
+       "CONTACT",
+       "HIT_IF_SLOW"
+      ],
+      [
+       "CONTACT",
+       "HIT_IF_SLOW"
+      ],
+      [
+       "HIT_IF_VERY_SLOW"
+      ],
+      [
+       "HIT_IF_VERY_SLOW"
+      ],
+      [
+       "MISS"
+      ]
+     ]
+    },
+    {
+     "min": 8,
+     "max": 8,
+     "results": [
+      [
+       "CONTACT",
+       "HIT_IF_SLOW"
+      ],
+      [
+       "CONTACT",
+       "HIT_IF_SLOW"
+      ],
+      [
+       "CONTACT",
+       "HIT_IF_SLOW"
+      ],
+      [
+       "CONTACT",
+       "HIT_IF_VERY_SLOW"
+      ],
+      [
+       "HIT_IF_VERY_SLOW"
+      ]
+     ]
+    },
+    {
+     "min": 9,
+     "max": 10,
+     "results": [
+      [
+       "CONTACT",
+       "HIT"
+      ],
+      [
+       "CONTACT",
+       "HIT_IF_SLOW"
+      ],
+      [
+       "CONTACT",
+       "HIT_IF_SLOW"
+      ],
+      [
+       "CONTACT",
+       "HIT_IF_SLOW"
+      ],
+      [
+       "CONTACT",
+       "HIT_IF_VERY_SLOW"
+      ]
+     ]
+    },
+    {
+     "min": 11,
+     "max": 12,
+     "results": [
+      [
+       "CONTACT",
+       "DAMAGED"
+      ],
+      [
+       "CONTACT",
+       "HIT"
+      ],
+      [
+       "CONTACT",
+       "HIT_IF_SLOW"
+      ],
+      [
+       "CONTACT",
+       "HIT_IF_SLOW"
+      ],
+      [
+       "CONTACT",
+       "HIT_IF_SLOW"
+      ]
+     ]
+    },
+    {
+     "min": 13,
+     "max": 14,
+     "results": [
+      [
+       "CONTACT",
+       "DAMAGED"
+      ],
+      [
+       "CONTACT",
+       "DAMAGED"
+      ],
+      [
+       "CONTACT",
+       "HIT"
+      ],
+      [
+       "CONTACT",
+       "HIT_IF_SLOW"
+      ],
+      [
+       "CONTACT",
+       "HIT_IF_SLOW"
+      ]
+     ]
+    },
+    {
+     "min": 15,
+     "max": 99,
+     "results": [
+      [
+       "CONTACT",
+       "DAMAGED"
+      ],
+      [
+       "CONTACT",
+       "DAMAGED"
+      ],
+      [
+       "CONTACT",
+       "DAMAGED"
+      ],
+      [
+       "CONTACT",
+       "HIT"
+      ],
+      [
+       "CONTACT",
+       "HIT"
+      ]
+     ]
+    }
    ]
   },
-
   "STEALTH_ATTACK": {
    "label": "Attacco Furtivo",
    "page": 41,
@@ -153,26 +654,174 @@
    "note": "Bersaglia un segmento Traiettoria con un segnalino Contatto (RB p.35).",
    "causes_time_lapse": true,
    "modifiers": [
-    {"value": 3, "when": "l'azione avviene in una U-Boat Zone"},
-    {"value": 2, "when": "il bersaglio e' un Convoglio disperso"}
+    {
+     "value": 3,
+     "when": "l'azione avviene in una U-Boat Zone"
+    },
+    {
+     "value": 2,
+     "when": "il bersaglio e' un Convoglio disperso"
+    }
    ],
    "columns": [
-    {"label": "0", "min": 0, "max": 0},
-    {"label": "1", "min": 1, "max": 1},
-    {"label": "2-3", "min": 2, "max": 3},
-    {"label": "4-6", "min": 4, "max": 6},
-    {"label": "7+", "min": 7, "max": 999}
+    {
+     "label": "0",
+     "min": 0,
+     "max": 0
+    },
+    {
+     "label": "1",
+     "min": 1,
+     "max": 1
+    },
+    {
+     "label": "2-3",
+     "min": 2,
+     "max": 3
+    },
+    {
+     "label": "4-6",
+     "min": 4,
+     "max": 6
+    },
+    {
+     "label": "7+",
+     "min": 7,
+     "max": 999
+    }
    ],
    "rows": [
-    {"min": 2, "max": 7, "results": [["MISS"], ["LOSE_CONTACT"], ["LOSE_CONTACT"], ["LOSE_CONTACT"], ["LOSE_CONTACT"]]},
-    {"min": 8, "max": 9, "results": [["HIT_IF_VERY_SLOW"], ["MISS"], ["MISS"], ["LOSE_CONTACT"], ["LOSE_CONTACT"]]},
-    {"min": 10, "max": 11, "results": [["HIT_IF_SLOW"], ["MISS"], ["MISS"], ["MISS"], ["LOSE_CONTACT"]]},
-    {"min": 12, "max": 12, "results": [["HIT"], ["HIT_IF_SLOW"], ["HIT_IF_SLOW"], ["MISS"], ["MISS"]]},
-    {"min": 13, "max": 13, "results": [["HIT", "HIT"], ["HIT"], ["HIT"], ["HIT_IF_SLOW"], ["HIT_IF_SLOW"]]},
-    {"min": 14, "max": 99, "results": [["DAMAGED", "DAMAGED"], ["DAMAGED"], ["HIT", "HIT"], ["HIT"], ["HIT"]]}
+    {
+     "min": 2,
+     "max": 7,
+     "results": [
+      [
+       "MISS"
+      ],
+      [
+       "LOSE_CONTACT"
+      ],
+      [
+       "LOSE_CONTACT"
+      ],
+      [
+       "LOSE_CONTACT"
+      ],
+      [
+       "LOSE_CONTACT"
+      ]
+     ]
+    },
+    {
+     "min": 8,
+     "max": 9,
+     "results": [
+      [
+       "HIT_IF_VERY_SLOW"
+      ],
+      [
+       "MISS"
+      ],
+      [
+       "MISS"
+      ],
+      [
+       "LOSE_CONTACT"
+      ],
+      [
+       "LOSE_CONTACT"
+      ]
+     ]
+    },
+    {
+     "min": 10,
+     "max": 11,
+     "results": [
+      [
+       "HIT_IF_SLOW"
+      ],
+      [
+       "MISS"
+      ],
+      [
+       "MISS"
+      ],
+      [
+       "MISS"
+      ],
+      [
+       "LOSE_CONTACT"
+      ]
+     ]
+    },
+    {
+     "min": 12,
+     "max": 12,
+     "results": [
+      [
+       "HIT"
+      ],
+      [
+       "HIT_IF_SLOW"
+      ],
+      [
+       "HIT_IF_SLOW"
+      ],
+      [
+       "MISS"
+      ],
+      [
+       "MISS"
+      ]
+     ]
+    },
+    {
+     "min": 13,
+     "max": 13,
+     "results": [
+      [
+       "HIT",
+       "HIT"
+      ],
+      [
+       "HIT"
+      ],
+      [
+       "HIT"
+      ],
+      [
+       "HIT_IF_SLOW"
+      ],
+      [
+       "HIT_IF_SLOW"
+      ]
+     ]
+    },
+    {
+     "min": 14,
+     "max": 99,
+     "results": [
+      [
+       "DAMAGED",
+       "DAMAGED"
+      ],
+      [
+       "DAMAGED"
+      ],
+      [
+       "HIT",
+       "HIT"
+      ],
+      [
+       "HIT"
+      ],
+      [
+       "HIT"
+      ]
+     ]
+    }
    ]
   },
-
   "TRAJECTORY": {
    "label": "Traiettoria",
    "page": 43,
@@ -180,7 +829,6 @@
    "table_driven": false,
    "note": "Nessun tiro di dadi: aggiunge segmenti alla Traiettoria della TF Attiva. Una Stazione che effettua questa azione diventa Traiettoria. Porre un segmento in un esagono che innesca Informazioni assegna subito un segnalino Informazioni a quel segmento."
   },
-
   "PASS": {
    "label": "Passare",
    "page": 35,
@@ -189,16 +837,26 @@
    "causes_time_lapse": true,
    "note": "Nessun tiro. Provoca lo Scorrere del Tempo e passa la mano."
   },
-
   "COMPLETION": {
    "label": "Completamento",
    "page": 29,
-   "verified": "partial",
+   "verified": true,
    "table_driven": false,
-   "note": "Vietata se una qualunque TF designata ha un segnalino Informazioni (RB p.21)."
+   "note": "Portare le navi in porto. Una sola TF designata, Stazione o Traiettoria di non piu' di 6 segmenti, almeno un segmento in un esagono di porto amico (non importa quale). Vietata con un segnalino Informazioni. Le navi lasciano il gioco (RB p.29). Regola in core/rules/completion.gd."
   },
-
-  "REORGANIZE": {"label": "Riorganizzazione", "page": 37, "verified": false, "table_driven": false},
-  "SIGNAL": {"label": "Segnalazione", "page": 39, "verified": false, "table_driven": false}
+  "REORGANIZE": {
+   "label": "Riorganizzazione",
+   "page": 37,
+   "verified": true,
+   "table_driven": false,
+   "note": "Dividere, unire, chiamare rinforzi. Con una sola dichiarazione si possono fare piu' divisioni, piu' unioni e piu' tentativi di Rinforzo. Il tentativo di Rinforzo e' 2d6, riesce con 7 o piu'; se fallisce una TF effettua lo Scorrere del Tempo e l'Iniziativa passa subito (RB p.37). Regola in core/rules/reorganize.gd."
+  },
+  "SIGNAL": {
+   "label": "Segnalazione",
+   "page": 39,
+   "verified": true,
+   "table_driven": false,
+   "note": "Trasforma una Traiettoria nemica in Stazione. Il bersaglio deve avere almeno un segnalino Informazioni; si sceglie quello, e la Stazione va nel suo esagono. Tutti gli altri segmenti e segnalini sono rimossi; il Contatto sul segmento bersaglio si trasferisce alla Stazione. Al termine l'Inattivo puo' Sottrarre l'Iniziativa (RB p.39). Regola in core/rules/signal_action.gd."
+  }
  }
 }

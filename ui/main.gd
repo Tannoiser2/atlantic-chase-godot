@@ -306,6 +306,12 @@ func _declare_action(key: String) -> void:
 		"PASS":
 			await _do_pass()
 			return
+		"REORGANIZE":
+			await _do_reorganize()
+			return
+		"SIGNAL":
+			await _do_signal()
+			return
 		"TRAJECTORY":
 			_msg("Traiettoria: trascina dalla Task Force selezionata per "
 				+ "disegnare la rotta, oppure clicca un esagono adiacente a "
@@ -678,6 +684,211 @@ func _resync_selection() -> void:
 
 
 # --------------------------------------------------------- Scorrere del Tempo --
+
+## Riorganizzazione (RB p.37). Con una sola dichiarazione si possono fare piu'
+## cose, quindi il menu resta aperto finche' il giocatore non chiude - o finche'
+## un tentativo di Rinforzo fallisce, che chiude l'azione e passa l'Iniziativa.
+func _do_reorganize() -> void:
+	while true:
+		var opts: Array = [
+			{"label": "Dividere una Task Force",
+				"detail": Reorganize.split_refusal(state, selected_tf)},
+			{"label": "Unire due Task Force",
+				"detail": "servono due Stazioni nello stesso esagono"},
+			{"label": "Tentativo di Rinforzo",
+				"detail": "2d6, riesce con 7 o piu'; se fallisce l'Iniziativa passa"},
+			{"label": "Chiudi la Riorganizzazione", "detail": ""},
+		]
+		var i: int = await Choice.ask(self, "Riorganizzazione - %s"
+			% selected_tf.display_name(),
+			"Caselle libere: [b]%d[/b] su %d." % [
+				Reorganize.free_slots(state, selected_tf.side),
+				Reorganize.max_task_forces(selected_tf.side)], opts)
+		match i:
+			0:
+				await _reorg_split()
+			1:
+				await _reorg_merge()
+			2:
+				if await _reorg_reinforce():
+					return       # fallito: l'azione finisce qui
+			_:
+				_msg("Riorganizzazione conclusa.")
+				return
+		_refresh()
+
+
+func _reorg_split() -> void:
+	var why := Reorganize.split_refusal(state, selected_tf)
+	if why != "":
+		_msg("Dividere: %s" % why)
+		return
+	# si sceglie una nave alla volta: e' il gesto del gioco da tavolo, dove le
+	# pedine si spostano una per una da una casella all'altra
+	var moving: Array[Ship] = []
+	while true:
+		var opts: Array = []
+		var pool: Array[Ship] = []
+		for s in selected_tf.ships:
+			if not moving.has(s):
+				pool.append(s)
+				opts.append({"label": s.display(), "detail": ""})
+		opts.append({"label": "Fatto (%d navi scelte)" % moving.size(),
+			"detail": "almeno una nave deve restare in ciascuna Task Force"})
+		var i: int = await Choice.ask(self, "Dividere - quali navi partono?",
+			"Scelte finora: %s" % ("nessuna" if moving.is_empty()
+				else ", ".join(_ship_names(moving))), opts)
+		if i < 0 or i >= pool.size():
+			break
+		moving.append(pool[i])
+	if moving.is_empty():
+		_msg("Dividere annullato.")
+		return
+
+	var contact_to_new := false
+	if selected_tf.trajectory.station_contact:
+		contact_to_new = 1 == await Choice.ask(self, "Segnalino Contatto",
+			"Dividere non genera nuovi segnalini: il Contatto resta a una "
+			+ "sola delle due Task Force.",
+			[{"label": "Resta a %s" % selected_tf.display_name(), "detail": ""},
+				{"label": "Passa alla nuova Task Force", "detail": ""}])
+	var evasive_to_new := false
+	if selected_tf.evasive:
+		evasive_to_new = 1 == await Choice.ask(self, "Manovre Evasive",
+			"Anche le Manovre Evasive vanno a una sola delle due.",
+			[{"label": "Restano a %s" % selected_tf.display_name(), "detail": ""},
+				{"label": "Passano alla nuova", "detail": ""}])
+
+	var r := Reorganize.split(state, selected_tf, moving, contact_to_new,
+		evasive_to_new)
+	_report(r)
+
+
+func _reorg_merge() -> void:
+	var here := selected_tf.trajectory
+	if not here.is_station():
+		_msg("Unire: %s e' una Traiettoria, non una Stazione." % selected_tf.display_name())
+		return
+	var others: Array[TaskForce] = []
+	for tf in state.forces_of(selected_tf.side):
+		if tf != selected_tf and Reorganize.merge_refusal(selected_tf, tf) == "":
+			others.append(tf)
+	if others.is_empty():
+		_msg("Unire: nessun'altra Stazione in %s." % str(here.station_hex))
+		return
+	var other := await _pick_tf(others, "Unire - quale Task Force assorbire?",
+		"Le sue navi passano a %s e la sua pedina torna disponibile."
+			% selected_tf.display_name(), true)
+	if other == null:
+		return
+	_report(Reorganize.merge(selected_tf, other))
+
+
+## Ritorna true se il tentativo e' fallito e l'azione deve chiudersi.
+func _reorg_reinforce() -> bool:
+	var groups: Array = []
+	var keys: Array[String] = []
+	var mine := "KM" if selected_tf.side == TaskForce.Side.KRIEGSMARINE else "RN"
+	for k_v: Variant in scenario.reinforcements.keys():
+		var k := String(k_v)
+		if not k.begins_with(mine):
+			continue
+		var ships: Array = scenario.reinforcements[k_v]
+		if ships.is_empty():
+			continue
+		keys.append(k)
+		groups.append({"label": k, "detail": ", ".join(ships)})
+	if groups.is_empty():
+		_msg("Rinforzi: nessun Gruppo disponibile per questa parte.")
+		return false
+	groups.append({"label": "Annulla", "detail": ""})
+	var i: int = await Choice.ask(self, "Tentativo di Rinforzo",
+		"2d6: con [b]7 o piu'[/b] le navi entrano in gioco. Se fallisce, una "
+		+ "Task Force effettua lo Scorrere del Tempo e l'Iniziativa passa.",
+		groups)
+	if i < 0 or i >= keys.size():
+		return false
+
+	var port := _reinforcement_port(keys[i])
+	if port == Vector2i.MAX:
+		_msg("Rinforzi %s: il porto di questo Gruppo non e' trascritto. "
+			% keys[i] + "E' stampato sulla mappa dello scenario nel "
+			+ "fascicolo; va aggiunto a core/data/victory/. Meglio non "
+			+ "farlo entrare che farlo entrare nel porto sbagliato.")
+		return false
+	var r := Reorganize.attempt_reinforcement(state, selected_tf.side, port,
+		scenario.reinforcements[keys[i]], keys[i])
+	_report(r)
+	if not r["ok"]:
+		return false
+	if bool(r["initiative_passes"]):
+		await _do_time_lapse()
+		state.initiative = 1 - state.initiative
+		state.initiative_count = 0
+		_msg("L'Iniziativa passa a %s."
+			% ("Kriegsmarine" if state.initiative == TaskForce.Side.KRIEGSMARINE
+				else "Royal Navy"))
+		return true
+	if bool(r["success"]):
+		scenario.reinforcements[keys[i]] = []
+	return false
+
+
+## Il porto di un Gruppo di Rinforzi. Il nome del gruppo non lo dice ("KM
+## Reinforcement A"), quindi si guarda dove sta la Casella sul Display: e' il
+## porto in cui il Gruppo e' stampato.
+func _reinforcement_port(group: String) -> Vector2i:
+	var meta: Dictionary = scenario.reinforcement_ports()
+	if meta.has(group):
+		return graph.port_hex(String(meta[group]))
+	return Vector2i.MAX
+
+
+func _ship_names(ships: Array[Ship]) -> Array[String]:
+	var out: Array[String] = []
+	for s in ships:
+		out.append(s.name)
+	return out
+
+
+func _report(r: Dictionary) -> void:
+	if not bool(r.get("ok", false)):
+		_msg(String(r.get("error", "operazione non riuscita")))
+		return
+	for l_v: Variant in r.get("log", []):
+		_msg(String(l_v))
+	_resync_selection()
+	_refresh()
+
+
+## Segnalazione (RB p.39): una Traiettoria nemica con un segnalino Informazioni
+## collassa in una Stazione.
+func _do_signal() -> void:
+	var cands := SignalAction.candidates(state, selected_tf.side)
+	if cands.is_empty():
+		_msg("Segnalazione: nessuna Traiettoria avversaria ha un segnalino "
+			+ "Informazioni. Senza, non c'e' niente da segnalare.")
+		return
+	var target := await _pick_tf(cands, "Segnalazione - quale Task Force?",
+		"Solo le Traiettorie con almeno un segnalino Informazioni.", false)
+	if target == null:
+		return
+
+	var hexes := SignalAction.target_hexes(target)
+	var at := hexes[0]
+	if hexes.size() > 1:
+		var opts: Array = []
+		for h in hexes:
+			opts.append({"label": str(h),
+				"detail": "la Stazione finisce qui, il resto della Traiettoria sparisce"})
+		var i: int = await Choice.ask(self, "Segnalazione - quale segnalino?",
+			"Il bersaglio ha piu' di un segnalino Informazioni.", opts)
+		if i < 0:
+			return
+		at = hexes[i]
+	_report(SignalAction.resolve(target, at))
+	_msg("Ora il giocatore Inattivo puo' tentare di Sottrarre l'Iniziativa.")
+
 
 ## Completamento (RB p.29): le navi entrano in porto e lasciano il gioco.
 ## Se la Task Force tocca piu' di un porto amico, la scelta e' del giocatore.

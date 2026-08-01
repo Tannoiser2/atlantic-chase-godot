@@ -2,6 +2,12 @@
  "_scenario": "Op6 New Friends",
  "_source": "Fascicolo Scenari per 2 Giocatori, edizione INGLESE (AC_TwoPlayer_Book_May_9_2021), pp.23-24. Trascritta a mano da tools/write_victory.py.",
  "mode": "VP",
+ "reinforcement_ports": {
+  "RN Reinforcement A": "Clyde",
+  "RN Reinforcement B": "Gibilterra",
+  "KM Reinforcement A": "Kiel",
+  "KM Reinforcement B": "Brest"
+ },
  "port_control": {
   "FR": "KRIEGSMARINE",
   "NO": "KRIEGSMARINE",

@@ -2,6 +2,12 @@
  "_scenario": "Op3 Norway",
  "_source": "Fascicolo Scenari per 2 Giocatori, edizione INGLESE (AC_TwoPlayer_Book_May_9_2021), pp.11-12. Trascritta a mano da tools/write_victory.py.",
  "mode": "VP",
+ "reinforcement_ports": {
+  "RN Reinforcement A": "Scapa Flow",
+  "RN Reinforcement B": "Clyde",
+  "RN Reinforcement C": "Africa",
+  "RN Reinforcement D": "Gibilterra"
+ },
  "awards": [
   {
    "side": "ROYAL_NAVY",

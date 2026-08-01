@@ -2,6 +2,10 @@
  "_scenario": "Op2 First Test",
  "_source": "Fascicolo Scenari per 2 Giocatori, edizione INGLESE (AC_TwoPlayer_Book_May_9_2021), pp.7-8. Trascritta a mano da tools/write_victory.py.",
  "mode": "VP",
+ "reinforcement_ports": {
+  "KM Reinforcement A": "Kiel",
+  "RN Reinforcement A": "Clyde"
+ },
  "awards": [
   {
    "side": "ROYAL_NAVY",

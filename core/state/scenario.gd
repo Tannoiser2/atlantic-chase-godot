@@ -152,6 +152,17 @@ func port_control() -> Dictionary:
 	return victory_data.get("port_control", {})
 
 
+## In quale porto entra ciascun Gruppo di Rinforzi.
+##
+## Il salvataggio VASSAL non lo dice - i Gruppi stanno in caselle del Display
+## Task Force, che non sono esagoni della mappa - quindi e' un dato letto a
+## mano dalla mappa dello scenario stampata nel fascicolo. Un Gruppo assente da
+## qui non ha un porto noto, e il gioco lo dice invece di sceglierne uno a
+## caso: entrare nel porto sbagliato e' peggio che non entrare.
+func reinforcement_ports() -> Dictionary:
+	return victory_data.get("reinforcement_ports", {})
+
+
 ## Le condizioni di vittoria di questo scenario sono state trascritte?
 ## Non basta guardare i premi in punti: Op1 Homecoming non ne ha nessuno e non
 ## per questo e' incompleta - si vince per condizioni, e quelle ci sono.

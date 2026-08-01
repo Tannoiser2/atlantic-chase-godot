@@ -2,6 +2,10 @@
  "_scenario": "Op7 Non Compos Mentis",
  "_source": "Fascicolo Scenari per 2 Giocatori, edizione INGLESE (AC_TwoPlayer_Book_May_9_2021), pp.27-28. Trascritta a mano da tools/write_victory.py.",
  "mode": "VP",
+ "reinforcement_ports": {
+  "RN Reinforcement A": "Clyde",
+  "RN Reinforcement B": "Clyde"
+ },
  "port_control": {
   "FR": "KRIEGSMARINE",
   "NO": "KRIEGSMARINE"

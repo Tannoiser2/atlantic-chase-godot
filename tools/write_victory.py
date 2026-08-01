@@ -96,6 +96,43 @@ TABLES = {}
 GERMAN_WEST = {"FR": KM, "NO": KM}   # "All French and Norwegian ports are
                                      # German controlled", da Op4 in poi
 
+# In quale porto entra ciascun Gruppo di Rinforzi.
+#
+# Il salvataggio VASSAL non lo dice: i Gruppi stanno in caselle del Display
+# Task Force, che non sono esagoni della mappa. Il porto e' stampato sulla
+# mappa dello scenario nel fascicolo, e va letto da li'.
+#
+# Trascritto solo dove l'ho visto davvero sulla pagina. Dove manca, il gioco
+# lo dice invece di scegliere un porto a caso: un Gruppo che entra nel porto
+# sbagliato e' peggio di un Gruppo che non entra.
+REINFORCEMENT_PORTS = {
+    "Op1 Homecoming":       {"KM Reinforcement A": "Kiel"},
+    "Op2 First Test":       {"KM Reinforcement A": "Kiel",
+                             "RN Reinforcement A": "Clyde"},
+    "Op3 Norway":           {"RN Reinforcement A": "Scapa Flow",
+                             "RN Reinforcement B": "Clyde",
+                             "RN Reinforcement C": "Africa",
+                             "RN Reinforcement D": "Gibilterra"},
+    "Op4 Berlin":           {"RN Reinforcement A": "Clyde",
+                             "RN Reinforcement B": "Scapa Flow",
+                             "RN Reinforcement C": "Clyde",
+                             "RN Reinforcement D": "Gibilterra"},
+    "Op5 Rheinubung":       {"RN Reinforcement A": "Gibilterra",
+                             "RN Reinforcement B": "Scapa Flow",
+                             "RN Reinforcement C": "Clyde"},
+    "Op6 New Friends":      {"RN Reinforcement A": "Clyde",
+                             "RN Reinforcement B": "Gibilterra",
+                             "KM Reinforcement A": "Kiel",
+                             "KM Reinforcement B": "Brest"},
+    "Op7 Non Compos Mentis": {"RN Reinforcement A": "Clyde",
+                              "RN Reinforcement B": "Clyde"},
+    "Op8 Cat and Mouse":    {"RN Reinforcement A": "Clyde",
+                             "RN Reinforcement B": "Gibilterra"},
+    "Op9 Actic Calamity":   {"RN Reinforcement A": "Scapa Flow",
+                             "RN Reinforcement B": "Gibilterra",
+                             "KM Reinforcement A": "Kiel"},
+}
+
 # --------------------------------------------------------------------------
 # Op1 Homecoming - nessuna tabella VP: si vince per condizioni.
 # --------------------------------------------------------------------------
@@ -573,6 +610,8 @@ def main():
         d = dict(TABLES[name])
         doc = {"_scenario": name, "_source": d.pop("_source"),
                "mode": d.pop("mode", "VP")}
+        if name in REINFORCEMENT_PORTS:
+            doc["reinforcement_ports"] = REINFORCEMENT_PORTS[name]
         doc.update(d)
         path = os.path.join(OUT, name + ".json")
         json.dump(doc, open(path, "w"), indent=1, ensure_ascii=False)
