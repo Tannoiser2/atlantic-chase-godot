@@ -56,6 +56,38 @@ Rifà l'intera catena: calibrazione del reticolo, decodifica dei 22 salvataggi,
 grafo della mappa, scenari, asset e ruolino navi. Serve la cartella `images/`
 del modulo VASSAL nella directory **superiore** a questa.
 
+### App per macOS
+
+```bash
+sh tools/build_macos.sh
+```
+
+Produce `build/macos/Atlantic Chase.app` (binario universale, ~173 MB), la
+firma e le toglie la quarantena. Si apre con un doppio clic.
+
+**Firma e quarantena sono due cose diverse**, e vengono spesso confuse:
+
+- la **firma** è la firma del codice; senza, macOS non apre l'app. Godot ne
+  mette una *ad-hoc*, cioè locale e senza certificato: per un'app che gira su
+  questo Mac basta.
+- la **quarantena** è un attributo che macOS appiccica a qualunque file
+  **scaricato** — browser, GitHub, AirDrop, Mail. Non c'entra con la firma:
+  l'app compilata qui non ce l'ha, la stessa app scaricata da GitHub sì, ed è
+  quella che fa comparire *"proviene da uno sviluppatore non identificato"*.
+
+Se la scarichi su un altro Mac, lì va tolta di nuovo:
+
+```bash
+xattr -dr com.apple.quarantine "/percorso/Atlantic Chase.app"
+```
+
+Per non doverlo fare mai più servono un **Developer ID Apple** (99 $/anno) e la
+notarizzazione. Se ne hai uno, lo script lo usa al posto della firma ad-hoc:
+
+```bash
+AC_SIGN_IDENTITY="Developer ID Application: Nome (TEAMID)" sh tools/build_macos.sh
+```
+
 ### Giocare da iPad (o da un altro dispositivo di casa)
 
 ```bash
