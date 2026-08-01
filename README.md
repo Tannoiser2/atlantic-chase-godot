@@ -78,7 +78,7 @@ gli header di cross-origin isolation e basta un server statico banale.
 godot --headless --path . --script res://tests/run_tests.gd
 ```
 
-873 verifiche su 8 suite. Esce con codice 1 al primo fallimento, quindi è
+1048 verifiche su 9 suite. Esce con codice 1 al primo fallimento, quindi è
 usabile direttamente in CI.
 
 ---
@@ -95,10 +95,12 @@ core/           logica pura, zero dipendenze da Node
   map/          coordinate esagonali, grafo della mappa
   state/        Traiettoria, Task Force, GameState serializzabile
   rules/        Scorrere del Tempo, Totale Traiettoria, Interruzione,
-                motore delle Azioni, Risultati Comuni
+                motore delle Azioni, Risultati Comuni, Completamento,
+                Punti Vittoria
   battle/       Mappa di Battaglia: raggi, cannoni, siluri, manovra, fuga
   engine/       RNG con seme, registro comandi con undo/redo
-  data/         map_graph.json, tables.json, actions.json, ships.json, scenarios/
+  data/         map_graph.json, tables.json, actions.json, ships.json,
+                scenarios/, victory/
 ui/             rendering e input (Godot): splash, mappa, battaglia, pannelli
 tools/          pipeline Python: calibrazione, estrazione, import
 tests/          runner headless senza dipendenze esterne

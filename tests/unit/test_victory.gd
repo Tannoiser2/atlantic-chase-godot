@@ -36,6 +36,7 @@ func run() -> void:
 	test_completion_refusals()
 	test_completion_scores()
 	test_battle_scores()
+	test_debriefing()
 
 
 func _v(id: String) -> Victory:
@@ -492,3 +493,46 @@ func test_battle_scores() -> void:
 		"firer": bismarck}] as Array[Dictionary])
 	true_(hood.sunk, "l'Hood affonda lo stesso")
 	eq(st6.vp_of(TaskForce.Side.KRIEGSMARINE), 0.0, "ma nessuno segna punti")
+
+
+## Il solitario: un punteggio solo, letto su una tabella di Esiti a soglie.
+func test_debriefing() -> void:
+	_begin("solitario: tabella degli Esiti")
+	var path := "res://core/data/victory/BL1 Raiders of the North Atlantic.json"
+	var f := FileAccess.open(path, FileAccess.READ)
+	ne(f, null, "la tabella di BL1 c'e'")
+	var data: Dictionary = JSON.parse_string(f.get_as_text())
+	f.close()
+
+	var sc := Scenario.new()
+	sc.victory_data = data
+	var v := Victory.from_scenario(sc)
+	eq(v.mode, Victory.Mode.DEBRIEFING, "modalita' debriefing")
+	eq(v.solo_side, TaskForce.Side.KRIEGSMARINE, "si comanda il tedesco")
+	eq(v.debriefing.size(), 5, "cinque esiti possibili")
+
+	# le soglie, dall'alto in basso
+	eq(String(v.debriefing_row(9.0)["label"]), "Raiders Triumphant!", "9 punti")
+	eq(String(v.debriefing_row(6.0)["label"]), "Raiders Triumphant!", "6 esatti")
+	eq(String(v.debriefing_row(5.0)["label"]), "Successo", "5 punti")
+	eq(String(v.debriefing_row(3.0)["label"]), "Successo", "3 esatti")
+	eq(String(v.debriefing_row(2.0)["label"]), "Incoraggiante", "2 punti")
+	eq(String(v.debriefing_row(0.0)["label"]), "Che cosa e' andato storto?", "zero")
+	eq(String(v.debriefing_row(-2.0)["label"]), "Che cosa e' andato storto?", "-2")
+	eq(String(v.debriefing_row(-3.0)["label"]), "Fallimento", "-3: fine della carriera")
+	eq(String(v.debriefing_row(-99.0)["label"]), "Fallimento", "e a scendere pure")
+
+	# qui perdere navi COSTA: e' l'obiettivo dichiarato dello scenario
+	var st := _state()
+	var tracker := VictoryTracker.new(v, st)
+	var before := VictoryTracker.snapshot(roster.make("Graf Spee"))
+	var spee := roster.make("Graf Spee")
+	spee.sunk = true
+	tracker.hits_on(spee, 1, TaskForce.Side.KRIEGSMARINE, before)
+	eq(st.vp_of(TaskForce.Side.KRIEGSMARINE), -5.0, "una nave tedesca persa: -5")
+
+	var o := v.outcome(st)
+	eq(float(o["score"]), -5.0, "il punteggio e' quello del giocatore")
+	eq(int(o["winner"]), -1, "e non c'e' nessun vincitore da dichiarare")
+	eq(String(o["row"]["label"]), "Fallimento", "l'esito e' il peggiore")
+	true_(v.describe(st).contains("Fallimento"), "e viene scritto per esteso")

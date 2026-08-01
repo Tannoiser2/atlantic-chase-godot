@@ -12,9 +12,12 @@ extends RefCounted
 ##   CONDITIONS  Op1 Homecoming non ha nessuna tabella VP: e' un elenco di
 ##               condizioni ("se il Bremen Completa a Kiel vincono i tedeschi").
 ##               Contare punti qui sarebbe inventarsi una regola che non c'e'.
-##   DEBRIEFING  gli scenari in solitario non si vincono e non si perdono: il
-##               fascicolo dice che "a scenario concluso si legge una tabella di
-##               Esiti", e piu' in alto sta la riga raggiunta, meglio e' andata.
+##   DEBRIEFING  gli scenari in solitario non si vincono e non si perdono. Si
+##               conta un punteggio - UNO SOLO, quello del giocatore, non due
+##               contrapposti - e lo si cerca in una tabella di Esiti a soglie:
+##               in BL1, 6 o piu' e' "Raiders Triumphant!", da -3 in giu' e'
+##               "Raeder e' sollevato dal comando". `solo_side` dice di chi e'
+##               quel punteggio.
 ##
 ## La tabella sta in core/data/victory/<nome>.json - file separato dallo
 ## scenario, che invece e' generato dal .vsav: cosi' una rigenerazione non
@@ -72,6 +75,10 @@ var debriefing: Array = []
 var has_table: bool = false
 var notes: Array = []
 
+## Solo in modalita' DEBRIEFING: di chi e' il punteggio che si legge sulla
+## tabella degli Esiti. Nel solitario si comanda una parte sola.
+var solo_side: int = TaskForce.Side.KRIEGSMARINE
+
 
 static func from_scenario(sc: Scenario) -> Victory:
 	var v := Victory.new()
@@ -81,6 +88,9 @@ static func from_scenario(sc: Scenario) -> Victory:
 	v.tiebreak = d.get("tiebreak", {})
 	v.conditions = d.get("conditions", [])
 	v.debriefing = d.get("debriefing", [])
+	v.solo_side = TaskForce.Side.ROYAL_NAVY \
+		if String(d.get("solo_side", "KRIEGSMARINE")) == "ROYAL_NAVY" \
+		else TaskForce.Side.KRIEGSMARINE
 	for a_v: Variant in d.get("awards", []):
 		var a: Dictionary = a_v
 		v.awards.append({
@@ -291,6 +301,19 @@ func apply_event(state: GameState, event: int, ship: Ship = null,
 	return lines
 
 
+## La riga della tabella degli Esiti raggiunta con questo punteggio.
+##
+## Le righe sono ordinate dalla migliore alla peggiore e ognuna ha una soglia
+## `min`: si scende finche' il punteggio la raggiunge. L'ultima riga fa da
+## fondo ("-3 o meno"), quindi non ha soglia. Ritorna {} se la tabella non c'e'.
+func debriefing_row(score: float) -> Dictionary:
+	for r_v: Variant in debriefing:
+		var r: Dictionary = r_v
+		if not r.has("min") or score >= float(r["min"]):
+			return r
+	return {}
+
+
 ## Esito finale. Ritorna:
 ##   { "mode": int, "km": float, "rn": float, "winner": int (-1 = da risolvere),
 ##     "tie": bool, "tiebreak_text": String, "resolved": bool }
@@ -302,6 +325,15 @@ func outcome(state: GameState) -> Dictionary:
 	var out := {"mode": mode, "km": km, "rn": rn,
 		"tie": is_equal_approx(km, rn), "resolved": true, "winner": -1,
 		"tiebreak_text": String(tiebreak.get("condition", ""))}
+	if mode == Mode.DEBRIEFING:
+		# nel solitario non c'e' un vincitore: c'e' un punteggio e una riga
+		out["tie"] = false
+		out["winner"] = -1
+		out["score"] = state.vp_of(solo_side)
+		var row := debriefing_row(float(out["score"]))
+		out["row"] = row
+		out["resolved"] = not row.is_empty()
+		return out
 	if mode != Mode.VP:
 		# senza tabella VP il punteggio non decide niente
 		out["resolved"] = false
@@ -335,13 +367,16 @@ func describe(state: GameState) -> String:
 					else ("Royal Navy" if w == "ROYAL_NAVY" else w)
 				lines.append("  - %s -> vince %s" % [String(c.get("text", "")), who])
 		Mode.DEBRIEFING:
+			var o3 := outcome(state)
 			lines.append("Scenario in solitario: non si vince, si legge "
-				+ "l'esito. Piu' in alto e' la riga raggiunta, meglio e' andata.")
-			for i in debriefing.size():
-				var r: Dictionary = debriefing[i]
-				lines.append("  %d. %s%s" % [i + 1, String(r.get("text", "")),
-					("  [%s]" % String(r.get("label", "")))
-						if String(r.get("label", "")) != "" else ""])
+				+ "l'esito.")
+			lines.append("Punteggio: %s" % GameState.vp_str(float(o3["score"])))
+			var row: Dictionary = o3["row"]
+			if row.is_empty():
+				lines.append("(tabella degli Esiti non trascritta)")
+			else:
+				lines.append("-> %s" % String(row.get("label", "")))
+				lines.append("   " + String(row.get("text", "")))
 		_:
 			var o := outcome(state)
 			lines.append("Punti Vittoria - Kriegsmarine %s, Royal Navy %s"

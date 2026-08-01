@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **873 verifiche, 8 suite, headless.**
+Tutti i test passano: **1048 verifiche, 9 suite, headless.**
 
 ---
 
@@ -17,9 +17,48 @@ Tutti i test passano: **873 verifiche, 8 suite, headless.**
 | **M3** Mappa interattiva | ✅ **completo** | Selezione, costruzione traiettoria, anteprima, undo, HUD, log |
 | **M4** Motore azioni | ✅ **completo** | Tutte e 4 le tabelle trascritte e verificate; danno alle navi |
 | **M5** Battaglia | ✅ **completo** | motore + vista: 5 zone, cannoni, siluri, manovra, fumo, fuga, uscita |
-| **M6** Scenari | 🟡 **quasi completo** | 22 scenari con navi, comandanti, rinforzi e briefing; le condizioni di vittoria sono testo, non regole |
+| **M6** Scenari | ✅ **completo** | 22 scenari con navi, comandanti, rinforzi e briefing |
+| **M7** Vittoria | 🟡 **quasi completo** | Le 9 Operazioni hanno la tabella eseguibile e i punti arrivano al segnapunti; mancano i 12 mini-scenari e i 15 solitari |
 
 ### Cosa è cambiato nell'ultima sessione
+
+- **Tutte e nove le tabelle di Vittoria delle Operazioni**, trascritte
+  dall'edizione **inglese** del fascicolo per 2 giocatori. L'italiana perde le
+  intestazioni di colonna della tabella tedesca della Rheinübung, e senza
+  *Francia / Norvegia / Germania* quei numeri non vogliono dire niente.
+- **Tre modelli di vittoria, non uno.** Leggendo tutti e tre i fascicoli:
+  *VP* (otto Operazioni), *CONDITIONS* (Op1 Homecoming non ha nessuna tabella
+  VP, è un elenco di condizioni) e *DEBRIEFING* (il solitario non si vince: si
+  conta un punteggio solo e si legge una tabella di Esiti a soglie). Il motore
+  li tiene distinti invece di forzarli in uno.
+- **I VP ora sono in virgola mobile.** Cinque tabelle su nove pagano **mezzo
+  punto** per un incrociatore britannico affondato: arrotondare cambiava il
+  vincitore. Si stampano `3½`.
+- **Punti negativi, Colpi e premi una tantum.** In Op3 il britannico *perde* 1
+  punto se non ha minato Narvik o Trondheim; in Op8 un semplice Colpo sul
+  Tirpitz vale 1 punto; *"il primo Completamento tedesco riuscito a Bergen"*
+  paga una volta sola, e il fatto che sia scattato sta nello stato salvato.
+- **L'azione Completamento** (RB p.29) era dichiarabile ma non faceva niente.
+  Ora applica la regola: una sola TF, non più di 6 segmenti, almeno un segmento
+  in un esagono di porto **amico**, vietata con un segnalino Informazioni.
+- **Chi controlla i porti** è un dato di scenario: dalla quarta Operazione in
+  poi i porti francesi e norvegesi sono tedeschi, e singoli scenari chiudono
+  singoli porti (Murmansk in Op9, South America in Op6 e Op8).
+- **Dieci righe restano da spuntare a mano** — mine posate, marcatore Base
+  Aerea, *"la TF dell'Hipper ha eseguito un'azione Traiettoria"*, zona di
+  sicurezza USA. Il motore non le assegna da solo: le elenca. E un premio che
+  non scatta perché **manca un dato** viene distinto da uno che non scatta
+  perché la nave non corrisponde, e scritto nel registro.
+- **Corretto il Bremen nel ruolino.** Il nome è stampato in corsivo, l'OCR non
+  l'aveva letto e il parser aveva preso `bremen` e `bremenb` per codici di
+  *tipo*: due navi anonime invece di una a due facce. Op1 è tutta costruita su
+  quella nave e senza nome nessuna regola poteva nominarla. Da 86 navi a 85.
+- **Un bug preso dai test**: leggevo il proprietario di una nave *dopo* averle
+  applicato i Colpi, ma una nave affondata non figura più fra quelle a galla
+  della sua Task Force — così il Bismarck affondato veniva contato come nave
+  britannica, con 3 punti al giocatore sbagliato.
+
+### Cosa era cambiato nella sessione precedente
 
 - **M4 chiuso.** Le quattro tabelle azione (Ingaggiare, Ricerca Navale, Attacco
   Aereo, Attacco Furtivo) sono state lette dalla mappa a ingrandimento 5–6× e
@@ -170,18 +209,33 @@ dal metodo con cui il reticolo è stato ricavato.
 
 ## Cosa manca, in ordine di importanza
 
-### 1. Condizioni di vittoria eseguibili
+### 1. Le tabelle di Vittoria che mancano
 
-Gli scenari hanno ora navi, comandanti, rinforzi, iniziativa, meteo e il testo
-completo di fine partita e vittoria, e i Punti Vittoria si contano.
+Le **9 Operazioni** sono fatte. Restano:
 
-Quello che manca è renderle **automatiche**. In Atlantic Chase sono discorsive e
-piene di eccezioni per scenario — *"il tedesco vince se il Bismarck è in un porto
-francese; altrimenti vince il britannico"* — quindi ogni scenario è quasi un
-caso a sé. Oggi il testo è mostrato nel briefing (tasto **B**) e i giocatori lo
-applicano; automatizzarlo è un lavoro scenario per scenario.
+- i **12 mini-scenari** (`MS1`–`MS12`), le cui tabelle stanno nel fascicolo per
+  2 giocatori dopo le Operazioni;
+- i **15 scenari in solitario** (`BL1`–`BL3`, `N1`–`N6`, `B1`–`B4`, `A1`–`A2`).
+  Di `BL1` la tabella degli Esiti è già trascritta e verificata, come modello.
 
-### 2. Export per iPad
+Il formato è pronto e testato: si aggiungono file in `core/data/victory/`, o si
+estende `tools/write_victory.py`.
+
+### 2. Il modo solitario vero e proprio
+
+Gli scenari in solitario **non stanno nel modulo VASSAL**: non c'è nessun
+`.vsav` da cui ricavare lo schieramento, va trascritto a mano dalle mappe del
+fascicolo. E ognuno usa sistemi che il motore non ha: marcatori *Rendezvous* e
+Tabella del Rifornimento, **Tabella delle Azioni** dell'avversario immaginario,
+Tabella per Identificare la TF nemica, TF *non identificate*. È il cuore del
+modo solitario ed è una milestone a sé, non una trascrizione.
+
+### 3. Le dieci righe da spuntare a mano
+
+Il motore le elenca ma nessuna schermata le mostra ancora: serve un pannello di
+fine partita che le presenti come una lista da spuntare, e sommi il risultato.
+
+### 4. Export per iPad
 
 I gesti touch ci sono (pinch, due dita, tocco prolungato) ma non sono mai stati
 provati su un dispositivo vero: mancano i template di export di Godot 4.7
@@ -192,7 +246,7 @@ provati su un dispositivo vero: mancano i template di export di Godot 4.7
 ## Una nota sull'ambito
 
 **M0–M5 sono chiusi e testati.** Rispetto al piano iniziale è un mese e mezzo
-di lavoro stimato, con 726 verifiche automatiche a copertura.
+di lavoro stimato, con oltre mille verifiche automatiche a copertura.
 
 Quello che resta non è più ricerca ma trascrizione e interfaccia: le statistiche
 delle navi, gli obiettivi degli scenari, la vista della Mappa di Battaglia, i

@@ -1,0 +1,115 @@
+{
+ "_scenario": "BL1 Raiders of the North Atlantic",
+ "_source": "Fascicolo Scenari in Solitario, edizione INGLESE (AC_Solo_scenarios_2022, pp.5-8). Trascritta a mano.",
+ "mode": "DEBRIEFING",
+ "solo_side": "KRIEGSMARINE",
+ "_status": "Tabella degli Esiti e premi COMPLETI e verificati. Lo SCHIERAMENTO no: gli scenari in solitario non stanno nel modulo VASSAL, quindi non c'e' nessun .vsav da cui ricavarlo e va trascritto a mano dalla mappa stampata nel fascicolo. Finche' non c'e', questo file serve al motore ma lo scenario non e' giocabile.",
+ "awards": [
+  {
+   "side": "KRIEGSMARINE",
+   "event": "CUSTOM",
+   "points": -1,
+   "label": "Nessun Convoglio britannico distrutto",
+   "manual": true
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "CUSTOM",
+   "points": 3,
+   "label": "Un Convoglio britannico distrutto",
+   "manual": true
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "CUSTOM",
+   "points": 6,
+   "label": "Due o piu' Convogli britannici distrutti",
+   "manual": true
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "CONVOY_COMPLETED",
+   "match": {"owner": "ROYAL_NAVY"},
+   "points": -2,
+   "label": "ogni Convoglio britannico che ha Completato"
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_SUNK",
+   "match": {"owner": "KRIEGSMARINE"},
+   "points": -5,
+   "label": "ogni nave tedesca affondata"
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_DAMAGED",
+   "match": {"owner": "KRIEGSMARINE"},
+   "points": -3,
+   "label": "ogni nave tedesca danneggiata"
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_COMPLETED",
+   "match": {"owner": "KRIEGSMARINE", "destination": "South America"},
+   "points": 3,
+   "label": "una o piu' TF tedesche hanno Completato in South America",
+   "once": true
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_DAMAGED",
+   "match": {"owner": "ROYAL_NAVY", "types": ["BC", "CA", "CL"]},
+   "points": 1,
+   "label": "ogni BC, CA o CL britannico danneggiato"
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_SUNK",
+   "match": {"owner": "ROYAL_NAVY", "types": ["BC", "CA", "CL"]},
+   "points": 2,
+   "label": "ogni BC, CA o CL britannico affondato"
+  }
+ ],
+ "debriefing": [
+  {
+   "min": 6,
+   "label": "Raiders Triumphant!",
+   "text": "Il Grandammiraglio Raeder e' soddisfatto dei rapporti. Per ora i britannici non riescono a contrastare i suoi corsari. Ha il permesso di lanciarne altri nell'Atlantico."
+  },
+  {
+   "min": 3,
+   "label": "Successo",
+   "text": "Raeder e' soddisfatto dei rapporti, ma se una nave tedesca e' stata danneggiata o affondata non ha scelta: dovra' ridurre le sortite. Non puo' permettersi perdite."
+  },
+  {
+   "min": 1,
+   "label": "Incoraggiante",
+   "text": "I rapporti incoraggiano Raeder, ma se una nave tedesca ha combattuto una Battaglia contro qualcosa che non fosse un Convoglio, il Fuhrer lo richiama all'ordine. Se pero' e' stata affondata una nave britannica (non un Convoglio), l'Esito sale di una riga, a 'Successo'."
+  },
+  {
+   "min": -2,
+   "label": "Che cosa e' andato storto?",
+   "text": "Nessun'altra nave tedesca sara' liberata per incursioni nell'Atlantico. Se e' stata affondata una corazzata tascabile, i giorni di Raeder sono contati."
+  },
+  {
+   "label": "Fallimento",
+   "text": "Il Grandammiraglio Raeder e' sollevato dal comando."
+  }
+ ],
+ "murmansk_table": {
+  "_note": "Prima del Debriefing, se una TF tedesca ha Completato a Murmansk si tira un dado. Modificatore: -1 se sono stati distrutti due o piu' Convogli.",
+  "rows": [
+   {"max": 0, "points": -3, "text": "Le navi tedesche sono confiscate dall'Unione Sovietica. Perdi 3 VP."},
+   {"max": 2, "points": -1, "text": "Scoppia un incidente internazionale. Perdi 1 VP."},
+   {"max": 6, "points": 0, "text": "Le navi fanno rifornimento in silenzio e rientrano sane e salve a Kiel."}
+  ]
+ },
+ "notes": [
+  "Il solitario non si vince e non si perde: si conta UN punteggio, quello del giocatore, e lo si cerca nella tabella degli Esiti. Non ci sono due punteggi contrapposti come nelle Operazioni.",
+  "Qui il giocatore e' il TEDESCO, e diversi premi TOLGONO punti: -5 per ogni nave tedesca affondata, -3 per ogni nave danneggiata, -2 per ogni convoglio britannico arrivato. L'obiettivo dice esattamente questo: 'in nessun caso dovete perdere una nave tedesca'.",
+  "Le tre righe sui Convogli distrutti si escludono a vicenda (nessuno -1, uno 3, due o piu' 6) e vanno spuntate a mano: il motore non tiene il conto dei convogli distrutti separato da quello dei convogli arrivati.",
+  "Le righe 'Successo' e 'Incoraggiante' hanno condizioni aggiuntive scritte a parole, che possono spostare l'Esito di una riga. Sono riportate nel testo e le valuta il giocatore.",
+  "La tabella Murmansk si tira PRIMA del Debriefing e modifica il punteggio. Non e' automatica: serve un tiro di dado.",
+  "Questo scenario usa sistemi che il motore non ha ancora: marcatori Rendezvous e Tabella del Rifornimento, Tabella delle Azioni Britanniche per l'avversario immaginario, Tabella per Identificare la TF britannica. Sono il cuore del modo solitario e vanno implementati a parte."
+ ]
+}
