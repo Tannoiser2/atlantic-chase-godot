@@ -1,0 +1,2922 @@
+{
+ "_source": "OCR delle pedine (tesseract, soglia di Otsu); tipo, nome e nazione dal nome del file. gun_*_na = la pedina riporta 'na', cioe' la nave non puo' sparare a quel raggio.",
+ "_review": "reports/ships_review.txt elenca le pedine da controllare a occhio.",
+ "ships": [
+  {
+   "file": "ship_fr_bb_bretagne.png",
+   "name": "Bretagne",
+   "nation": "FR",
+   "type": "BB",
+   "damaged_side": false,
+   "gun_close": 3,
+   "gun_far": 1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 4,
+   "speed": "MEDIUM",
+   "_raw": {
+    "guns": "3/1",
+    "speed": "m",
+    "defense": "4"
+   }
+  },
+  {
+   "file": "ship_fr_bb_bretagneb.png",
+   "name": "Bretagne",
+   "nation": "FR",
+   "type": "BB",
+   "damaged_side": true,
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 2,
+   "speed": "VERY_SLOW",
+   "_raw": {
+    "guns": "1/0",
+    "speed": "vs",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_fr_bb_provence.png",
+   "name": "Provence",
+   "nation": "FR",
+   "type": "BB",
+   "damaged_side": false,
+   "gun_close": 3,
+   "gun_far": 1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 2,
+   "speed": "MEDIUM",
+   "_raw": {
+    "guns": "3/1",
+    "speed": "m",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_fr_bb_provenceb.png",
+   "name": "Provence",
+   "nation": "FR",
+   "type": "BB",
+   "damaged_side": true,
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 2,
+   "speed": "VERY_SLOW",
+   "_raw": {
+    "guns": "1/0",
+    "speed": "vs",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_fr_bc_dunkerque.png",
+   "name": "Dunkerque",
+   "nation": "FR",
+   "type": "BC",
+   "damaged_side": false,
+   "gun_close": 4,
+   "gun_far": 2,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 2,
+   "speed": "",
+   "_raw": {
+    "guns": "4/2",
+    "speed": "",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_fr_bc_dunkerqueb.png",
+   "name": "Dunkerque",
+   "nation": "FR",
+   "type": "BC",
+   "damaged_side": true,
+   "gun_close": 2,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 4,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "2/0",
+    "speed": "s",
+    "defense": "4"
+   }
+  },
+  {
+   "file": "ship_fr_bc_strasbourg.png",
+   "name": "Strasbourg",
+   "nation": "FR",
+   "type": "BC",
+   "damaged_side": false,
+   "gun_close": 4,
+   "gun_far": 2,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 4,
+   "speed": "",
+   "_raw": {
+    "guns": "4/2",
+    "speed": "",
+    "defense": "4"
+   }
+  },
+  {
+   "file": "ship_fr_bc_strasbourgb.png",
+   "name": "Strasbourg",
+   "nation": "FR",
+   "type": "BC",
+   "damaged_side": true,
+   "gun_close": 2,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 4,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "2/0",
+    "speed": "s",
+    "defense": "4"
+   }
+  },
+  {
+   "file": "ship_fr_cl_g_leygues.png",
+   "name": "G Leygues",
+   "nation": "FR",
+   "type": "CL",
+   "damaged_side": false,
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "1/0",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_fr_cl_g_leyguesb.png",
+   "name": "G Leygues",
+   "nation": "FR",
+   "type": "CL",
+   "damaged_side": true,
+   "gun_close": 0,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "0/0",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_fr_cl_gloire.png",
+   "name": "Gloire",
+   "nation": "FR",
+   "type": "CL",
+   "damaged_side": false,
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "1/0",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_fr_cl_gloireb.png",
+   "name": "Gloire",
+   "nation": "FR",
+   "type": "CL",
+   "damaged_side": true,
+   "gun_close": 0,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "0/0",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_fr_cl_montcalm.png",
+   "name": "Montcalm",
+   "nation": "FR",
+   "type": "CL",
+   "damaged_side": false,
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "1/0",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_fr_cl_montcalmb.png",
+   "name": "Montcalm",
+   "nation": "FR",
+   "type": "CL",
+   "damaged_side": true,
+   "gun_close": 0,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "0/O",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_fr_cv_bearn.png",
+   "name": "Bearn",
+   "nation": "FR",
+   "type": "CV",
+   "damaged_side": false,
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "MEDIUM",
+   "_raw": {
+    "guns": "a/a",
+    "speed": "m",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_fr_cv_bearnb.png",
+   "name": "Bearn",
+   "nation": "FR",
+   "type": "CV",
+   "damaged_side": true,
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_na": true,
+   "gun_far_na": true,
+   "defense": 2,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "na",
+    "speed": "s",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_ge_ac_orion.png",
+   "name": "Orion",
+   "nation": "GE",
+   "type": "AC",
+   "damaged_side": false,
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "O/-1",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_ge_ac_widder.png",
+   "name": "Widder",
+   "nation": "GE",
+   "type": "AC",
+   "damaged_side": false,
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "O/-1",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_ge_ao_tanker_x2.png",
+   "name": "Tanker X2",
+   "nation": "GE",
+   "type": "AO",
+   "damaged_side": false,
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_na": true,
+   "gun_far_na": true,
+   "defense": 1,
+   "speed": "VERY_SLOW",
+   "_raw": {
+    "guns": "na",
+    "speed": "vs",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_ge_bb_bismarck.png",
+   "name": "Bismarck",
+   "nation": "GE",
+   "type": "BB",
+   "damaged_side": false,
+   "gun_close": 4,
+   "gun_far": 2,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "MEDIUM",
+   "_raw": {
+    "guns": "4/2",
+    "speed": "m",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_ge_bb_bismarckb.png",
+   "name": "Bismarck",
+   "nation": "GE",
+   "type": "BB",
+   "damaged_side": true,
+   "gun_close": 3,
+   "gun_far": 1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 4,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "3/1",
+    "speed": "s",
+    "defense": "4"
+   }
+  },
+  {
+   "file": "ship_ge_bb_tirpitz.png",
+   "name": "Tirpitz",
+   "nation": "GE",
+   "type": "BB",
+   "damaged_side": false,
+   "gun_close": 4,
+   "gun_far": 2,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 2,
+   "speed": "MEDIUM",
+   "_raw": {
+    "guns": "4/2",
+    "speed": "m",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_ge_bb_tirpitzb.png",
+   "name": "Tirpitz",
+   "nation": "GE",
+   "type": "BB",
+   "damaged_side": true,
+   "gun_close": 3,
+   "gun_far": 1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 0,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "3/1",
+    "speed": "s",
+    "defense": ""
+   }
+  },
+  {
+   "file": "ship_ge_bc_gneisenau.png",
+   "name": "Gneisenau",
+   "nation": "GE",
+   "type": "BC",
+   "damaged_side": false,
+   "gun_close": 3,
+   "gun_far": 2,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 2,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "3/2",
+    "speed": "f",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_ge_bc_gneisenaub.png",
+   "name": "Gneisenau",
+   "nation": "GE",
+   "type": "BC",
+   "damaged_side": true,
+   "gun_close": 2,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 4,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "2/0",
+    "speed": "s",
+    "defense": "4"
+   }
+  },
+  {
+   "file": "ship_ge_bc_scharnhorst.png",
+   "name": "Scharnhorst",
+   "nation": "GE",
+   "type": "BC",
+   "damaged_side": false,
+   "gun_close": 3,
+   "gun_far": 2,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "3/2",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_ge_bc_scharnhorstb.png",
+   "name": "Scharnhorst",
+   "nation": "GE",
+   "type": "BC",
+   "damaged_side": true,
+   "gun_close": 2,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 4,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "2/0",
+    "speed": "s",
+    "defense": "4"
+   }
+  },
+  {
+   "file": "ship_ge_bremen.png",
+   "name": "",
+   "nation": "GE",
+   "type": "BREMEN",
+   "damaged_side": false,
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_na": true,
+   "gun_far_na": true,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "na",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_ge_bremenb.png",
+   "name": "",
+   "nation": "GE",
+   "type": "BREMENB",
+   "damaged_side": false,
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_na": true,
+   "gun_far_na": true,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "na",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_ge_ca_hipper.png",
+   "name": "Hipper",
+   "nation": "GE",
+   "type": "CA",
+   "damaged_side": false,
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "1/0",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_ge_ca_hipperb.png",
+   "name": "Hipper",
+   "nation": "GE",
+   "type": "CA",
+   "damaged_side": true,
+   "gun_close": 0,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 4,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "0/O",
+    "speed": "s",
+    "defense": "4"
+   }
+  },
+  {
+   "file": "ship_ge_ca_preugen.png",
+   "name": "Preugen",
+   "nation": "GE",
+   "type": "CA",
+   "damaged_side": false,
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "1/0",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_ge_ca_preugenb.png",
+   "name": "Preugen",
+   "nation": "GE",
+   "type": "CA",
+   "damaged_side": true,
+   "gun_close": 0,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 2,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "0/O",
+    "speed": "s",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_ge_cl_karlsruhe.png",
+   "name": "Karlsruhe",
+   "nation": "GE",
+   "type": "CL",
+   "damaged_side": false,
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "1/0",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_ge_cl_karlsruheb.png",
+   "name": "Karlsruhe",
+   "nation": "GE",
+   "type": "CL",
+   "damaged_side": true,
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "O/-1",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_ge_cl_koln.png",
+   "name": "Koln",
+   "nation": "GE",
+   "type": "CL",
+   "damaged_side": false,
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "MEDIUM",
+   "_raw": {
+    "guns": "1/0",
+    "speed": "m",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_ge_cl_kolnb.png",
+   "name": "Koln",
+   "nation": "GE",
+   "type": "CL",
+   "damaged_side": true,
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "O/-1",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_ge_cl_konigsberg.png",
+   "name": "Konigsberg",
+   "nation": "GE",
+   "type": "CL",
+   "damaged_side": false,
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "1/0",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_ge_cl_konigsbergb.png",
+   "name": "Konigsberg",
+   "nation": "GE",
+   "type": "CL",
+   "damaged_side": true,
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "O/-1",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_ge_cl_leipzig.png",
+   "name": "Leipzig",
+   "nation": "GE",
+   "type": "CL",
+   "damaged_side": false,
+   "gun_close": 4,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "4/0",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_ge_cl_leipzigb.png",
+   "name": "Leipzig",
+   "nation": "GE",
+   "type": "CL",
+   "damaged_side": true,
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "VERY_SLOW",
+   "_raw": {
+    "guns": "O/-1",
+    "speed": "vs",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_ge_cl_nurnburg.png",
+   "name": "Nurnburg",
+   "nation": "GE",
+   "type": "CL",
+   "damaged_side": false,
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "1/0",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_ge_cl_nurnburgb.png",
+   "name": "Nurnburg",
+   "nation": "GE",
+   "type": "CL",
+   "damaged_side": true,
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "O/-1",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_ge_convoy_x2.png",
+   "name": "X2",
+   "nation": "GE",
+   "type": "CONVOY",
+   "damaged_side": false,
+   "gun_close": 2,
+   "gun_far": null,
+   "gun_close_na": false,
+   "gun_far_na": true,
+   "defense": 0,
+   "speed": "VERY_SLOW",
+   "_raw": {
+    "guns": "2/na",
+    "speed": "vs",
+    "defense": ""
+   }
+  },
+  {
+   "file": "ship_ge_cv_grzeppelin.png",
+   "name": "Grzeppelin",
+   "nation": "GE",
+   "type": "CV",
+   "damaged_side": false,
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "MEDIUM",
+   "_raw": {
+    "guns": "a",
+    "speed": "m",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_ge_cv_grzeppelinb.png",
+   "name": "Grzeppelin",
+   "nation": "GE",
+   "type": "CV",
+   "damaged_side": true,
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_na": true,
+   "gun_far_na": true,
+   "defense": 2,
+   "speed": "VERY_SLOW",
+   "_raw": {
+    "guns": "na",
+    "speed": "vs",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_ge_dd_squadron.png",
+   "name": "Squadron",
+   "nation": "GE",
+   "type": "DD",
+   "damaged_side": false,
+   "gun_close": 0,
+   "gun_far": null,
+   "gun_close_na": false,
+   "gun_far_na": true,
+   "defense": 0,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "o/na",
+    "speed": "s",
+    "defense": ""
+   }
+  },
+  {
+   "file": "ship_ge_pb_graf_spee.png",
+   "name": "Graf Spee",
+   "nation": "GE",
+   "type": "PB",
+   "damaged_side": false,
+   "gun_close": 0,
+   "gun_far": 1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "MEDIUM",
+   "_raw": {
+    "guns": "o/1",
+    "speed": "m",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_ge_pb_graf_speeb.png",
+   "name": "Graf Spee",
+   "nation": "GE",
+   "type": "PB",
+   "damaged_side": true,
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 4,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "1/0",
+    "speed": "s",
+    "defense": "4"
+   }
+  },
+  {
+   "file": "ship_ge_pb_lutzow.png",
+   "name": "Lutzow",
+   "nation": "GE",
+   "type": "PB",
+   "damaged_side": false,
+   "gun_close": 0,
+   "gun_far": 1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "MEDIUM",
+   "_raw": {
+    "guns": "O/1",
+    "speed": "m",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_ge_pb_lutzowb.png",
+   "name": "Lutzow",
+   "nation": "GE",
+   "type": "PB",
+   "damaged_side": true,
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 4,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "1/0",
+    "speed": "s",
+    "defense": "4"
+   }
+  },
+  {
+   "file": "ship_ge_pb_scheer.png",
+   "name": "Scheer",
+   "nation": "GE",
+   "type": "PB",
+   "damaged_side": false,
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "MEDIUM",
+   "_raw": {
+    "guns": "-/4",
+    "speed": "m",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_ge_pb_scheerb.png",
+   "name": "Scheer",
+   "nation": "GE",
+   "type": "PB",
+   "damaged_side": true,
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "MEDIUM",
+   "_raw": {
+    "guns": "-/4",
+    "speed": "m",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_ge_pb_sheerb.png",
+   "name": "Sheer",
+   "nation": "GE",
+   "type": "PB",
+   "damaged_side": true,
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 2,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "1/0",
+    "speed": "s",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_ge_shore_battery.png",
+   "name": "Battery",
+   "nation": "GE",
+   "type": "SHORE",
+   "damaged_side": false,
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 0,
+   "speed": "",
+   "_raw": {
+    "guns": "1/o",
+    "speed": "",
+    "defense": ""
+   }
+  },
+  {
+   "file": "ship_uk_bb_doy.png",
+   "name": "Doy",
+   "nation": "UK",
+   "type": "BB",
+   "damaged_side": false,
+   "gun_close": 4,
+   "gun_far": 2,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 2,
+   "speed": "",
+   "_raw": {
+    "guns": "4/2",
+    "speed": "mf",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_uk_bb_doyb.png",
+   "name": "Doy",
+   "nation": "UK",
+   "type": "BB",
+   "damaged_side": true,
+   "gun_close": 2,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 0,
+   "speed": "",
+   "_raw": {
+    "guns": "2/0",
+    "speed": "",
+    "defense": ""
+   }
+  },
+  {
+   "file": "ship_uk_bb_kgv.png",
+   "name": "Kgv",
+   "nation": "UK",
+   "type": "BB",
+   "damaged_side": false,
+   "gun_close": 4,
+   "gun_far": 2,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 2,
+   "speed": "MEDIUM",
+   "_raw": {
+    "guns": "4/2",
+    "speed": "m",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_uk_bb_kgvb.png",
+   "name": "Kgv",
+   "nation": "UK",
+   "type": "BB",
+   "damaged_side": true,
+   "gun_close": 2,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 4,
+   "speed": "",
+   "_raw": {
+    "guns": "2/0",
+    "speed": "",
+    "defense": "4"
+   }
+  },
+  {
+   "file": "ship_uk_bb_malaya.png",
+   "name": "Malaya",
+   "nation": "UK",
+   "type": "BB",
+   "damaged_side": false,
+   "gun_close": 3,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 4,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "3/0",
+    "speed": "s",
+    "defense": "4"
+   }
+  },
+  {
+   "file": "ship_uk_bb_malayab.png",
+   "name": "Malaya",
+   "nation": "UK",
+   "type": "BB",
+   "damaged_side": true,
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 2,
+   "speed": "VERY_SLOW",
+   "_raw": {
+    "guns": "1/o",
+    "speed": "vs",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_uk_bb_nelson.png",
+   "name": "Nelson",
+   "nation": "UK",
+   "type": "BB",
+   "damaged_side": false,
+   "gun_close": 3,
+   "gun_far": 2,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 0,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "3/2",
+    "speed": "s",
+    "defense": "0"
+   }
+  },
+  {
+   "file": "ship_uk_bb_nelsonb.png",
+   "name": "Nelson",
+   "nation": "UK",
+   "type": "BB",
+   "damaged_side": true,
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 2,
+   "speed": "VERY_SLOW",
+   "_raw": {
+    "guns": "1/0",
+    "speed": "vs",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_uk_bb_pow.png",
+   "name": "Pow",
+   "nation": "UK",
+   "type": "BB",
+   "damaged_side": false,
+   "gun_close": 4,
+   "gun_far": 2,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 2,
+   "speed": "MEDIUM",
+   "_raw": {
+    "guns": "4/2",
+    "speed": "m",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_uk_bb_powb.png",
+   "name": "Pow",
+   "nation": "UK",
+   "type": "BB",
+   "damaged_side": true,
+   "gun_close": 2,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 4,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "2/0",
+    "speed": "s",
+    "defense": "4"
+   }
+  },
+  {
+   "file": "ship_uk_bb_ramilles.png",
+   "name": "Ramilles",
+   "nation": "UK",
+   "type": "BB",
+   "damaged_side": false,
+   "gun_close": 3,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 4,
+   "speed": "",
+   "_raw": {
+    "guns": "3/0",
+    "speed": "",
+    "defense": "4"
+   }
+  },
+  {
+   "file": "ship_uk_bb_ramillesb.png",
+   "name": "Ramilles",
+   "nation": "UK",
+   "type": "BB",
+   "damaged_side": true,
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 2,
+   "speed": "VERY_SLOW",
+   "_raw": {
+    "guns": "1/0",
+    "speed": "vs",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_uk_bb_resolution.png",
+   "name": "Resolution",
+   "nation": "UK",
+   "type": "BB",
+   "damaged_side": false,
+   "gun_close": 2,
+   "gun_far": 1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 4,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "2/1",
+    "speed": "s",
+    "defense": "4"
+   }
+  },
+  {
+   "file": "ship_uk_bb_resolutionb.png",
+   "name": "Resolution",
+   "nation": "UK",
+   "type": "BB",
+   "damaged_side": true,
+   "gun_close": 2,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 7,
+   "speed": "VERY_SLOW",
+   "_raw": {
+    "guns": "2/0",
+    "speed": "vs",
+    "defense": "7"
+   }
+  },
+  {
+   "file": "ship_uk_bb_rodney.png",
+   "name": "Rodney",
+   "nation": "UK",
+   "type": "BB",
+   "damaged_side": false,
+   "gun_close": 3,
+   "gun_far": 2,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 2,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "3/2",
+    "speed": "s",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_uk_bb_rodneyb.png",
+   "name": "Rodney",
+   "nation": "UK",
+   "type": "BB",
+   "damaged_side": true,
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 2,
+   "speed": "VERY_SLOW",
+   "_raw": {
+    "guns": "1/o",
+    "speed": "vs",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_uk_bb_royal_oak.png",
+   "name": "Royal Oak",
+   "nation": "UK",
+   "type": "BB",
+   "damaged_side": false,
+   "gun_close": 3,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 2,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "3/0",
+    "speed": "s",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_uk_bb_royal_oakb.png",
+   "name": "Royal Oak",
+   "nation": "UK",
+   "type": "BB",
+   "damaged_side": true,
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 2,
+   "speed": "VERY_SLOW",
+   "_raw": {
+    "guns": "1/0",
+    "speed": "vs",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_uk_bb_valiant.png",
+   "name": "Valiant",
+   "nation": "UK",
+   "type": "BB",
+   "damaged_side": false,
+   "gun_close": 3,
+   "gun_far": 1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 4,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "3/1",
+    "speed": "s",
+    "defense": "4"
+   }
+  },
+  {
+   "file": "ship_uk_bb_valiantb.png",
+   "name": "Valiant",
+   "nation": "UK",
+   "type": "BB",
+   "damaged_side": true,
+   "gun_close": 2,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 2,
+   "speed": "VERY_SLOW",
+   "_raw": {
+    "guns": "2/0",
+    "speed": "vs",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_uk_bb_warspite.png",
+   "name": "Warspite",
+   "nation": "UK",
+   "type": "BB",
+   "damaged_side": false,
+   "gun_close": 3,
+   "gun_far": 1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 2,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "3/1",
+    "speed": "s",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_uk_bb_warspiteb.png",
+   "name": "Warspite",
+   "nation": "UK",
+   "type": "BB",
+   "damaged_side": true,
+   "gun_close": 2,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 2,
+   "speed": "VERY_SLOW",
+   "_raw": {
+    "guns": "2/0",
+    "speed": "vs",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_uk_bc_hood.png",
+   "name": "Hood",
+   "nation": "UK",
+   "type": "BC",
+   "damaged_side": false,
+   "gun_close": 3,
+   "gun_far": 1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 2,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "3/1",
+    "speed": "f",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_uk_bc_hoodb.png",
+   "name": "Hood",
+   "nation": "UK",
+   "type": "BC",
+   "damaged_side": true,
+   "gun_close": 2,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 4,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "2/0",
+    "speed": "s",
+    "defense": "4"
+   }
+  },
+  {
+   "file": "ship_uk_bc_renown.png",
+   "name": "Renown",
+   "nation": "UK",
+   "type": "BC",
+   "damaged_side": false,
+   "gun_close": 3,
+   "gun_far": 1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 2,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "3/1",
+    "speed": "f",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_uk_bc_renownb.png",
+   "name": "Renown",
+   "nation": "UK",
+   "type": "BC",
+   "damaged_side": true,
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 2,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "1/o",
+    "speed": "s",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_uk_bc_repulse.png",
+   "name": "Repulse",
+   "nation": "UK",
+   "type": "BC",
+   "damaged_side": false,
+   "gun_close": 3,
+   "gun_far": 1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 2,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "3/1",
+    "speed": "f",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_uk_bc_repulseb.png",
+   "name": "Repulse",
+   "nation": "UK",
+   "type": "BC",
+   "damaged_side": true,
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 2,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "1/0",
+    "speed": "s",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_uk_ca_belfast.png",
+   "name": "Belfast",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": false,
+   "gun_close": -1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "-1/0",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_belfastb.png",
+   "name": "Belfast",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": true,
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 2,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "O/-1",
+    "speed": "s",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_uk_ca_berwick.png",
+   "name": "Berwick",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": false,
+   "gun_close": -1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "-1/0",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_berwickb.png",
+   "name": "Berwick",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": true,
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "O/-1",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_birmingham.png",
+   "name": "Birmingham",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": false,
+   "gun_close": -1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "-1/0",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_birminghamb.png",
+   "name": "Birmingham",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": true,
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "O/-1",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_cornwall.png",
+   "name": "Cornwall",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": false,
+   "gun_close": -1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "-1/0",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_cornwallb.png",
+   "name": "Cornwall",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": true,
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "O/-1",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_cumberland.png",
+   "name": "Cumberland",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": false,
+   "gun_close": -1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "-1/0",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_cumberlandb.png",
+   "name": "Cumberland",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": true,
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "O/-1",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_devonshire.png",
+   "name": "Devonshire",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": false,
+   "gun_close": -1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "-1/0",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_devonshireb.png",
+   "name": "Devonshire",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": true,
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "O/-1",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_dorsetshire.png",
+   "name": "Dorsetshire",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": false,
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "1/0",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_dorsetshireb.png",
+   "name": "Dorsetshire",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": true,
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "O/-1",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_edinburgh.png",
+   "name": "Edinburgh",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": false,
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "1/0",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_edinburghb.png",
+   "name": "Edinburgh",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": true,
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 2,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "O/-1",
+    "speed": "s",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_uk_ca_exeter.png",
+   "name": "Exeter",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": false,
+   "gun_close": -1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "-1/0",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_exeterb.png",
+   "name": "Exeter",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": true,
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "7-/-1",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_fiji.png",
+   "name": "Fiji",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": false,
+   "gun_close": -1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "-1/0",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_fijib.png",
+   "name": "Fiji",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": true,
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "O/-1",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_glasgow.png",
+   "name": "Glasgow",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": false,
+   "gun_close": -1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "-1/0",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_glasgowb.png",
+   "name": "Glasgow",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": true,
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "O/-1",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_kent.png",
+   "name": "Kent",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": false,
+   "gun_close": -1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "-1/0",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_kentb.png",
+   "name": "Kent",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": true,
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "7-/1",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_kenya.png",
+   "name": "Kenya",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": false,
+   "gun_close": -1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "-1/0",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_kenyab.png",
+   "name": "Kenya",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": true,
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "O/-1",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_liverpool.png",
+   "name": "Liverpool",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": false,
+   "gun_close": -1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "-1/0",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_liverpoolb.png",
+   "name": "Liverpool",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": true,
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 2,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "-/1",
+    "speed": "s",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_uk_ca_london.png",
+   "name": "London",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": false,
+   "gun_close": -1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "-1/0",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_londonb.png",
+   "name": "London",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": true,
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "O/-1",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_manchester.png",
+   "name": "Manchester",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": false,
+   "gun_close": -1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "-1/0",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_manchesterb.png",
+   "name": "Manchester",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": true,
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "O/-1",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_newcastle.png",
+   "name": "Newcastle",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": false,
+   "gun_close": -1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "-1/0",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_newcastleb.png",
+   "name": "Newcastle",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": true,
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "O/-1",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_nigeria.png",
+   "name": "Nigeria",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": false,
+   "gun_close": -1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "-1/0",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_nigeriab.png",
+   "name": "Nigeria",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": true,
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "O/-1",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_norfolk.png",
+   "name": "Norfolk",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": false,
+   "gun_close": -1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "-1/0",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_norfolkb.png",
+   "name": "Norfolk",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": true,
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "-/1",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_sheffield.png",
+   "name": "Sheffield",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": false,
+   "gun_close": -1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "-1/0",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_sheffieldb.png",
+   "name": "Sheffield",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": true,
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "O/-1",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_southampton.png",
+   "name": "Southampton",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": false,
+   "gun_close": -1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "-1/0",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_southamptonb.png",
+   "name": "Southampton",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": true,
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "O/-1",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_suffolk.png",
+   "name": "Suffolk",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": false,
+   "gun_close": -1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "-1/0",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_suffolkb.png",
+   "name": "Suffolk",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": true,
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "O/-1",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_trinidad.png",
+   "name": "Trinidad",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": false,
+   "gun_close": -1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "-1/0",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_ca_trinidadb.png",
+   "name": "Trinidad",
+   "nation": "UK",
+   "type": "CA",
+   "damaged_side": true,
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "O/-1",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_cl_achilles.png",
+   "name": "Achilles",
+   "nation": "UK",
+   "type": "CL",
+   "damaged_side": false,
+   "gun_close": 0,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "-0/O",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_cl_ajax.png",
+   "name": "Ajax",
+   "nation": "UK",
+   "type": "CL",
+   "damaged_side": false,
+   "gun_close": 0,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "-0/0",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_cl_ajaxb.png",
+   "name": "Ajax",
+   "nation": "UK",
+   "type": "CL",
+   "damaged_side": true,
+   "gun_close": 1,
+   "gun_far": -2,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "1/-2",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_cl_arethusa.png",
+   "name": "Arethusa",
+   "nation": "UK",
+   "type": "CL",
+   "damaged_side": false,
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "-O/-1",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_cl_arethusab.png",
+   "name": "Arethusa",
+   "nation": "UK",
+   "type": "CL",
+   "damaged_side": true,
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_na": true,
+   "gun_far_na": true,
+   "defense": 1,
+   "speed": "VERY_SLOW",
+   "_raw": {
+    "guns": "na",
+    "speed": "vs",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_cl_aurora.png",
+   "name": "Aurora",
+   "nation": "UK",
+   "type": "CL",
+   "damaged_side": false,
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "-O/-1",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_cl_aurorab.png",
+   "name": "Aurora",
+   "nation": "UK",
+   "type": "CL",
+   "damaged_side": true,
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_na": true,
+   "gun_far_na": true,
+   "defense": 1,
+   "speed": "VERY_SLOW",
+   "_raw": {
+    "guns": "na",
+    "speed": "vs",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_cl_galatea.png",
+   "name": "Galatea",
+   "nation": "UK",
+   "type": "CL",
+   "damaged_side": false,
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "-O/-1",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_cl_galateab.png",
+   "name": "Galatea",
+   "nation": "UK",
+   "type": "CL",
+   "damaged_side": true,
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_na": true,
+   "gun_far_na": true,
+   "defense": 1,
+   "speed": "VERY_SLOW",
+   "_raw": {
+    "guns": "na",
+    "speed": "vs",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_cl_hermione.png",
+   "name": "Hermione",
+   "nation": "UK",
+   "type": "CL",
+   "damaged_side": false,
+   "gun_close": 0,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "-0/0",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_cl_hermioneb.png",
+   "name": "Hermione",
+   "nation": "UK",
+   "type": "CL",
+   "damaged_side": true,
+   "gun_close": -1,
+   "gun_far": -2,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "-1/-2",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_cl_naiad.png",
+   "name": "Naiad",
+   "nation": "UK",
+   "type": "CL",
+   "damaged_side": false,
+   "gun_close": 0,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "-O/O",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_cl_naiadb.png",
+   "name": "Naiad",
+   "nation": "UK",
+   "type": "CL",
+   "damaged_side": true,
+   "gun_close": -1,
+   "gun_far": -2,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 7,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "-1/-2",
+    "speed": "s",
+    "defense": "7"
+   }
+  },
+  {
+   "file": "ship_uk_cl_neptune.png",
+   "name": "Neptune",
+   "nation": "UK",
+   "type": "CL",
+   "damaged_side": false,
+   "gun_close": 0,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "-0/O",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_cl_neptuneb.png",
+   "name": "Neptune",
+   "nation": "UK",
+   "type": "CL",
+   "damaged_side": true,
+   "gun_close": 1,
+   "gun_far": -2,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "1/-2",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_convoy_x3.png",
+   "name": "X3",
+   "nation": "UK",
+   "type": "CONVOY",
+   "damaged_side": false,
+   "gun_close": 2,
+   "gun_far": null,
+   "gun_close_na": false,
+   "gun_far_na": true,
+   "defense": 0,
+   "speed": "VERY_SLOW",
+   "_raw": {
+    "guns": "2 / na",
+    "speed": "vs",
+    "defense": ""
+   }
+  },
+  {
+   "file": "ship_uk_convoy_x3_b.png",
+   "name": "X3",
+   "nation": "UK",
+   "type": "CONVOY",
+   "damaged_side": true,
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_na": true,
+   "gun_far_na": true,
+   "defense": 0,
+   "speed": "VERY_SLOW",
+   "_raw": {
+    "guns": "na",
+    "speed": "vs",
+    "defense": ""
+   }
+  },
+  {
+   "file": "ship_uk_cv_ark_royal.png",
+   "name": "Ark Royal",
+   "nation": "UK",
+   "type": "CV",
+   "damaged_side": false,
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "",
+   "_raw": {
+    "guns": "3",
+    "speed": "",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_cv_ark_royalb.png",
+   "name": "Ark Royal",
+   "nation": "UK",
+   "type": "CV",
+   "damaged_side": true,
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_na": true,
+   "gun_far_na": true,
+   "defense": 2,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "na",
+    "speed": "s",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_uk_cv_furious.png",
+   "name": "Furious",
+   "nation": "UK",
+   "type": "CV",
+   "damaged_side": false,
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "MEDIUM",
+   "_raw": {
+    "guns": "a",
+    "speed": "m",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_cv_furiousb.png",
+   "name": "Furious",
+   "nation": "UK",
+   "type": "CV",
+   "damaged_side": true,
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_na": true,
+   "gun_far_na": true,
+   "defense": 2,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "na",
+    "speed": "s",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_uk_cv_glorious.png",
+   "name": "Glorious",
+   "nation": "UK",
+   "type": "CV",
+   "damaged_side": false,
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "-/-",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_cv_gloriousb.png",
+   "name": "Glorious",
+   "nation": "UK",
+   "type": "CV",
+   "damaged_side": true,
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_na": true,
+   "gun_far_na": true,
+   "defense": 0,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "na",
+    "speed": "s",
+    "defense": ""
+   }
+  },
+  {
+   "file": "ship_uk_cv_victorious.png",
+   "name": "Victorious",
+   "nation": "UK",
+   "type": "CV",
+   "damaged_side": false,
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "",
+   "_raw": {
+    "guns": "/",
+    "speed": "",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_uk_cv_victoriousb.png",
+   "name": "Victorious",
+   "nation": "UK",
+   "type": "CV",
+   "damaged_side": true,
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_na": true,
+   "gun_far_na": true,
+   "defense": 2,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "na",
+    "speed": "s",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_uk_dd_squadron.png",
+   "name": "Squadron",
+   "nation": "UK",
+   "type": "DD",
+   "damaged_side": false,
+   "gun_close": 0,
+   "gun_far": null,
+   "gun_close_na": false,
+   "gun_far_na": true,
+   "defense": 0,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "-o/na",
+    "speed": "s",
+    "defense": ""
+   }
+  },
+  {
+   "file": "ship_uk_shore_battery.png",
+   "name": "Battery",
+   "nation": "UK",
+   "type": "SHORE",
+   "damaged_side": false,
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 0,
+   "speed": "",
+   "_raw": {
+    "guns": "1/o",
+    "speed": "",
+    "defense": ""
+   }
+  },
+  {
+   "file": "ship_us_bb_washington.png",
+   "name": "Washington",
+   "nation": "US",
+   "type": "BB",
+   "damaged_side": false,
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_na": true,
+   "gun_far_na": true,
+   "defense": 2,
+   "speed": "",
+   "_raw": {
+    "guns": "na",
+    "speed": "",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_us_bb_washingtonb.png",
+   "name": "Washington",
+   "nation": "US",
+   "type": "BB",
+   "damaged_side": true,
+   "gun_close": 2,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 2,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "2/0",
+    "speed": "s",
+    "defense": "2"
+   }
+  },
+  {
+   "file": "ship_us_ca_tuscaloosa.png",
+   "name": "Tuscaloosa",
+   "nation": "US",
+   "type": "CA",
+   "damaged_side": false,
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "1/0",
+    "speed": "f",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_us_ca_tuscaloosab.png",
+   "name": "Tuscaloosa",
+   "nation": "US",
+   "type": "CA",
+   "damaged_side": true,
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "O/-1",
+    "speed": "s",
+    "defense": "1"
+   }
+  },
+  {
+   "file": "ship_us_ca_wichita.png",
+   "name": "Wichita",
+   "nation": "US",
+   "type": "CA",
+   "damaged_side": false,
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 7,
+   "speed": "FAST",
+   "_raw": {
+    "guns": "1/0",
+    "speed": "f",
+    "defense": "7"
+   }
+  },
+  {
+   "file": "ship_us_ca_wichitab.png",
+   "name": "Wichita",
+   "nation": "US",
+   "type": "CA",
+   "damaged_side": true,
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_na": false,
+   "gun_far_na": false,
+   "defense": 1,
+   "speed": "SLOW",
+   "_raw": {
+    "guns": "O/-1",
+    "speed": "s",
+    "defense": "1"
+   }
+  }
+ ]
+}

@@ -39,5 +39,9 @@ $PY tools/import_scenarios.py
 echo "== 10. asset ==========================================================="
 $PY tools/prepare_assets.py
 
+echo "== 11. ruolino navi (OCR delle pedine, ~4 min) =========================="
+$PY tools/extract_ships.py
+$PY tools/merge_ships.py
+
 echo
 echo "Fatto. Ora:  godot --headless --path . --script res://tests/run_tests.gd"

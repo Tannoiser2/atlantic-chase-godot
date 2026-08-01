@@ -46,6 +46,13 @@ var defense_damaged: int = 0
 var gun_close: Variant = null
 var gun_far: Variant = null
 
+## Valori del LATO DANNEGGIATO. Girando la pedina cambiano tutti e tre i dati:
+## cannoni, Difesa e velocita' (la Bismarck e' 4/2 Difesa 2 media da integra,
+## 3/1 Difesa 4 lenta da danneggiata).
+var gun_close_damaged: Variant = null
+var gun_far_damaged: Variant = null
+var speed_damaged: int = -1
+
 var has_torpedo: bool = false
 
 ## Limite di Colpi per Convogli e Squadroni DD (le istruzioni dello scenario
@@ -133,9 +140,20 @@ func apply_hits(n: int) -> String:
 	return txt
 
 
-## Valore dei cannoni per la banda di raggio. `null` = "na" sulla pedina:
-## la nave non puo' sparare a quel raggio (RB p.56).
+## Velocita' del lato attualmente a faccia in su.
+func current_speed() -> int:
+	if damaged and speed_damaged >= 0:
+		return speed_damaged
+	return speed
+
+
+## Valore dei cannoni per la banda di raggio, sul lato attualmente a faccia in
+## su. `null` = "na" sulla pedina: la nave non puo' sparare a quel raggio
+## (RB p.56; e' il caso delle portaerei integre, che al posto dei valori
+## stampano l'icona dell'aereo).
 func gun_value(band: String) -> Variant:
+	if damaged:
+		return gun_close_damaged if band == "close" else gun_far_damaged
 	return gun_close if band == "close" else gun_far
 
 
@@ -145,11 +163,11 @@ func can_fire(band: String) -> bool:
 
 ## Il bersaglio e' abbastanza lento perche' il risultato lo colpisca?
 func is_slow_or_slower() -> bool:
-	return speed <= TimeLapse.Speed.SLOW
+	return current_speed() <= TimeLapse.Speed.SLOW
 
 
 func is_very_slow() -> bool:
-	return speed == TimeLapse.Speed.VERY_SLOW
+	return current_speed() == TimeLapse.Speed.VERY_SLOW
 
 
 func display() -> String:
@@ -170,6 +188,8 @@ func to_dict() -> Dictionary:
 		"speed": speed, "damaged": damaged, "sunk": sunk, "hits": hits,
 		"defense": defense, "defense_damaged": defense_damaged,
 		"gun_close": gun_close, "gun_far": gun_far,
+		"gun_close_damaged": gun_close_damaged, "gun_far_damaged": gun_far_damaged,
+		"speed_damaged": speed_damaged,
 		"has_torpedo": has_torpedo, "hit_limit": hit_limit}
 
 
@@ -186,6 +206,9 @@ static func from_dict(d: Dictionary) -> Ship:
 	s.defense_damaged = int(d.get("defense_damaged", 0))
 	s.gun_close = d.get("gun_close", null)
 	s.gun_far = d.get("gun_far", null)
+	s.gun_close_damaged = d.get("gun_close_damaged", null)
+	s.gun_far_damaged = d.get("gun_far_damaged", null)
+	s.speed_damaged = int(d.get("speed_damaged", -1))
 	s.has_torpedo = bool(d.get("has_torpedo", false))
 	s.hit_limit = int(d.get("hit_limit", HITS_TO_DESTROY_UNARMORED))
 	return s

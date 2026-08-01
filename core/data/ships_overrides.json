@@ -1,0 +1,353 @@
+{
+ "_purpose": "Correzioni manuali alle 21 pedine che l'OCR non ha letto, verificate a occhio su reports/sheet_final.png. Applicate da tools/merge_ships.py DOPO l'OCR, cosi' una rigenerazione non le perde.",
+ "_notes": [
+  "Le PORTAEREI integre non hanno valori dei cannoni: al loro posto la pedina stampa l'icona di un aereo. Non e' un difetto di lettura, significa che non possono fare Fuoco di Cannoni (na/na). Sul lato Danneggiato stampano 'na' per esteso.",
+  "Lo ZERO e' disegnato come una 'o' minuscola: 'o/-1' va letto '0/-1'.",
+  "Petroliere, mercantili e Convogli stampano un solo 'na', valido per entrambe le bande.",
+  "Refuso nel modulo VASSAL: esistono Scheer.png, Scheerb.png e Sheerb.png. Le prime due sono ENTRAMBE il lato integro (doppione); il lato Danneggiato vero e' Sheerb.png, che sulla pedina scrive 'Scheer damaged'. Corretto qui.",
+  "Verifica completa: tutte le 161 pedine sono state confrontate a occhio con la lettura OCR (reports/verify_0..3.png, che sovrappone il valore letto alla pedina). Due difetti sistematici emersi: la Difesa '2' spesso letta '4' (o '1'/'7'), e un segno meno spurio davanti a '1/0' sugli incrociatori. Tutte le differenze sono corrette qui sotto."
+ ],
+ "overrides": {
+  "ship_fr_bc_dunkerque.png": {
+   "gun_close": 4,
+   "gun_far": 2,
+   "defense": 2,
+   "speed": "FAST"
+  },
+  "ship_fr_bc_strasbourg.png": {
+   "gun_close": 4,
+   "gun_far": 2,
+   "defense": 2,
+   "speed": "FAST"
+  },
+  "ship_fr_cv_bearn.png": {
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_na": true,
+   "gun_far_na": true,
+   "defense": 1,
+   "speed": "MEDIUM"
+  },
+  "ship_ge_bb_tirpitzb.png": {
+   "gun_close": 3,
+   "gun_far": 1,
+   "defense": 4,
+   "speed": "SLOW"
+  },
+  "ship_ge_cv_grzeppelin.png": {
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_na": true,
+   "gun_far_na": true,
+   "defense": 1,
+   "speed": "MEDIUM"
+  },
+  "ship_ge_pb_scheer.png": {
+   "gun_close": 2,
+   "gun_far": 1,
+   "defense": 1,
+   "speed": "MEDIUM"
+  },
+  "ship_ge_pb_scheerb.png": {
+   "gun_close": 2,
+   "gun_far": 1,
+   "defense": 1,
+   "speed": "MEDIUM"
+  },
+  "ship_uk_bb_doy.png": {
+   "gun_close": 4,
+   "gun_far": 2,
+   "defense": 2,
+   "speed": "MEDIUM"
+  },
+  "ship_uk_bb_doyb.png": {
+   "gun_close": 2,
+   "gun_far": 0,
+   "defense": 3,
+   "speed": "SLOW"
+  },
+  "ship_uk_bb_kgvb.png": {
+   "gun_close": 2,
+   "gun_far": 0,
+   "defense": 3,
+   "speed": "SLOW"
+  },
+  "ship_uk_bb_ramilles.png": {
+   "gun_close": 3,
+   "gun_far": 0,
+   "defense": 2,
+   "speed": "SLOW"
+  },
+  "ship_uk_ca_exeterb.png": {
+   "gun_close": 0,
+   "gun_far": -1,
+   "defense": 1,
+   "speed": "SLOW"
+  },
+  "ship_uk_ca_kentb.png": {
+   "gun_close": 0,
+   "gun_far": -1,
+   "defense": 1,
+   "speed": "SLOW"
+  },
+  "ship_uk_ca_liverpoolb.png": {
+   "gun_close": 0,
+   "gun_far": -1,
+   "defense": 2,
+   "speed": "SLOW"
+  },
+  "ship_uk_ca_norfolkb.png": {
+   "gun_close": 0,
+   "gun_far": -1,
+   "defense": 1,
+   "speed": "SLOW"
+  },
+  "ship_uk_cv_ark_royal.png": {
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_na": true,
+   "gun_far_na": true,
+   "defense": 1,
+   "speed": "MEDIUM"
+  },
+  "ship_uk_cv_furious.png": {
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_na": true,
+   "gun_far_na": true,
+   "defense": 1,
+   "speed": "MEDIUM"
+  },
+  "ship_uk_cv_glorious.png": {
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_na": true,
+   "gun_far_na": true,
+   "defense": 1,
+   "speed": "MEDIUM"
+  },
+  "ship_uk_cv_gloriousb.png": {
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_na": true,
+   "gun_far_na": true,
+   "defense": 2,
+   "speed": "SLOW"
+  },
+  "ship_uk_cv_victorious.png": {
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_na": true,
+   "gun_far_na": true,
+   "defense": 1,
+   "speed": "MEDIUM"
+  },
+  "ship_us_bb_washington.png": {
+   "gun_close": 3,
+   "gun_far": 2,
+   "defense": 2,
+   "speed": "MEDIUM"
+  },
+  "ship_uk_bb_nelson.png": {
+   "gun_close": 3,
+   "gun_far": 2,
+   "defense": 2,
+   "speed": "SLOW"
+  },
+  "ship_ge_pb_sheerb.png": {
+   "name": "Scheer",
+   "damaged_side": true,
+   "gun_close": 1,
+   "gun_far": 0,
+   "defense": 2,
+   "speed": "SLOW"
+  },
+  "ship_fr_bb_bretagne.png": {
+   "defense": 2
+  },
+  "ship_fr_bc_dunkerqueb.png": {
+   "defense": 3
+  },
+  "ship_fr_bc_strasbourgb.png": {
+   "defense": 3
+  },
+  "ship_ge_bb_bismarck.png": {
+   "defense": 2
+  },
+  "ship_ge_bc_gneisenaub.png": {
+   "defense": 3
+  },
+  "ship_ge_bc_scharnhorst.png": {
+   "defense": 2
+  },
+  "ship_ge_bc_scharnhorstb.png": {
+   "defense": 3
+  },
+  "ship_ge_ca_hipperb.png": {
+   "defense": 2
+  },
+  "ship_ge_pb_graf_speeb.png": {
+   "defense": 2
+  },
+  "ship_ge_pb_lutzowb.png": {
+   "defense": 2
+  },
+  "ship_uk_bb_malaya.png": {
+   "defense": 2
+  },
+  "ship_uk_bb_powb.png": {
+   "defense": 3
+  },
+  "ship_uk_bb_resolution.png": {
+   "defense": 2
+  },
+  "ship_uk_bb_resolutionb.png": {
+   "defense": 2
+  },
+  "ship_uk_bb_valiant.png": {
+   "defense": 2
+  },
+  "ship_uk_bc_hoodb.png": {
+   "defense": 3
+  },
+  "ship_uk_cl_naiadb.png": {
+   "defense": 1
+  },
+  "ship_us_ca_wichita.png": {
+   "defense": 1,
+   "gun_close": 1,
+   "gun_far": 0
+  },
+  "ship_uk_ca_edinburghb.png": {
+   "defense": 2
+  },
+  "ship_ge_cl_leipzig.png": {
+   "gun_close": 1,
+   "gun_far": 0
+  },
+  "ship_ge_pb_graf_spee.png": {
+   "gun_close": 2,
+   "gun_far": 1
+  },
+  "ship_ge_pb_lutzow.png": {
+   "gun_close": 2,
+   "gun_far": 1
+  },
+  "ship_uk_cl_ajaxb.png": {
+   "gun_close": -1,
+   "gun_far": -2
+  },
+  "ship_uk_cl_neptuneb.png": {
+   "gun_close": -1,
+   "gun_far": -2
+  },
+  "ship_uk_ca_belfast.png": {
+   "gun_close": 1,
+   "gun_far": 0
+  },
+  "ship_uk_ca_berwick.png": {
+   "gun_close": 1,
+   "gun_far": 0
+  },
+  "ship_uk_ca_birmingham.png": {
+   "gun_close": 1,
+   "gun_far": 0
+  },
+  "ship_uk_ca_cornwall.png": {
+   "gun_close": 1,
+   "gun_far": 0
+  },
+  "ship_uk_ca_cumberland.png": {
+   "gun_close": 1,
+   "gun_far": 0
+  },
+  "ship_uk_ca_devonshire.png": {
+   "gun_close": 1,
+   "gun_far": 0
+  },
+  "ship_uk_ca_exeter.png": {
+   "gun_close": 1,
+   "gun_far": 0
+  },
+  "ship_uk_ca_fiji.png": {
+   "gun_close": 1,
+   "gun_far": 0,
+   "speed": "FAST"
+  },
+  "ship_uk_ca_glasgow.png": {
+   "gun_close": 1,
+   "gun_far": 0
+  },
+  "ship_uk_ca_kent.png": {
+   "gun_close": 1,
+   "gun_far": 0
+  },
+  "ship_uk_ca_kenya.png": {
+   "gun_close": 1,
+   "gun_far": 0
+  },
+  "ship_uk_ca_liverpool.png": {
+   "gun_close": 1,
+   "gun_far": 0
+  },
+  "ship_uk_ca_london.png": {
+   "gun_close": 1,
+   "gun_far": 0
+  },
+  "ship_uk_ca_manchester.png": {
+   "gun_close": 1,
+   "gun_far": 0
+  },
+  "ship_uk_ca_newcastle.png": {
+   "gun_close": 1,
+   "gun_far": 0
+  },
+  "ship_uk_ca_nigeria.png": {
+   "gun_close": 1,
+   "gun_far": 0
+  },
+  "ship_uk_ca_norfolk.png": {
+   "gun_close": 1,
+   "gun_far": 0
+  },
+  "ship_uk_ca_sheffield.png": {
+   "gun_close": 1,
+   "gun_far": 0
+  },
+  "ship_uk_ca_southampton.png": {
+   "gun_close": 1,
+   "gun_far": 0
+  },
+  "ship_uk_ca_suffolk.png": {
+   "gun_close": 1,
+   "gun_far": 0
+  },
+  "ship_uk_ca_trinidad.png": {
+   "gun_close": 1,
+   "gun_far": 0
+  },
+  "ship_us_ca_tuscaloosa.png": {
+   "gun_close": 1,
+   "gun_far": 0
+  },
+  "ship_ge_bremen.png": {
+   "speed": "FAST"
+  },
+  "ship_ge_cl_koln.png": {
+   "speed": "FAST"
+  },
+  "ship_ge_convoy_x2.png": {
+   "gun_close": -2,
+   "gun_far": null,
+   "gun_far_na": true
+  },
+  "ship_uk_convoy_x3.png": {
+   "gun_close": -2,
+   "gun_far": null,
+   "gun_far_na": true
+  }
+ },
+ "exclude": {
+  "ship_ge_pb_scheerb.png": "doppione del lato integro della Scheer (vedi note)"
+ }
+}

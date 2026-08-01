@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **726 verifiche, 6 suite, headless.**
+Tutti i test passano: **797 verifiche, 7 suite, headless.**
 
 ---
 
@@ -36,8 +36,11 @@ Tutti i test passano: **726 verifiche, 6 suite, headless.**
 - **Area giocabile corretta**: rimossi 15 esagoni oltre la cornice stampata,
   incluso il caso che il criterio automatico sbagliava (a est di Kiel, sul
   pannello della Battaglia). Da 171 a **156 esagoni**.
-- **15 porti** collegati al loro esagono, con i nomi delle Caselle verificati
+- **22 porti** collegati al loro esagono, con i nomi delle Caselle verificati
   contro le Zone del modulo VASSAL.
+- **Ruolino navi completo**: 86 navi con cannoni, Difesa e velocità per
+  entrambi i lati della pedina, estratte via OCR e **verificate tutte a occhio**
+  una per una.
 - **Corretta una freccia che avevo attribuito al lato sbagliato.** L'esagono
   16,-2 (St. Nazaire e Bordeaux) era stato scartato come "terra piena"; non
   essendo nel grafo, lo strumento di etichettatura non ne mostrava i lati e la
@@ -154,28 +157,13 @@ dal metodo con cui il reticolo è stato ricavato.
 
 ## Cosa manca, in ordine di importanza
 
-### 1. Le statistiche delle navi — *l'ultimo dato mancante*
-
-Il modello `Ship` c'è ed è completo: Difesa, Difesa sul lato Danneggiato, valore
-dei cannoni per banda di raggio (con `na` che impedisce il fuoco), siluri,
-limite di Colpi per Convogli. Le regole di danno sono implementate e testate.
-
-Quello che manca è un `ships.json` con i valori reali: sono stampati sulle
-pedine e l'OCR su quelle immagini non è affidabile. Vanno trascritti a mano dai
-fascicoli Scenari — circa 90 navi.
-
-Finché mancano, il codice **lo dichiara invece di fingere**: una nave con Difesa
-zero accumula Colpi senza girare la pedina e il log scrive "Difesa non
-trascritta"; un risultato di Colpo su una TF senza elenco navi scrive "la TF non
-ha ancora un elenco navi". Nessun valore inventato.
-
-### 2. M6 — obiettivi e condizioni di vittoria
+### 1. M6 — obiettivi e condizioni di vittoria
 
 I 22 scenari si caricano con traiettorie e stazioni reali, ma sono gusci: mancano
 obiettivi, rinforzi, punteggi VP e condizioni di vittoria, che stanno nei
 fascicoli Scenari e vanno trascritti.
 
-### 3. Interfaccia della Battaglia
+### 2. Interfaccia della Battaglia
 
 Il motore di M5 è completo e testato, ma non ha ancora una vista: la Mappa di
 Battaglia (`assets/boards/map_north_sea.jpg` e `map_norwegian_sea.jpg`) non è
@@ -183,7 +171,7 @@ disegnata a schermo e le fasi si possono guidare solo da codice. Premendo **1**
 sulla mappa operazionale, un risultato BATTAGLIA scrive ancora "non ancora
 implementata".
 
-### 4. Controlli touch
+### 3. Controlli touch
 
 Servono per giocare da iPad: tap per selezionare ed estendere, pinch per lo
 zoom, pulsanti a schermo per azioni, undo e Scorrere del Tempo. Oggi tutto passa

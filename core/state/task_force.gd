@@ -61,8 +61,9 @@ func recompute_speed() -> int:
 	for s in ships:
 		if s.sunk:
 			continue
-		if slowest < 0 or s.speed < slowest:
-			slowest = s.speed
+		var sp := s.current_speed()
+		if slowest < 0 or sp < slowest:
+			slowest = sp
 	if slowest >= 0:
 		speed = slowest
 	return speed

@@ -1,0 +1,1716 @@
+{
+ "_source": "tools/extract_ships.py (OCR delle pedine) + core/data/ships_overrides.json (letture a occhio).",
+ "_schema": "Una voce per NAVE, non per pedina: i campi *_damaged sono quelli del lato Danneggiato. gun_* a null significa 'na' sulla pedina, cioe' la nave non puo' sparare a quel raggio (tipico delle portaerei integre, che al posto dei valori stampano l'icona dell'aereo).",
+ "count": 86,
+ "ships": [
+  {
+   "name": "Bretagne",
+   "nation": "FR",
+   "type": "BB",
+   "kind": "WARSHIP",
+   "gun_close": 3,
+   "gun_far": 1,
+   "gun_close_damaged": 1,
+   "gun_far_damaged": 0,
+   "defense": 2,
+   "defense_damaged": 2,
+   "speed": "MEDIUM",
+   "speed_damaged": "VERY_SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_fr_bb_bretagne.png",
+    "ship_fr_bb_bretagneb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Provence",
+   "nation": "FR",
+   "type": "BB",
+   "kind": "WARSHIP",
+   "gun_close": 3,
+   "gun_far": 1,
+   "gun_close_damaged": 1,
+   "gun_far_damaged": 0,
+   "defense": 2,
+   "defense_damaged": 2,
+   "speed": "MEDIUM",
+   "speed_damaged": "VERY_SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_fr_bb_provence.png",
+    "ship_fr_bb_provenceb.png"
+   ],
+   "manual": false
+  },
+  {
+   "name": "Dunkerque",
+   "nation": "FR",
+   "type": "BC",
+   "kind": "WARSHIP",
+   "gun_close": 4,
+   "gun_far": 2,
+   "gun_close_damaged": 2,
+   "gun_far_damaged": 0,
+   "defense": 2,
+   "defense_damaged": 3,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_fr_bc_dunkerque.png",
+    "ship_fr_bc_dunkerqueb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Strasbourg",
+   "nation": "FR",
+   "type": "BC",
+   "kind": "WARSHIP",
+   "gun_close": 4,
+   "gun_far": 2,
+   "gun_close_damaged": 2,
+   "gun_far_damaged": 0,
+   "defense": 2,
+   "defense_damaged": 3,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_fr_bc_strasbourg.png",
+    "ship_fr_bc_strasbourgb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "G Leygues",
+   "nation": "FR",
+   "type": "CL",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": 0,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_fr_cl_g_leygues.png",
+    "ship_fr_cl_g_leyguesb.png"
+   ],
+   "manual": false
+  },
+  {
+   "name": "Gloire",
+   "nation": "FR",
+   "type": "CL",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": 0,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_fr_cl_gloire.png",
+    "ship_fr_cl_gloireb.png"
+   ],
+   "manual": false
+  },
+  {
+   "name": "Montcalm",
+   "nation": "FR",
+   "type": "CL",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": 0,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_fr_cl_montcalm.png",
+    "ship_fr_cl_montcalmb.png"
+   ],
+   "manual": false
+  },
+  {
+   "name": "Bearn",
+   "nation": "FR",
+   "type": "CV",
+   "kind": "WARSHIP",
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_damaged": null,
+   "gun_far_damaged": null,
+   "defense": 1,
+   "defense_damaged": 2,
+   "speed": "MEDIUM",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_fr_cv_bearn.png",
+    "ship_fr_cv_bearnb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Orion",
+   "nation": "GE",
+   "type": "AC",
+   "kind": "WARSHIP",
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": -1,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "SLOW",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": false,
+   "files": [
+    "ship_ge_ac_orion.png"
+   ],
+   "manual": false
+  },
+  {
+   "name": "Widder",
+   "nation": "GE",
+   "type": "AC",
+   "kind": "WARSHIP",
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": -1,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "SLOW",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": false,
+   "files": [
+    "ship_ge_ac_widder.png"
+   ],
+   "manual": false
+  },
+  {
+   "name": "Tanker X2",
+   "nation": "GE",
+   "type": "AO",
+   "kind": "WARSHIP",
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_damaged": null,
+   "gun_far_damaged": null,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "VERY_SLOW",
+   "speed_damaged": "VERY_SLOW",
+   "has_damaged_side": false,
+   "files": [
+    "ship_ge_ao_tanker_x2.png"
+   ],
+   "manual": false
+  },
+  {
+   "name": "Bismarck",
+   "nation": "GE",
+   "type": "BB",
+   "kind": "WARSHIP",
+   "gun_close": 4,
+   "gun_far": 2,
+   "gun_close_damaged": 3,
+   "gun_far_damaged": 1,
+   "defense": 2,
+   "defense_damaged": 4,
+   "speed": "MEDIUM",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_ge_bb_bismarck.png",
+    "ship_ge_bb_bismarckb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Tirpitz",
+   "nation": "GE",
+   "type": "BB",
+   "kind": "WARSHIP",
+   "gun_close": 4,
+   "gun_far": 2,
+   "gun_close_damaged": 3,
+   "gun_far_damaged": 1,
+   "defense": 2,
+   "defense_damaged": 4,
+   "speed": "MEDIUM",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_ge_bb_tirpitz.png",
+    "ship_ge_bb_tirpitzb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Gneisenau",
+   "nation": "GE",
+   "type": "BC",
+   "kind": "WARSHIP",
+   "gun_close": 3,
+   "gun_far": 2,
+   "gun_close_damaged": 2,
+   "gun_far_damaged": 0,
+   "defense": 2,
+   "defense_damaged": 3,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_ge_bc_gneisenau.png",
+    "ship_ge_bc_gneisenaub.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Scharnhorst",
+   "nation": "GE",
+   "type": "BC",
+   "kind": "WARSHIP",
+   "gun_close": 3,
+   "gun_far": 2,
+   "gun_close_damaged": 2,
+   "gun_far_damaged": 0,
+   "defense": 2,
+   "defense_damaged": 3,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_ge_bc_scharnhorst.png",
+    "ship_ge_bc_scharnhorstb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "",
+   "nation": "GE",
+   "type": "BREMEN",
+   "kind": "WARSHIP",
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_damaged": null,
+   "gun_far_damaged": null,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "FAST",
+   "has_damaged_side": false,
+   "files": [
+    "ship_ge_bremen.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "",
+   "nation": "GE",
+   "type": "BREMENB",
+   "kind": "WARSHIP",
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_damaged": null,
+   "gun_far_damaged": null,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "SLOW",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": false,
+   "files": [
+    "ship_ge_bremenb.png"
+   ],
+   "manual": false
+  },
+  {
+   "name": "Hipper",
+   "nation": "GE",
+   "type": "CA",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": 0,
+   "defense": 1,
+   "defense_damaged": 2,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_ge_ca_hipper.png",
+    "ship_ge_ca_hipperb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Preugen",
+   "nation": "GE",
+   "type": "CA",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": 0,
+   "defense": 1,
+   "defense_damaged": 2,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_ge_ca_preugen.png",
+    "ship_ge_ca_preugenb.png"
+   ],
+   "manual": false
+  },
+  {
+   "name": "Karlsruhe",
+   "nation": "GE",
+   "type": "CL",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": -1,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_ge_cl_karlsruhe.png",
+    "ship_ge_cl_karlsruheb.png"
+   ],
+   "manual": false
+  },
+  {
+   "name": "Koln",
+   "nation": "GE",
+   "type": "CL",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": -1,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_ge_cl_koln.png",
+    "ship_ge_cl_kolnb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Konigsberg",
+   "nation": "GE",
+   "type": "CL",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": -1,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_ge_cl_konigsberg.png",
+    "ship_ge_cl_konigsbergb.png"
+   ],
+   "manual": false
+  },
+  {
+   "name": "Leipzig",
+   "nation": "GE",
+   "type": "CL",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": -1,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "SLOW",
+   "speed_damaged": "VERY_SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_ge_cl_leipzig.png",
+    "ship_ge_cl_leipzigb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Nurnburg",
+   "nation": "GE",
+   "type": "CL",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": -1,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_ge_cl_nurnburg.png",
+    "ship_ge_cl_nurnburgb.png"
+   ],
+   "manual": false
+  },
+  {
+   "name": "Convoy x2",
+   "nation": "GE",
+   "type": "CONVOY",
+   "kind": "CONVOY",
+   "gun_close": -2,
+   "gun_far": null,
+   "gun_close_damaged": -2,
+   "gun_far_damaged": null,
+   "defense": 0,
+   "defense_damaged": 0,
+   "speed": "VERY_SLOW",
+   "speed_damaged": "VERY_SLOW",
+   "has_damaged_side": false,
+   "files": [
+    "ship_ge_convoy_x2.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Grzeppelin",
+   "nation": "GE",
+   "type": "CV",
+   "kind": "WARSHIP",
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_damaged": null,
+   "gun_far_damaged": null,
+   "defense": 1,
+   "defense_damaged": 2,
+   "speed": "MEDIUM",
+   "speed_damaged": "VERY_SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_ge_cv_grzeppelin.png",
+    "ship_ge_cv_grzeppelinb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "DD Squadron",
+   "nation": "GE",
+   "type": "DD",
+   "kind": "DD_SQUADRON",
+   "gun_close": 0,
+   "gun_far": null,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": null,
+   "defense": 0,
+   "defense_damaged": 0,
+   "speed": "SLOW",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": false,
+   "files": [
+    "ship_ge_dd_squadron.png"
+   ],
+   "manual": false
+  },
+  {
+   "name": "Graf Spee",
+   "nation": "GE",
+   "type": "PB",
+   "kind": "WARSHIP",
+   "gun_close": 2,
+   "gun_far": 1,
+   "gun_close_damaged": 1,
+   "gun_far_damaged": 0,
+   "defense": 1,
+   "defense_damaged": 2,
+   "speed": "MEDIUM",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_ge_pb_graf_spee.png",
+    "ship_ge_pb_graf_speeb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Lutzow",
+   "nation": "GE",
+   "type": "PB",
+   "kind": "WARSHIP",
+   "gun_close": 2,
+   "gun_far": 1,
+   "gun_close_damaged": 1,
+   "gun_far_damaged": 0,
+   "defense": 1,
+   "defense_damaged": 2,
+   "speed": "MEDIUM",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_ge_pb_lutzow.png",
+    "ship_ge_pb_lutzowb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Scheer",
+   "nation": "GE",
+   "type": "PB",
+   "kind": "WARSHIP",
+   "gun_close": 2,
+   "gun_far": 1,
+   "gun_close_damaged": 1,
+   "gun_far_damaged": 0,
+   "defense": 1,
+   "defense_damaged": 2,
+   "speed": "MEDIUM",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_ge_pb_scheer.png",
+    "ship_ge_pb_sheerb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Shore Battery",
+   "nation": "GE",
+   "type": "SHORE",
+   "kind": "SHORE_BATTERY",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 1,
+   "gun_far_damaged": 0,
+   "defense": 0,
+   "defense_damaged": 0,
+   "speed": "",
+   "speed_damaged": "",
+   "has_damaged_side": false,
+   "files": [
+    "ship_ge_shore_battery.png"
+   ],
+   "manual": false
+  },
+  {
+   "name": "Doy",
+   "nation": "UK",
+   "type": "BB",
+   "kind": "WARSHIP",
+   "gun_close": 4,
+   "gun_far": 2,
+   "gun_close_damaged": 2,
+   "gun_far_damaged": 0,
+   "defense": 2,
+   "defense_damaged": 3,
+   "speed": "MEDIUM",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_bb_doy.png",
+    "ship_uk_bb_doyb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Kgv",
+   "nation": "UK",
+   "type": "BB",
+   "kind": "WARSHIP",
+   "gun_close": 4,
+   "gun_far": 2,
+   "gun_close_damaged": 2,
+   "gun_far_damaged": 0,
+   "defense": 2,
+   "defense_damaged": 3,
+   "speed": "MEDIUM",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_bb_kgv.png",
+    "ship_uk_bb_kgvb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Malaya",
+   "nation": "UK",
+   "type": "BB",
+   "kind": "WARSHIP",
+   "gun_close": 3,
+   "gun_far": 0,
+   "gun_close_damaged": 1,
+   "gun_far_damaged": 0,
+   "defense": 2,
+   "defense_damaged": 2,
+   "speed": "SLOW",
+   "speed_damaged": "VERY_SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_bb_malaya.png",
+    "ship_uk_bb_malayab.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Nelson",
+   "nation": "UK",
+   "type": "BB",
+   "kind": "WARSHIP",
+   "gun_close": 3,
+   "gun_far": 2,
+   "gun_close_damaged": 1,
+   "gun_far_damaged": 0,
+   "defense": 2,
+   "defense_damaged": 2,
+   "speed": "SLOW",
+   "speed_damaged": "VERY_SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_bb_nelson.png",
+    "ship_uk_bb_nelsonb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Pow",
+   "nation": "UK",
+   "type": "BB",
+   "kind": "WARSHIP",
+   "gun_close": 4,
+   "gun_far": 2,
+   "gun_close_damaged": 2,
+   "gun_far_damaged": 0,
+   "defense": 2,
+   "defense_damaged": 3,
+   "speed": "MEDIUM",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_bb_pow.png",
+    "ship_uk_bb_powb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Ramilles",
+   "nation": "UK",
+   "type": "BB",
+   "kind": "WARSHIP",
+   "gun_close": 3,
+   "gun_far": 0,
+   "gun_close_damaged": 1,
+   "gun_far_damaged": 0,
+   "defense": 2,
+   "defense_damaged": 2,
+   "speed": "SLOW",
+   "speed_damaged": "VERY_SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_bb_ramilles.png",
+    "ship_uk_bb_ramillesb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Resolution",
+   "nation": "UK",
+   "type": "BB",
+   "kind": "WARSHIP",
+   "gun_close": 2,
+   "gun_far": 1,
+   "gun_close_damaged": 2,
+   "gun_far_damaged": 0,
+   "defense": 2,
+   "defense_damaged": 2,
+   "speed": "SLOW",
+   "speed_damaged": "VERY_SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_bb_resolution.png",
+    "ship_uk_bb_resolutionb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Rodney",
+   "nation": "UK",
+   "type": "BB",
+   "kind": "WARSHIP",
+   "gun_close": 3,
+   "gun_far": 2,
+   "gun_close_damaged": 1,
+   "gun_far_damaged": 0,
+   "defense": 2,
+   "defense_damaged": 2,
+   "speed": "SLOW",
+   "speed_damaged": "VERY_SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_bb_rodney.png",
+    "ship_uk_bb_rodneyb.png"
+   ],
+   "manual": false
+  },
+  {
+   "name": "Royal Oak",
+   "nation": "UK",
+   "type": "BB",
+   "kind": "WARSHIP",
+   "gun_close": 3,
+   "gun_far": 0,
+   "gun_close_damaged": 1,
+   "gun_far_damaged": 0,
+   "defense": 2,
+   "defense_damaged": 2,
+   "speed": "SLOW",
+   "speed_damaged": "VERY_SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_bb_royal_oak.png",
+    "ship_uk_bb_royal_oakb.png"
+   ],
+   "manual": false
+  },
+  {
+   "name": "Valiant",
+   "nation": "UK",
+   "type": "BB",
+   "kind": "WARSHIP",
+   "gun_close": 3,
+   "gun_far": 1,
+   "gun_close_damaged": 2,
+   "gun_far_damaged": 0,
+   "defense": 2,
+   "defense_damaged": 2,
+   "speed": "SLOW",
+   "speed_damaged": "VERY_SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_bb_valiant.png",
+    "ship_uk_bb_valiantb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Warspite",
+   "nation": "UK",
+   "type": "BB",
+   "kind": "WARSHIP",
+   "gun_close": 3,
+   "gun_far": 1,
+   "gun_close_damaged": 2,
+   "gun_far_damaged": 0,
+   "defense": 2,
+   "defense_damaged": 2,
+   "speed": "SLOW",
+   "speed_damaged": "VERY_SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_bb_warspite.png",
+    "ship_uk_bb_warspiteb.png"
+   ],
+   "manual": false
+  },
+  {
+   "name": "Hood",
+   "nation": "UK",
+   "type": "BC",
+   "kind": "WARSHIP",
+   "gun_close": 3,
+   "gun_far": 1,
+   "gun_close_damaged": 2,
+   "gun_far_damaged": 0,
+   "defense": 2,
+   "defense_damaged": 3,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_bc_hood.png",
+    "ship_uk_bc_hoodb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Renown",
+   "nation": "UK",
+   "type": "BC",
+   "kind": "WARSHIP",
+   "gun_close": 3,
+   "gun_far": 1,
+   "gun_close_damaged": 1,
+   "gun_far_damaged": 0,
+   "defense": 2,
+   "defense_damaged": 2,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_bc_renown.png",
+    "ship_uk_bc_renownb.png"
+   ],
+   "manual": false
+  },
+  {
+   "name": "Repulse",
+   "nation": "UK",
+   "type": "BC",
+   "kind": "WARSHIP",
+   "gun_close": 3,
+   "gun_far": 1,
+   "gun_close_damaged": 1,
+   "gun_far_damaged": 0,
+   "defense": 2,
+   "defense_damaged": 2,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_bc_repulse.png",
+    "ship_uk_bc_repulseb.png"
+   ],
+   "manual": false
+  },
+  {
+   "name": "Belfast",
+   "nation": "UK",
+   "type": "CA",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": -1,
+   "defense": 1,
+   "defense_damaged": 2,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_ca_belfast.png",
+    "ship_uk_ca_belfastb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Berwick",
+   "nation": "UK",
+   "type": "CA",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": -1,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_ca_berwick.png",
+    "ship_uk_ca_berwickb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Birmingham",
+   "nation": "UK",
+   "type": "CA",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": -1,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_ca_birmingham.png",
+    "ship_uk_ca_birminghamb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Cornwall",
+   "nation": "UK",
+   "type": "CA",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": -1,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_ca_cornwall.png",
+    "ship_uk_ca_cornwallb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Cumberland",
+   "nation": "UK",
+   "type": "CA",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": -1,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_ca_cumberland.png",
+    "ship_uk_ca_cumberlandb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Devonshire",
+   "nation": "UK",
+   "type": "CA",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": -1,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_ca_devonshire.png",
+    "ship_uk_ca_devonshireb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Dorsetshire",
+   "nation": "UK",
+   "type": "CA",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": -1,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_ca_dorsetshire.png",
+    "ship_uk_ca_dorsetshireb.png"
+   ],
+   "manual": false
+  },
+  {
+   "name": "Edinburgh",
+   "nation": "UK",
+   "type": "CA",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": -1,
+   "defense": 1,
+   "defense_damaged": 2,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_ca_edinburgh.png",
+    "ship_uk_ca_edinburghb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Exeter",
+   "nation": "UK",
+   "type": "CA",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": -1,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_ca_exeter.png",
+    "ship_uk_ca_exeterb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Fiji",
+   "nation": "UK",
+   "type": "CA",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": -1,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_ca_fiji.png",
+    "ship_uk_ca_fijib.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Glasgow",
+   "nation": "UK",
+   "type": "CA",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": -1,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_ca_glasgow.png",
+    "ship_uk_ca_glasgowb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Kent",
+   "nation": "UK",
+   "type": "CA",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": -1,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_ca_kent.png",
+    "ship_uk_ca_kentb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Kenya",
+   "nation": "UK",
+   "type": "CA",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": -1,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_ca_kenya.png",
+    "ship_uk_ca_kenyab.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Liverpool",
+   "nation": "UK",
+   "type": "CA",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": -1,
+   "defense": 1,
+   "defense_damaged": 2,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_ca_liverpool.png",
+    "ship_uk_ca_liverpoolb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "London",
+   "nation": "UK",
+   "type": "CA",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": -1,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_ca_london.png",
+    "ship_uk_ca_londonb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Manchester",
+   "nation": "UK",
+   "type": "CA",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": -1,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_ca_manchester.png",
+    "ship_uk_ca_manchesterb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Newcastle",
+   "nation": "UK",
+   "type": "CA",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": -1,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_ca_newcastle.png",
+    "ship_uk_ca_newcastleb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Nigeria",
+   "nation": "UK",
+   "type": "CA",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": -1,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_ca_nigeria.png",
+    "ship_uk_ca_nigeriab.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Norfolk",
+   "nation": "UK",
+   "type": "CA",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": -1,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_ca_norfolk.png",
+    "ship_uk_ca_norfolkb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Sheffield",
+   "nation": "UK",
+   "type": "CA",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": -1,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_ca_sheffield.png",
+    "ship_uk_ca_sheffieldb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Southampton",
+   "nation": "UK",
+   "type": "CA",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": -1,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_ca_southampton.png",
+    "ship_uk_ca_southamptonb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Suffolk",
+   "nation": "UK",
+   "type": "CA",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": -1,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_ca_suffolk.png",
+    "ship_uk_ca_suffolkb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Trinidad",
+   "nation": "UK",
+   "type": "CA",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": -1,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_ca_trinidad.png",
+    "ship_uk_ca_trinidadb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Achilles",
+   "nation": "UK",
+   "type": "CL",
+   "kind": "WARSHIP",
+   "gun_close": 0,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": 0,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "FAST",
+   "has_damaged_side": false,
+   "files": [
+    "ship_uk_cl_achilles.png"
+   ],
+   "manual": false
+  },
+  {
+   "name": "Ajax",
+   "nation": "UK",
+   "type": "CL",
+   "kind": "WARSHIP",
+   "gun_close": 0,
+   "gun_far": 0,
+   "gun_close_damaged": -1,
+   "gun_far_damaged": -2,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_cl_ajax.png",
+    "ship_uk_cl_ajaxb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Arethusa",
+   "nation": "UK",
+   "type": "CL",
+   "kind": "WARSHIP",
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_damaged": null,
+   "gun_far_damaged": null,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "VERY_SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_cl_arethusa.png",
+    "ship_uk_cl_arethusab.png"
+   ],
+   "manual": false
+  },
+  {
+   "name": "Aurora",
+   "nation": "UK",
+   "type": "CL",
+   "kind": "WARSHIP",
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_damaged": null,
+   "gun_far_damaged": null,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "VERY_SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_cl_aurora.png",
+    "ship_uk_cl_aurorab.png"
+   ],
+   "manual": false
+  },
+  {
+   "name": "Galatea",
+   "nation": "UK",
+   "type": "CL",
+   "kind": "WARSHIP",
+   "gun_close": 0,
+   "gun_far": -1,
+   "gun_close_damaged": null,
+   "gun_far_damaged": null,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "VERY_SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_cl_galatea.png",
+    "ship_uk_cl_galateab.png"
+   ],
+   "manual": false
+  },
+  {
+   "name": "Hermione",
+   "nation": "UK",
+   "type": "CL",
+   "kind": "WARSHIP",
+   "gun_close": 0,
+   "gun_far": 0,
+   "gun_close_damaged": -1,
+   "gun_far_damaged": -2,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_cl_hermione.png",
+    "ship_uk_cl_hermioneb.png"
+   ],
+   "manual": false
+  },
+  {
+   "name": "Naiad",
+   "nation": "UK",
+   "type": "CL",
+   "kind": "WARSHIP",
+   "gun_close": 0,
+   "gun_far": 0,
+   "gun_close_damaged": -1,
+   "gun_far_damaged": -2,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_cl_naiad.png",
+    "ship_uk_cl_naiadb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Neptune",
+   "nation": "UK",
+   "type": "CL",
+   "kind": "WARSHIP",
+   "gun_close": 0,
+   "gun_far": 0,
+   "gun_close_damaged": -1,
+   "gun_far_damaged": -2,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_cl_neptune.png",
+    "ship_uk_cl_neptuneb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Convoy x3",
+   "nation": "UK",
+   "type": "CONVOY",
+   "kind": "CONVOY",
+   "gun_close": -2,
+   "gun_far": null,
+   "gun_close_damaged": null,
+   "gun_far_damaged": null,
+   "defense": 0,
+   "defense_damaged": 0,
+   "speed": "VERY_SLOW",
+   "speed_damaged": "VERY_SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_convoy_x3.png",
+    "ship_uk_convoy_x3_b.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Ark Royal",
+   "nation": "UK",
+   "type": "CV",
+   "kind": "WARSHIP",
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_damaged": null,
+   "gun_far_damaged": null,
+   "defense": 1,
+   "defense_damaged": 2,
+   "speed": "MEDIUM",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_cv_ark_royal.png",
+    "ship_uk_cv_ark_royalb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Furious",
+   "nation": "UK",
+   "type": "CV",
+   "kind": "WARSHIP",
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_damaged": null,
+   "gun_far_damaged": null,
+   "defense": 1,
+   "defense_damaged": 2,
+   "speed": "MEDIUM",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_cv_furious.png",
+    "ship_uk_cv_furiousb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Glorious",
+   "nation": "UK",
+   "type": "CV",
+   "kind": "WARSHIP",
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_damaged": null,
+   "gun_far_damaged": null,
+   "defense": 1,
+   "defense_damaged": 2,
+   "speed": "MEDIUM",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_cv_glorious.png",
+    "ship_uk_cv_gloriousb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Victorious",
+   "nation": "UK",
+   "type": "CV",
+   "kind": "WARSHIP",
+   "gun_close": null,
+   "gun_far": null,
+   "gun_close_damaged": null,
+   "gun_far_damaged": null,
+   "defense": 1,
+   "defense_damaged": 2,
+   "speed": "MEDIUM",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_uk_cv_victorious.png",
+    "ship_uk_cv_victoriousb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "DD Squadron",
+   "nation": "UK",
+   "type": "DD",
+   "kind": "DD_SQUADRON",
+   "gun_close": 0,
+   "gun_far": null,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": null,
+   "defense": 0,
+   "defense_damaged": 0,
+   "speed": "SLOW",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": false,
+   "files": [
+    "ship_uk_dd_squadron.png"
+   ],
+   "manual": false
+  },
+  {
+   "name": "Shore Battery",
+   "nation": "UK",
+   "type": "SHORE",
+   "kind": "SHORE_BATTERY",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 1,
+   "gun_far_damaged": 0,
+   "defense": 0,
+   "defense_damaged": 0,
+   "speed": "",
+   "speed_damaged": "",
+   "has_damaged_side": false,
+   "files": [
+    "ship_uk_shore_battery.png"
+   ],
+   "manual": false
+  },
+  {
+   "name": "Washington",
+   "nation": "US",
+   "type": "BB",
+   "kind": "WARSHIP",
+   "gun_close": 3,
+   "gun_far": 2,
+   "gun_close_damaged": 2,
+   "gun_far_damaged": 0,
+   "defense": 2,
+   "defense_damaged": 2,
+   "speed": "MEDIUM",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_us_bb_washington.png",
+    "ship_us_bb_washingtonb.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Tuscaloosa",
+   "nation": "US",
+   "type": "CA",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": -1,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_us_ca_tuscaloosa.png",
+    "ship_us_ca_tuscaloosab.png"
+   ],
+   "manual": true
+  },
+  {
+   "name": "Wichita",
+   "nation": "US",
+   "type": "CA",
+   "kind": "WARSHIP",
+   "gun_close": 1,
+   "gun_far": 0,
+   "gun_close_damaged": 0,
+   "gun_far_damaged": -1,
+   "defense": 1,
+   "defense_damaged": 1,
+   "speed": "FAST",
+   "speed_damaged": "SLOW",
+   "has_damaged_side": true,
+   "files": [
+    "ship_us_ca_wichita.png",
+    "ship_us_ca_wichitab.png"
+   ],
+   "manual": true
+  }
+ ]
+}

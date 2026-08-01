@@ -38,10 +38,10 @@ static func modifiers(state: BattleState, tf: TaskForce) -> Dictionary:
 
 	var fastest_own := -1
 	for s in own:
-		fastest_own = maxi(fastest_own, s.speed)
+		fastest_own = maxi(fastest_own, s.current_speed())
 	var enemy_faster := false
 	for s in enemy:
-		if s.speed > fastest_own:
+		if s.current_speed() > fastest_own:
 			enemy_faster = true
 			break
 	if enemy_faster:

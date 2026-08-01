@@ -36,10 +36,11 @@ static func can_make_smoke(ship: Ship) -> bool:
 static func move_order(state: BattleState) -> Array[Ship]:
 	var by_speed := {}
 	for s in state.all_ships():
-		if not by_speed.has(s.speed):
-			by_speed[s.speed] = {"target": [] as Array[Ship], "active": [] as Array[Ship]}
+		var sp := s.current_speed()
+		if not by_speed.has(sp):
+			by_speed[sp] = {"target": [] as Array[Ship], "active": [] as Array[Ship]}
 		var side := "active" if state.active_ships().has(s) else "target"
-		(by_speed[s.speed][side] as Array[Ship]).append(s)
+		(by_speed[sp][side] as Array[Ship]).append(s)
 
 	var speeds := by_speed.keys()
 	speeds.sort()
