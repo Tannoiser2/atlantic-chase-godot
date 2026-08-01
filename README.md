@@ -61,6 +61,22 @@ tools/.venv/bin/python tools/vsav_extract.py       # decodifica i 22 salvataggi
 tools/.venv/bin/python tools/import_scenarios.py   # li converte in scenari
 ```
 
+### Giocare da iPad (o da un altro dispositivo di casa)
+
+```bash
+sh tools/serve_web.sh
+```
+
+Esporta in HTML5 e apre un server sulla rete locale; lo script stampa
+l'indirizzo da aprire in Safari sull'iPad. Nessuna pubblicazione: resta tutto
+in casa.
+
+I gesti touch: **due dita** spostano la mappa e zoomano, **un dito** seleziona e
+disegna la Traiettoria, **un tocco prolungato** fa quello che fa il clic destro.
+
+L'export usa `thread_support` disattivato apposta, così il browser non pretende
+gli header di cross-origin isolation e basta un server statico banale.
+
 ### Test
 
 ```bash

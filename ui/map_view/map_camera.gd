@@ -30,6 +30,16 @@ func _ready() -> void:
 	set_process(true)
 
 
+## Vero mentre ci sono due o piu' dita sullo schermo.
+##
+## Serve perche' Godot, per compatibilita', genera ANCHE eventi di mouse dal
+## primo dito: senza questo controllo un pinch comincerebbe a disegnare una
+## Traiettoria mentre si zooma. Chi gestisce il gioco lo interroga e ignora il
+## mouse finche' e' vero.
+func multitouch_active() -> bool:
+	return _touches.size() >= 2
+
+
 func setup(p_map_size: Vector2) -> void:
 	map_size = p_map_size
 	# parte inquadrando tutta la mappa

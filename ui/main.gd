@@ -141,6 +141,15 @@ func _process(delta: float) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if _battle_view != null:
 		return
+	# durante un pinch il mouse emulato dal primo dito va ignorato, altrimenti
+	# si disegnerebbe una Traiettoria mentre si zooma
+	if cam.multitouch_active():
+		if dragging:
+			dragging = false
+			drag_path.clear()
+			traj_layer.clear_preview()
+		_press_time = 0.0
+		return
 	if event is InputEventMouseMotion:
 		var w := cam.world_from_screen((event as InputEventMouseMotion).position)
 		var h := graph.pixel_to_hex(w)

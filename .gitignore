@@ -4,11 +4,13 @@
 #   assets/map/  assets/counters/  assets/boards/  reports/*.png  docs/regolamento/
 # perche' un repo pubblico e' distribuzione a chiunque, e quella e' opera di GMT.
 
+# Output dell'export web: si rigenera con  sh tools/serve_web.sh
+build/
+
 # --- Ambienti e cache --------------------------------------------------------
 tools/.venv/
 .godot/
 *.import
-export_presets.cfg
 
 # --- Sistema -----------------------------------------------------------------
 .DS_Store
