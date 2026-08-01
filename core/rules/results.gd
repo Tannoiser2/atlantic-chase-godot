@@ -64,9 +64,62 @@ static func apply(code: String, active: TaskForce, target: TaskForce,
 		"STEAL_INITIATIVE":
 			out["steal_initiative_offer"] = true
 			out["text"] = "Il giocatore Inattivo puo' tentare di Sottrarre l'Iniziativa."
+		"HIT":
+			out["text"] = _hit(target, -1)
+		"HIT_IF_SLOW":
+			out["text"] = _hit(target, TimeLapse.Speed.SLOW)
+		"HIT_IF_VERY_SLOW":
+			out["text"] = _hit(target, TimeLapse.Speed.VERY_SLOW)
+		"DAMAGED":
+			out["text"] = _damage(target)
+		"SPLASH":
+			out["text"] = "Splash: nessun colpo."
 		_:
 			out["text"] = "risultato '%s' non ancora implementato" % code
 	return out
+
+
+## Colpo, eventualmente condizionato alla velocita' del bersaglio.
+## `max_speed` -1 significa "nessuna condizione"; altrimenti solo le navi con
+## velocita' <= max_speed possono essere colpite (Charts: "Colpo, bersaglio
+## Lento" e "Colpo, bersaglio Molto Lento").
+## La scelta della nave spetta al giocatore Attivo; qui si prende la prima
+## ammissibile, preferendo quelle gia' danneggiate perche' e' la scelta
+## normalmente piu' dannosa. In M5 la scelta passera' al giocatore.
+static func _hit(target: TaskForce, max_speed: int) -> String:
+	if target == null:
+		return "Colpo: nessun bersaglio."
+	var eligible: Array[Ship] = []
+	for s in target.afloat_ships():
+		if max_speed < 0 or s.speed <= max_speed:
+			eligible.append(s)
+	if eligible.is_empty():
+		if target.ships.is_empty():
+			return ("Colpo: la TF %s non ha ancora un elenco navi "
+				+ "(statistiche non trascritte).") % target.display_name()
+		return ("Colpo: nessuna nave di %s ha la velocita' richiesta, "
+			+ "nessun effetto.") % target.display_name()
+	eligible.sort_custom(func(a: Ship, b: Ship) -> bool:
+		return int(a.damaged) > int(b.damaged))
+	var txt := eligible[0].apply_hit()
+	target.recompute_speed()
+	return "Colpo su %s: %s" % [target.display_name(), txt]
+
+
+static func _damage(target: TaskForce) -> String:
+	if target == null:
+		return "Danneggiato: nessun bersaglio."
+	var afloat := target.afloat_ships()
+	if afloat.is_empty():
+		if target.ships.is_empty():
+			return ("Danneggiato: la TF %s non ha ancora un elenco navi "
+				+ "(statistiche non trascritte).") % target.display_name()
+		return "Danneggiato: %s non ha piu' navi a galla." % target.display_name()
+	afloat.sort_custom(func(a: Ship, b: Ship) -> bool:
+		return int(a.damaged) > int(b.damaged))
+	var txt := afloat[0].apply_damage()
+	target.recompute_speed()
+	return "Danneggiato su %s: %s" % [target.display_name(), txt]
 
 
 static func _contact(target: TaskForce, h: Vector2i) -> String:

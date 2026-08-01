@@ -7,6 +7,7 @@ extends SceneTree
 var _frames := 0
 var _out := "user://shot.png"
 var _root_node: Node = null
+var _args: PackedStringArray = PackedStringArray()
 
 
 func _initialize() -> void:
@@ -16,10 +17,21 @@ func _initialize() -> void:
 	var packed: PackedScene = load("res://ui/main.tscn")
 	_root_node = packed.instantiate()
 	root.add_child(_root_node)
+	_args = args
 
 
 func _process(_delta: float) -> bool:
 	_frames += 1
+	# la configurazione va fatta dopo _ready() della scena, non in _initialize()
+	if _frames == 2:
+		# argomenti opzionali: <reticolo 0-3> <zoom> <centro_x> <centro_y>
+		if _args.size() >= 2:
+			_root_node.board.set_grid_mode(int(_args[1]))
+		if _args.size() >= 5:
+			var cam: Camera2D = _root_node.cam
+			var z := float(_args[2])
+			cam.zoom = Vector2(z, z)
+			cam.position = Vector2(float(_args[3]), float(_args[4]))
 	if _frames < 30:
 		return false
 	var img := root.get_texture().get_image()

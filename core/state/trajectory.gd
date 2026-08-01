@@ -94,15 +94,18 @@ func contact_count() -> int:
 
 ## Puo' un segmento essere aggiunto in `h` al capo `end`?
 ## `end` 0 = davanti, 1 = dietro. Per una Stazione entrambi valgono uguale.
-func can_extend(h: Vector2i, end: int, graph: MapGraph, port_hexes: Dictionary = {}) -> bool:
-	return extend_error(h, end, graph, port_hexes) == ""
+func can_extend(h: Vector2i, end: int, graph: MapGraph, port_hexes: Dictionary = {},
+		side: int = -1) -> bool:
+	return extend_error(h, end, graph, port_hexes, side) == ""
 
 
 ## Come can_extend ma restituisce il motivo del rifiuto (stringa vuota = ok).
 ## Avere il motivo per esteso serve alla UI: si mostra al giocatore perche' una
 ## mossa non e' legale invece di limitarsi a ignorare il click.
+## `side` -1 salta il controllo dei lati riservati a una nazione (usato dai test
+## e dall'editor); passando TaskForce.Side.* si applica anche quello.
 func extend_error(h: Vector2i, end: int, graph: MapGraph,
-		port_hexes: Dictionary = {}) -> String:
+		port_hexes: Dictionary = {}, side: int = -1) -> String:
 	if segments.size() >= MAX_SEGMENTS:
 		return "una Traiettoria non puo' superare i %d segmenti" % MAX_SEGMENTS
 	if not graph.is_playable(h):
@@ -114,8 +117,10 @@ func extend_error(h: Vector2i, end: int, graph: MapGraph,
 	var from := end_hex(end)
 	if not graph.is_adjacent(from, h):
 		if Hex.are_adjacent(from, h):
-			return "passaggio negato (lati 'not adjacent')"
+			return "passaggio negato dalla mappa ('not adjacent')"
 		return "l'esagono non e' adiacente al capo della Traiettoria"
+	if side >= 0 and not graph.is_adjacent_for(side, from, h):
+		return "passaggio riservato: %s" % graph.restriction_label(from, h)
 	return ""
 
 
@@ -123,8 +128,8 @@ func extend_error(h: Vector2i, end: int, graph: MapGraph,
 ## `info` va messo a true dal chiamante quando l'esagono innesca Informazioni
 ## (porto nemico, base aerea, Stazione TF nemica, forza Furtiva) - RB p.21.
 func extend(h: Vector2i, end: int, graph: MapGraph, port_hexes: Dictionary = {},
-		info: bool = false) -> bool:
-	if extend_error(h, end, graph, port_hexes) != "":
+		info: bool = false, side: int = -1) -> bool:
+	if extend_error(h, end, graph, port_hexes, side) != "":
 		return false
 	var seg := {"hex": h, "info": info, "contact": false}
 	if is_station():

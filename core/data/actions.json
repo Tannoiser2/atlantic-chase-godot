@@ -99,8 +99,8 @@
   "NAVAL_SEARCH": {
    "label": "Ricerca Navale",
    "page": 33,
-   "verified": "partial",
-   "verified_note": "La colonna 0-4 e' stata letta a ingrandimento 4x ed e' certa. Le colonne 5-9, 10-15 e 16+ usano i simboli a barre (EARLY_LATE vs SHADOW) che a questa risoluzione non sono sempre distinguibili con sicurezza: sono marcate 'unverified' cella per cella e vanno ricontrollate sulla mappa fisica prima di considerare l'azione definitiva.",
+   "verified": true,
+   "verified_note": "Tutte e 28 le celle lette a ingrandimento 5-6x. La distinzione fra 'In Anticipo o In Ritardo' (barre rosso-BIANCO-rosso) e 'Seguire' (tre barre tutte rosse) e' netta a questo ingrandimento.",
    "causes_time_lapse": true,
    "columns": [
     {"label": "0-4", "min": 0, "max": 4},
@@ -116,32 +116,61 @@
     {"min": 10, "max": 11, "results": [["CONTACT", "SIGHTED"], ["CONTACT", "SIGHTED"], ["CONTACT", "SHADOW"], ["EARLY_LATE"]]},
     {"min": 12, "max": 12, "results": [["SKIRMISH", "SIGHTED"], ["CONTACT", "SIGHTED"], ["CONTACT", "SIGHTED"], ["SHADOW"]]},
     {"min": 13, "max": 99, "results": [["SKIRMISH", "SIGHTED"], ["SKIRMISH", "SIGHTED"], ["SKIRMISH", "SIGHTED"], ["CONTACT", "SHADOW"]]}
-   ],
-   "unverified_cells": [
-    [0, 1], [0, 2], [1, 1], [1, 2], [2, 1], [2, 2], [2, 3],
-    [3, 1], [3, 2], [3, 3], [4, 2], [4, 3], [5, 3], [6, 3]
    ]
   },
 
   "AIR_STRIKE": {
    "label": "Attacco Aereo",
    "page": 27,
-   "verified": false,
-   "verified_note": "Tabella NON ancora trascritta. Sulla mappa usa colonne 0 / 1-4 / 5-9 / 10-13 / 14+ e righe da 6 a 15+, con simboli di Colpo e Danno. Va letta prima di abilitare l'azione.",
-   "note": "Richiede meteo buono ('Good weather only'). Serve una TF con portaerei (CV) o una base aerea.",
+   "verified": true,
+   "verified_note": "Tutte e 35 le celle lette a ingrandimento 5x. Simboli: stella rossa a 4 punte = Colpo; con 'S' = Colpo se il bersaglio e' Lento; con 'V' su disco grigio = Colpo se Molto Lento; stella a raggi multipli aranciata = Danneggiato (verificata sul regolamento p.50).",
+   "note": "Solo con meteo Buono ('Good weather only'). Richiede una TF con portaerei (CV) o una base aerea.",
+   "requires_good_weather": true,
    "causes_time_lapse": true,
-   "columns": [],
-   "rows": []
+   "columns": [
+    {"label": "0", "min": 0, "max": 0},
+    {"label": "1-4", "min": 1, "max": 4},
+    {"label": "5-9", "min": 5, "max": 9},
+    {"label": "10-15", "min": 10, "max": 15},
+    {"label": "16+", "min": 16, "max": 999}
+   ],
+   "rows": [
+    {"min": 2, "max": 6, "results": [["MISS"], ["MISS"], ["MISS"], ["MISS"], ["MISS"]]},
+    {"min": 7, "max": 7, "results": [["CONTACT", "HIT_IF_SLOW"], ["CONTACT", "HIT_IF_SLOW"], ["HIT_IF_VERY_SLOW"], ["HIT_IF_VERY_SLOW"], ["MISS"]]},
+    {"min": 8, "max": 8, "results": [["CONTACT", "HIT_IF_SLOW"], ["CONTACT", "HIT_IF_SLOW"], ["CONTACT", "HIT_IF_SLOW"], ["CONTACT", "HIT_IF_VERY_SLOW"], ["HIT_IF_VERY_SLOW"]]},
+    {"min": 9, "max": 10, "results": [["CONTACT", "HIT"], ["CONTACT", "HIT_IF_SLOW"], ["CONTACT", "HIT_IF_SLOW"], ["CONTACT", "HIT_IF_SLOW"], ["CONTACT", "HIT_IF_VERY_SLOW"]]},
+    {"min": 11, "max": 12, "results": [["CONTACT", "DAMAGED"], ["CONTACT", "HIT"], ["CONTACT", "HIT_IF_SLOW"], ["CONTACT", "HIT_IF_SLOW"], ["CONTACT", "HIT_IF_SLOW"]]},
+    {"min": 13, "max": 14, "results": [["CONTACT", "DAMAGED"], ["CONTACT", "DAMAGED"], ["CONTACT", "HIT"], ["CONTACT", "HIT_IF_SLOW"], ["CONTACT", "HIT_IF_SLOW"]]},
+    {"min": 15, "max": 99, "results": [["CONTACT", "DAMAGED"], ["CONTACT", "DAMAGED"], ["CONTACT", "DAMAGED"], ["CONTACT", "HIT"], ["CONTACT", "HIT"]]}
+   ]
   },
 
   "STEALTH_ATTACK": {
    "label": "Attacco Furtivo",
    "page": 41,
-   "verified": false,
-   "verified_note": "Tabella NON ancora trascritta. Colonne 0 / 1 / 2-3 / 4-6 / 7+, simboli Perdere il Contatto, Colpo e Colpo-se-Lento. Modificatori: +3 in zona U-Boat, +2 se il bersaglio e' un Convoglio disperso.",
+   "verified": true,
+   "verified_note": "Tutte e 30 le celle lette a ingrandimento 5x. Le celle con due icone significano due risultati (es. 13/colonna 0 = due Colpi).",
+   "note": "Bersaglia un segmento Traiettoria con un segnalino Contatto (RB p.35).",
    "causes_time_lapse": true,
-   "columns": [],
-   "rows": []
+   "modifiers": [
+    {"value": 3, "when": "l'azione avviene in una U-Boat Zone"},
+    {"value": 2, "when": "il bersaglio e' un Convoglio disperso"}
+   ],
+   "columns": [
+    {"label": "0", "min": 0, "max": 0},
+    {"label": "1", "min": 1, "max": 1},
+    {"label": "2-3", "min": 2, "max": 3},
+    {"label": "4-6", "min": 4, "max": 6},
+    {"label": "7+", "min": 7, "max": 999}
+   ],
+   "rows": [
+    {"min": 2, "max": 7, "results": [["MISS"], ["LOSE_CONTACT"], ["LOSE_CONTACT"], ["LOSE_CONTACT"], ["LOSE_CONTACT"]]},
+    {"min": 8, "max": 9, "results": [["HIT_IF_VERY_SLOW"], ["MISS"], ["MISS"], ["LOSE_CONTACT"], ["LOSE_CONTACT"]]},
+    {"min": 10, "max": 11, "results": [["HIT_IF_SLOW"], ["MISS"], ["MISS"], ["MISS"], ["LOSE_CONTACT"]]},
+    {"min": 12, "max": 12, "results": [["HIT"], ["HIT_IF_SLOW"], ["HIT_IF_SLOW"], ["MISS"], ["MISS"]]},
+    {"min": 13, "max": 13, "results": [["HIT", "HIT"], ["HIT"], ["HIT"], ["HIT_IF_SLOW"], ["HIT_IF_SLOW"]]},
+    {"min": 14, "max": 99, "results": [["DAMAGED", "DAMAGED"], ["DAMAGED"], ["HIT", "HIT"], ["HIT"], ["HIT"]]}
+   ]
   },
 
   "TRAJECTORY": {

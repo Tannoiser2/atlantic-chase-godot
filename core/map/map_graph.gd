@@ -32,6 +32,9 @@ var _inv_d: float
 # topologia
 var hexes: Dictionary = {}          # Vector2i -> Dictionary
 var _blocked: Dictionary = {}       # "q,r|q,r" -> true
+## Lati percorribili da una sola parte (es. il Canale di Kiel, "German only").
+## chiave lato -> { "side": int, "label": String }
+var _restricted: Dictionary = {}
 var ports: Dictionary = {}          # String -> Dictionary
 
 var load_error: String = ""
@@ -102,6 +105,18 @@ func _apply(d: Dictionary) -> bool:
 		var x := Vector2i(int(b["aq"]), int(b["ar"]))
 		var y := Vector2i(int(b["bq"]), int(b["br"]))
 		_blocked[_edge_key(x, y)] = true
+
+	_restricted.clear()
+	for r_v: Variant in d.get("restricted_edges", []):
+		var rr: Dictionary = r_v
+		var x2 := Vector2i(int(rr["aq"]), int(rr["ar"]))
+		var y2 := Vector2i(int(rr["bq"]), int(rr["br"]))
+		var side := TaskForce.Side.KRIEGSMARINE
+		if String(rr.get("side", "")) == "ROYAL_NAVY":
+			side = TaskForce.Side.ROYAL_NAVY
+		_restricted[_edge_key(x2, y2)] = {
+			"side": side, "label": String(rr.get("label", "")),
+		}
 
 	ports.clear()
 	for p_v: Variant in d.get("ports", []):
@@ -184,6 +199,34 @@ func is_adjacent(a: Vector2i, b: Vector2i) -> bool:
 	if not (hexes.has(a) and hexes.has(b)):
 		return false
 	return not _blocked.has(_edge_key(a, b))
+
+
+## Adiacenza per una parte specifica. Aggiunge ai vincoli di is_adjacent() i
+## lati riservati a una nazione: il Canale di Kiel e' percorribile solo dalle
+## Task Force tedesche ("KW Kanal German only" stampato sulla mappa).
+func is_adjacent_for(side: int, a: Vector2i, b: Vector2i) -> bool:
+	if not is_adjacent(a, b):
+		return false
+	var k := _edge_key(a, b)
+	if _restricted.has(k):
+		return int((_restricted[k] as Dictionary)["side"]) == side
+	return true
+
+
+## Etichetta della restrizione su un lato, o stringa vuota.
+func restriction_label(a: Vector2i, b: Vector2i) -> String:
+	var k := _edge_key(a, b)
+	if _restricted.has(k):
+		return String((_restricted[k] as Dictionary)["label"])
+	return ""
+
+
+func is_edge_restricted(a: Vector2i, b: Vector2i) -> bool:
+	return _restricted.has(_edge_key(a, b))
+
+
+func restricted_edge_count() -> int:
+	return _restricted.size()
 
 
 func adjacent_hexes(h: Vector2i) -> Array[Vector2i]:

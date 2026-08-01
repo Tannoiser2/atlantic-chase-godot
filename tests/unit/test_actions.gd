@@ -25,6 +25,9 @@ func run() -> void:
 	test_resolution_pipeline()
 	test_interruption_cancels_action()
 	test_unverified_actions_refused()
+	test_air_strike_table()
+	test_stealth_attack_table()
+	test_damage_results()
 	test_result_contact_and_sighted()
 	test_result_shadow()
 	test_result_early_late()
@@ -172,20 +175,118 @@ func test_interruption_cancels_action() -> void:
 
 func test_unverified_actions_refused() -> void:
 	_begin("le azioni non verificate vengono rifiutate, non indovinate")
+	# le quattro tabelle d'azione sono state lette dalla mappa e sono verificate
+	for k in ["ENGAGE", "NAVAL_SEARCH", "AIR_STRIKE", "STEALTH_ATTACK"]:
+		true_(eng.is_verified(k), "%s verificata" % k)
+	eq(eng.action("NAVAL_SEARCH").get("unverified_cells", []).size(), 0,
+		"Ricerca Navale non ha piu' celle dubbie")
+	false_(eng.is_cell_unverified("NAVAL_SEARCH", 4, 7), "nessuna cella da riverificare")
+
+	# le azioni ancora non trascritte devono essere rifiutate con un motivo
 	var st := GameState.new(graph, 5)
 	var a := st.add_task_force(_tf(TaskForce.Side.KRIEGSMARINE, 2))
 	var dec := ActionEngine.Declaration.new()
-	dec.action_key = "AIR_STRIKE"
+	dec.action_key = "SIGNAL"
 	dec.active = a
 	var res := eng.resolve(dec, st)
-	false_(res["ok"], "non risolta")
-	true_(String(res["error"]).contains("non ancora trascritta"),
-		"il motivo e' esplicito: " + String(res["error"]))
-	false_(eng.is_verified("AIR_STRIKE"), "Attacco Aereo non verificato")
-	true_(eng.is_verified("ENGAGE"), "Ingaggiare verificato")
-	true_(eng.is_verified("NAVAL_SEARCH"), "Ricerca Navale utilizzabile")
-	true_(eng.is_cell_unverified("NAVAL_SEARCH", 4, 7), "cella segnalata da riverificare")
-	false_(eng.is_cell_unverified("NAVAL_SEARCH", 4, 0), "colonna 0-4 verificata")
+	false_(res["ok"], "Segnalazione non risolta")
+	ne(String(res["error"]), "", "il motivo e' esplicito: " + String(res["error"]))
+	false_(eng.is_verified("SIGNAL"), "Segnalazione non verificata")
+
+
+func test_air_strike_table() -> void:
+	_begin("tabella Attacco Aereo")
+	eq(eng.lookup("AIR_STRIKE", 6, 0), ["MISS"] as Array[String], "6 o meno: sempre mancato")
+	eq(eng.lookup("AIR_STRIKE", 6, 20), ["MISS"] as Array[String], "6 o meno / TT 16+")
+	eq(eng.lookup("AIR_STRIKE", 7, 0),
+		["CONTACT", "HIT_IF_SLOW"] as Array[String], "7 / TT 0")
+	eq(eng.lookup("AIR_STRIKE", 7, 6),
+		["HIT_IF_VERY_SLOW"] as Array[String], "7 / TT 5-9: solo il Colpo, senza Contatto")
+	eq(eng.lookup("AIR_STRIKE", 7, 20), ["MISS"] as Array[String], "7 / TT 16+")
+	eq(eng.lookup("AIR_STRIKE", 8, 20),
+		["HIT_IF_VERY_SLOW"] as Array[String], "8 / TT 16+")
+	eq(eng.lookup("AIR_STRIKE", 10, 0), ["CONTACT", "HIT"] as Array[String], "9-10 / TT 0")
+	eq(eng.lookup("AIR_STRIKE", 12, 0),
+		["CONTACT", "DAMAGED"] as Array[String], "11-12 / TT 0")
+	eq(eng.lookup("AIR_STRIKE", 15, 12), ["CONTACT", "HIT"] as Array[String], "15+ / TT 10-15")
+	eq(eng.lookup("AIR_STRIKE", 20, 5),
+		["CONTACT", "DAMAGED"] as Array[String], "somma altissima / TT 5-9")
+	# l'Attacco Aereo ha 5 colonne come l'Ingaggio ma con soglie diverse
+	eq(eng.column_for("AIR_STRIKE", 15), 3, "TT 15 -> 10-15")
+	eq(eng.column_for("AIR_STRIKE", 16), 4, "TT 16 -> 16+")
+
+
+func test_stealth_attack_table() -> void:
+	_begin("tabella Attacco Furtivo")
+	eq(eng.lookup("STEALTH_ATTACK", 7, 0), ["MISS"] as Array[String], "7 o meno / TT 0")
+	eq(eng.lookup("STEALTH_ATTACK", 7, 1),
+		["LOSE_CONTACT"] as Array[String], "7 o meno / TT 1")
+	eq(eng.lookup("STEALTH_ATTACK", 9, 0),
+		["HIT_IF_VERY_SLOW"] as Array[String], "8-9 / TT 0")
+	eq(eng.lookup("STEALTH_ATTACK", 11, 0), ["HIT_IF_SLOW"] as Array[String], "10-11 / TT 0")
+	eq(eng.lookup("STEALTH_ATTACK", 12, 0), ["HIT"] as Array[String], "12 / TT 0")
+	# le celle con due icone valgono due risultati
+	eq(eng.lookup("STEALTH_ATTACK", 13, 0), ["HIT", "HIT"] as Array[String],
+		"13 / TT 0 = due Colpi")
+	eq(eng.lookup("STEALTH_ATTACK", 14, 0), ["DAMAGED", "DAMAGED"] as Array[String],
+		"14+ / TT 0 = due Danni")
+	eq(eng.lookup("STEALTH_ATTACK", 14, 3), ["HIT", "HIT"] as Array[String],
+		"14+ / TT 2-3 = due Colpi")
+	eq(eng.lookup("STEALTH_ATTACK", 14, 9), ["HIT"] as Array[String], "14+ / TT 7+")
+	eq(eng.column_for("STEALTH_ATTACK", 1), 1, "colonna 1 e' separata")
+	eq(eng.column_for("STEALTH_ATTACK", 3), 2, "TT 3 -> 2-3")
+	eq(eng.column_for("STEALTH_ATTACK", 7), 4, "TT 7 -> 7+")
+	# i modificatori documentati sulla mappa
+	var mods: Array = eng.action("STEALTH_ATTACK").get("modifiers", [])
+	eq(mods.size(), 2, "due modificatori (+3 U-Boat Zone, +2 Convoglio disperso)")
+
+
+func test_damage_results() -> void:
+	_begin("Colpo e Danneggiato")
+	var st := GameState.new(graph, 5)
+	var a := st.add_task_force(_tf(TaskForce.Side.KRIEGSMARINE, 2))
+	var b := st.add_task_force(_tf(TaskForce.Side.ROYAL_NAVY, 2))
+	var bb := Ship.new("Hood", TimeLapse.Speed.FAST)
+	bb.type_code = "BC"
+	var slow := Ship.new("Malaya", TimeLapse.Speed.SLOW)
+	slow.type_code = "BB"
+	b.ships = [bb, slow] as Array[Ship]
+	eq(b.recompute_speed(), TimeLapse.Speed.SLOW, "la TF va alla velocita' della piu' lenta")
+
+	# COLPO senza condizione: colpisce
+	Results.apply("HIT", a, b, Vector2i.ZERO, st)
+	eq(bb.hits + slow.hits, 1, "un Colpo assegnato")
+
+	# COLPO se il bersaglio e' Molto Lento: nessuna nave lo e', nessun effetto
+	var before := bb.hits + slow.hits
+	var r := Results.apply("HIT_IF_VERY_SLOW", a, b, Vector2i.ZERO, st)
+	eq(bb.hits + slow.hits, before, "nessuna nave Molto Lenta: nessun Colpo")
+	true_(String(r["text"]).contains("nessun"), "lo dice: " + String(r["text"]))
+
+	# COLPO se Lento: la Malaya e' lenta
+	Results.apply("HIT_IF_SLOW", a, b, Vector2i.ZERO, st)
+	eq(slow.hits, 1, "colpita la nave lenta")
+
+	# DANNEGGIATO: gira la pedina; i Colpi restano (RB p.51)
+	Results.apply("DAMAGED", a, b, Vector2i.ZERO, st)
+	var damaged_count := int(bb.damaged) + int(slow.damaged)
+	eq(damaged_count, 1, "una nave danneggiata")
+	# secondo Danno sulla stessa nave: affonda
+	Results.apply("DAMAGED", a, b, Vector2i.ZERO, st)
+	eq(int(bb.sunk) + int(slow.sunk), 1, "la nave gia' danneggiata affonda")
+
+	# Convogli e Squadroni DD: un Danno vale 2 Colpi, e a 4 Colpi sono distrutti
+	var c := st.add_task_force(_tf(TaskForce.Side.ROYAL_NAVY, 1))
+	var convoy := Ship.new("Convoglio", TimeLapse.Speed.VERY_SLOW, Ship.Kind.CONVOY)
+	c.ships = [convoy] as Array[Ship]
+	false_(convoy.can_be_damaged(), "un Convoglio non si danneggia")
+	Results.apply("DAMAGED", a, c, Vector2i.ZERO, st)
+	eq(convoy.hits, 2, "un Danno vale 2 Colpi")
+	false_(convoy.sunk, "non ancora distrutto")
+	Results.apply("DAMAGED", a, c, Vector2i.ZERO, st)
+	eq(convoy.hits, 4, "quattro Colpi")
+	true_(convoy.sunk, "distrutto a 4 Colpi")
+	true_(c.is_eliminated(), "la TF non ha piu' navi a galla")
 
 
 func test_result_contact_and_sighted() -> void:

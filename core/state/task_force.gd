@@ -16,11 +16,12 @@ var color: String = "GE"       ## "GE" | "Brown" | "Tan" | "Red"
 var slot: int = 0              ## indice nel set colore
 var name: String = ""
 
-## Nomi delle navi (chiavi in ships.json). La velocita' della TF e' quella
-## della sua nave piu' lenta (RB, tabella Scorrere del Tempo).
-var ships: Array[String] = []
+## Le navi della Task Force.
+var ships: Array[Ship] = []
 
 ## Velocita' della TF: indice in TimeLapse.Speed.
+## Regola: e' quella della nave piu' lenta. Se ci sono navi, viene ricalcolata;
+## il campo resta impostabile a mano per gli scenari privi di elenco navi.
 var speed: int = TimeLapse.Speed.MEDIUM
 
 var trajectory: Trajectory = null
@@ -53,6 +54,32 @@ func can_complete() -> bool:
 	return trajectory.info_count() == 0
 
 
+## La velocita' della TF e' quella della sua nave piu' lenta (le navi affondate
+## non contano). Senza elenco navi resta il valore impostato dallo scenario.
+func recompute_speed() -> int:
+	var slowest := -1
+	for s in ships:
+		if s.sunk:
+			continue
+		if slowest < 0 or s.speed < slowest:
+			slowest = s.speed
+	if slowest >= 0:
+		speed = slowest
+	return speed
+
+
+func afloat_ships() -> Array[Ship]:
+	var out: Array[Ship] = []
+	for s in ships:
+		if not s.sunk:
+			out.append(s)
+	return out
+
+
+func is_eliminated() -> bool:
+	return not ships.is_empty() and afloat_ships().is_empty()
+
+
 func display_name() -> String:
 	if name != "":
 		return name
@@ -61,9 +88,12 @@ func display_name() -> String:
 
 
 func to_dict() -> Dictionary:
+	var sh: Array = []
+	for s in ships:
+		sh.append(s.to_dict())
 	return {
 		"id": id, "side": side, "color": color, "slot": slot, "name": name,
-		"ships": ships, "speed": speed, "evasive": evasive, "leader": leader,
+		"ships": sh, "speed": speed, "evasive": evasive, "leader": leader,
 		"trajectory": trajectory.to_dict(),
 	}
 
@@ -73,11 +103,13 @@ static func from_dict(d: Dictionary) -> TaskForce:
 	tf.color = String(d.get("color", "GE"))
 	tf.slot = int(d.get("slot", 0))
 	tf.name = String(d.get("name", ""))
-	var ss: Array[String] = []
+	var ss: Array[Ship] = []
 	for s_v: Variant in d.get("ships", []):
-		ss.append(String(s_v))
+		ss.append(Ship.from_variant(s_v))
 	tf.ships = ss
 	tf.speed = int(d.get("speed", TimeLapse.Speed.MEDIUM))
+	if not ss.is_empty():
+		tf.recompute_speed()
 	tf.evasive = bool(d.get("evasive", false))
 	tf.leader = String(d.get("leader", ""))
 	tf.trajectory = Trajectory.from_dict(d.get("trajectory", {}))

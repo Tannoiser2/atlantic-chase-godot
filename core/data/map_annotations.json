@@ -1,0 +1,35 @@
+{
+ "_purpose": "Dati della mappa che nessun algoritmo puo' ricavare: vanno letti a occhio dalla mappa stampata. Sono tenuti separati da map_graph.json (generato) cosi' sopravvivono a una rigenerazione del grafo. Applicati da tools/apply_annotations.py.",
+
+ "blocked_edges": {
+  "_rule": "La mappa stampa frecce grigie a doppia punta con la scritta 'not adjacent' attraverso la terraferma. I due esagoni ai capi della freccia NON sono adiacenti, anche se condividono un lato.",
+  "_method": "Identificate con tools/label_edges.py, che etichetta i punti medi dei lati: ogni freccia e' stata associata al lato su cui giace, senza ambiguita'.",
+  "_coverage": "Controllate tutte le regioni con terraferma: Isole Britanniche, Irlanda, Bretagna, Islanda, Norvegia, Danimarca, Terranova, Iberia/Gibilterra. Fuori da queste non esistono frecce.",
+  "edges": [
+   {"aq": 15, "ar": -5, "bq": 15, "br": -4, "where": "Scozia, a nord di Methil"},
+   {"aq": 15, "ar": -4, "bq": 16, "br": -5, "where": "Firth of Forth"},
+   {"aq": 15, "ar": -4, "bq": 16, "br": -4, "where": "Inghilterra settentrionale, verso lo Humber"},
+   {"aq": 15, "ar": -3, "bq": 16, "br": -4, "where": "Inghilterra centrale, fra Galles e Mare del Nord"},
+   {"aq": 14, "ar": -3, "bq": 15, "br": -4, "where": "Irlanda del Nord / Canale del Nord"},
+   {"aq": 14, "ar": -3, "bq": 15, "br": -3, "where": "Irlanda meridionale"},
+   {"aq": 15, "ar": -2, "bq": 16, "br": -3, "where": "Bretagna"},
+   {"aq": 13, "ar": -7, "bq": 13, "br": -6, "where": "Islanda, versante nord"},
+   {"aq": 13, "ar": -6, "bq": 14, "br": -7, "where": "Islanda, versante est"}
+  ]
+ },
+
+ "restricted_edges": {
+  "_rule": "Lati attraversabili solo da una delle due parti. Sulla mappa sono frecce NERE con una condizione scritta, non le frecce grigie 'not adjacent'.",
+  "edges": [
+   {"aq": 17, "ar": -5, "bq": 18, "br": -6,
+    "side": "KRIEGSMARINE",
+    "label": "Canale di Kiel (KW Kanal)",
+    "note": "La mappa scrive 'KW Kanal German only': solo le Task Force tedesche possono usare questo lato."}
+  ]
+ },
+
+ "ports": {
+  "_status": "DA COMPLETARE. I 20 box porto hanno poligoni esatti in reports/zones.json, ma manca il collegamento box -> esagono di sbocco. Vedi STATO.md.",
+  "entries": []
+ }
+}

@@ -307,7 +307,7 @@ func _can_extend_to(h: Vector2i) -> bool:
 	if selected_tf == null:
 		return false
 	return selected_tf.trajectory.extend_error(
-		h, active_end, graph, state.port_hexes()) == ""
+		h, active_end, graph, state.port_hexes(), selected_tf.side) == ""
 
 
 func _try_extend(h: Vector2i) -> void:
@@ -317,10 +317,10 @@ func _try_extend(h: Vector2i) -> void:
 	var ends := [active_end, 1 - active_end]
 	for e_v: Variant in ends:
 		var e: int = e_v
-		var err := traj.extend_error(h, e, graph, ports)
+		var err := traj.extend_error(h, e, graph, ports, selected_tf.side)
 		if err == "":
 			var info := state.triggers_info(h, selected_tf.side)
-			traj.extend(h, e, graph, ports, info)
+			traj.extend(h, e, graph, ports, info, selected_tf.side)
 			active_end = e
 			var extra := ""
 			if info:
@@ -332,7 +332,7 @@ func _try_extend(h: Vector2i) -> void:
 				{"tf": selected_tf.id, "hex": [h.x, h.y]})
 			state.changed.emit()
 			return
-	_msg("mossa illegale: %s" % traj.extend_error(h, active_end, graph, ports))
+	_msg("mossa illegale: %s" % traj.extend_error(h, active_end, graph, ports, selected_tf.side))
 
 
 func _cycle_tf(step: int) -> void:
@@ -452,8 +452,8 @@ func _update_preview(h: Vector2i) -> void:
 		return
 	var traj := selected_tf.trajectory
 	var ports := state.port_hexes()
-	var err := traj.extend_error(h, active_end, graph, ports)
-	var other := traj.extend_error(h, 1 - active_end, graph, ports)
+	var err := traj.extend_error(h, active_end, graph, ports, selected_tf.side)
+	var other := traj.extend_error(h, 1 - active_end, graph, ports, selected_tf.side)
 	if err != "" and other != "":
 		traj_layer.clear_preview()
 		return
@@ -594,9 +594,9 @@ func _refresh() -> void:
 		else sc, "EDITOR" if mode == Mode.EDITOR else "gioco"]
 
 	var lines: Array[String] = []
-	lines.append("Meteo: [b]%s[/b]    Esagoni: %d    Lati negati: %d"
-		% ["cattivo" if state.weather == 1 else "buono",
-			graph.hex_count(), graph.blocked_edge_count()])
+	lines.append("Meteo: [b]%s[/b]  Esagoni: %d  Lati negati: %d  Riservati: %d"
+		% ["cattivo" if state.weather == 1 else "buono", graph.hex_count(),
+			graph.blocked_edge_count(), graph.restricted_edge_count()])
 	if selected_tf != null:
 		var t := selected_tf.trajectory
 		var kind := "Stazione" if t.is_station() else "Traiettoria"

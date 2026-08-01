@@ -21,6 +21,8 @@ func run() -> void:
 	test_adjacency_symmetry()
 	test_geometry_constants()
 	test_blocked_edges()
+	test_real_not_adjacent_arrows()
+	test_kiel_canal()
 
 
 func test_graph_loads() -> void:
@@ -115,3 +117,62 @@ func test_blocked_edges() -> void:
 	false_(graph.adjacent_hexes(a).has(b), "il lato bloccato sparisce dai vicini")
 	graph.block_edge(a, b, false)
 	true_(graph.is_adjacent(a, b), "adiacenti di nuovo dopo lo sblocco")
+
+
+## Le 9 frecce "not adjacent" trascritte dalla mappa (core/data/map_annotations.json).
+## Il grafo e' rigenerabile; queste annotazioni no, perche' sono state lette a
+## occhio. Questo test impedisce che una rigenerazione le perda in silenzio.
+func test_real_not_adjacent_arrows() -> void:
+	_begin("frecce 'not adjacent' stampate sulla mappa")
+	var expected := [
+		[Vector2i(15, -5), Vector2i(15, -4), "Scozia"],
+		[Vector2i(15, -4), Vector2i(16, -5), "Firth of Forth"],
+		[Vector2i(15, -4), Vector2i(16, -4), "Inghilterra nord"],
+		[Vector2i(15, -3), Vector2i(16, -4), "Inghilterra centrale"],
+		[Vector2i(14, -3), Vector2i(15, -4), "Canale del Nord"],
+		[Vector2i(14, -3), Vector2i(15, -3), "Irlanda sud"],
+		[Vector2i(15, -2), Vector2i(16, -3), "Bretagna"],
+		[Vector2i(13, -7), Vector2i(13, -6), "Islanda nord"],
+		[Vector2i(13, -6), Vector2i(14, -7), "Islanda est"],
+	]
+	eq(graph.blocked_edge_count(), expected.size(), "numero di lati negati")
+	for e: Array in expected:
+		var a: Vector2i = e[0]
+		var b: Vector2i = e[1]
+		var where: String = e[2]
+		true_(graph.has_hex(a), "%s: esiste %s" % [where, str(a)])
+		true_(graph.has_hex(b), "%s: esiste %s" % [where, str(b)])
+		true_(Hex.are_adjacent(a, b), "%s: geometricamente adiacenti" % where)
+		false_(graph.is_adjacent(a, b), "%s: passaggio negato" % where)
+		false_(graph.adjacent_hexes(a).has(b), "%s: assente dai vicini" % where)
+
+	# la conseguenza che conta: non si attraversa la Gran Bretagna
+	var traj := Trajectory.new()
+	traj.station_hex = Vector2i(15, -4)
+	eq(traj.extend_error(Vector2i(16, -4), 1, graph),
+		"passaggio negato dalla mappa ('not adjacent')",
+		"una Traiettoria non puo' attraversare l'Inghilterra")
+
+
+func test_kiel_canal() -> void:
+	_begin("Canale di Kiel: riservato alla Kriegsmarine")
+	var a := Vector2i(17, -5)
+	var b := Vector2i(18, -6)
+	true_(graph.has_hex(a) and graph.has_hex(b), "entrambi gli esagoni esistono")
+	true_(graph.is_adjacent(a, b), "il lato non e' negato in assoluto")
+	true_(graph.is_edge_restricted(a, b), "il lato e' riservato")
+	true_(graph.is_adjacent_for(TaskForce.Side.KRIEGSMARINE, a, b),
+		"la Kriegsmarine puo' passare")
+	false_(graph.is_adjacent_for(TaskForce.Side.ROYAL_NAVY, a, b),
+		"la Royal Navy no ('KW Kanal German only')")
+	true_(graph.restriction_label(a, b).contains("Kiel"), "l'etichetta lo spiega")
+
+	# e la regola arriva fino alla costruzione della Traiettoria
+	var t := Trajectory.new()
+	t.station_hex = a
+	eq(t.extend_error(b, 1, graph, {}, TaskForce.Side.KRIEGSMARINE), "",
+		"una TF tedesca puo' entrare nel canale")
+	true_(t.extend_error(b, 1, graph, {}, TaskForce.Side.ROYAL_NAVY)
+		.contains("riservato"), "una TF britannica no")
+	eq(t.extend_error(b, 1, graph, {}), "",
+		"senza indicare la nazione il vincolo non si applica (usato dall'editor)")
