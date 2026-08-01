@@ -32,6 +32,7 @@ func run() -> void:
 	test_result_shadow()
 	test_result_early_late()
 	test_result_speed_dependent()
+	test_chooser()
 
 
 func _tf(side: int, n: int, speed: int = TimeLapse.Speed.MEDIUM) -> TaskForce:
@@ -372,3 +373,60 @@ func test_result_speed_dependent() -> void:
 	fast.trajectory.set_info(0, true)
 	var r5 := Results.apply("MISS", fast, slow, h, st)
 	true_(r5["initiative_changes"], "Mancato + Informazioni -> cambio di Iniziativa")
+
+
+## Diverse regole lasciano scegliere al giocatore Attivo. Il core non conosce
+## l'interfaccia: riceve una Callable. Senza, applica la scelta automatica.
+func test_chooser() -> void:
+	_begin("scelta del giocatore sui risultati")
+	var st := GameState.new(graph, 5)
+	var a := st.add_task_force(_tf(TaskForce.Side.KRIEGSMARINE, 2))
+	var b := st.add_task_force(_tf(TaskForce.Side.ROYAL_NAVY, 2))
+	var s1 := Ship.new("Prima", TimeLapse.Speed.FAST)
+	s1.defense = 3
+	var s2 := Ship.new("Seconda", TimeLapse.Speed.FAST)
+	s2.defense = 3
+	b.ships = [s1, s2] as Array[Ship]
+
+	# senza chooser: sceglie il codice, e comunque colpisce UNA nave
+	Results.apply("HIT", a, b, Vector2i.ZERO, st)
+	eq(s1.hits + s2.hits, 1, "un Colpo assegnato senza scelta esplicita")
+
+	# con chooser: colpisce quella indicata.
+	# Nota: in GDScript le lambda catturano le variabili locali PER VALORE, quindi
+	# per far uscire un dato dalla closure serve un contenitore condiviso.
+	var seen: Array[String] = []
+	var chooser := func(cands: Array, reason: String) -> Variant:
+		seen.append(reason)
+		for c_v: Variant in cands:
+			if (c_v as Ship).name == "Seconda":
+				return c_v
+		return cands[0]
+	Results.apply("HIT", a, b, Vector2i.ZERO, st, chooser)
+	eq(s2.hits, 1, "colpita la nave scelta dal giocatore")
+	eq(seen.size(), 1, "il chooser e' stato interpellato una volta")
+	true_(seen[0].contains("Colpo"), "e ha ricevuto il motivo: " + seen[0])
+
+	# una sola candidata: non si disturba il giocatore
+	var c := st.add_task_force(_tf(TaskForce.Side.ROYAL_NAVY, 2))
+	var only := Ship.new("Unica", TimeLapse.Speed.FAST)
+	only.defense = 3
+	c.ships = [only] as Array[Ship]
+	var calls: Array[String] = []
+	var spy := func(_cands: Array, reason: String) -> Variant:
+		calls.append(reason)
+		return null
+	Results.apply("HIT", a, c, Vector2i.ZERO, st, spy)
+	eq(only.hits, 1, "la sola nave viene colpita")
+	eq(calls.size(), 0, "con una sola candidata non si chiede nulla")
+
+	# In Anticipo o In Ritardo: il giocatore sceglie quale troncone eliminare
+	var d := st.add_task_force(_tf(TaskForce.Side.ROYAL_NAVY, 7))
+	var mid: Vector2i = d.trajectory.segments[2]["hex"]
+	var before_len := d.trajectory.length()
+	var front_chooser := func(_cands: Array, reason: String) -> Variant:
+		return true if reason.begins_with("buco:") else null
+	Results.apply("EARLY_LATE", a, d, mid, st, front_chooser)
+	true_(d.trajectory.length() < before_len, "la Traiettoria si accorcia")
+	eq(d.trajectory.length(), 4,
+		"scelto il troncone davanti: restano i 4 segmenti dietro")

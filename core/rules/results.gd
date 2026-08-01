@@ -8,13 +8,20 @@ extends RefCounted
 ##
 ## I risultati che aprono una Battaglia (BATTLE, SURPRISE, e CLOSING/SKIRMISH
 ## quando si risolvono in battaglia) non sono applicati qui: restituiscono una
-## richiesta che il livello superiore usera' per aprire la Mappa di Battaglia (M5).
+## richiesta che il livello superiore usera' per aprire la Mappa di Battaglia.
+##
+## Diverse regole lasciano SCEGLIERE al giocatore Attivo: quale nave colpire,
+## quale troncone di Traiettoria eliminare dopo un buco. Il core non puo'
+## conoscere l'interfaccia, quindi la scelta arriva come `chooser`, una Callable
+## che riceve le alternative e ne restituisce una. Senza chooser si applica una
+## scelta automatica ragionevole, che e' quello che serve ai test e al bot.
 
 enum Battle { NONE, FULL, SURPRISE, LIMITED }
 
 
 static func apply(code: String, active: TaskForce, target: TaskForce,
-		target_hex: Vector2i, state: GameState) -> Dictionary:
+		target_hex: Vector2i, state: GameState,
+		chooser: Callable = Callable()) -> Dictionary:
 	var out := {"code": code, "text": "", "battle": Battle.NONE,
 		"initiative_changes": false, "steal_initiative_offer": false}
 	match code:
@@ -35,7 +42,7 @@ static func apply(code: String, active: TaskForce, target: TaskForce,
 			out["text"] = _shadow(target, target_hex)
 			out["steal_initiative_offer"] = true
 		"EARLY_LATE":
-			out["text"] = _early_late(target, target_hex, state)
+			out["text"] = _early_late(target, target_hex, state, chooser)
 		"LOSE_CONTACT":
 			out["text"] = _lose_contact(target, target_hex)
 		"CLOSING":
@@ -65,13 +72,13 @@ static func apply(code: String, active: TaskForce, target: TaskForce,
 			out["steal_initiative_offer"] = true
 			out["text"] = "Il giocatore Inattivo puo' tentare di Sottrarre l'Iniziativa."
 		"HIT":
-			out["text"] = _hit(target, -1)
+			out["text"] = _hit(target, -1, chooser)
 		"HIT_IF_SLOW":
-			out["text"] = _hit(target, TimeLapse.Speed.SLOW)
+			out["text"] = _hit(target, TimeLapse.Speed.SLOW, chooser)
 		"HIT_IF_VERY_SLOW":
-			out["text"] = _hit(target, TimeLapse.Speed.VERY_SLOW)
+			out["text"] = _hit(target, TimeLapse.Speed.VERY_SLOW, chooser)
 		"DAMAGED":
-			out["text"] = _damage(target)
+			out["text"] = _damage(target, chooser)
 		"SPLASH":
 			out["text"] = "Splash: nessun colpo."
 		_:
@@ -86,7 +93,21 @@ static func apply(code: String, active: TaskForce, target: TaskForce,
 ## La scelta della nave spetta al giocatore Attivo; qui si prende la prima
 ## ammissibile, preferendo quelle gia' danneggiate perche' e' la scelta
 ## normalmente piu' dannosa. In M5 la scelta passera' al giocatore.
-static func _hit(target: TaskForce, max_speed: int) -> String:
+## Chiede la scelta al giocatore se ha senso chiederla, altrimenti applica
+## quella automatica. Con una sola candidata non disturba nessuno.
+static func _choose(chooser: Callable, candidates: Array[Ship],
+		reason: String, fallback: Ship) -> Ship:
+	if candidates.size() <= 1:
+		return candidates[0] if not candidates.is_empty() else fallback
+	if chooser.is_valid():
+		var picked: Variant = chooser.call(candidates, reason)
+		if picked is Ship and candidates.has(picked):
+			return picked
+	return fallback
+
+
+static func _hit(target: TaskForce, max_speed: int,
+		chooser: Callable = Callable()) -> String:
 	if target == null:
 		return "Colpo: nessun bersaglio."
 	var eligible: Array[Ship] = []
@@ -101,12 +122,14 @@ static func _hit(target: TaskForce, max_speed: int) -> String:
 			+ "nessun effetto.") % target.display_name()
 	eligible.sort_custom(func(a: Ship, b: Ship) -> bool:
 		return int(a.damaged) > int(b.damaged))
-	var txt := eligible[0].apply_hit()
+	var ship := _choose(chooser, eligible,
+		"Quale nave di %s subisce il Colpo?" % target.display_name(), eligible[0])
+	var txt := ship.apply_hit()
 	target.recompute_speed()
 	return "Colpo su %s: %s" % [target.display_name(), txt]
 
 
-static func _damage(target: TaskForce) -> String:
+static func _damage(target: TaskForce, chooser: Callable = Callable()) -> String:
 	if target == null:
 		return "Danneggiato: nessun bersaglio."
 	var afloat := target.afloat_ships()
@@ -117,7 +140,9 @@ static func _damage(target: TaskForce) -> String:
 		return "Danneggiato: %s non ha piu' navi a galla." % target.display_name()
 	afloat.sort_custom(func(a: Ship, b: Ship) -> bool:
 		return int(a.damaged) > int(b.damaged))
-	var txt := afloat[0].apply_damage()
+	var ship := _choose(chooser, afloat,
+		"Quale nave di %s viene Danneggiata?" % target.display_name(), afloat[0])
+	var txt := ship.apply_damage()
 	target.recompute_speed()
 	return "Danneggiato su %s: %s" % [target.display_name(), txt]
 
@@ -188,7 +213,8 @@ static func _shadow(target: TaskForce, h: Vector2i) -> String:
 ## Attivo sceglie uno dei due tronconi e lo elimina. Qui applichiamo la scelta
 ## piu' dannosa per il bersaglio (troncone piu' lungo): in M4 completo la scelta
 ## passera' al giocatore, ma il conteggio dei segmenti resta corretto.
-static func _early_late(target: TaskForce, h: Vector2i, state: GameState) -> String:
+static func _early_late(target: TaskForce, h: Vector2i, state: GameState,
+		chooser: Callable = Callable()) -> String:
 	if target == null:
 		return "In Anticipo o In Ritardo: nessun bersaglio."
 	var t := target.trajectory
@@ -218,7 +244,14 @@ static func _early_late(target: TaskForce, h: Vector2i, state: GameState) -> Str
 			% [target.display_name(), str(h)])
 
 	# buco: si elimina uno dei due tronconi
+	# RB p.51: sceglie il giocatore Attivo. Senza scelta esplicita si elimina il
+	# troncone piu' lungo, che e' l'opzione piu' dannosa per il bersaglio.
 	var drop_front := before >= after
+	if chooser.is_valid():
+		var pick: Variant = chooser.call([] as Array[Ship],
+			"buco:%d:%d" % [before, after])
+		if typeof(pick) == TYPE_BOOL:
+			drop_front = pick
 	var dropped := before if drop_front else after
 	if drop_front:
 		for k in before:

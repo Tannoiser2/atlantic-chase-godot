@@ -50,6 +50,13 @@ func _process(_delta: float) -> bool:
 					t.station_hex if t.is_station() else t.end_hex(0))
 	# Le texture salgono in VRAM al primo disegno: se lo scatto arriva subito
 	# dopo, le pedine escono bianche. Si forza un ridisegno tardivo.
+	if _frames == 6 and _args.size() >= 6 and _args[5] == "dialog":
+		# seleziona una TF con una Traiettoria lunga e apre lo Scorrere del Tempo
+		for tf in _root_node.state.task_forces:
+			if tf.length() >= 5:
+				_root_node.selected_tf = tf
+				break
+		_root_node._do_time_lapse()
 	if _frames == 6 and _args.size() >= 6 and _args[5] == "help":
 		_root_node._toggle_help()
 	if _frames == 26 and _root_node != null and _root_node.get("_battle_view") != null:

@@ -17,6 +17,13 @@ var _dragging := false
 var _drag_anchor := Vector2.ZERO
 var _target_zoom := 1.0
 
+## Touch: due dita spostano la mappa, e allontanandole o avvicinandole si
+## zooma. Con un dito solo il gesto resta al gioco (selezione e disegno della
+## Traiettoria), altrimenti si trascinerebbe la mappa invece di tracciare.
+var _touches: Dictionary = {}          ## indice dito -> posizione
+var _pinch_distance: float = 0.0
+var _pinch_mid_prev: Vector2 = Vector2.ZERO
+
 
 func _ready() -> void:
 	_target_zoom = zoom.x
@@ -36,6 +43,26 @@ func setup(p_map_size: Vector2) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventScreenTouch:
+		var st := event as InputEventScreenTouch
+		if st.pressed:
+			_touches[st.index] = st.position
+		else:
+			_touches.erase(st.index)
+		_pinch_distance = 0.0
+		_pinch_mid_prev = Vector2.ZERO
+		if _touches.size() >= 2:
+			get_viewport().set_input_as_handled()
+		return
+
+	if event is InputEventScreenDrag:
+		var sd := event as InputEventScreenDrag
+		_touches[sd.index] = sd.position
+		if _touches.size() >= 2:
+			_handle_pinch(sd)
+			get_viewport().set_input_as_handled()
+		return
+
 	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
 		if mb.button_index == MOUSE_BUTTON_MIDDLE:
@@ -67,6 +94,26 @@ func _process(delta: float) -> void:
 	if absf(z - zoom.x) > 0.0001:
 		zoom = Vector2(z, z)
 		_clamp_position()
+
+
+## Due dita: la distanza fra loro comanda lo zoom, il loro punto medio comanda
+## lo spostamento. Sono i due gesti che ci si aspetta su uno schermo tattile.
+func _handle_pinch(_last: InputEventScreenDrag) -> void:
+	var pts: Array = _touches.values()
+	var a: Vector2 = pts[0]
+	var b: Vector2 = pts[1]
+	var dist := a.distance_to(b)
+	var mid := (a + b) * 0.5
+	if _pinch_distance > 0.0 and dist > 1.0:
+		var factor := dist / _pinch_distance
+		if absf(factor - 1.0) > 0.005:
+			_zoom_at(mid, factor)
+	_pinch_distance = dist
+	# lo spostamento del punto medio muove la mappa
+	if _pinch_mid_prev != Vector2.ZERO:
+		position -= (mid - _pinch_mid_prev) / zoom.x
+		_clamp_position()
+	_pinch_mid_prev = mid
 
 
 ## Zoom mantenendo fermo il punto sotto il cursore: senza questo, zoomare su un

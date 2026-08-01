@@ -38,6 +38,13 @@ var drag_end: int = 1
 var drag_path: Array[Vector2i] = []
 var _press_hex: Vector2i = Vector2i.MAX
 var _press_shift: bool = false
+
+## Su schermo tattile non esiste il tasto destro: un tocco prolungato sullo
+## stesso esagono fa la stessa cosa, cioe' rimuove un segmento dal capo piu'
+## vicino. Il conto parte alla pressione e si annulla se il dito si sposta.
+const LONG_PRESS_SECONDS := 0.55
+var _press_time: float = 0.0
+var _long_press_done: bool = false
 var scenario_ids: Array[String] = []
 var scenario_index: int = 0
 var scenario: Scenario = null
@@ -116,6 +123,19 @@ func _load_scenario_at(idx: int) -> void:
 	_refresh()
 
 
+func _process(delta: float) -> void:
+	# tocco prolungato = clic destro
+	if _press_time > 0.0 and not _long_press_done:
+		_press_time += delta
+		if _press_time >= LONG_PRESS_SECONDS:
+			_long_press_done = true
+			dragging = false
+			drag_path.clear()
+			traj_layer.clear_preview()
+			_on_right_click(_press_hex)
+			_refresh()
+
+
 # --------------------------------------------------------------------- input --
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -125,6 +145,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		var w := cam.world_from_screen((event as InputEventMouseMotion).position)
 		var h := graph.pixel_to_hex(w)
 		board.set_hover(h if graph.has_hex(h) else Vector2i.MAX)
+		if h != _press_hex:
+			_press_time = 0.0        # il dito si e' spostato: non e' piu' un tocco lungo
 		if dragging:
 			_extend_drag(h)
 		else:
@@ -140,8 +162,15 @@ func _unhandled_input(event: InputEvent) -> void:
 			if mb.pressed:
 				_press_hex = h
 				_press_shift = mb.shift_pressed
+				_press_time = 0.0001
+				_long_press_done = false
 				_begin_drag(h)
 			else:
+				_press_time = 0.0
+				if _long_press_done:
+					_long_press_done = false
+					get_viewport().set_input_as_handled()
+					return
 				# un trascinamento senza percorso e' un clic: si comporta come
 				# prima (seleziona una TF, oppure estende di un esagono)
 				if drag_path.is_empty():
@@ -227,17 +256,21 @@ func _on_key(k: InputEventKey) -> void:
 	_refresh()
 
 
-## Dichiara un'azione della TF selezionata contro la TF avversaria piu' vicina.
-## La scelta completa delle designazioni (Coordinatrice, Supporto Aereo) arrivera'
-## con il pannello dedicato; qui basta a rendere il motore verificabile a mano.
+## Dichiara un'azione. Le designazioni contano: la TF Coordinatrice e quella di
+## Supporto Aereo entrano nel Totale Traiettoria (RB p.17), quindi le sceglie il
+## giocatore. Le domande si saltano quando non c'e' nulla da scegliere.
 func _declare_action(key: String) -> void:
-	if selected_tf == null:
-		_msg("nessuna Task Force selezionata")
+	var why := _action_unavailable_reason(key)
+	if why != "":
+		_msg("%s: %s" % [String(engine.action(key).get("label", key)), why])
 		return
-	var target := _nearest_enemy(selected_tf)
+
+	var enemies := state.forces_of(1 - selected_tf.side)
+	var target := await _pick_tf(enemies, "Task Force Bersaglio",
+		"Contro chi dichiari l'azione?", false)
 	if target == null:
-		_msg("nessuna Task Force avversaria in gioco")
 		return
+
 	var dec := ActionEngine.Declaration.new()
 	dec.action_key = key
 	dec.active = selected_tf
@@ -245,16 +278,39 @@ func _declare_action(key: String) -> void:
 	var t := target.trajectory
 	dec.target_hex = t.station_hex if t.is_station() else t.end_hex(0)
 
+	# Coordinatrice: una propria TF diversa dall'Attiva
+	var own: Array[TaskForce] = []
+	for tf in state.forces_of(selected_tf.side):
+		if tf != selected_tf:
+			own.append(tf)
+	if not own.is_empty():
+		dec.active_coordinating = await _pick_tf(own, "TF Coordinatrice",
+			"Designa una Task Force Coordinatrice? La sua lunghezza puo' "
+			+ "sostituire quella della TF Attiva nel Totale Traiettoria.", true)
+
+	# Supporto Aereo: serve una portaerei a bordo
+	var carriers: Array[TaskForce] = []
+	for tf in own:
+		for sh in tf.ships:
+			if sh.type_code == "CV" and not sh.sunk:
+				carriers.append(tf)
+				break
+	if not carriers.is_empty():
+		dec.active_air_support = await _pick_tf(carriers, "TF Supporto Aereo",
+			"Designa una Task Force di Supporto Aereo? Deve avere una "
+			+ "portaerei.", true)
+
 	var res := engine.resolve(dec, state)
 	var label := String(engine.action(key).get("label", key))
 	if not res["ok"]:
 		_msg("%s: %s" % [label, res["error"]])
 		return
 	_msg("%s -> %s" % [label, engine.describe(res)])
+
 	var pending_battle := Results.Battle.NONE
 	for code_v: Variant in res["results"] as Array:
 		var applied := Results.apply(String(code_v), selected_tf, target,
-			dec.target_hex, state)
+			dec.target_hex, state, _ship_chooser)
 		_msg("    %s" % applied["text"])
 		if applied["battle"] != Results.Battle.NONE:
 			pending_battle = applied["battle"]
@@ -262,10 +318,38 @@ func _declare_action(key: String) -> void:
 	state.changed.emit()
 	if pending_battle != Results.Battle.NONE:
 		_open_battle(pending_battle, selected_tf, target, dec.target_hex)
+	_refresh()
 
 
-## Apre la Mappa di Battaglia. RB p.55: le TF Coordinatrici e Supporto Aereo non
-## partecipano, quindi entrano solo la TF Attiva e quella Bersaglio.
+## Chiede di scegliere una Task Force. Se ce n'e' una sola e non e' opzionale,
+## non disturba il giocatore. Ritorna null se annullato o "nessuna".
+func _pick_tf(candidates: Array[TaskForce], title: String, desc: String,
+		optional: bool) -> TaskForce:
+	if candidates.is_empty():
+		return null
+	if candidates.size() == 1 and not optional:
+		return candidates[0]
+	var options: Array = []
+	for tf in candidates:
+		var tj := tf.trajectory
+		var kind := "Stazione" if tj.is_station() else "%d segmenti" % tj.length()
+		var ships: Array[String] = []
+		for sh in tf.ships:
+			ships.append(sh.display())
+		options.append({"label": "%s  (%s)" % [tf.display_name(), kind],
+			"detail": ", ".join(ships) if not ships.is_empty() else "nessuna nave elencata"})
+	if optional:
+		options.append({"label": "Nessuna", "detail": ""})
+	var i: int = await Choice.ask(self, title, desc, options, not optional)
+	if i < 0:
+		return null
+	if optional and i == candidates.size():
+		return null
+	return candidates[i]
+
+
+## Apre la Mappa di Battaglia. RB p.55: le TF Coordinatrici e di Supporto Aereo
+## non partecipano, quindi entrano solo la TF Attiva e quella Bersaglio.
 func _open_battle(kind_result: int, active: TaskForce, target: TaskForce,
 		hex: Vector2i) -> void:
 	var kind := BattleState.Kind.BATTLE
@@ -543,24 +627,70 @@ func _do_time_lapse() -> void:
 	if opts.is_empty():
 		_msg("nessuna rimozione legale")
 		return
-	# scelta automatica: la prima opzione senza Limite di Informazioni.
-	# In M4 questa scelta passera' al giocatore tramite un pannello.
+
+	# RB p.19-20: la scelta e' del proprietario della Traiettoria, e conta:
+	# invocare il Limite di Informazioni toglie un segnalino ma rimuove meno
+	# segmenti. La decide il giocatore, non il codice.
 	var chosen: Dictionary = opts[0]
-	for o in opts:
-		if not o["uses_intel_limit"]:
-			chosen = o
-			break
+	if opts.size() > 1:
+		var options: Array = []
+		for o in opts:
+			var detail := "%d segmenti" % int(o["total"])
+			if o["uses_intel_limit"]:
+				detail += "  -  rimuove un segnalino INFORMAZIONI (Limite di Informazioni)"
+			options.append({"label": String(o["label"]), "detail": detail})
+		var desc := ("Velocita' [b]%s[/b], meteo [b]%s[/b]: lo Scorrere del Tempo "
+			+ "chiede di rimuovere [b]%d[/b] segmenti.\n"
+			+ "I segmenti si tolgono solo dai capi.") % [
+				TimeLapse.SPEED_LABELS[selected_tf.speed],
+				"cattivo" if state.weather == 1 else "buono", amount]
+		var i: int = await Choice.ask(self, "Scorrere del Tempo - %s"
+			% selected_tf.display_name(), desc, options)
+		if i < 0:
+			_msg("Scorrere del Tempo annullato")
+			return
+		chosen = opts[i]
+
 	var freed := TimeLapse.apply(traj, chosen)
 	var note := ""
 	if traj.length() == 0 and not freed.is_empty():
-		traj.become_station(freed[0])
-		note = " -> diventa Stazione in %s" % str(freed[0])
+		# RB p.14: la Stazione va in UNO QUALSIASI degli esagoni appena liberati
+		var hex_choice := freed[0]
+		if freed.size() > 1:
+			var opts2: Array = []
+			for h in freed:
+				opts2.append({"label": "Esagono %s" % str(h), "detail": ""})
+			var j: int = await Choice.ask(self, "Dove poni la Stazione?",
+				"La Traiettoria ha esaurito i segmenti. La Stazione puo' andare "
+				+ "in uno qualsiasi degli esagoni appena liberati.", opts2, false)
+			if j >= 0:
+				hex_choice = freed[j]
+		traj.become_station(hex_choice)
+		note = " -> diventa Stazione in %s" % str(hex_choice)
 	_msg("Scorrere del Tempo (%s, meteo %s): richiesti %d, %s%s"
 		% [TimeLapse.SPEED_LABELS[selected_tf.speed],
 			"cattivo" if state.weather == 1 else "buono",
 			amount, chosen["label"], note])
 	log.record("Scorrere del Tempo (%s)" % selected_tf.display_name())
 	state.changed.emit()
+	_refresh()
+
+
+## Scelta della nave bersaglio quando una regola la lascia al giocatore.
+## Passata a Results.apply come Callable: il core non sa che esiste una UI.
+func _ship_chooser(candidates: Array, reason: String) -> Variant:
+	# le scelte non-nave (quale troncone eliminare) passano un elenco vuoto
+	if candidates.is_empty():
+		return null
+	var options: Array = []
+	for c_v: Variant in candidates:
+		var sh: Ship = c_v
+		options.append({"label": sh.display(),
+			"detail": "Difesa %d, Colpi %d, %s" % [
+				sh.defense_damaged if sh.damaged else sh.defense, sh.hits,
+				TimeLapse.SPEED_LABELS[sh.current_speed()]]})
+	var i: int = await Choice.ask(self, "Scegli la nave", reason, options, false)
+	return candidates[i] if i >= 0 else candidates[0]
 
 
 # ------------------------------------------------------------------- editor --
@@ -847,6 +977,11 @@ func _build_help(root: Control) -> void:
   S                          crea o toglie il Fumo
   F / G                      tenta la Fuga (Attivo / Bersaglio)
   ESC                        torna alla mappa
+
+[b]Touch (iPad)[/b]
+  due dita             sposta la mappa e zooma (pinch)
+  un dito              seleziona e disegna la Traiettoria
+  tocco prolungato     come il clic destro: rimuove un segmento
 
 [b]Scenario e vista[/b]
   [ e ]        scenario precedente / successivo
