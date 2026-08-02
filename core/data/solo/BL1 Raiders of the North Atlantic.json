@@ -1,0 +1,154 @@
+{
+ "_scenario": "BL1 Raiders of the North Atlantic",
+ "_source": "Fascicolo Scenari in Solitario, edizione INGLESE (AC_Solo_scenarios_2022, pp.5-8). Trascritta a mano.",
+ "_role": "Qui il giocatore e' il TEDESCO. Le tabelle rappresentano quindi l'avversario BRITANNICO, piu' la Tabella del Rifornimento, che non e' un avversario ma il caso.",
+ "tables": [
+  {
+   "id": "fueling",
+   "title": "Tabella del Rifornimento",
+   "rows": [
+    {
+     "label": "Meteo Buono",
+     "min": 0,
+     "max": 0,
+     "cells": [
+      "a",
+      "a",
+      "b",
+      "c",
+      "d",
+      "e"
+     ]
+    },
+    {
+     "label": "Meteo Cattivo",
+     "min": 1,
+     "max": 1,
+     "cells": [
+      "a",
+      "c",
+      "e",
+      "f",
+      "f",
+      "g"
+     ]
+    }
+   ],
+   "legend": {
+    "a": "Rimuovi il marcatore RV. Ripara UN Colpo da una nave tedesca della TF (se ne ha). NUOVO OBIETTIVO: da ora, in questo scenario, l'unico porto tedesco in cui questa TF puo' tentare il Completamento e' South America. La TF non puo' fare Riorganizzazione (Dividere o Unire) ne' un altro Controllo Rifornimento. -- Se una TF britannica e' NELL'esagono: viene avvistato un aereo; assegna un segnalino Contatto alla TF tedesca; se ne ha gia' uno, metti un marcatore Base Aerea britannica nell'esagono (se l'esagono ha la Linea Artica, mettilo nell'esagono non artico piu' vicino).",
+    "b": "Rimuovi il marcatore RV. NOTIZIE: se ci sono meno di tre Convogli sulla Mappa Operazionale, crea una nuova TF con dentro un Convoglio, sulla rotta Bordeaux-Africa (7 segmenti). Per le azioni di Completamento la destinazione di quella TF e' Bordeaux, non Plymouth ne' Clyde/Liverpool. Usa un set TF libero; se tutti e dieci sono gia' in gioco, non aggiungere la nuova TF.",
+    "c": "Sposta il marcatore RV in un esagono adiacente, a tua scelta. Poi tenta di Sottrarre l'Iniziativa. -- Se una TF britannica e' NELL'esagono della tua TF, invece di tentare di Sottrarre l'Iniziativa si ha un Incidente Internazionale.",
+    "d": "Rimuovi il marcatore RV. Rimuovi anche un segnalino Manovre Evasive dalla TF tedesca (se ne ha). NUOVO OBIETTIVO: le uniche azioni consentite a questa TF sono Traiettoria, Completamento e Passare. Non puoi assegnarle un segnalino Manovre Evasive. Guasti meccanici gravi: se c'e' un'altra nave nella TF, ora fa da scorta (Dividere e Riorganizzare non sono consentiti). -- Se una TF britannica e' NELL'esagono, tenta di Sottrarre l'Iniziativa.",
+    "e": "Rimuovi il marcatore RV. Con Meteo Buono, rimuovi anche un segnalino Manovre Evasive dalla TF tedesca (se ne ha).",
+    "f": "Rimuovi il marcatore RV. Nessun altro effetto.",
+    "g": "Sposta il marcatore RV in un esagono adiacente, a tua scelta. -- Se una TF britannica e' NELL'esagono della tua TF, tenta di Sottrarre l'Iniziativa."
+   },
+   "note": "Si tira quando si ha l'Iniziativa e una TF tedesca e' nello stesso esagono di un marcatore Rendezvous ED e' una Stazione. Salvo diverso avviso, dopo il Controllo si mantiene l'Iniziativa. Non puo' avvenire durante lo Scorrere del Tempo di un'azione Passare."
+  },
+  {
+   "id": "british_actions",
+   "title": "Tabella delle Azioni Britanniche",
+   "rows": [
+    {
+     "label": "0 Completamenti/Convogli",
+     "min": 0,
+     "max": 0,
+     "cells": [
+      "A",
+      "A",
+      "B",
+      "B",
+      "C",
+      "C"
+     ]
+    },
+    {
+     "label": "1",
+     "min": 1,
+     "max": 1,
+     "cells": [
+      "A",
+      "A",
+      "X",
+      "convoy",
+      "C",
+      "C"
+     ]
+    },
+    {
+     "label": "2 o piu'",
+     "min": 2,
+     "max": 99,
+     "cells": [
+      "F",
+      "A",
+      "A",
+      "X",
+      "convoy",
+      "C"
+     ]
+    }
+   ],
+   "legend": {
+    "A": "ATTACCO AEREO. Meteo Cattivo: se c'e' una TF britannica in gioco con un CA, trattalo come una 'X' (la TF con il CA e' quella scelta). Se non ci sono CA in gioco, trattalo come una 'B'. -- Meteo Buono: esegui un Attacco Aereo contro una TF tedesca a portata di una base aerea britannica o francese (scegli il bersaglio che da' al britannico il modificatore di Supporto Aereo piu' favorevole). -- Nessun bersaglio? Se il Meteo e' Buono ma non c'e' bersaglio per un Attacco Aereo, seleziona una TF britannica con un CA; se ce ne sono piu' d'una, quella piu' vicina a una TF tedesca; se nessuna, crea una TF non identificata a Portsmouth. In ogni caso la TF scelta esegue un'azione Traiettoria verso la TF tedesca piu' vicina, poi una Ricerca Navale (se la TF tedesca e' una Stazione, esegue invece un Ingaggio). -- 4 o piu' CA? Se ci sono quattro o piu' CA britannici in gioco e non c'e' bersaglio per l'Attacco Aereo, trattalo come una 'A' E una 'F': la TF francese sara' l'Attiva e quella britannica la Coordinante. Scorrere del Tempo: rimuovi i segmenti piu' LONTANI dalla TF tedesca.",
+    "B": "BLOCCO. Crea una nuova TF britannica con tre CA. Metti la sua Stazione nell'esagono indicato dal fascicolo. Poi tira di nuovo sulla Tabella delle Azioni. -- Se e' la seconda volta o piu' che esce questo risultato, e c'e' gia' una Stazione TF britannica in quell'esagono, ignoralo e trattalo come una 'X'.",
+    "C": "AZIONE DI COMPLETAMENTO. Rimuovi le navi britanniche Danneggiate; se cosi' una TF resta vuota, rimuovila. Poi scegli una TF britannica. -- Scelta: una TF con un Convoglio; se ce n'e' piu' d'una, quella con la Traiettoria piu' CORTA. Se non ci sono Convogli in gioco, trattalo invece come un risultato 'Convoglio'. -- Azione: la TF scelta tenta il Completamento a Clyde/Liverpool o a Portsmouth, quello piu' vicino. Puo' dover fare prima un'azione Traiettoria (rotta piu' diretta evitando i segnalini Informazioni, se possibile). Se il Completamento e' impedito dai segnalini Informazioni o dalla lunghezza della Traiettoria, il britannico esegue invece un Passare. -- Scorrere del Tempo: rimuovi i segmenti piu' LONTANI dal porto di destinazione. Dopo un Completamento riuscito: Incidente Internazionale.",
+    "convoy": "CONVOGLIO. Rimuovi le navi britanniche Danneggiate; se cosi' una TF resta vuota, rimuovila. -- Completamento? Se c'e' una TF britannica con un Convoglio in gioco, tira un dado: 1-2 trattalo come 'A'; 3-5 come 'C'; 6 come 'F'. -- Nessun Convoglio? Se non c'e' nessuna TF con un Convoglio, creane una nuova con dentro un Convoglio e un CL a scelta. Poi tira un dado per sapere dove: PARI Africa, DISPARI Halifax. La nuova TF esegue poi un'azione Traiettoria verso Portsmouth o Clyde/Liverpool, quello piu' vicino. Poi: Incidente Internazionale.",
+    "F": "AZIONE FRANCESE. Fine? Se tre Convogli britannici hanno Completato, entrano in vigore i Limiti di Carburante. -- Scelta: e' selezionata la TF francese. -- Azione: la TF francese agisce per portare in Battaglia la TF tedesca piu' vicina a un Convoglio britannico. Scegli l'esagono bersaglio piu' vicino al Convoglio. Se non c'e' nessun Convoglio in gioco, crea una nuova TF a Gibilterra (Stazione nella casella del porto, Convoglio nella sua casella del Display). Se nessuna TF tedesca puo' essere presa di mira, trattalo invece come una 'C'. -- Scorrere del Tempo: rimuovi i segmenti piu' LONTANI dall'esagono bersaglio.",
+    "X": "AZIONE DECISIVA. Fine? Se due Convogli britannici hanno Completato, entrano in vigore i Limiti di Carburante. -- Scelta: una TF britannica con un BC (non i BC francesi). Se non ce n'e', una TF non identificata; e se non ce n'e' nemmeno una, creane una non identificata a Scapa Flow o a Gibilterra, quella piu' vicina a una TF tedesca. -- Azione: la TF scelta agisce per portare in Battaglia la TF tedesca piu' vicina. Se nessuna TF tedesca puo' essere presa di mira con una Ricerca Navale o un Ingaggio, trattalo invece come una 'C'. Scorrere del Tempo: rimuovi i segmenti piu' LONTANI dall'esagono bersaglio."
+   },
+   "note": "Si usa quando l'Iniziativa e' britannica. La riga si sceglie contando le azioni di Completamento britanniche riuscite E i Convogli distrutti (contano solo i Completamenti che coinvolgono TF con un Convoglio)."
+  },
+  {
+   "id": "identify",
+   "title": "Identificare la TF britannica",
+   "rows": [
+    {
+     "label": "",
+     "min": 0,
+     "max": 0,
+     "cells": [
+      "BC/CA/CL",
+      "BC/CA/CL",
+      "BC/CA",
+      "CA/CA",
+      "CA/CL",
+      "DD"
+     ]
+    }
+   ],
+   "note": "Lo Squadrone DD e' distrutto quando subisce 2 Colpi. -- Una TF non identificata e' 'molto lenta' finche' non si identifica. Si identifica quando un risultato tocca una o piu' delle sue navi (per esempio quando devono passare sulla Mappa di Battaglia). Con un Attacco Aereo o Furtivo, un Colpo di qualunque genere la identifica, ma un 'mancato' no. Una Schermaglia puo' rivelare navi Veloci (e la Battaglia Limitata avviene lo stesso), e le navi Veloci possono essere sorprese. -- Se una TF identificata perde tutte le navi, si rimuove: non torna non identificata."
+  },
+  {
+   "id": "murmansk",
+   "title": "Murmansk?",
+   "rows": [
+    {
+     "label": "",
+     "min": 0,
+     "max": 0,
+     "cells": [
+      "confisca",
+      "incidente",
+      "incidente",
+      "salvi",
+      "salvi",
+      "salvi"
+     ]
+    }
+   ],
+   "legend": {
+    "confisca": "Le navi tedesche sono confiscate dall'Unione Sovietica. Perdi 3 VP.",
+    "incidente": "Scoppia un incidente internazionale. Perdi 1 VP.",
+    "salvi": "Le navi fanno rifornimento in silenzio e rientrano sane e salve a Kiel."
+   },
+   "note": "Si tira PRIMA del Debriefing, se una TF tedesca ha Completato a Murmansk.",
+   "modifiers": [
+    {
+     "label": "due o piu' Convogli distrutti",
+     "value": -1
+    }
+   ]
+  }
+ ]
+}

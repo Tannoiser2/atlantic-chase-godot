@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **1113 verifiche, 9 suite, headless.**
+Tutti i test passano: **1378 verifiche, 11 suite, headless.**
 
 ---
 
@@ -18,9 +18,32 @@ Tutti i test passano: **1113 verifiche, 9 suite, headless.**
 | **M4** Motore azioni | ✅ **completo** | Tutte e 4 le tabelle trascritte e verificate; danno alle navi |
 | **M5** Battaglia | ✅ **completo** | motore + vista: 5 zone, cannoni, siluri, manovra, fumo, fuga, uscita |
 | **M6** Scenari | ✅ **completo** | 22 scenari con navi, comandanti, rinforzi e briefing |
-| **M7** Vittoria | 🟡 **quasi completo** | Le 9 Operazioni hanno la tabella eseguibile e i punti arrivano al segnapunti; mancano i 12 mini-scenari e i 15 solitari |
+| **M7** Regole complete | ✅ **completo** | Tutte e 9 le azioni, Convogli, finale di partita, salvataggio; tutti e 22 gli scenari hanno le condizioni di vittoria |
+| **M8** Solitario | 🟡 **iniziato** | Motore delle tabelle + TF non identificate; BL1 e BL2 trascritte. Mancano gli schieramenti e gli altri 13 scenari |
 
 ### Cosa è cambiato nell'ultima sessione
+
+- **Le ultime due azioni**: Riorganizzazione (dividere, unire, chiamare
+  rinforzi) e Segnalazione. Tutte e nove le azioni del gioco sono ora
+  trascritte e dichiarabili.
+- **Le regole speciali dei Convogli**: dispersione (incassa un Colpo per
+  attacco invece di tutti, ma vale un punto in meno all'arrivo — e non si
+  torna indietro) e azioni vietate a chi scorta.
+- **Il finale di partita**: dopo tre Convogli arrivati al tedesco restano
+  quattro azioni e l'obbligo di rientrare se può.
+- **Salvare e riprendere**, col generatore di dadi dentro il salvataggio — un
+  bug preso dai test: lo stato del RNG è un intero a 64 bit e JSON lo
+  degradava a float, quindi ricaricare dava una partita *simile*, non la
+  stessa.
+- **Le condizioni di vittoria di tutti e 22 gli scenari.** I mini-scenari
+  hanno rivelato un **quarto** modello: non contano punti, hanno quattro
+  caselle Decisiva/Marginale da riempire.
+- **Il modo solitario è cominciato**: motore delle tabelle a dado, Task Force
+  *non identificate*, e le tabelle di BL1 e BL2 trascritte per intero.
+- **La Campagna non era rotta**: non è uno scenario, è la riserva navi delle
+  nove Operazioni. Ora viene importata.
+
+### Cosa era cambiato nella sessione precedente
 
 - **I dodici mini-scenari non erano vuoti: erano Battaglie.** Sembravano tutti
   *"0 TF, 0 navi"*, e la spiegazione comoda era che il modulo VASSAL non li

@@ -34,6 +34,20 @@ var evasive: bool = false
 ## in gioco piu' avanti, e da li' devono ripartire.
 var completed: bool = false
 var completed_port: String = ""
+
+## Task Force NON IDENTIFICATA, solo nel modo solitario.
+##
+## L'avversario immaginario muove Task Force di cui non si sa niente: non
+## hanno navi nella loro casella del Display, perche' non e' ancora stato
+## deciso quali siano. Finche' restano cosi' la loro velocita' e' "molto
+## lenta" - non perche' siano lente, ma perche' non sapendo cosa contengono
+## non si puo' presumere di piu'.
+##
+## Si identificano quando succede loro qualcosa che costringe a guardarci
+## dentro: un risultato che tocca una delle loro navi, o il passaggio sulla
+## Mappa di Battaglia. Allora si tira sulla tabella "Identificare la TF" e le
+## navi compaiono.
+var unidentified: bool = false
 var leader: String = ""
 
 
@@ -63,6 +77,12 @@ func can_complete() -> bool:
 ## La velocita' della TF e' quella della sua nave piu' lenta (le navi affondate
 ## non contano). Senza elenco navi resta il valore impostato dallo scenario.
 func recompute_speed() -> int:
+	# Una Task Force non identificata e' "molto lenta" per definizione, non
+	# perche' contenga navi lente: non sapendo cosa contiene, non si puo'
+	# presumere di piu'. E' anche quello che la rende raggiungibile.
+	if unidentified:
+		speed = TimeLapse.Speed.VERY_SLOW
+		return speed
 	var slowest := -1
 	for s in ships:
 		if s.sunk:
@@ -102,6 +122,7 @@ func to_dict() -> Dictionary:
 		"id": id, "side": side, "color": color, "slot": slot, "name": name,
 		"ships": sh, "speed": speed, "evasive": evasive, "leader": leader,
 		"completed": completed, "completed_port": completed_port,
+		"unidentified": unidentified,
 		"trajectory": trajectory.to_dict(),
 	}
 
@@ -123,7 +144,10 @@ static func from_dict(d: Dictionary) -> TaskForce:
 			ss.append(Ship.from_variant(s_v))
 	tf.ships = ss
 	tf.speed = int(d.get("speed", TimeLapse.Speed.MEDIUM))
-	if not ss.is_empty():
+	# `unidentified` va letto PRIMA di ricalcolare la velocita': e' proprio
+	# quel flag a deciderla, e leggerlo dopo la lasciava sbagliata
+	tf.unidentified = bool(d.get("unidentified", false))
+	if not ss.is_empty() or tf.unidentified:
 		tf.recompute_speed()
 	tf.evasive = bool(d.get("evasive", false))
 	tf.completed = bool(d.get("completed", false))

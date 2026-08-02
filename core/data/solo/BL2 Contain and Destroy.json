@@ -1,0 +1,152 @@
+{
+ "_scenario": "BL2 Contain and Destroy",
+ "_source": "Fascicolo Scenari in Solitario, edizione INGLESE (AC_Solo_scenarios_2022, pp.9-11). Trascritta a mano.",
+ "_role": "Qui il giocatore e' il BRITANNICO, e le tabelle rappresentano l'avversario TEDESCO. E' il rovescio di BL1: stesse strutture, parti scambiate.",
+ "tables": [
+  {
+   "id": "actions_early",
+   "title": "Tabella delle Azioni Tedesche - Presto",
+   "rows": [
+    {
+     "label": "0 Completamenti britannici",
+     "min": 0,
+     "max": 0,
+     "cells": [
+      "A",
+      "X",
+      "convoy",
+      "convoy",
+      "T",
+      "C"
+     ]
+    },
+    {
+     "label": "1",
+     "min": 1,
+     "max": 1,
+     "cells": [
+      "A",
+      "X",
+      "X",
+      "X",
+      "convoy",
+      "C"
+     ]
+    },
+    {
+     "label": "2 o piu'",
+     "min": 2,
+     "max": 99,
+     "cells": [
+      "E",
+      "E",
+      "A",
+      "X",
+      "X",
+      "C"
+     ]
+    }
+   ],
+   "note": "Si comincia con questa. Si passa alla tabella 'Tardi' dopo che c'e' stata una Battaglia, o un Convoglio e' stato distrutto, o una delle due parti ha eseguito un Attacco Aereo.",
+   "legend": {
+    "A": "ATTACCO AEREO. Rimuovi tutte le navi tedesche Danneggiate; se cosi' una TF resta vuota, rimuovila. Le navi rimosse contano per i VP. -- Meteo Cattivo: trattalo come una 'T'. -- Meteo Buono: esegui un Attacco Aereo contro una TF britannica a portata di una base aerea tedesca (scegli il bersaglio che da' ai tedeschi il modificatore di Supporto Aereo piu' favorevole). -- Nessun bersaglio? Se il Meteo e' Buono ma non c'e' bersaglio, tira un dado: 1-2 crea una nuova TF tedesca in South America e mettici un Convoglio; poi esegue un'azione Traiettoria fino alle Azzorre e poi alle Faroe, quindi tira di nuovo sulla Tabella delle Azioni. 3-6 trattalo come una 'X'.",
+    "C": "AZIONE DI COMPLETAMENTO. Scelta: una TF tedesca con un Convoglio. Se non ci sono Convogli in gioco, una TF con una nave Danneggiata; se nessuna, la TF con la Traiettoria piu' CORTA. -- Nessuna TF tedesca? Trattalo come una 'A'. -- Azione: la TF scelta tenta il Completamento a Kiel. Se contiene una PB integra, tenta invece il Completamento in South America. Puo' dover fare prima un'azione Traiettoria (rotta piu' diretta) evitando porti e basi aeree nemiche, ma non le Stazioni nemiche. Se la lunghezza della Traiettoria o i segnalini Informazioni impediscono il Completamento, esegue invece un Passare. -- Scorrere del Tempo: rimuovi i segmenti piu' LONTANI dal porto di destinazione. Dopo un Completamento riuscito: Incidente Internazionale.",
+    "convoy": "CONVOGLIO. Scelta: una TF tedesca con un Convoglio. Se non ce n'e' nessuna in gioco, crea una nuova TF a NARVIK e mettici un Convoglio. -- Azione: la TF scelta tenta il Completamento a Kiel. Puo' dover fare prima un'azione Traiettoria (rotta piu' diretta) e poi il Completamento. Se il Completamento e' impedito dai segnalini Informazioni o dalla lunghezza della Traiettoria, la TF esegue invece un Passare. -- Scorrere del Tempo: rimuovi i segmenti piu' LONTANI da Kiel. Dopo un Completamento riuscito: Incidente Internazionale.",
+    "E": "FINE? -- Meteo Cattivo: se c'e' un Convoglio tedesco in gioco, quel Convoglio Completa automaticamente e lo scenario finisce. Inoltre, se sono state distrutte 2 o piu' navi (Convogli compresi), lo scenario finisce. Altrimenti applica il risultato del Meteo Buono. -- Meteo Buono: se il Meteo e' Buono e non c'e' nessun Convoglio britannico in gioco, lo scenario finisce: vai al Debriefing. Se c'e' un Convoglio britannico in gioco, crea una nuova TF tedesca con un BC e mettila a Wilhelmshaven. Tenta di portare in Battaglia la TF britannica piu' vicina che abbia un Convoglio. Evitera' i porti e le basi aeree britanniche, e se possibile la portata degli Attacchi Aerei. -- C'e' gia' un BC? Se c'e' gia' un BC tedesco in gioco, aggiungi un secondo BC alla sua TF e trattalo come una 'X' (quella TF e' la scelta). Se ci sono gia' due BC nella TF, rimuovine uno (se e' Danneggiato, rimuovi quello). Se il risultato 'E' esce una terza volta o oltre e il Meteo e' Buono, trattalo come una 'X'.",
+    "T": "AZIONE TRAIETTORIA. Scelta: una TF non identificata. Se non ce n'e' nessuna in gioco, creane una a NARVIK. -- Azione: la TF scelta esegue un'azione Traiettoria (rotta piu' diretta evitando i segnalini Informazioni; se i segmenti non bastano ad arrivare, allungala fin dove arriva). Tira un dado per sapere dove va: 1-3 South America, poi Completamento (South America); 4-5 Kiel, poi Completamento (Kiel); 6 Azzorre, poi Passare. -- Dopo l'azione Traiettoria si esegue la 'azione successiva' indicata: la TF scelta fa un Completamento oppure un Passare; se il Completamento e' impossibile per la lunghezza della Traiettoria o per i segnalini Informazioni, i tedeschi Passano. Scorrere del Tempo: rimuovi i segmenti piu' VICINI a Murmansk.",
+    "X": "AZIONE DECISIVA. Scelta: una TF tedesca con un BC. Se non ce n'e' nessuna in gioco, una TF che non abbia un Convoglio. Se nessuna TF tedesca e' idonea, crea una nuova TF non identificata tirando 1d6: 1-4 Kiel, 5 Narvik, 6 South America. -- Azione: se la TF scelta ha una nave Danneggiata, applica invece il risultato 'C' (con la TF della nave Danneggiata come TF scelta). Se nessuna delle sue navi e' Danneggiata, la TF scelta agisce per portare in Battaglia una TF britannica che abbia un Convoglio, puntando all'esagono piu' vicino ed evitando i segnalini Informazioni se possibile. Se non c'e' nessun Convoglio in gioco, trattalo invece come una 'E'. -- Scorrere del Tempo: rimuovi i segmenti piu' LONTANI dall'esagono bersaglio."
+   }
+  },
+  {
+   "id": "actions_late",
+   "title": "Tabella delle Azioni Tedesche - Tardi",
+   "rows": [
+    {
+     "label": "Meteo Buono",
+     "min": 0,
+     "max": 0,
+     "cells": [
+      "E",
+      "A",
+      "A",
+      "X",
+      "X",
+      "C"
+     ]
+    },
+    {
+     "label": "Meteo Cattivo",
+     "min": 1,
+     "max": 1,
+     "cells": [
+      "E",
+      "E",
+      "T",
+      "X",
+      "X",
+      "C"
+     ]
+    }
+   ],
+   "modifiers": [
+    {
+     "label": "nave tedesca danneggiata, affondata o Convoglio distrutto",
+     "value": -1
+    }
+   ],
+   "legend": {
+    "A": "ATTACCO AEREO. Rimuovi tutte le navi tedesche Danneggiate; se cosi' una TF resta vuota, rimuovila. Le navi rimosse contano per i VP. -- Meteo Cattivo: trattalo come una 'T'. -- Meteo Buono: esegui un Attacco Aereo contro una TF britannica a portata di una base aerea tedesca (scegli il bersaglio che da' ai tedeschi il modificatore di Supporto Aereo piu' favorevole). -- Nessun bersaglio? Se il Meteo e' Buono ma non c'e' bersaglio, tira un dado: 1-2 crea una nuova TF tedesca in South America e mettici un Convoglio; poi esegue un'azione Traiettoria fino alle Azzorre e poi alle Faroe, quindi tira di nuovo sulla Tabella delle Azioni. 3-6 trattalo come una 'X'.",
+    "C": "AZIONE DI COMPLETAMENTO. Scelta: una TF tedesca con un Convoglio. Se non ci sono Convogli in gioco, una TF con una nave Danneggiata; se nessuna, la TF con la Traiettoria piu' CORTA. -- Nessuna TF tedesca? Trattalo come una 'A'. -- Azione: la TF scelta tenta il Completamento a Kiel. Se contiene una PB integra, tenta invece il Completamento in South America. Puo' dover fare prima un'azione Traiettoria (rotta piu' diretta) evitando porti e basi aeree nemiche, ma non le Stazioni nemiche. Se la lunghezza della Traiettoria o i segnalini Informazioni impediscono il Completamento, esegue invece un Passare. -- Scorrere del Tempo: rimuovi i segmenti piu' LONTANI dal porto di destinazione. Dopo un Completamento riuscito: Incidente Internazionale.",
+    "convoy": "CONVOGLIO. Scelta: una TF tedesca con un Convoglio. Se non ce n'e' nessuna in gioco, crea una nuova TF a NARVIK e mettici un Convoglio. -- Azione: la TF scelta tenta il Completamento a Kiel. Puo' dover fare prima un'azione Traiettoria (rotta piu' diretta) e poi il Completamento. Se il Completamento e' impedito dai segnalini Informazioni o dalla lunghezza della Traiettoria, la TF esegue invece un Passare. -- Scorrere del Tempo: rimuovi i segmenti piu' LONTANI da Kiel. Dopo un Completamento riuscito: Incidente Internazionale.",
+    "E": "FINE? -- Meteo Cattivo: se c'e' un Convoglio tedesco in gioco, quel Convoglio Completa automaticamente e lo scenario finisce. Inoltre, se sono state distrutte 2 o piu' navi (Convogli compresi), lo scenario finisce. Altrimenti applica il risultato del Meteo Buono. -- Meteo Buono: se il Meteo e' Buono e non c'e' nessun Convoglio britannico in gioco, lo scenario finisce: vai al Debriefing. Se c'e' un Convoglio britannico in gioco, crea una nuova TF tedesca con un BC e mettila a Wilhelmshaven. Tenta di portare in Battaglia la TF britannica piu' vicina che abbia un Convoglio. Evitera' i porti e le basi aeree britanniche, e se possibile la portata degli Attacchi Aerei. -- C'e' gia' un BC? Se c'e' gia' un BC tedesco in gioco, aggiungi un secondo BC alla sua TF e trattalo come una 'X' (quella TF e' la scelta). Se ci sono gia' due BC nella TF, rimuovine uno (se e' Danneggiato, rimuovi quello). Se il risultato 'E' esce una terza volta o oltre e il Meteo e' Buono, trattalo come una 'X'.",
+    "T": "AZIONE TRAIETTORIA. Scelta: una TF non identificata. Se non ce n'e' nessuna in gioco, creane una a NARVIK. -- Azione: la TF scelta esegue un'azione Traiettoria (rotta piu' diretta evitando i segnalini Informazioni; se i segmenti non bastano ad arrivare, allungala fin dove arriva). Tira un dado per sapere dove va: 1-3 South America, poi Completamento (South America); 4-5 Kiel, poi Completamento (Kiel); 6 Azzorre, poi Passare. -- Dopo l'azione Traiettoria si esegue la 'azione successiva' indicata: la TF scelta fa un Completamento oppure un Passare; se il Completamento e' impossibile per la lunghezza della Traiettoria o per i segnalini Informazioni, i tedeschi Passano. Scorrere del Tempo: rimuovi i segmenti piu' VICINI a Murmansk.",
+    "X": "AZIONE DECISIVA. Scelta: una TF tedesca con un BC. Se non ce n'e' nessuna in gioco, una TF che non abbia un Convoglio. Se nessuna TF tedesca e' idonea, crea una nuova TF non identificata tirando 1d6: 1-4 Kiel, 5 Narvik, 6 South America. -- Azione: se la TF scelta ha una nave Danneggiata, applica invece il risultato 'C' (con la TF della nave Danneggiata come TF scelta). Se nessuna delle sue navi e' Danneggiata, la TF scelta agisce per portare in Battaglia una TF britannica che abbia un Convoglio, puntando all'esagono piu' vicino ed evitando i segnalini Informazioni se possibile. Se non c'e' nessun Convoglio in gioco, trattalo invece come una 'E'. -- Scorrere del Tempo: rimuovi i segmenti piu' LONTANI dall'esagono bersaglio."
+   }
+  },
+  {
+   "id": "identify",
+   "title": "Identificare la TF tedesca",
+   "rows": [
+    {
+     "label": "",
+     "min": 0,
+     "max": 0,
+     "cells": [
+      "PB",
+      "PB",
+      "CA",
+      "AC",
+      "Convoglio",
+      "Convoglio"
+     ]
+    }
+   ],
+   "note": "Se la TF non identificata sta cercando di portare in Battaglia, sostituisci 'Convoglio' con 'PB'. -- Se un AC o due PB o due CA sono gia' in gioco, o sono gia' stati messi in gioco, e ne uscirebbe un altro, sostituisci con un BC. Al massimo due BC possono essere in gioco; se se ne dovesse portare in gioco un terzo, sostituisci con un CL."
+  },
+  {
+   "id": "incident",
+   "title": "Incidente Internazionale",
+   "rows": [
+    {
+     "label": "",
+     "min": 0,
+     "max": 0,
+     "cells": [
+      "airbase",
+      "backlash",
+      "backlash",
+      "nessuno",
+      "nessuno",
+      "nessuno"
+     ]
+    }
+   ],
+   "legend": {
+    "airbase": "Metti un marcatore Base Aerea tedesca a Trondheim.",
+    "backlash": "Contraccolpo Politico: la Norvegia e' irritata (-2 VP).",
+    "nessuno": "Nessun effetto negativo."
+   },
+   "note": "Si tira ogni volta che il britannico esegue un'azione Ingaggio o Attacco Aereo contro una TF in Acque Neutrali, DOPO aver risolto l'Ingaggio/Battaglia/Attacco Aereo."
+  }
+ ]
+}
