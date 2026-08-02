@@ -4,8 +4,176 @@
  "weather": 0,
  "initiative": 0,
  "round": 1,
- "task_forces": [],
- "reinforcements": {},
+ "task_forces": [
+  {
+   "id": 1,
+   "side": 0,
+   "color": "GE",
+   "slot": 0,
+   "name": "KM GE-0",
+   "ships": [
+    "Lutzow"
+   ],
+   "leader": "Raeder",
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 17,
+    "station_r": -5,
+    "station_contact": false,
+    "station_port": "Wilhelmshaven"
+   }
+  },
+  {
+   "id": 2,
+   "side": 0,
+   "color": "GE",
+   "slot": 1,
+   "name": "KM GE-1",
+   "ships": [
+    "Widder"
+   ],
+   "leader": "",
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 15,
+    "station_r": -2,
+    "station_contact": false,
+    "station_port": "Brest"
+   }
+  },
+  {
+   "id": 3,
+   "side": 1,
+   "color": "Tan",
+   "slot": 0,
+   "name": "Convoglio Halifax-Clyde",
+   "ships": [
+    "Convoy x3"
+   ],
+   "leader": "",
+   "speed": 2,
+   "trajectory": {
+    "segments": [
+     {
+      "q": 5,
+      "r": 4,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 6,
+      "r": 3,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 7,
+      "r": 2,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 8,
+      "r": 1,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 9,
+      "r": 0,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 10,
+      "r": -1,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 11,
+      "r": -2,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 12,
+      "r": -3,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 13,
+      "r": -3,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 14,
+      "r": -4,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 15,
+      "r": -4,
+      "info": false,
+      "contact": false
+     }
+    ],
+    "station_q": 5,
+    "station_r": 4,
+    "station_contact": false,
+    "station_port": ""
+   }
+  },
+  {
+   "id": 4,
+   "side": 1,
+   "color": "Tan",
+   "slot": 1,
+   "name": "Convoglio Africa-Portsmouth",
+   "ships": [
+    "Convoy x3"
+   ],
+   "leader": "",
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 11,
+    "station_r": 5,
+    "station_contact": false,
+    "station_port": "Africa"
+   }
+  },
+  {
+   "id": 5,
+   "side": 1,
+   "color": "Red",
+   "slot": 0,
+   "name": "Forza francese Brest",
+   "ships": [
+    "Dunkerque",
+    "Strasbourg"
+   ],
+   "leader": "",
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 15,
+    "station_r": -2,
+    "station_contact": false,
+    "station_port": "Brest"
+   }
+  }
+ ],
+ "reinforcements": {
+  "KM Reinforcement A": [
+   "Graf Spee"
+  ]
+ },
  "info_triggers": [],
  "briefing": {
   "title": "BL1 Raiders of the North Atlantic",
@@ -14,7 +182,9 @@
   "historical": "Scenario solitario trascritto dal fascicolo; schieramento non proveniente da VASSAL."
  },
  "setup_notes": [
-  "Meteo Buono; iniziativa tedesca. Mappa operazionale. Schieramento e RV dal fascicolo: corsari tedeschi e convogli britannici con rotte stampate; le rotte porto-porta e i segnalini RV non sono convertiti in esagoni inventati."
+  "Meteo Buono; iniziativa tedesca. Mappa operazionale. Schieramento e RV dal fascicolo: corsari tedeschi e convogli britannici con rotte stampate; le rotte porto-porta e i segnalini RV non sono convertiti in esagoni inventati.",
+  "Graf Spee e' nel Gruppo Rinforzi A a Kiel. I marker RV restano da piazzare a mano: il gioco non ha ancora pedine RV.",
+  "La rotta Africa-Portsmouth da 8 segmenti resta da disegnare a mano: sul grafo principale calibrato non c'e una catena esatta di 8 segmenti fino a Portsmouth."
  ],
  "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati."
 }

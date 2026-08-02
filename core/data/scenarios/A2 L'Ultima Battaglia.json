@@ -4,7 +4,202 @@
  "weather": 0,
  "initiative": 0,
  "round": 1,
- "task_forces": [],
+ "task_forces": [
+  {
+   "id": 1,
+   "side": 1,
+   "color": "Brown",
+   "slot": 0,
+   "name": "Home Fleet",
+   "ships": [
+    "Kgv",
+    "Victorious",
+    "Belfast",
+    "London"
+   ],
+   "leader": "",
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 15,
+    "station_r": -5,
+    "station_contact": false,
+    "station_port": "Scapa Flow"
+   }
+  },
+  {
+   "id": 2,
+   "side": 1,
+   "color": "Tan",
+   "slot": 0,
+   "name": "Convoglio New York-Clyde",
+   "ships": [
+    "Convoy x3"
+   ],
+   "leader": "",
+   "speed": 2,
+   "trajectory": {
+    "segments": [
+     {
+      "q": 4,
+      "r": 5,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 5,
+      "r": 4,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 6,
+      "r": 3,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 7,
+      "r": 2,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 8,
+      "r": 1,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 9,
+      "r": 0,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 10,
+      "r": -1,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 11,
+      "r": -2,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 12,
+      "r": -3,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 13,
+      "r": -3,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 14,
+      "r": -4,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 15,
+      "r": -4,
+      "info": false,
+      "contact": false
+     }
+    ],
+    "station_q": 4,
+    "station_r": 5,
+    "station_contact": false,
+    "station_port": ""
+   }
+  },
+  {
+   "id": 3,
+   "side": 1,
+   "color": "Tan",
+   "slot": 1,
+   "name": "Convoglio Hvalfjordur-Murmansk",
+   "ships": [
+    "Convoy x3"
+   ],
+   "leader": "",
+   "speed": 2,
+   "trajectory": {
+    "segments": [
+     {
+      "q": 13,
+      "r": -6,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 14,
+      "r": -6,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 15,
+      "r": -7,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 16,
+      "r": -8,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 17,
+      "r": -9,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 17,
+      "r": -10,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 18,
+      "r": -11,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 19,
+      "r": -12,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 20,
+      "r": -13,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 20,
+      "r": -12,
+      "info": false,
+      "contact": false
+     }
+    ],
+    "station_q": 13,
+    "station_r": -6,
+    "station_contact": false,
+    "station_port": ""
+   }
+  }
+ ],
  "reinforcements": {},
  "info_triggers": [],
  "briefing": {
@@ -14,7 +209,8 @@
   "historical": "Trascritto dal fascicolo solitario italiano; testo completo in core/data/solo."
  },
  "setup_notes": [
-  "Meteo Buono; iniziativa tedesca. TF e Mine britanniche iniziali come mappa; U-Boat tedesco entro 3 da porto tedesco e non in spazio con Stazione/porto/base nemica. Convogli New York-Clyde/Liverpool 12 segmenti e Hvalfjordur-Murmansk 10 segmenti. Le forze tedesche sono scelte spendendo VP; massimo due gruppi rinforzi; RV opzionali. Raeder presente."
+  "Meteo Buono; iniziativa tedesca. TF e Mine britanniche iniziali come mappa; U-Boat tedesco entro 3 da porto tedesco e non in spazio con Stazione/porto/base nemica. Convogli New York-Clyde/Liverpool 12 segmenti e Hvalfjordur-Murmansk 10 segmenti. Le forze tedesche sono scelte spendendo VP; massimo due gruppi rinforzi; RV opzionali. Raeder presente.",
+  "Le forze tedesche iniziali sono scelte spendendo VP: non vengono piazzate automaticamente per non scegliere al posto del giocatore."
  ],
  "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati."
 }

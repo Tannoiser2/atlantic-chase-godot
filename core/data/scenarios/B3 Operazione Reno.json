@@ -4,8 +4,200 @@
  "weather": 0,
  "initiative": 0,
  "round": 1,
- "task_forces": [],
- "reinforcements": {},
+ "task_forces": [
+  {
+   "id": 1,
+   "side": 0,
+   "color": "GE",
+   "slot": 0,
+   "name": "Bismarck",
+   "ships": [
+    "Bismarck",
+    "Preugen"
+   ],
+   "leader": "Lutjens",
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 18,
+    "station_r": -6,
+    "station_contact": false,
+    "station_port": "Kiel"
+   }
+  },
+  {
+   "id": 2,
+   "side": 1,
+   "color": "Tan",
+   "slot": 0,
+   "name": "Convoglio Halifax-Clyde",
+   "ships": [
+    "Convoy x3"
+   ],
+   "leader": "",
+   "speed": 2,
+   "trajectory": {
+    "segments": [
+     {
+      "q": 5,
+      "r": 4,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 6,
+      "r": 3,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 7,
+      "r": 2,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 8,
+      "r": 1,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 9,
+      "r": 0,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 10,
+      "r": -1,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 11,
+      "r": -2,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 12,
+      "r": -3,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 13,
+      "r": -3,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 14,
+      "r": -4,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 15,
+      "r": -4,
+      "info": false,
+      "contact": false
+     }
+    ],
+    "station_q": 5,
+    "station_r": 4,
+    "station_contact": false,
+    "station_port": ""
+   }
+  },
+  {
+   "id": 3,
+   "side": 1,
+   "color": "Tan",
+   "slot": 1,
+   "name": "Convoglio Gibilterra-Clyde",
+   "ships": [
+    "Convoy x3"
+   ],
+   "leader": "",
+   "speed": 2,
+   "trajectory": {
+    "segments": [
+     {
+      "q": 14,
+      "r": 2,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 13,
+      "r": 2,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 12,
+      "r": 2,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 12,
+      "r": 1,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 12,
+      "r": 0,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 12,
+      "r": -1,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 12,
+      "r": -2,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 13,
+      "r": -3,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 14,
+      "r": -4,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 15,
+      "r": -4,
+      "info": false,
+      "contact": false
+     }
+    ],
+    "station_q": 14,
+    "station_r": 2,
+    "station_contact": false,
+    "station_port": ""
+   }
+  }
+ ],
+ "reinforcements": {
+  "KM Reinforcement A": [
+   "Gneisenau",
+   "Scharnhorst"
+  ]
+ },
  "info_triggers": [],
  "briefing": {
   "title": "B3 Operazione Reno",
@@ -14,7 +206,8 @@
   "historical": "Trascritto dal fascicolo solitario italiano; testo completo in core/data/solo."
  },
  "setup_notes": [
-  "Meteo Buono; iniziativa tedesca. Bismarck con Lutjens; RV come mappa; Convogli Halifax-Clyde/Liverpool 11 segmenti e Clyde/Liverpool-Gibilterra 10 segmenti. Due BC nel Rinforzo A a Brest, entrano solo col risultato b del Rifornimento. Raeder presente."
+  "Meteo Buono; iniziativa tedesca. Bismarck con Lutjens; RV come mappa; Convogli Halifax-Clyde/Liverpool 11 segmenti e Clyde/Liverpool-Gibilterra 10 segmenti. Due BC nel Rinforzo A a Brest, entrano solo col risultato b del Rifornimento. Raeder presente.",
+  "I marker RV restano da piazzare a mano: il gioco non ha ancora pedine RV."
  ],
  "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati."
 }

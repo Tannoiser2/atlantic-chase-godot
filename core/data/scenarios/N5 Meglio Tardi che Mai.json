@@ -4,8 +4,76 @@
  "weather": 1,
  "initiative": 1,
  "round": 1,
- "task_forces": [],
- "reinforcements": {},
+ "task_forces": [
+  {
+   "id": 1,
+   "side": 1,
+   "color": "Brown",
+   "slot": 0,
+   "name": "Forza Narvik",
+   "ships": [
+    "Southampton",
+    "Birmingham"
+   ],
+   "leader": "Pound",
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 17,
+    "station_r": -9,
+    "station_contact": false,
+    "station_port": "Narvik"
+   }
+  },
+  {
+   "id": 2,
+   "side": 1,
+   "color": "Tan",
+   "slot": 0,
+   "name": "Convoglio Narvik",
+   "ships": [
+    "Convoy x3"
+   ],
+   "leader": "",
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 17,
+    "station_r": -9,
+    "station_contact": false,
+    "station_port": "Narvik"
+   }
+  },
+  {
+   "id": 3,
+   "side": 1,
+   "color": "Tan",
+   "slot": 1,
+   "name": "Convoglio Trondheim",
+   "ships": [
+    "Convoy x3"
+   ],
+   "leader": "",
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 17,
+    "station_r": -8,
+    "station_contact": false,
+    "station_port": "Trondheim"
+   }
+  }
+ ],
+ "reinforcements": {
+  "RN Reinforcement A": [
+   "Renown",
+   "Valiant"
+  ],
+  "RN Reinforcement B": [
+   "Repulse",
+   "Rodney"
+  ]
+ },
  "info_triggers": [],
  "briefing": {
   "title": "N5 Meglio Tardi che Mai",
@@ -14,7 +82,8 @@
   "historical": "Trascritto dal fascicolo solitario italiano; testo completo in core/data/solo."
  },
  "setup_notes": [
-  "Meteo Sfavorevole; giocatore britannico. Convogli britannici per Narvik/Trondheim e reazione norvegese; i rinforzi spendono RP. Schieramento mappa trascritto come note perche' contiene rotte/punti norvegesi non calibrati come esagoni dedicati."
+  "Meteo Sfavorevole; giocatore britannico. Convogli britannici per Narvik/Trondheim e reazione norvegese; i rinforzi spendono RP. Schieramento mappa trascritto come note perche' contiene rotte/punti norvegesi non calibrati come esagoni dedicati.",
+  "Lo scenario usa punti norvegesi/inset: dove il fascicolo indica localita non calibrate, le TF sono poste nel porto norvegese calibrato corrispondente."
  ],
  "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati."
 }

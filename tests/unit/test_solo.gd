@@ -68,6 +68,11 @@ func test_all_solo_transcriptions_load() -> void:
 		true_(o.tables.size() >= 1, "%s: almeno una tabella" % id)
 		var sc := Scenario.load_by_id(id)
 		eq(sc.load_error, "", "%s: scenario manuale caricato" % id)
+		if id == "BL3 Raiders of the North Sea":
+			true_(str(sc.raw_setup_notes()).contains("Mappa Inserto"),
+				"%s: dichiara perche' non piazza TF sulla mappa principale" % id)
+		else:
+			true_(sc.task_forces.size() > 0, "%s: schieramento iniziale piazzato" % id)
 		true_(sc.has_victory_table(), "%s: tabella Esito/Debriefing" % id)
 		var v := Victory.from_scenario(sc)
 		eq(v.mode, Victory.Mode.DEBRIEFING, "%s: modo Debriefing" % id)

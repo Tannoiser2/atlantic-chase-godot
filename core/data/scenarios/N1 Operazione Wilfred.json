@@ -4,8 +4,99 @@
  "weather": 1,
  "initiative": 1,
  "round": 1,
- "task_forces": [],
- "reinforcements": {},
+ "task_forces": [
+  {
+   "id": 1,
+   "side": 1,
+   "color": "Brown",
+   "slot": 0,
+   "name": "Home Fleet",
+   "ships": [
+    "Renown",
+    "Valiant",
+    "Repulse",
+    "Rodney",
+    "Sheffield",
+    "Birmingham"
+   ],
+   "leader": "Pound",
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 15,
+    "station_r": -5,
+    "station_contact": false,
+    "station_port": "Scapa Flow"
+   }
+  },
+  {
+   "id": 2,
+   "side": 1,
+   "color": "Tan",
+   "slot": 0,
+   "name": "Convoglio Vestfjorden",
+   "ships": [
+    "Convoy x3"
+   ],
+   "leader": "",
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 17,
+    "station_r": -9,
+    "station_contact": false,
+    "station_port": "Narvik"
+   }
+  },
+  {
+   "id": 3,
+   "side": 1,
+   "color": "Tan",
+   "slot": 1,
+   "name": "Convoglio Bud",
+   "ships": [
+    "Convoy x3"
+   ],
+   "leader": "",
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 17,
+    "station_r": -8,
+    "station_contact": false,
+    "station_port": "Trondheim"
+   }
+  },
+  {
+   "id": 4,
+   "side": 1,
+   "color": "Tan",
+   "slot": 2,
+   "name": "Convoglio Andalsnes",
+   "ships": [
+    "Convoy x3"
+   ],
+   "leader": "",
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 17,
+    "station_r": -6,
+    "station_contact": false,
+    "station_port": "Bergen"
+   }
+  }
+ ],
+ "reinforcements": {
+  "RN Reinforcement A": [
+   "Rodney",
+   "Valiant"
+  ],
+  "RN Reinforcement B": [
+   "Renown",
+   "Repulse"
+  ]
+ },
  "info_triggers": [],
  "briefing": {
   "title": "N1 Operazione Wilfred",
@@ -14,7 +105,8 @@
   "historical": "Trascritto dal fascicolo solitario italiano; testo completo in core/data/solo."
  },
  "setup_notes": [
-  "Meteo Sfavorevole; iniziativa britannica; mappa aggiuntiva Mare di Norvegia. Nessuna TF tedesca iniziale. Schieramento britannico letto dalla mappa stampata: Convogli per mine a Vestfjorden/Narvik, Bud e Aandalsnes; rotte da disegnare dal giocatore perche' il fascicolo non fornisce esagoni. Pound presente."
+  "Meteo Sfavorevole; iniziativa britannica; mappa aggiuntiva Mare di Norvegia. Nessuna TF tedesca iniziale. Schieramento britannico letto dalla mappa stampata: Convogli per mine a Vestfjorden/Narvik, Bud e Aandalsnes; rotte da disegnare dal giocatore perche' il fascicolo non fornisce esagoni. Pound presente.",
+  "Le localita Bud e Andalsnes non hanno esagoni dedicati nel grafo principale: le relative TF sono stazioni nei porti norvegesi calibrati piu vicini."
  ],
  "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati."
 }
