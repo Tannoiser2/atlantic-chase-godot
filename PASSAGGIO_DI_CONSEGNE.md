@@ -1,7 +1,7 @@
 # Passaggio di consegne
 
 Documento per chi riprende il lavoro su questo progetto (Codex o altri).
-Scritto il 2 agosto 2026, dopo il commit `c5ba0e8`.
+Scritto il 2 agosto 2026. **Aggiornato all'ultimo commit della sessione.**
 
 Leggi anche `README.md` (come è fatto) e `STATO.md` (stato per milestone).
 Questo file dice **da dove ripartire e cosa non rifare**.
@@ -12,10 +12,10 @@ Questo file dice **da dove ripartire e cosa non rifare**.
 
 Versione digitale di *Atlantic Chase* (GMT Games, 2020) in **Godot 4.7**,
 GDScript. Motore di regole puro e testabile headless, interfaccia sopra.
-**1378 verifiche su 11 suite, tutte verdi.** Repository `Tannoiser2/atlantic-chase-godot`, branch `master`.
+**1637 verifiche su 14 suite, tutte verdi.** Repository `Tannoiser2/atlantic-chase-godot`, branch `master`.
 
 ```bash
-godot --headless --path . --script res://tests/run_tests.gd   # 1378 verifiche
+godot --headless --path . --script res://tests/run_tests.gd   # 1637 verifiche
 godot --path . --script res://tools/smoke_ui.gd               # prova di fumo GUI
 sh tools/build_macos.sh                                       # app per macOS
 ```
@@ -157,6 +157,30 @@ salvataggi ufficiali. Non rimetterla in discussione senza una ragione forte.
 
 Ogni volta che ne è saltato fuori uno nuovo la tentazione era piegarlo al
 modello già esistente. Sarebbe stata una regola inventata ogni volta.
+
+---
+
+## 4.bis Che cosa è finito e che cosa no
+
+**Finito e testato:**
+- tutte e **9 le azioni** del gioco base, Battaglia base compresa
+- le regole dei **Convogli**, il **finale di partita**, **salvataggio/ricarica**
+- le **condizioni di vittoria di tutti e 22 gli scenari**, in quattro modelli
+- il **combattimento avanzato** dall'inizio alla fine: attitudine → colonne →
+  Risultato Speciale → dove ha colpito → effetto → la nave cambia davvero
+- il **motore** del solitario (tabelle a dado, TF non identificate) con BL1,
+  BL2 e BL3 trascritte
+
+**Non finito, e perché:**
+- il **Controllo Danni / Effetti Duraturi** ha una tabella che non ho letto per
+  intero (fascicolo avanzato p.12). Non l'ho scritta a memoria: è meglio un
+  buco dichiarato di una regola inventata.
+- la **fase dell'Attitudine** esiste nel motore ma non nell'interfaccia: oggi
+  le attitudini si impostano solo dallo schieramento dello scenario, e non si
+  possono cambiare a ogni Round come vuole la regola.
+- gli **schieramenti dei 15 scenari solitari** vanno letti dalle mappe del
+  fascicolo: non sono nel modulo VASSAL.
+- **effetti visivi e sonori** in Battaglia: non c'è niente.
 
 ---
 
