@@ -158,7 +158,23 @@ modello già esistente. Sarebbe stata una regola inventata ogni volta.
 
 ## 5. Da dove ripartire — in ordine
 
-### 5.1 PRIORITÀ ALTA — la Battaglia decide da sola (bug di correttezza)
+### 5.0 FATTO dopo la prima stesura di questo documento
+
+- **§5.1 chiusa**: la Battaglia non decide più da sola. Il giocatore assegna i
+  bersagli (clic su chi spara, poi sul bersaglio), le linee di fuoco si
+  disegnano con raggio e valore dei cannoni, e i bersagli si **pre-assegnano**
+  con la scelta del motore perché il giocatore li cambi.
+- **§5.2 iniziata**: implementata l'**Attitudine** (`core/battle/attitude.gd`),
+  con le attitudini di partenza dei 12 mini-scenari trascritte dalle mappe del
+  fascicolo. `Ship` ha ora `attitude` e `special_effects`.
+- **Il fascicolo avanzato INGLESE è disponibile**:
+  `docs/regolamento/AC_Adv_Battle_Rules_May_4_2021.pdf`. Usare quello come
+  fonte: l'italiano è una traduzione amatoriale, e sulle tabelle di vittoria
+  aveva già perso delle intestazioni di colonna.
+
+**1463 verifiche su 12 suite.**
+
+### 5.1 ~~la Battaglia decide da sola~~ — FATTO
 
 **Sintomo:** in Battaglia il giocatore preme SPAZIO e basta. Non sceglie chi
 spara a chi, né chi silura chi.
@@ -181,7 +197,7 @@ RB p.57: gli effetti si applicano dopo che TUTTE le navi hanno attaccato
 (eccezione: Round Uno dopo una SORPRESA con TF Attiva più veloce — già
 implementata come `surprise_first_strike`).
 
-### 5.2 PRIORITÀ ALTA — le Regole Avanzate di Battaglia non sono implementate
+### 5.2 PRIORITÀ ALTA — le Regole Avanzate di Battaglia (in corso)
 
 `docs/regolamento/(2) Atlantic Chase ADV RB ITA.pdf`. **Niente di quel
 fascicolo è nel codice.** Verificato: nessuna traccia di attitudini, Snafu,
@@ -193,7 +209,17 @@ solitari che ho già importato **contengono i marcatori di attitudine**
 fascicolo scenari alle pagine dei MS.
 
 Da implementare, nell'ordine in cui il fascicolo li introduce:
-- **Attitudini** (Closing / Running / Acquiring) e come cambiano manovra e raggio
+- ~~**Attitudini** (Closing / Running / Acquiring)~~ — **FATTO**, vedi
+  `core/battle/attitude.gd` e `tests/unit/test_attitude.gd`. Restano da
+  collegare alla *vista* di Battaglia: la fase dell'Attitudine (nuova prima
+  fase del Round) non esiste ancora nell'interfaccia, e `Gunnery` non usa
+  ancora la colonna Acquisizione né la divisione del fuoco.
+- **Tabella del Fuoco di Cannoni avanzata**: ha due colonne
+  (Acquisizione / Avvicinamento-Corsa-Dividere) al posto di una. Sta nelle
+  *Tabelle di Aiuto al Gioco Avanzato*, da leggere dal PDF inglese.
+- **Fermo**, nuovo tipo di velocità
+- **Inseguimento** durante la Manovra (`Attitude.can_pursue` già c'è)
+- **Battaglia Estesa** (Round extra)
 - **Snafu Check** a inizio Battaglia (molti MS hanno istruzioni speciali che lo
   modificano — sono già trascritte in `core/data/victory/MS*.json`, nelle note)
 - **Verifica di Disimpegno** a fine Battaglia, con i risultati `port` / `scuttle` / `oil`
