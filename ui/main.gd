@@ -219,9 +219,9 @@ func _unhandled_input(event: InputEvent) -> void:
 				if drag_path.is_empty():
 					dragging = false
 					traj_layer.clear_preview()
-					_on_left_click(_press_hex, _press_shift)
+					await _on_left_click(_press_hex, _press_shift)
 				else:
-					_finish_drag()
+					await _finish_drag()
 			get_viewport().set_input_as_handled()
 		elif mb.button_index == MOUSE_BUTTON_RIGHT and mb.pressed:
 			_on_right_click(h)
@@ -631,6 +631,12 @@ func _seek_initiative() -> bool:
 
 func _offer_steal_initiative(reason: String) -> bool:
 	var inactive := 1 - state.initiative
+	if solo != null and inactive == _solo_imaginary_side():
+		_msg("%s - Iniziativa: l'avversario immaginario tenta di Sottrarre."
+			% reason)
+		var auto := Initiative.steal(state)
+		_report_initiative(auto)
+		return bool(auto.get("changed", false))
 	var opts: Array = [
 		{"label": "Tenta di Sottrarre", "detail": "2d6 + Conto; con 9+ prende l'Iniziativa"},
 		{"label": "Rinuncia: Manovre Evasive", "detail": "il Conto non aumenta"},
@@ -773,7 +779,7 @@ func _on_left_click(h: Vector2i, shift: bool) -> void:
 	if not _trajectory_action_armed:
 		_msg("Per tracciare una rotta dichiara prima l'azione Traiettoria (5).")
 		return
-	_try_extend(h)
+	await _try_extend(h)
 
 
 func _on_right_click(h: Vector2i) -> void:
@@ -886,6 +892,7 @@ func _finish_drag() -> void:
 			% [added, selected_tf.display_name()])
 		state.changed.emit()
 		_trajectory_action_armed = false
+		await _after_trajectory_action(selected_tf)
 	_refresh()
 
 
@@ -921,8 +928,16 @@ func _try_extend(h: Vector2i) -> void:
 				{"tf": selected_tf.id, "hex": [h.x, h.y]})
 			state.changed.emit()
 			_trajectory_action_armed = false
+			await _after_trajectory_action(selected_tf)
 			return
 	_msg("mossa illegale: %s" % traj.extend_error(h, active_end, graph, ports, selected_tf.side))
+
+
+func _after_trajectory_action(active: TaskForce) -> void:
+	if active == null:
+		return
+	if await _offer_steal_initiative("Traiettoria"):
+		await _maybe_run_solo_opponent_turn("Traiettoria")
 
 
 func _cycle_tf(step: int) -> void:
