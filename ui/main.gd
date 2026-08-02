@@ -1154,7 +1154,68 @@ func _solo_roll_action(auto: bool = false) -> void:
 	for line in SoloTable.describe(result).split("\n"):
 		_msg("  " + line)
 	log.record("Solitario: %s" % String(result.get("code", "")))
+	await _apply_solo_ai_result(result)
 	state.changed.emit()
+
+
+func _apply_solo_ai_result(result: Dictionary) -> void:
+	var imaginary := _solo_imaginary_side()
+	if imaginary < 0:
+		return
+	var decision := SoloAI.execute_code(String(result.get("code", "")),
+		state, graph, engine, _port_control(), imaginary)
+	for line_v: Variant in decision.get("log", []):
+		_msg(String(line_v))
+	if bool(decision.get("completion", false)):
+		var comp := Completion.resolve(decision["active"], decision["completion_port"], vp_tracker)
+		for line_v2: Variant in comp.get("log", []):
+			_msg(String(line_v2))
+		log.record("Solitario AI: Completamento")
+		state.changed.emit()
+	elif String(decision.get("action_key", "")) != "":
+		await _resolve_solo_ai_action(decision)
+	elif bool(decision.get("ok", false)):
+		log.record("Solitario AI: Traiettoria")
+		state.changed.emit()
+	if bool(decision.get("pass_initiative", false)):
+		var player := _solo_player_side()
+		if player >= 0:
+			_change_initiative_to(player)
+
+
+func _resolve_solo_ai_action(decision: Dictionary) -> void:
+	var key := String(decision.get("action_key", ""))
+	var active: TaskForce = decision.get("active", null)
+	var target: TaskForce = decision.get("target", null)
+	if key == "" or active == null or target == null:
+		return
+	var dec := ActionEngine.Declaration.new()
+	dec.action_key = key
+	dec.active = active
+	dec.target = target
+	dec.target_hex = decision.get("target_hex", Vector2i.MAX)
+	var res := engine.resolve(dec, state)
+	var label := String(engine.action(key).get("label", key))
+	if not res["ok"]:
+		_msg("Solitario AI - %s: %s" % [label, String(res["error"])])
+		return
+	_msg("Solitario AI - %s -> %s" % [label, engine.describe(res)])
+	if _action_canceled_by_interruption(res):
+		_msg("Solitario AI: azione annullata da Interruzione.")
+		log.record("Solitario AI: %s annullata" % label)
+		state.changed.emit()
+		return
+	var pending_battle := Results.Battle.NONE
+	for code_v: Variant in res["results"] as Array:
+		var code := String(code_v)
+		var applied := Results.apply(code, active, target, dec.target_hex, state)
+		_msg("    %s" % applied["text"])
+		if applied["battle"] != Results.Battle.NONE:
+			pending_battle = applied["battle"]
+	log.record("Solitario AI: %s" % label)
+	state.changed.emit()
+	if pending_battle != Results.Battle.NONE:
+		_open_battle(pending_battle, active, target, dec.target_hex)
 
 
 func _solo_roll_any_table() -> void:

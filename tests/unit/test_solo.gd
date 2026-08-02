@@ -39,6 +39,9 @@ func run() -> void:
 	test_identify()
 	test_a1_identify_from_second_edition()
 	test_unidentified_speed()
+	test_solo_ai_routes_around_information()
+	test_solo_ai_executes_trajectory_code()
+	test_solo_ai_declares_legal_attack()
 	test_fueling()
 	test_solo_battle_behavior()
 
@@ -246,6 +249,60 @@ func test_unidentified_speed() -> void:
 	var back := TaskForce.from_dict(tf.to_dict())
 	true_(back.unidentified, "resta non identificata dopo il salvataggio")
 	eq(back.speed, TimeLapse.Speed.VERY_SLOW, "e resta lentissima")
+
+
+func test_solo_ai_routes_around_information() -> void:
+	_begin("AI solitaria: rotta evitando Informazioni")
+	var st := GameState.new(graph, 1)
+	var tf := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
+	tf.trajectory.become_station(Vector2i(6, 0))
+	st.add_task_force(tf)
+	st.add_info_trigger(Vector2i(7, 0), "base aerea")
+
+	var plan := SoloAI.best_route(st, graph, tf, Vector2i(8, 0))
+	ne(plan, {}, "trova una rotta alternativa")
+	false_((plan["steps"] as Array).has(Vector2i(7, 0)),
+		"non passa dall'esagono con Informazioni")
+	true_(bool(plan["avoids_info"]), "la rotta dichiara che evita Informazioni")
+
+
+func test_solo_ai_executes_trajectory_code() -> void:
+	_begin("AI solitaria: codice T diventa Traiettoria")
+	var st := GameState.new(graph, 1)
+	var km := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
+	km.unidentified = true
+	km.trajectory.become_station(Vector2i(6, 0))
+	var rn := TaskForce.new(2, TaskForce.Side.ROYAL_NAVY)
+	rn.ships.append(ShipRoster.shared().make("Convoy x3"))
+	rn.trajectory.become_station(Vector2i(8, 0))
+	st.add_task_force(km)
+	st.add_task_force(rn)
+
+	var r := SoloAI.execute_code("T", st, graph, ActionEngine.load_default(), {}, km.side)
+	true_(bool(r["ok"]), "la policy esegue una mossa")
+	true_(km.length() > 0, "la TF del bot non resta ferma")
+	true_(bool(r["pass_initiative"]), "dopo la mossa restituisce il turno")
+
+
+func test_solo_ai_declares_legal_attack() -> void:
+	_begin("AI solitaria: dichiara un attacco legale")
+	var st := GameState.new(graph, 1)
+	var km := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
+	km.ships.append(ShipRoster.shared().make("Bismarck"))
+	km.trajectory.become_station(Vector2i(6, 0))
+	var rn := TaskForce.new(2, TaskForce.Side.ROYAL_NAVY)
+	rn.ships.append(ShipRoster.shared().make("Convoy x3"))
+	rn.trajectory.become_station(Vector2i(8, 0))
+	rn.trajectory.extend(Vector2i(7, 0), 0, graph, {}, false, rn.side)
+	rn.trajectory.extend(Vector2i(6, 0), 0, graph, {}, false, rn.side)
+	st.add_task_force(km)
+	st.add_task_force(rn)
+
+	var r := SoloAI.execute_code("X", st, graph, ActionEngine.load_default(), {}, km.side)
+	true_(["NAVAL_SEARCH", "STEALTH_ATTACK"].has(String(r["action_key"])),
+		"sceglie un'azione offensiva legale")
+	eq(r["active"], km, "la TF tedesca e' Attiva")
+	eq(r["target"], rn, "il Convoglio e' il bersaglio")
 
 
 ## In BL1 il giocatore e' il tedesco, e la tabella che conta e' quella del
