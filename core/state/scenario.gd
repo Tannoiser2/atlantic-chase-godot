@@ -47,6 +47,7 @@ var victory_data: Dictionary = {}
 ## lungo sono sembrati "vuoti": l'importatore cercava rotte che non esistono.
 var battle_setup: Dictionary = {}
 var setup_notes: Array = []
+var rendezvous_markers: Array = []
 
 var load_error: String = ""
 
@@ -90,6 +91,7 @@ func load_from(path: String) -> bool:
 	briefing = d.get("briefing", {})
 	import_warnings = d.get("import_warnings", [])
 	setup_notes = d.get("setup_notes", [])
+	rendezvous_markers = d.get("rendezvous_markers", [])
 	var bs: Variant = d.get("battle_setup", null)
 	battle_setup = bs if typeof(bs) == TYPE_DICTIONARY else {}
 	var sp: Variant = d.get("ship_pool", null)
@@ -256,6 +258,7 @@ func to_state_dict() -> Dictionary:
 		"round": round_number,
 		"task_forces": task_forces,
 		"info_triggers": info_triggers,
+		"rendezvous_markers": rendezvous_markers,
 	}
 
 

@@ -50,6 +50,10 @@ var completed_port: String = ""
 var unidentified: bool = false
 var leader: String = ""
 
+## Stato speciale per scenari solitari. Le chiavi sono sempre esplicite e
+## scenario-specifiche: meglio un flag nominato che una regola nascosta in UI.
+var solo_flags: Dictionary = {}
+
 
 func _init(p_id: int = 0, p_side: int = Side.KRIEGSMARINE) -> void:
 	id = p_id
@@ -133,6 +137,7 @@ func to_dict() -> Dictionary:
 		"ships": sh, "speed": speed, "evasive": evasive, "leader": leader,
 		"completed": completed, "completed_port": completed_port,
 		"unidentified": unidentified,
+		"solo_flags": solo_flags.duplicate(true),
 		"trajectory": trajectory.to_dict(),
 	}
 
@@ -163,5 +168,6 @@ static func from_dict(d: Dictionary) -> TaskForce:
 	tf.completed = bool(d.get("completed", false))
 	tf.completed_port = String(d.get("completed_port", ""))
 	tf.leader = String(d.get("leader", ""))
+	tf.solo_flags = (d.get("solo_flags", {}) as Dictionary).duplicate(true)
 	tf.trajectory = Trajectory.from_dict(d.get("trajectory", {}))
 	return tf

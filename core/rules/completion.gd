@@ -93,6 +93,9 @@ static func port_options(tf: TaskForce, graph: MapGraph,
 	for h in occupied_hexes(tf):
 		for pname_v: Variant in graph.ports_in(h):
 			var pname := String(pname_v)
+			var required := String(tf.solo_flags.get("bl1_completion_port", ""))
+			if required != "" and pname != required:
+				continue
 			if seen.has(pname):
 				continue
 			var p: Dictionary = graph.ports.get(pname, {})

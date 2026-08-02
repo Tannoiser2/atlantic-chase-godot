@@ -71,6 +71,10 @@ var advanced_battle: bool = false
 var solo_phase: int = SoloOpponent.Phase.EARLY
 var solo_phase_reason: String = ""
 
+## Marker Rendezvous degli scenari solitari BL. Sono dati di scenario, ma devono
+## vivere nello stato perche' il Rifornimento li rimuove o li sposta.
+var rendezvous_markers: Array[Dictionary] = []
+
 
 func add_vp(side: int, amount: float, reason: String = "") -> void:
 	vp[side] = float(vp.get(side, 0.0)) + amount
@@ -127,6 +131,18 @@ func task_force(id: int) -> TaskForce:
 	return _by_id.get(id, null)
 
 
+func remove_task_force(tf: TaskForce) -> bool:
+	if tf == null:
+		return false
+	var idx := task_forces.find(tf)
+	if idx < 0:
+		return false
+	task_forces.remove_at(idx)
+	_by_id.erase(tf.id)
+	changed.emit()
+	return true
+
+
 func forces_of(side: int) -> Array[TaskForce]:
 	var out: Array[TaskForce] = []
 	for tf in task_forces:
@@ -142,6 +158,35 @@ func forces_in(h: Vector2i) -> Array[TaskForce]:
 		if tf.trajectory.occupies(h):
 			out.append(tf)
 	return out
+
+
+func rendezvous_at(h: Vector2i) -> Dictionary:
+	for rv in rendezvous_markers:
+		if bool(rv.get("active", true)) and Vector2i(int(rv.get("q", 0)),
+				int(rv.get("r", 0))) == h:
+			return rv
+	return {}
+
+
+func remove_rendezvous_at(h: Vector2i) -> bool:
+	for rv in rendezvous_markers:
+		if bool(rv.get("active", true)) and Vector2i(int(rv.get("q", 0)),
+				int(rv.get("r", 0))) == h:
+			rv["active"] = false
+			changed.emit()
+			return true
+	return false
+
+
+func move_rendezvous_at(from: Vector2i, to: Vector2i) -> bool:
+	for rv in rendezvous_markers:
+		if bool(rv.get("active", true)) and Vector2i(int(rv.get("q", 0)),
+				int(rv.get("r", 0))) == from:
+			rv["q"] = to.x
+			rv["r"] = to.y
+			changed.emit()
+			return true
+	return false
 
 
 # ------------------------------------------------------- informazioni (21) --
@@ -220,6 +265,7 @@ func to_dict() -> Dictionary:
 		"advanced_battle": advanced_battle,
 		"solo_phase": solo_phase,
 		"solo_phase_reason": solo_phase_reason,
+		"rendezvous_markers": rendezvous_markers.duplicate(true),
 		"rng": rng.to_dict(),
 	}
 
@@ -238,6 +284,10 @@ func apply_dict(d: Dictionary) -> void:
 	advanced_battle = bool(d.get("advanced_battle", false))
 	solo_phase = int(d.get("solo_phase", SoloOpponent.Phase.EARLY))
 	solo_phase_reason = String(d.get("solo_phase_reason", ""))
+	rendezvous_markers.clear()
+	for rv_v: Variant in d.get("rendezvous_markers", []):
+		var rv: Dictionary = rv_v
+		rendezvous_markers.append(rv.duplicate(true))
 	vp_once.clear()
 	for k_v: Variant in d.get("vp_once", []):
 		vp_once.append(String(k_v))

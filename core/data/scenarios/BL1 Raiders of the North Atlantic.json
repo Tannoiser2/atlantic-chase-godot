@@ -183,7 +183,7 @@
  },
  "setup_notes": [
   "Meteo Buono; iniziativa tedesca. Mappa operazionale. Schieramento e RV dal fascicolo: corsari tedeschi e convogli britannici con rotte stampate; le rotte porto-porta e i segnalini RV non sono convertiti in esagoni inventati.",
-  "Graf Spee e' nel Gruppo Rinforzi A a Kiel. I marker RV restano da piazzare a mano: il gioco non ha ancora pedine RV.",
+  "Graf Spee e' nel Gruppo Rinforzi A a Kiel. I marker RV hanno stato e disegno, ma le coordinate stampate non sono ancora calibrate sul grafo principale.",
   "La rotta Africa-Portsmouth da 8 segmenti resta da disegnare a mano: sul grafo principale calibrato non c'e una catena esatta di 8 segmenti fino a Portsmouth."
  ],
  "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati."

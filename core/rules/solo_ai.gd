@@ -12,6 +12,16 @@ extends RefCounted
 
 const ROUTE_STEP_LIMIT := Trajectory.MAX_SEGMENTS
 
+const UK_TYPE_POOLS := {
+	"BC": ["Hood", "Renown", "Repulse"],
+	"CA": ["Belfast", "Berwick", "Birmingham", "Cornwall", "Cumberland",
+		"Devonshire", "Dorsetshire", "Exeter", "London", "Norfolk", "Sheffield",
+		"Suffolk"],
+	"CL": ["Achilles", "Ajax", "Arethusa", "Aurora", "Galatea", "Hermione",
+		"Naiad", "Neptune"],
+	"DD": ["DD Squadron"],
+}
+
 
 static func execute_code(code: String, state: GameState, graph: MapGraph,
 		engine: ActionEngine, port_control: Dictionary, side: int) -> Dictionary:
@@ -54,6 +64,227 @@ static func execute_code(code: String, state: GameState, graph: MapGraph,
 			out["log"].append("Solitario AI: il codice '%s' non ha ancora una policy automatica." % code)
 			out["pass_initiative"] = true
 	return out
+
+
+static func apply_table_result(table_id: String, result: Dictionary,
+		state: GameState, graph: MapGraph, engine: ActionEngine,
+		port_control: Dictionary, side: int, subject: TaskForce = null) -> Dictionary:
+	if state.scenario_name.begins_with("BL1"):
+		return _bl1_table_result(table_id, result, state, graph, engine,
+			port_control, side, subject)
+	var out := _empty("Solitario AI: la tabella '%s' e' trascritta ma non ha ancora effetti automatici." % table_id)
+	out["pass_initiative"] = false
+	return out
+
+
+static func _bl1_table_result(table_id: String, result: Dictionary,
+		state: GameState, graph: MapGraph, engine: ActionEngine,
+		port_control: Dictionary, side: int, subject: TaskForce) -> Dictionary:
+	var code := String(result.get("code", ""))
+	match table_id:
+		"identify":
+			return _identify_unidentified_tf(state, subject, code,
+				"Solitario AI BL1: Identificazione britannica")
+		"murmansk":
+			return _bl1_murmansk(code, state)
+		"fueling":
+			return _bl1_fueling(code, state, graph, engine, port_control, subject)
+	return _empty("Solitario AI BL1: tabella '%s' non applicabile automaticamente." % table_id)
+
+
+static func _identify_unidentified_tf(state: GameState, tf: TaskForce,
+		code: String, note: String) -> Dictionary:
+	if tf == null:
+		return _empty("%s: nessuna TF selezionata." % note)
+	if not tf.unidentified:
+		return _empty("%s: %s e' gia' identificata." % [note, tf.display_name()])
+	var specs := code.split("/", false)
+	var ships: Array[Ship] = []
+	var used := _ship_names_in_play(state)
+	for spec_v in specs:
+		var spec := String(spec_v).strip_edges().to_upper()
+		var sh := _make_available_ship(spec, used)
+		if sh != null:
+			ships.append(sh)
+			used[sh.name] = true
+	if ships.is_empty():
+		return _empty("%s: codice '%s' senza nave disponibile nel ruolino." % [note, code])
+	tf.ships = ships
+	tf.unidentified = false
+	tf.recompute_speed()
+	var out := _empty("%s: %s rivela %s." % [note, tf.display_name(),
+		", ".join(_ship_names(ships))])
+	out["ok"] = true
+	out["active"] = tf
+	return out
+
+
+static func _make_available_ship(type_code: String, used: Dictionary) -> Ship:
+	var pool: Array = UK_TYPE_POOLS.get(type_code, [])
+	for name_v: Variant in pool:
+		var name := String(name_v)
+		if used.has(name):
+			continue
+		var sh := ShipRoster.shared().make(name)
+		if sh != null:
+			return sh
+	return null
+
+
+static func _ship_names_in_play(state: GameState) -> Dictionary:
+	var used := {}
+	for tf in state.task_forces:
+		for s in tf.ships:
+			used[s.name] = true
+	return used
+
+
+static func _ship_names(ships: Array[Ship]) -> Array[String]:
+	var out: Array[String] = []
+	for s in ships:
+		out.append(s.display())
+	return out
+
+
+static func _bl1_murmansk(code: String, state: GameState) -> Dictionary:
+	var out := _empty("")
+	match code:
+		"confisca":
+			state.add_vp(TaskForce.Side.KRIEGSMARINE, -3.0, "BL1 Murmansk: confisca")
+			out["log"].append("Solitario AI BL1 Murmansk: confisca, -3 VP tedeschi.")
+		"incidente":
+			state.add_vp(TaskForce.Side.KRIEGSMARINE, -1.0, "BL1 Murmansk: incidente")
+			out["log"].append("Solitario AI BL1 Murmansk: Incidente Internazionale, -1 VP tedesco.")
+		"salvi":
+			out["log"].append("Solitario AI BL1 Murmansk: rifornimento riuscito senza perdita di VP.")
+		_:
+			out["log"].append("Solitario AI BL1 Murmansk: codice '%s' non riconosciuto." % code)
+			return out
+	out["ok"] = true
+	return out
+
+
+static func _bl1_fueling(code: String, state: GameState, graph: MapGraph,
+		engine: ActionEngine, port_control: Dictionary, tf: TaskForce) -> Dictionary:
+	if tf == null:
+		return _empty("Solitario AI BL1 Rifornimento: seleziona una TF tedesca.")
+	if tf.side != TaskForce.Side.KRIEGSMARINE:
+		return _empty("Solitario AI BL1 Rifornimento: %s non e' tedesca." % tf.display_name())
+	if not tf.trajectory.is_station():
+		return _empty("Solitario AI BL1 Rifornimento: %s non e' una Stazione." % tf.display_name())
+	var h := tf.trajectory.station_hex
+	var out := _empty("Solitario AI BL1 Rifornimento %s su %s." % [code, tf.display_name()])
+	var rv_removed := false
+	match code:
+		"a":
+			rv_removed = state.remove_rendezvous_at(h)
+			_repair_one_hit(tf, out)
+			tf.solo_flags["bl1_completion_port"] = "South America"
+			tf.solo_flags["bl1_no_reorganize"] = true
+			tf.solo_flags["bl1_no_more_fueling"] = true
+			out["log"].append("Nuovo obiettivo: %s potra' Completare solo in South America." % tf.display_name())
+			_bl1_british_in_hex_effect(state, h, tf, out)
+		"b":
+			rv_removed = state.remove_rendezvous_at(h)
+			if _count_convoys_in_play(state, TaskForce.Side.ROYAL_NAVY) < 3:
+				var conv := _create_force_at(state, graph, TaskForce.Side.ROYAL_NAVY,
+					"Bordeaux", ["Convoy x3"], false)
+				var cl := _make_available_ship("CL", _ship_names_in_play(state))
+				if cl != null:
+					conv.ships.append(cl)
+					conv.recompute_speed()
+				out["log"].append("News: creata TF Convoglio britannica Bordeaux-Africa.")
+				var r := _complete_or_route_to_port(state, graph, port_control, conv,
+					"Africa", "Solitario AI BL1 Rifornimento b")
+				out["log"].append_array(r.get("log", []))
+		"c":
+			_move_rv_by_policy(state, graph, h, tf, out)
+			if _enemy_in_same_hex(state, tf.side, tf) == null:
+				out["initiative"] = "vie"
+				out["log"].append("Policy digitale BL1: va tentato Cercare l'Iniziativa.")
+			else:
+				out["international_incident"] = true
+				out["log"].append("Incidente Internazionale: TF britannica nell'esagono.")
+		"d":
+			rv_removed = state.remove_rendezvous_at(h)
+			tf.evasive = false
+			tf.solo_flags["bl1_mechanical_problems"] = true
+			tf.solo_flags["bl1_actions_only"] = ["TRAJECTORY", "COMPLETION", "PASS"]
+			tf.solo_flags["bl1_no_evasive"] = true
+			out["log"].append("Guasti meccanici: consentite solo Traiettoria, Completamento e Passare.")
+			if _enemy_in_same_hex(state, tf.side, tf) != null:
+				out["initiative"] = "vie"
+		"e":
+			rv_removed = state.remove_rendezvous_at(h)
+			if state.weather == TimeLapse.Weather.GOOD:
+				tf.evasive = false
+				out["log"].append("Meteo buono: rimosse Manovre Evasive, se presenti.")
+		"f":
+			rv_removed = state.remove_rendezvous_at(h)
+			out["log"].append("Nessun altro effetto.")
+		"g":
+			_move_rv_by_policy(state, graph, h, tf, out)
+			if _enemy_in_same_hex(state, tf.side, tf) != null:
+				out["initiative"] = "vie"
+		_:
+			out["log"].append("Codice Rifornimento non riconosciuto: %s." % code)
+			return out
+	if rv_removed:
+		out["log"].append("Marker RV rimosso dall'esagono %s." % str(h))
+	elif ["a", "b", "d", "e", "f"].has(code):
+		out["log"].append("Nessun marker RV calibrato in %s: effetto applicato alla TF, marker non rimosso." % str(h))
+	out["ok"] = true
+	return out
+
+
+static func _repair_one_hit(tf: TaskForce, out: Dictionary) -> void:
+	for s in tf.ships:
+		if s.hits > 0:
+			s.hits -= 1
+			out["log"].append("Riparato 1 Colpo da %s." % s.name)
+			return
+	out["log"].append("Nessun Colpo da riparare.")
+
+
+static func _count_convoys_in_play(state: GameState, side: int) -> int:
+	var n := 0
+	for tf in state.forces_of(side):
+		if _has_convoy(tf):
+			n += 1
+	return n
+
+
+static func _bl1_british_in_hex_effect(state: GameState, h: Vector2i,
+		tf: TaskForce, out: Dictionary) -> void:
+	if _enemy_in_same_hex(state, tf.side, tf) == null:
+		return
+	if tf.trajectory.station_contact:
+		state.add_info_trigger(h, "side:1")
+		out["log"].append("TF britannica presente: Contatto gia' presente, aggiunta base aerea britannica.")
+	else:
+		tf.trajectory.station_contact = true
+		out["log"].append("TF britannica presente: assegnato Contatto alla TF tedesca.")
+
+
+static func _move_rv_by_policy(state: GameState, graph: MapGraph, from: Vector2i,
+		tf: TaskForce, out: Dictionary) -> void:
+	var best := Vector2i.MAX
+	var bestd := 999999
+	var target := _enemy_center(state, tf.side)
+	for h in graph.adjacent_hexes(from):
+		if not graph.is_playable(h) or state.port_hexes().has(h):
+			continue
+		var d := Hex.distance(h, target)
+		if d < bestd:
+			bestd = d
+			best = h
+	if best == Vector2i.MAX:
+		out["log"].append("Policy digitale BL1: nessun esagono adiacente valido per spostare l'RV.")
+		return
+	if state.move_rendezvous_at(from, best):
+		out["log"].append("Policy digitale BL1: RV spostato da %s a %s." % [str(from), str(best)])
+	else:
+		out["log"].append("Nessun marker RV calibrato in %s: spostamento registrato solo nel log." % str(from))
 
 
 static func _n1(code: String, state: GameState, graph: MapGraph,

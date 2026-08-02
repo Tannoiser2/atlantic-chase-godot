@@ -84,6 +84,7 @@ func test_serialization_roundtrip() -> void:
 	var tf := _tf(TaskForce.Side.KRIEGSMARINE, origin)
 	tf.name = "Bismarck TF"
 	tf.speed = TimeLapse.Speed.FAST
+	tf.solo_flags["bl1_completion_port"] = "South America"
 	var cur := origin
 	for i in 3:
 		for cand in graph.adjacent_hexes(cur):
@@ -94,6 +95,8 @@ func test_serialization_roundtrip() -> void:
 	tf.trajectory.set_info(0, true)
 	st.add_task_force(tf)
 	st.add_info_trigger(origin, "base aerea tedesca")
+	var rv_hex := graph.adjacent_hexes(origin)[1]
+	st.rendezvous_markers.append({"id": "rv-a", "q": rv_hex.x, "r": rv_hex.y})
 
 	var d := st.to_dict()
 	var st2 := GameState.new(graph, 0)
@@ -108,7 +111,13 @@ func test_serialization_roundtrip() -> void:
 	eq(st2.task_forces[0].speed, TimeLapse.Speed.FAST, "velocita'")
 	eq(st2.task_forces[0].length(), tf.length(), "lunghezza traiettoria")
 	eq(st2.task_forces[0].info_count(), 1, "segnalini Informazioni")
+	eq(String(st2.task_forces[0].solo_flags.get("bl1_completion_port", "")),
+		"South America", "flag solitario conservato")
 	true_(st2.info_triggers.has(origin), "inneschi Informazioni conservati")
+	eq(st2.rendezvous_markers.size(), 1, "marker RV conservato")
+	eq(String(st2.rendezvous_at(rv_hex).get("id", "")), "rv-a", "marker RV indicizzato per esagono")
+	true_(st2.remove_rendezvous_at(rv_hex), "marker RV rimuovibile")
+	false_(bool(st2.rendezvous_at(rv_hex).get("active", false)), "marker RV non piu' attivo")
 
 
 func test_undo_redo() -> void:

@@ -54,6 +54,7 @@ func run() -> void:
 	test_solo_ai_has_policy_for_action_codes()
 	test_solo_norwegian_completion_ports()
 	test_fueling()
+	test_solo_ai_bl1_aux_tables_apply()
 	test_solo_battle_behavior()
 	test_solo_battle_view_preassigns_both_sides()
 
@@ -564,12 +565,82 @@ func test_fueling() -> void:
 			"la procedura '%s' e' trascritta" % code)
 
 	# la tabella Murmansk ha un modificatore che il giocatore attiva
-	var m: SoloTable = o.table("murmansk")
-	ne(m, null, "e c'e' anche la tabella Murmansk")
-	eq(m.modifier_total(["due o piu' Convogli distrutti"]), -1,
-		"che peggiora se hai distrutto molti Convogli")
-	eq(String(m.read(0, 1)["code"]), "confisca", "con 1 le navi sono confiscate")
-	eq(String(m.read(0, 6)["code"]), "salvi", "con 6 rientrano a Kiel")
+		var m: SoloTable = o.table("murmansk")
+		ne(m, null, "e c'e' anche la tabella Murmansk")
+		eq(m.modifier_total(["due o piu' Convogli distrutti"]), -1,
+			"che peggiora se hai distrutto molti Convogli")
+		eq(String(m.read(0, 1)["code"]), "confisca", "con 1 le navi sono confiscate")
+		eq(String(m.read(0, 6)["code"]), "salvi", "con 6 rientrano a Kiel")
+		var sc := Scenario.load_by_id("BL1 Raiders of the North Atlantic")
+		eq(String(sc.port_control().get("Murmansk", "")), "KRIEGSMARINE",
+			"BL1 consente Murmansk ai tedeschi")
+		eq(String(sc.port_control().get("South America", "")), "KRIEGSMARINE",
+			"BL1 consente South America quando il Rifornimento lo ordina")
+
+
+func test_solo_ai_bl1_aux_tables_apply() -> void:
+	_begin("AI solitaria BL1: tabelle ausiliarie applicate")
+	var control := Scenario.load_by_id("BL1 Raiders of the North Atlantic").port_control()
+	var st := GameState.new(graph, 1)
+	st.scenario_name = "BL1 Raiders of the North Atlantic"
+	var unk := TaskForce.new(1, TaskForce.Side.ROYAL_NAVY)
+	unk.name = "TF ignota"
+	unk.unidentified = true
+	st.add_task_force(unk)
+	var id_res := SoloAI.apply_table_result("identify", {"code": "BC/CA/CL"},
+		st, graph, ActionEngine.load_default(), control, TaskForce.Side.ROYAL_NAVY, unk)
+	true_(bool(id_res["ok"]), "Identificazione applicata")
+	false_(unk.unidentified, "la TF non resta ignota")
+	eq(unk.ships.size(), 3, "assegna tre navi")
+	eq(unk.ships[0].name, "Hood", "sceglie una BC disponibile")
+
+	var mur := SoloAI.apply_table_result("murmansk", {"code": "confisca"},
+		st, graph, ActionEngine.load_default(), control, TaskForce.Side.ROYAL_NAVY)
+	true_(bool(mur["ok"]), "Murmansk confisca applicata")
+	eq(float(st.vp[TaskForce.Side.KRIEGSMARINE]), -3.0, "confisca: -3 VP")
+	var inc := SoloAI.apply_table_result("murmansk", {"code": "incidente"},
+		st, graph, ActionEngine.load_default(), control, TaskForce.Side.ROYAL_NAVY)
+	true_(bool(inc["ok"]), "Murmansk incidente applicato")
+	eq(float(st.vp[TaskForce.Side.KRIEGSMARINE]), -4.0, "incidente: altro -1 VP")
+
+	var south := Vector2i(6, 7)
+	var km := TaskForce.new(2, TaskForce.Side.KRIEGSMARINE)
+	km.ships.append(ShipRoster.shared().make("Lutzow"))
+	km.ships[0].hits = 1
+	km.trajectory.become_station(south)
+	st.add_task_force(km)
+	st.rendezvous_markers.append({"id": "rv-south", "q": south.x, "r": south.y})
+	var fuel_a := SoloAI.apply_table_result("fueling", {"code": "a"},
+		st, graph, ActionEngine.load_default(), control, TaskForce.Side.ROYAL_NAVY, km)
+	true_(bool(fuel_a["ok"]), "Rifornimento a applicato")
+	true_(st.rendezvous_at(south).is_empty(), "Rifornimento a rimuove l'RV")
+	eq(km.ships[0].hits, 0, "ripara un Colpo")
+	eq(String(km.solo_flags.get("bl1_completion_port", "")), "South America",
+		"imposta South America come unico porto")
+	true_(bool(km.solo_flags.get("bl1_no_reorganize", false)), "vieta Riorganizzazione")
+	eq(String(Completion.port_options(km, graph, control)[0]["name"]), "South America",
+		"il filtro di Completamento accetta solo South America")
+
+	var st2 := GameState.new(graph, 1)
+	st2.scenario_name = "BL1 Raiders of the North Atlantic"
+	var km2 := TaskForce.new(3, TaskForce.Side.KRIEGSMARINE)
+	km2.ships.append(ShipRoster.shared().make("Lutzow"))
+	km2.evasive = true
+	km2.trajectory.become_station(Vector2i(6, 0))
+	st2.add_task_force(km2)
+	st2.rendezvous_markers.append({"id": "rv-mech", "q": 6, "r": 0})
+	var rn2 := TaskForce.new(4, TaskForce.Side.ROYAL_NAVY)
+	rn2.ships.append(ShipRoster.shared().make("Hood"))
+	rn2.trajectory.become_station(Vector2i(6, 0))
+	st2.add_task_force(rn2)
+	var fuel_d := SoloAI.apply_table_result("fueling", {"code": "d"},
+		st2, graph, ActionEngine.load_default(), control, TaskForce.Side.ROYAL_NAVY, km2)
+	true_(bool(fuel_d["ok"]), "Rifornimento d applicato")
+	false_(km2.evasive, "rimuove Manovre Evasive")
+	true_((km2.solo_flags.get("bl1_actions_only", []) as Array).has("TRAJECTORY"),
+		"limita le azioni della TF")
+	eq(String(fuel_d.get("initiative", "")), "vie", "con britannici nell'esagono chiede VforI")
+	true_(st2.rendezvous_at(Vector2i(6, 0)).is_empty(), "Rifornimento d rimuove l'RV")
 
 
 func test_solo_battle_behavior() -> void:

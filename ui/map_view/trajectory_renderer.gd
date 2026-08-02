@@ -63,9 +63,10 @@ func _draw() -> void:
 	if state == null or graph == null:
 		return
 
-	_compute_lanes()
-	for tf in state.task_forces:
-		_draw_task_force(tf)
+		_compute_lanes()
+		for tf in state.task_forces:
+			_draw_task_force(tf)
+		_draw_rendezvous_markers()
 
 	if not preview_hexes.is_empty():
 		_draw_preview()
@@ -217,9 +218,25 @@ func _draw_task_force(tf: TaskForce) -> void:
 		_draw_badge(pts[0] + back * graph.inradius * 0.62,
 			tf.short_name(), col, is_sel)
 
-	if is_sel:
-		_draw_label(pts[pts.size() - 1] + Vector2(0, -graph.inradius * 0.75),
-			"%d seg" % traj.length(), col)
+		if is_sel:
+			_draw_label(pts[pts.size() - 1] + Vector2(0, -graph.inradius * 0.75),
+				"%d seg" % traj.length(), col)
+
+
+func _draw_rendezvous_markers() -> void:
+	for rv_v: Variant in state.rendezvous_markers:
+		var rv: Dictionary = rv_v
+		if not bool(rv.get("active", true)):
+			continue
+		var h := Vector2i(int(rv.get("q", 0)), int(rv.get("r", 0)))
+		if not graph.is_playable(h):
+			continue
+		var c := graph.center_of(h)
+		var s := graph.inradius * 0.30
+		var rect := Rect2(c - Vector2(s, s), Vector2(s * 2, s * 2))
+		draw_rect(rect, Color(0.04, 0.12, 0.14, 0.82), true)
+		draw_rect(rect, Color(0.55, 0.96, 1.0, 0.96), false, 3.0)
+		_draw_label(c, "RV", Color(0.74, 1.0, 1.0), 0.24)
 
 
 func _draw_end_cap(tip: Vector2, prev: Vector2, col: Color, w: float) -> void:

@@ -1345,6 +1345,10 @@ func _solo_roll_any_table() -> void:
 	for line in SoloTable.describe(result).split("\n"):
 		_msg("  " + line)
 	log.record("Solitario: %s" % String(result.get("code", "")))
+	if ["actions", "actions_early", "actions_late", "british_actions"].has(keys[i]):
+		await _apply_solo_ai_result(result)
+	else:
+		await _apply_solo_table_result(keys[i], result, selected_tf)
 	state.changed.emit()
 
 
@@ -1368,9 +1372,30 @@ func _solo_identify_selected() -> void:
 	if t != null and t.note != "":
 		_msg("  Nota: %s" % t.note)
 	if bool(result.get("ok", false)):
-		_msg("  Aggiungi le navi indicate manualmente: il motore non sceglie sostituzioni non stampate.")
+		var applied := await _apply_solo_table_result("identify", result, selected_tf)
+		if not bool(applied.get("ok", false)):
+			_msg("  Aggiungi le navi indicate manualmente: il motore non sceglie sostituzioni non stampate.")
 	log.record("Solitario: identificazione")
 	state.changed.emit()
+
+
+func _apply_solo_table_result(table_id: String, result: Dictionary,
+		subject: TaskForce = null) -> Dictionary:
+	var imaginary := _solo_imaginary_side()
+	var decision := SoloAI.apply_table_result(table_id, result, state, graph, engine,
+		_port_control(), imaginary, subject)
+	for line_v: Variant in decision.get("log", []):
+		var line := String(line_v)
+		if line != "":
+			_msg("  " + line)
+	if bool(decision.get("ok", false)):
+		log.record("Solitario AI: %s" % table_id)
+		_resync_selection()
+		_refresh()
+	if String(decision.get("initiative", "")) == "vie":
+		if _seek_initiative():
+			await _maybe_run_solo_opponent_turn("Tabella solitario")
+	return decision
 
 
 func _solo_go_late() -> void:
@@ -2054,12 +2079,17 @@ func _action_unavailable_reason(key: String) -> String:
 		return "nessuna Task Force selezionata"
 	if not _can_control_tf(selected_tf):
 		return "questa Task Force appartiene all'avversario immaginario"
-	if selected_tf.side != state.initiative:
-		if solo != null and state.forces_of(state.initiative).is_empty():
-			return ("l'Iniziativa e' dell'avversario immaginario: la Tabella "
-				+ "Solitario viene tirata automaticamente; O la riapre")
-		return "l'Iniziativa e' di %s" % Initiative.side_name(state.initiative)
-	# Passare, Completamento e Traiettoria si dichiarano anche senza nemici in
+		if selected_tf.side != state.initiative:
+			if solo != null and state.forces_of(state.initiative).is_empty():
+				return ("l'Iniziativa e' dell'avversario immaginario: la Tabella "
+					+ "Solitario viene tirata automaticamente; O la riapre")
+			return "l'Iniziativa e' di %s" % Initiative.side_name(state.initiative)
+		var forced_actions: Array = selected_tf.solo_flags.get("bl1_actions_only", [])
+		if not forced_actions.is_empty() and not forced_actions.has(key):
+			return "BL1: i guasti meccanici consentono solo Traiettoria, Completamento e Passare"
+		if key == "REORGANIZE" and bool(selected_tf.solo_flags.get("bl1_no_reorganize", false)):
+			return "BL1: il Rifornimento vieta Riorganizzazione a questa TF"
+		# Passare, Completamento e Traiettoria si dichiarano anche senza nemici in
 	# vista: pretendere un bersaglio le renderebbe indichiarabili
 	if not engine.is_verified(key):
 		return String(engine.action(key).get("verified_note",
