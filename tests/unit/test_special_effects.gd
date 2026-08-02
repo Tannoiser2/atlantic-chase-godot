@@ -19,6 +19,7 @@ func run() -> void:
 	test_communications()
 	test_magazine()
 	test_repair()
+	test_wired_into_battle()
 
 
 func _ship(n: String = "Bismarck") -> Ship:
@@ -195,3 +196,60 @@ func test_repair() -> void:
 	var forced := SpecialEffects.repair_targets(s)
 	eq(forced.size(), 1, "e il Controllo Danni non puo' scegliere")
 	eq(forced[0], SpecialEffects.BRIDGE, "deve puntare alla Plancia")
+
+
+## La catena intera: un siluro avanzato che produce un effetto, e l'effetto che
+## cambia davvero la nave.
+func test_wired_into_battle() -> void:
+	_begin("dal siluro all'effetto, passando per la Battaglia")
+	var st := BattleState.new(BattleState.Kind.BATTLE, TimeLapse.Weather.GOOD)
+	st.advanced = true
+
+	var km := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
+	km.name = "KM"
+	var victim := _ship("Hipper")
+	victim.battle_zone = BattleState.Zone.CLOSE
+	victim.attitude = Attitude.Kind.CLOSING
+	km.ships = [victim] as Array[Ship]
+
+	var rn := TaskForce.new(2, TaskForce.Side.ROYAL_NAVY)
+	rn.name = "RN"
+	var firer := _ship("Galatea")
+	firer.has_torpedo = true
+	firer.battle_zone = BattleState.Zone.CLOSE
+	firer.attitude = Attitude.Kind.CLOSING
+	rn.ships = [firer] as Array[Ship]
+
+	st.active_tf = km
+	st.target_tf = rn
+
+	var rng := DiceRNG.new(1)
+	# 5+5 = 10 sulla tavola dei Siluri: Risultato Grave.
+	# Poi 4+4 = 8 sulla Linea di Galleggiamento: Allagamento (molto lenta).
+	rng.push_forced([5, 5, 4, 4])
+	var b := Battle.new(st, rng)
+	b.torpedo_phase({firer: victim})
+
+	true_(SpecialEffects.has(victim, SpecialEffects.FLOOD_SLOW),
+		"l'effetto e' finito sulla nave")
+	eq(victim.current_speed(), TimeLapse.Speed.VERY_SLOW,
+		"e la nave e' davvero rallentata, non solo etichettata")
+	false_(victim.damaged, "senza essere Danneggiata: e' un'altra cosa")
+	true_(AdvancedGunnery.is_crippled(victim),
+		"ma e' azzoppata, quindi perde la colonna Acquisizione")
+
+	# la penalita' al Fuoco arriva fino al tiro
+	SpecialEffects.apply(victim, SpecialEffects.TURRETS)
+	var a := Gunnery.attack(victim, firer, DiceRNG.new(2), false, false, true)
+	var found := false
+	for m in a["modifiers"] as Array:
+		if String(m["label"]) == "effetti speciali":
+			found = true
+			eq(int(m["value"]), -2, "le Torrette valgono -2")
+	true_(found, "e il modificatore compare nel conto dell'attacco")
+
+	# un incendio grave la zittisce del tutto
+	SpecialEffects.apply(victim, SpecialEffects.FIRE_STOPPED)
+	var a2 := Gunnery.attack(victim, firer, DiceRNG.new(3), false, false, true)
+	false_(a2["ok"], "con l'incendio grave non spara piu'")
+	eq(victim.current_speed(), TimeLapse.Speed.STOPPED, "ed e' ferma")

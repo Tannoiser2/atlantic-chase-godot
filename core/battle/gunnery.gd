@@ -125,6 +125,11 @@ static func attack(firer: Ship, target: Ship, rng: DiceRNG,
 		advanced: bool = false, targets: int = 1) -> Dictionary:
 	var r := range_between(firer.battle_zone, target.battle_zone)
 	var band := band_for(r)
+	# un incendio o un allagamento gravi zittiscono la nave del tutto
+	if advanced and not SpecialEffects.can_fire(firer):
+		return {"ok": false, "reason":
+			"%s non puo' sparare: %s" % [firer.name,
+				", ".join(firer.special_effects)], "hits": 0, "range": r}
 	if not firer.can_fire(band):
 		return {"ok": false, "reason": "%s non puo' sparare a raggio %s ('na' sulla pedina)"
 			% [firer.name, RANGE_LABELS[r]], "hits": 0, "range": r}
@@ -132,7 +137,13 @@ static func attack(firer: Ship, target: Ship, rng: DiceRNG,
 	var gv := int(firer.gun_value(band))
 	var roll := roll_for_range(r, rng, "cannoni %s -> %s" % [firer.name, target.name])
 	var mods := modifiers(target, gv, smoke_target, smoke_firer)
-	var total: int = int(roll["sum"]) + int(mods["total"])
+	# le penalita' degli Effetti Speciali dell'ATTACCANTE (Torrette a ogni
+	# raggio, Batterie da vicino) si sommano ai modificatori normali
+	var se_mod := SpecialEffects.gunnery_modifier(firer, r) if advanced else 0
+	if se_mod != 0:
+		(mods["list"] as Array).append({"label": "effetti speciali",
+			"value": se_mod})
+	var total: int = int(roll["sum"]) + int(mods["total"]) + se_mod
 	var hits := hits_for(total)
 	var out := {
 		"ok": true, "firer": firer, "target": target,

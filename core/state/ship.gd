@@ -166,6 +166,11 @@ func apply_hits(n: int) -> String:
 
 ## Velocita' del lato attualmente a faccia in su.
 func current_speed() -> int:
+	# gli Effetti Speciali battono tutto: una nave che brucia o si allaga e'
+	# molto lenta o ferma qualunque cosa dica la pedina
+	var forced := SpecialEffects.speed_override(self)
+	if forced != -99:
+		return forced
 	if damaged and speed_damaged >= 0:
 		return speed_damaged
 	return speed

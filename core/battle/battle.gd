@@ -95,10 +95,17 @@ func _resolve_wave(firers: Array[Ship], targeting: Dictionary) -> Array[Dictiona
 
 func _apply_hits(results: Array[Dictionary]) -> void:
 	for a in results:
-		if not a["ok"] or int(a["hits"]) <= 0:
+		if not a["ok"]:
 			continue
 		var target: Ship = a["target"]
-		if target.sunk:
+		if target == null or target.sunk:
+			continue
+		# Un Risultato Grave fa ZERO Colpi: e' un effetto, non un danno. Il
+		# controllo sui Colpi va quindi fatto DOPO gli effetti speciali, se no
+		# tutta la parte piu' interessante delle regole avanzate verrebbe
+		# saltata da un `continue` scritto per le regole base.
+		_apply_special(a)
+		if int(a.get("hits", 0)) <= 0 or target.sunk:
 			continue
 		# Fotografia e proprietario si prendono PRIMA di applicare i Colpi.
 		# La fotografia perche' dopo, danneggiata e affondata sono gia'
@@ -110,7 +117,7 @@ func _apply_hits(results: Array[Dictionary]) -> void:
 		var owner_tf := state.own_tf_of(target)
 		# un Convoglio disperso incassa un solo Colpo per attacco (RB p.11):
 		# e' il motivo per cui vale la pena disperderlo
-		var raw := int(a["hits"])
+		var raw := int(a.get("hits", 0))
 		var hits := Convoy.hits_taken(target, raw)
 		if hits < raw:
 			state.note("    %s e' disperso: dei %d Colpi ne incassa %d."
@@ -119,6 +126,29 @@ func _apply_hits(results: Array[Dictionary]) -> void:
 		if tracker != null and owner_tf != null:
 			for line in tracker.hits_on(target, hits, owner_tf.side, before):
 				state.note("    " + line)
+
+
+## Gli Effetti Speciali delle Regole Avanzate.
+##
+## Sta qui e non dentro Gunnery/Torpedo per la stessa ragione per cui i Colpi
+## si applicano qui: la regola vuole che tutto si applichi DOPO che tutte le
+## navi hanno attaccato, e questo e' il punto unico in cui succede.
+func _apply_special(a: Dictionary) -> void:
+	if not state.advanced or not bool(a.get("special", false)):
+		return
+	var target: Ship = a["target"]
+	var effect := String(a.get("effect", ""))
+	if effect == "":
+		# I risultati Gravi del FUOCO rimandano alle tabelle Cintura /
+		# Sovrastruttura / Linea di Galleggiamento, che stanno sul player aid
+		# avanzato e non sono state trascritte. Meglio dirlo che inventare un
+		# effetto: qui si decide se una nave resta in combattimento o no.
+		state.note("    %s su %s: la tabella dell'effetto non e' ancora "
+			% [String(a.get("label", "risultato speciale")), target.name]
+			+ "trascritta, va tirata a mano sul player aid avanzato.")
+		return
+	var r := SpecialEffects.apply(target, effect)
+	state.note("    " + String(r["log"]))
 
 
 # ---------------------------------------------------------------- 2. Siluri --
@@ -133,8 +163,10 @@ func torpedo_phase(attacks: Dictionary) -> Array[Dictionary]:
 		var target: Ship = attacks[firer_v]
 		if firer.sunk or target == null or target.sunk:
 			continue
-		var a := Torpedo.attack(firer, target, rng)
-		state.note(Torpedo.describe(a))
+		var a := AdvancedTorpedo.attack(firer, target, rng) if state.advanced \
+			else Torpedo.attack(firer, target, rng)
+		state.note(AdvancedTorpedo.describe(a) if state.advanced
+			else Torpedo.describe(a))
 		out.append(a)
 	_apply_hits(out)
 	state.check_end()
