@@ -45,6 +45,12 @@ func run() -> void:
 	test_solo_ai_bl2_t_creates_unknown()
 	test_solo_ai_bl3_completion_port_by_phase()
 	test_solo_ai_bl1_x_creates_unknown_hunter()
+	test_solo_ai_b1_convoy_creates_and_routes()
+	test_solo_ai_b1_x_creates_unknown_interceptor()
+	test_solo_ai_x_suffix_prefers_ship_type()
+	test_solo_ai_xu_prefers_unidentified()
+	test_solo_ai_a1_x_creates_german_raider()
+	test_solo_ai_a1_c_routes_to_named_port()
 	test_fueling()
 	test_solo_battle_behavior()
 
@@ -368,6 +374,120 @@ func test_solo_ai_bl1_x_creates_unknown_hunter() -> void:
 	true_(bool(r["ok"]), "la policy crea e muove una TF")
 	eq(st.forces_of(TaskForce.Side.ROYAL_NAVY).size(), 1, "crea una TF britannica")
 	true_(st.forces_of(TaskForce.Side.ROYAL_NAVY)[0].unidentified, "la TF creata e' ignota")
+
+
+func test_solo_ai_b1_convoy_creates_and_routes() -> void:
+	_begin("AI solitaria B1: Convoy crea una TF e la muove")
+	var st := GameState.new(graph, 1)
+	st.scenario_name = "B1 Operazione Berlino"
+	st.rng.push_forced([2])
+	var km := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
+	km.ships.append(ShipRoster.shared().make("Scharnhorst"))
+	km.trajectory.become_station(Vector2i(17, -5))
+	st.add_task_force(km)
+
+	var r := SoloAI.execute_code("Conv", st, graph, ActionEngine.load_default(),
+		{}, TaskForce.Side.ROYAL_NAVY)
+	true_(bool(r["ok"]), "crea e muove il Convoglio")
+	eq(st.forces_of(TaskForce.Side.ROYAL_NAVY).size(), 1, "una TF britannica creata")
+	true_(SoloAI._has_convoy(st.forces_of(TaskForce.Side.ROYAL_NAVY)[0]), "contiene un Convoglio")
+	true_(st.forces_of(TaskForce.Side.ROYAL_NAVY)[0].length() > 0, "traccia rotta verso Clyde/Liverpool")
+
+
+func test_solo_ai_b1_x_creates_unknown_interceptor() -> void:
+	_begin("AI solitaria B1: X crea intercettore ignoto")
+	var st := GameState.new(graph, 1)
+	st.scenario_name = "B1 Operazione Berlino"
+	var km := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
+	km.ships.append(ShipRoster.shared().make("Gneisenau"))
+	km.trajectory.become_station(Vector2i(17, -5))
+	st.add_task_force(km)
+
+	var r := SoloAI.execute_code("X", st, graph, ActionEngine.load_default(),
+		{}, TaskForce.Side.ROYAL_NAVY)
+	true_(bool(r["ok"]), "la policy muove o attacca")
+	eq(st.forces_of(TaskForce.Side.ROYAL_NAVY).size(), 1, "crea una TF britannica")
+	true_(st.forces_of(TaskForce.Side.ROYAL_NAVY)[0].unidentified, "la TF e' ignota")
+
+
+func test_solo_ai_x_suffix_prefers_ship_type() -> void:
+	_begin("AI solitaria: XCA preferisce una CA")
+	var st := GameState.new(graph, 1)
+	st.scenario_name = "B2 La Battaglia dell'Atlantico"
+	var ca := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
+	ca.ships.append(ShipRoster.shared().make("Hipper"))
+	ca.trajectory.become_station(Vector2i(6, 0))
+	var bc := TaskForce.new(2, TaskForce.Side.KRIEGSMARINE)
+	bc.ships.append(ShipRoster.shared().make("Scharnhorst"))
+	bc.trajectory.become_station(Vector2i(10, 0))
+	var convoy := TaskForce.new(3, TaskForce.Side.ROYAL_NAVY)
+	convoy.ships.append(ShipRoster.shared().make("Convoy x3"))
+	convoy.trajectory.become_station(Vector2i(8, 0))
+	st.add_task_force(ca)
+	st.add_task_force(bc)
+	st.add_task_force(convoy)
+
+	var r := SoloAI.execute_code("XCA", st, graph, ActionEngine.load_default(),
+		{}, TaskForce.Side.KRIEGSMARINE)
+	eq(r["active"], ca, "sceglie la TF col CA indicato dal codice")
+	true_(bool(r["ok"]), "e produce una mossa")
+
+
+func test_solo_ai_xu_prefers_unidentified() -> void:
+	_begin("AI solitaria: Xu preferisce una TF ignota")
+	var st := GameState.new(graph, 1)
+	st.scenario_name = "B4 Decisione sui Mari"
+	var known := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
+	known.ships.append(ShipRoster.shared().make("Bismarck"))
+	known.trajectory.become_station(Vector2i(6, 0))
+	var unk := TaskForce.new(2, TaskForce.Side.KRIEGSMARINE)
+	unk.unidentified = true
+	unk.recompute_speed()
+	unk.trajectory.become_station(Vector2i(10, 0))
+	var convoy := TaskForce.new(3, TaskForce.Side.ROYAL_NAVY)
+	convoy.ships.append(ShipRoster.shared().make("Convoy x3"))
+	convoy.trajectory.become_station(Vector2i(8, 0))
+	st.add_task_force(known)
+	st.add_task_force(unk)
+	st.add_task_force(convoy)
+
+	var r := SoloAI.execute_code("Xu", st, graph, ActionEngine.load_default(),
+		{}, TaskForce.Side.KRIEGSMARINE)
+	eq(r["active"], unk, "sceglie la TF ignota indicata dal codice")
+	true_(bool(r["ok"]), "e produce una mossa")
+
+
+func test_solo_ai_a1_x_creates_german_raider() -> void:
+	_begin("AI solitaria A1: X crea una TF tedesca")
+	var st := GameState.new(graph, 1)
+	st.scenario_name = "A1 Convogli PQ"
+	st.rng.push_forced([2])
+	var convoy := TaskForce.new(1, TaskForce.Side.ROYAL_NAVY)
+	convoy.ships.append(ShipRoster.shared().make("Convoy x3"))
+	convoy.trajectory.become_station(Vector2i(15, -5))
+	st.add_task_force(convoy)
+
+	var r := SoloAI.execute_code("X", st, graph, ActionEngine.load_default(),
+		{}, TaskForce.Side.KRIEGSMARINE)
+	true_(bool(r["ok"]), "crea e muove verso il Convoglio")
+	eq(st.forces_of(TaskForce.Side.KRIEGSMARINE).size(), 1, "una TF tedesca creata")
+	true_(st.forces_of(TaskForce.Side.KRIEGSMARINE)[0].unidentified, "la TF e' ignota")
+
+
+func test_solo_ai_a1_c_routes_to_named_port() -> void:
+	_begin("AI solitaria A1: C rientra a Narvik/St. Nazaire")
+	var st := GameState.new(graph, 1)
+	st.scenario_name = "A1 Convogli PQ"
+	var km := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
+	km.ships.append(ShipRoster.shared().make("Hipper"))
+	km.trajectory.become_station(Vector2i(17, -9))
+	st.add_task_force(km)
+
+	var r := SoloAI.execute_code("C", st, graph, ActionEngine.load_default(),
+		{"NO": "KRIEGSMARINE", "FR": "KRIEGSMARINE"}, TaskForce.Side.KRIEGSMARINE)
+	true_(bool(r["completion"]), "a Narvik puo' completare subito")
+	eq(String((r["completion_port"] as Dictionary)["name"]), "Narvik",
+		"sceglie il porto previsto piu' vicino")
 
 
 ## In BL1 il giocatore e' il tedesco, e la tabella che conta e' quella del
