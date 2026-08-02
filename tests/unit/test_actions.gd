@@ -22,6 +22,7 @@ func run() -> void:
 	test_engage_table()
 	test_columns()
 	test_legality()
+	test_target_legality()
 	test_resolution_pipeline()
 	test_interruption_cancels_action()
 	test_unverified_actions_refused()
@@ -111,6 +112,48 @@ func test_legality() -> void:
 	ne(eng.legality_error(dec2, st), "", "Completamento con Informazioni: rifiutato")
 	a.trajectory.set_info(0, false)
 	eq(eng.legality_error(dec2, st), "", "Completamento senza Informazioni: accettato")
+
+
+func test_target_legality() -> void:
+	_begin("bersagli nel posto giusto")
+	var st := GameState.new(graph, 5)
+	var a := st.add_task_force(_tf(TaskForce.Side.KRIEGSMARINE, 0))
+	var b := st.add_task_force(_tf(TaskForce.Side.ROYAL_NAVY, 0))
+	b.trajectory.become_station(graph.adjacent_hexes(origin)[0])
+
+	var engage := ActionEngine.Declaration.new()
+	engage.action_key = "ENGAGE"
+	engage.active = a
+	engage.target = b
+	true_(eng.legality_error(engage, st).contains("stesso esagono"),
+		"Ingaggiare richiede condivisione dell'esagono")
+
+	b.trajectory.become_station(origin)
+	eq(eng.legality_error(engage, st), "", "Stazione nello stesso esagono: legale")
+
+	var search := ActionEngine.Declaration.new()
+	search.action_key = "NAVAL_SEARCH"
+	search.active = a
+	search.target = b
+	true_(eng.legality_error(search, st).contains("Traiettoria"),
+		"Ricerca Navale non bersaglia Stazioni")
+
+	b.trajectory.extend(graph.adjacent_hexes(origin)[0], 1, graph)
+	eq(eng.legality_error(search, st), "", "Traiettoria nello stesso esagono: legale")
+
+	var air := ActionEngine.Declaration.new()
+	air.action_key = "AIR_STRIKE"
+	air.active = a
+	air.target = b
+	true_(eng.legality_error(air, st).contains("CV"),
+		"Attacco Aereo richiede una CV o una base modellata")
+
+	var cv := ShipRoster.shared().make("Ark Royal")
+	a.ships = [cv] as Array[Ship]
+	a.recompute_speed()
+	st.weather = TimeLapse.Weather.BAD
+	true_(eng.legality_error(air, st).contains("Meteo Buone"),
+		"Attacco Aereo richiede meteo buono")
 
 
 func test_resolution_pipeline() -> void:

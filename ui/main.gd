@@ -58,6 +58,7 @@ var vp_tracker: VictoryTracker = null
 var solo: SoloOpponent = null
 
 var _messages: Array[String] = []
+var _battle_post_time_lapse: Array[TaskForce] = []
 
 
 func _ready() -> void:
@@ -344,7 +345,10 @@ func _declare_action(key: String) -> void:
 				+ "un capo. ESC annulla senza tracciare altro.")
 			return
 
-	var enemies := state.forces_of(1 - selected_tf.side)
+	var enemies := _eligible_targets_for_action(key, selected_tf)
+	if enemies.is_empty():
+		_msg("%s: nessun bersaglio legale adesso." % String(engine.action(key).get("label", key)))
+		return
 	var target := await _pick_tf(enemies, "Task Force Bersaglio",
 		"Contro chi dichiari l'azione?", false)
 	if target == null:
@@ -385,18 +389,37 @@ func _declare_action(key: String) -> void:
 		_msg("%s: %s" % [label, res["error"]])
 		return
 	_msg("%s -> %s" % [label, engine.describe(res)])
+	if _action_canceled_by_interruption(res):
+		await _handle_interruption_cancel(res, dec)
+		log.record("%s annullata da Interruzione (%s)"
+			% [label, selected_tf.display_name()])
+		state.changed.emit()
+		_refresh()
+		return
 
 	var pending_battle := Results.Battle.NONE
+	var initiative_changed := false
 	for code_v: Variant in res["results"] as Array:
 		var applied := Results.apply(String(code_v), selected_tf, target,
 			dec.target_hex, state, _ship_chooser)
 		_msg("    %s" % applied["text"])
+		if bool(applied.get("initiative_changes", false)):
+			initiative_changed = true
 		if applied["battle"] != Results.Battle.NONE:
 			pending_battle = applied["battle"]
 	log.record("%s (%s)" % [label, selected_tf.display_name()])
 	state.changed.emit()
 	if pending_battle != Results.Battle.NONE:
+		_battle_post_time_lapse.clear()
+		for tf in [dec.active_coordinating, dec.active_air_support]:
+			if tf != null and tf != dec.active and tf != dec.target \
+					and not _battle_post_time_lapse.has(tf):
+				_battle_post_time_lapse.append(tf)
 		_open_battle(pending_battle, selected_tf, target, dec.target_hex)
+	elif initiative_changed:
+		_change_initiative_to(1 - selected_tf.side)
+	else:
+		await _post_table_action_flow(key, dec)
 	_refresh()
 
 
@@ -425,6 +448,139 @@ func _pick_tf(candidates: Array[TaskForce], title: String, desc: String,
 	if optional and i == candidates.size():
 		return null
 	return candidates[i]
+
+
+func _eligible_targets_for_action(key: String, active: TaskForce) -> Array[TaskForce]:
+	var out: Array[TaskForce] = []
+	if active == null:
+		return out
+	for tf in state.forces_of(1 - active.side):
+		var dec := ActionEngine.Declaration.new()
+		dec.action_key = key
+		dec.active = active
+		dec.target = tf
+		if engine.legality_error(dec, state) == "":
+			out.append(tf)
+	return out
+
+
+func _action_canceled_by_interruption(res: Dictionary) -> bool:
+	var ir: Dictionary = res.get("interruption", {})
+	return not ir.is_empty() and bool(ir.get("triggered", false)) \
+		and int(ir.get("result", Interruption.Result.ALERT)) != Interruption.Result.ALERT
+
+
+func _handle_interruption_cancel(res: Dictionary, dec: ActionEngine.Declaration) -> void:
+	var ir: Dictionary = res.get("interruption", {})
+	_msg("    %s" % String(ir.get("effect", "Azione annullata.")))
+	match int(ir.get("result", Interruption.Result.ALERT)):
+		Interruption.Result.SLIP_AWAY:
+			await _handle_slip_away(dec)
+			_seek_initiative()
+		Interruption.Result.VIE_FOR_INITIATIVE:
+			_seek_initiative()
+		Interruption.Result.INITIATIVE_CHANGE:
+			_change_initiative_to(1 - dec.active.side)
+
+
+func _handle_slip_away(dec: ActionEngine.Declaration) -> void:
+	var opts: Array = [
+		{"label": "Segnalazione", "detail": "contro la TF Attiva o una Coordinatrice"},
+		{"label": "Manovre Evasive", "detail": "alla TF Bersaglio"},
+	]
+	var i: int = await Choice.ask(self, "Interruzione - Sfuggire",
+		"L'Inattivo sceglie l'effetto prima che l'azione sia annullata.", opts)
+	if i == 0:
+		var cands: Array[TaskForce] = []
+		for tf in [dec.active, dec.active_coordinating]:
+			if tf != null and not SignalAction.target_hexes(tf).is_empty():
+				cands.append(tf)
+		if cands.is_empty():
+			_msg("Sfuggire: nessuna TF Attiva/Coordinatrice ha segnalini Informazioni da segnalare.")
+			return
+		var target := await _pick_tf(cands, "Sfuggire - Segnalazione",
+			"Quale TF viene localizzata?", false)
+		if target == null:
+			return
+		var hexes := SignalAction.target_hexes(target)
+		var at := hexes[0]
+		if hexes.size() > 1:
+			var choices: Array = []
+			for h in hexes:
+				choices.append({"label": str(h), "detail": ""})
+			var j: int = await Choice.ask(self, "Sfuggire - quale segnalino?",
+				"La Stazione viene posta su quel segnalino Informazioni.", choices)
+			if j < 0:
+				return
+			at = hexes[j]
+		_report(SignalAction.resolve(target, at))
+	else:
+		if dec.target != null:
+			_report_initiative(Initiative.decline_steal_for_evasive(state, dec.target))
+		else:
+			_msg("Sfuggire: manca la TF Bersaglio per Manovre Evasive.")
+
+
+func _post_table_action_flow(key: String, dec: ActionEngine.Declaration) -> void:
+	if bool(engine.action(key).get("causes_time_lapse", false)):
+		for tf in dec.designated_active():
+			if tf != null and tf != dec.target:
+				await _do_time_lapse_for(tf)
+	match key:
+		"NAVAL_SEARCH":
+			await _offer_steal_initiative("Ricerca Navale")
+		"ENGAGE", "AIR_STRIKE", "STEALTH_ATTACK":
+			_seek_initiative()
+
+
+func _do_time_lapse_for(tf: TaskForce) -> void:
+	var old := selected_tf
+	selected_tf = tf
+	traj_layer.selected_tf_id = tf.id
+	await _do_time_lapse()
+	selected_tf = old if old != null and state.task_force(old.id) != null else selected_tf
+	traj_layer.selected_tf_id = selected_tf.id if selected_tf != null else -1
+
+
+func _report_initiative(r: Dictionary) -> void:
+	for line_v: Variant in r.get("log", []):
+		_msg(String(line_v))
+
+
+func _change_initiative_to(side: int) -> void:
+	if state.initiative == side:
+		return
+	state.initiative = side
+	state.initiative_count = 0
+	var w := Initiative.weather_check(state)
+	_msg("L'Iniziativa passa a %s; il conteggio torna a zero."
+		% Initiative.side_name(side))
+	_msg(String(w["log"]))
+
+
+func _seek_initiative() -> void:
+	_report_initiative(Initiative.seek(state))
+
+
+func _offer_steal_initiative(reason: String) -> bool:
+	var inactive := 1 - state.initiative
+	var opts: Array = [
+		{"label": "Tenta di Sottrarre", "detail": "2d6 + Conto; con 9+ prende l'Iniziativa"},
+		{"label": "Rinuncia: Manovre Evasive", "detail": "il Conto non aumenta"},
+	]
+	var i: int = await Choice.ask(self, "%s - Iniziativa" % reason,
+		"L'Inattivo (%s) puo' tentare di Sottrarre l'Iniziativa."
+			% Initiative.side_name(inactive), opts)
+	if i == 0:
+		var r := Initiative.steal(state)
+		_report_initiative(r)
+		return bool(r.get("changed", false))
+	if i == 1:
+		var cands := state.forces_of(inactive)
+		var tf := await _pick_tf(cands, "Manovre Evasive",
+			"A quale Task Force dell'Inattivo assegni il segnalino?", true)
+		_report_initiative(Initiative.decline_steal_for_evasive(state, tf))
+	return false
 
 
 ## Apre la Mappa di Battaglia. RB p.55: le TF Coordinatrici e di Supporto Aereo
@@ -486,6 +642,11 @@ func _close_battle(b: Battle) -> void:
 	for t_v: Variant in (out["sunk"] as Array):
 		_msg("  affondata: %s" % String(t_v))
 	_msg("Battaglia conclusa: %s" % b.state.end_reason)
+	for tf in _battle_post_time_lapse:
+		if tf != null and state.task_force(tf.id) != null:
+			await _do_time_lapse_for(tf)
+	_battle_post_time_lapse.clear()
+	_seek_initiative()
 	if _battle_layer != null:
 		_battle_layer.queue_free()
 		_battle_layer = null
@@ -1211,11 +1372,7 @@ func _reorg_reinforce() -> bool:
 		return false
 	if bool(r["initiative_passes"]):
 		await _do_time_lapse()
-		state.initiative = 1 - state.initiative
-		state.initiative_count = 0
-		_msg("L'Iniziativa passa a %s."
-			% ("Kriegsmarine" if state.initiative == TaskForce.Side.KRIEGSMARINE
-				else "Royal Navy"))
+		_report_initiative(Initiative.pass_to_inactive(state))
 		return true
 	if bool(r["success"]):
 		scenario.reinforcements[keys[i]] = []
@@ -1252,6 +1409,9 @@ func _report(r: Dictionary) -> void:
 ## Segnalazione (RB p.39): una Traiettoria nemica con un segnalino Informazioni
 ## collassa in una Stazione.
 func _do_signal() -> void:
+	if selected_tf == null:
+		return
+	var active := selected_tf
 	var cands := SignalAction.candidates(state, selected_tf.side)
 	if cands.is_empty():
 		_msg("Segnalazione: nessuna Traiettoria avversaria ha un segnalino "
@@ -1275,7 +1435,18 @@ func _do_signal() -> void:
 			return
 		at = hexes[i]
 	_report(SignalAction.resolve(target, at))
-	_msg("Ora il giocatore Inattivo puo' tentare di Sottrarre l'Iniziativa.")
+	if active != null and state.task_force(active.id) != null \
+			and not active.trajectory.is_station() and active.trajectory.occupies(at):
+		var opts2: Array = [
+			{"label": "Scorrere del Tempo", "detail": "la TF Attiva e' nell'esagono segnalato"},
+			{"label": "No", "detail": "non effettua Scorrere del Tempo adesso"},
+		]
+		var j: int = await Choice.ask(self, "Segnalazione - TF Attiva",
+			"La TF Attiva si trova nell'esagono bersaglio: puo' effettuare Scorrere del Tempo.",
+			opts2)
+		if j == 0:
+			await _do_time_lapse_for(active)
+	await _offer_steal_initiative("Segnalazione")
 
 
 ## Completamento (RB p.29): le navi entrano in porto e lasciano il gioco.
@@ -1284,6 +1455,12 @@ func _do_completion() -> void:
 	var opts := Completion.port_options(selected_tf, graph, _port_control())
 	if opts.is_empty():
 		_msg("Completamento: nessun porto amico raggiunto")
+		return
+
+	var completing_tf := selected_tf
+	if await _offer_steal_initiative("Completamento"):
+		_msg("Completamento fallito: l'Inattivo ha preso l'Iniziativa.")
+		await _do_time_lapse_for(completing_tf)
 		return
 
 	var chosen: Dictionary = opts[0]
@@ -1322,11 +1499,7 @@ func _do_pass() -> void:
 	else:
 		_msg("%s e' gia' una Stazione: nessuno Scorrere del Tempo."
 			% selected_tf.display_name())
-	state.initiative = 1 - state.initiative
-	state.initiative_count = 0
-	_msg("Passo. L'Iniziativa passa a %s; il conteggio torna a zero."
-		% ("Kriegsmarine" if state.initiative == TaskForce.Side.KRIEGSMARINE
-			else "Royal Navy"))
+	_report_initiative(Initiative.pass_to_inactive(state))
 	_refresh()
 
 
@@ -1587,6 +1760,8 @@ func _action_unavailable_reason(key: String) -> String:
 	if not engine.is_verified(key):
 		return String(engine.action(key).get("verified_note",
 			"tabella non ancora trascritta"))
+	if ActionBar.needs_enemy(key) and _eligible_targets_for_action(key, selected_tf).is_empty():
+		return "nessuna Task Force avversaria soddisfa le condizioni dell'azione"
 	var dec := ActionEngine.Declaration.new()
 	dec.action_key = key
 	dec.active = selected_tf
@@ -1825,11 +2000,18 @@ func _build_help(root: Control) -> void:
 [b]Azioni[/b]  (anche dai pulsanti in alto)
   1  Ingaggiare      2  Ricerca Navale
   3  Attacco Aereo   4  Attacco Furtivo
-  T   Scorrere del Tempo sulla TF selezionata
+  5  Traiettoria     6  Completamento
+  7  Passare         8  Riorganizzare
+  9  Segnalazione
+  T  Scorrere del Tempo sulla TF selezionata
   O   avversario immaginario (modo solitario)
   0   apre una Battaglia di prova
   Ctrl+W  alterna meteo buono/cattivo
   Ctrl+Z / Ctrl+Shift+Z   annulla / ripristina
+
+[b]Guida in tempo reale[/b]
+  Il pannello in basso a destra dice chi ha l'Iniziativa,
+  cosa puoi fare ora e perche' un'azione e' bloccata.
 
 [b]In Battaglia[/b]
   SPAZIO                     risolve la fase corrente

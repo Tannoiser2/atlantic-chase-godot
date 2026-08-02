@@ -128,6 +128,27 @@ func is_cell_unverified(key: String, dice_sum: int, trajectory_total: int) -> bo
 	return false
 
 
+static func _share_hex(a: TaskForce, b: TaskForce) -> bool:
+	if a == null or b == null:
+		return false
+	var hs := a.trajectory.hexes()
+	if a.trajectory.is_station():
+		hs.append(a.trajectory.station_hex)
+	for h in hs:
+		if b.trajectory.occupies(h):
+			return true
+	return false
+
+
+static func _has_usable_cv(tf: TaskForce) -> bool:
+	if tf == null:
+		return false
+	for s in tf.ships:
+		if s.type_code == "CV" and not s.damaged and not s.sunk:
+			return true
+	return false
+
+
 # ------------------------------------------------------------- dichiarazione --
 
 class Declaration extends RefCounted:
@@ -174,6 +195,19 @@ func legality_error(dec: Declaration, state: GameState) -> String:
 			return "questa azione richiede una Task Force Bersaglio"
 		if not dec.target.trajectory.is_station():
 			return "il bersaglio dell'Ingaggio deve essere una Stazione Task Force"
+		if not _share_hex(dec.active, dec.target):
+			return "Ingaggiare richiede una TF Bersaglio nello stesso esagono"
+	if dec.action_key == "NAVAL_SEARCH":
+		if dec.target == null:
+			return "questa azione richiede una Task Force Bersaglio"
+		if dec.target.trajectory.is_station():
+			return "il bersaglio della Ricerca Navale deve essere una Traiettoria"
+		if not _share_hex(dec.active, dec.target):
+			return "Ricerca Navale richiede un segmento bersaglio nello stesso esagono della TF Attiva"
+	if bool(a.get("requires_good_weather", false)) and state.weather != TimeLapse.Weather.GOOD:
+		return "%s richiede Condizioni Meteo Buone" % String(a.get("label", dec.action_key))
+	if dec.action_key == "AIR_STRIKE" and not _has_usable_cv(dec.active):
+		return "Attacco Aereo richiede una TF Attiva con CV non danneggiata o una base aerea non modellata"
 	if dec.action_key == "COMPLETION" and not dec.active.can_complete():
 		return "una TF con segnalino Informazioni non puo' effettuare il Completamento"
 	# una Task Force con un Convoglio ha le mani legate: niente Attacco Aereo,
