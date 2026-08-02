@@ -17,6 +17,7 @@ func run() -> void:
 	test_briefings()
 	test_victory_points()
 	test_victory_table()
+	test_enemy_presence_is_explained()
 	test_battle_scenarios()
 
 
@@ -198,6 +199,32 @@ func test_victory_table() -> void:
 			continue      # la Campagna non e' uno scenario, e' la riserva navi
 		true_(Scenario.load_by_id(id).has_victory_table(),
 			"%s ha le sue condizioni di vittoria" % id)
+
+
+func test_enemy_presence_is_explained() -> void:
+	_begin("presenza TF avversarie")
+	var bad: Array[String] = []
+	var solo_one_side := 0
+	var two_sided := 0
+	for id in Scenario.list_ids():
+		var sc := Scenario.load_by_id(id)
+		if id == "Campaign" or sc.is_battle_scenario():
+			continue
+		var sides := {}
+		for tf_v: Variant in sc.task_forces:
+			var tf: Dictionary = tf_v
+			sides[int(tf.get("side", -1))] = true
+		if sides.size() >= 2:
+			two_sided += 1
+		elif SoloOpponent.load_for(id) != null:
+			solo_one_side += 1
+		else:
+			bad.append(id)
+	eq(bad.size(), 0,
+		"nessuno scenario operativo non solitario parte senza avversario: %s" % str(bad))
+	true_(solo_one_side >= 10,
+		"%d scenari solitari partono con una sola parte e usano la tabella" % solo_one_side)
+	true_(two_sided >= 10, "%d scenari partono con entrambe le parti in mappa" % two_sided)
 
 
 ## I dodici mini-scenari non sono partite sulla mappa operazionale: sono

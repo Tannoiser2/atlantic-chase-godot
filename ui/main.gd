@@ -347,7 +347,8 @@ func _declare_action(key: String) -> void:
 
 	var enemies := _eligible_targets_for_action(key, selected_tf)
 	if enemies.is_empty():
-		_msg("%s: nessun bersaglio legale adesso." % String(engine.action(key).get("label", key)))
+		_msg("%s: %s" % [String(engine.action(key).get("label", key)),
+			_enemy_action_unavailable_reason(key, selected_tf)])
 		return
 	var target := await _pick_tf(enemies, "Task Force Bersaglio",
 		"Contro chi dichiari l'azione?", false)
@@ -462,6 +463,34 @@ func _eligible_targets_for_action(key: String, active: TaskForce) -> Array[TaskF
 		if engine.legality_error(dec, state) == "":
 			out.append(tf)
 	return out
+
+
+func _enemy_action_unavailable_reason(key: String, active: TaskForce) -> String:
+	if active == null:
+		return "nessuna Task Force selezionata"
+	if state.forces_of(1 - active.side).is_empty():
+		if solo != null:
+			return ("nessuna TF avversaria e' ancora in mappa: nel solitario "
+				+ "usa O per la Tabella Solitario o crea una TF non identificata "
+				+ "quando lo scenario lo ordina")
+		return "nessuna Task Force avversaria in gioco"
+	var dec := ActionEngine.Declaration.new()
+	dec.action_key = key
+	dec.active = active
+	dec.target = _nearest_enemy(active)
+	var err := engine.legality_error(dec, state)
+	if err != "" and not err.contains("stesso esagono") \
+			and not err.contains("Bersaglio") and not err.contains("Traiettoria"):
+		return err
+	match key:
+		"ENGAGE":
+			return "nessuna Stazione avversaria occupa lo stesso esagono della TF Attiva"
+		"NAVAL_SEARCH":
+			return "nessuna Traiettoria avversaria attraversa l'esagono della TF Attiva"
+		"STEALTH_ATTACK":
+			return "nessun segmento avversario con Contatto e' bersagliabile adesso"
+		_:
+			return "nessuna Task Force avversaria soddisfa le condizioni dell'azione"
 
 
 func _action_canceled_by_interruption(res: Dictionary) -> bool:
@@ -1755,13 +1784,11 @@ func _action_unavailable_reason(key: String) -> String:
 		return "nessuna Task Force selezionata"
 	# Passare, Completamento e Traiettoria si dichiarano anche senza nemici in
 	# vista: pretendere un bersaglio le renderebbe indichiarabili
-	if ActionBar.needs_enemy(key) and _nearest_enemy(selected_tf) == null:
-		return "nessuna Task Force avversaria in gioco"
 	if not engine.is_verified(key):
 		return String(engine.action(key).get("verified_note",
 			"tabella non ancora trascritta"))
 	if ActionBar.needs_enemy(key) and _eligible_targets_for_action(key, selected_tf).is_empty():
-		return "nessuna Task Force avversaria soddisfa le condizioni dell'azione"
+		return _enemy_action_unavailable_reason(key, selected_tf)
 	var dec := ActionEngine.Declaration.new()
 	dec.action_key = key
 	dec.active = selected_tf
