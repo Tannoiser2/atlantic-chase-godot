@@ -14,11 +14,36 @@ extends RefCounted
 
 enum Zone { FAR, NEAR, CLOSE }
 enum Kind { BATTLE, SURPRISE, LIMITED }
-enum Phase { GUNNERY, TORPEDO, MANEUVER, BREAK_AWAY, ENDED }
+## Le Regole Avanzate aggiungono due fasi: l'Attitudine PRIMA del Fuoco, e gli
+## Effetti Duraturi fra la Manovra e la Fuga. Vanno in fondo all'enum e non al
+## loro posto logico, per non rinumerare le fasi base: una partita salvata con
+## "phase": 2 deve restare in Manovra.
+enum Phase { GUNNERY, TORPEDO, MANEUVER, BREAK_AWAY, ENDED, ATTITUDE,
+	LINGERING }
 
 const ZONE_LABELS := ["Lontana", "Vicina", "Ravvicinata"]
 const KIND_LABELS := ["Battaglia", "Sorpresa", "Battaglia Limitata"]
-const PHASE_LABELS := ["Fuoco di Cannoni", "Siluri", "Manovra", "Fuga", "conclusa"]
+const PHASE_LABELS := ["Fuoco di Cannoni", "Siluri", "Manovra", "Fuga",
+	"conclusa", "Attitudine", "Effetti Duraturi"]
+
+## L'ordine vero delle fasi in un Round, che NON e' l'ordine dell'enum.
+const ORDER_BASIC := [Phase.GUNNERY, Phase.TORPEDO, Phase.MANEUVER,
+	Phase.BREAK_AWAY]
+const ORDER_ADVANCED := [Phase.ATTITUDE, Phase.GUNNERY, Phase.TORPEDO,
+	Phase.MANEUVER, Phase.LINGERING, Phase.BREAK_AWAY]
+
+
+## La fase che segue questa, o ENDED se il Round e' finito.
+func next_phase() -> int:
+	var order: Array = ORDER_ADVANCED if advanced else ORDER_BASIC
+	var i := order.find(phase)
+	if i < 0 or i + 1 >= order.size():
+		return Phase.ENDED
+	return int(order[i + 1])
+
+
+func first_phase() -> int:
+	return Phase.ATTITUDE if advanced else Phase.GUNNERY
 
 ## Si gioca con le Regole Avanzate di Battaglia?
 ##
@@ -26,6 +51,11 @@ const PHASE_LABELS := ["Fuoco di Cannoni", "Siluri", "Manovra", "Fuga", "conclus
 ## ignorate, tabella del Fuoco di sempre, nessun effetto speciale. Le avanzate
 ## sono un fascicolo a parte e si accendono di comune accordo fra i giocatori.
 var advanced: bool = false
+
+## La Battaglia e' gia' stata estesa per "nessuna nave in Corsa"? Si allunga
+## una volta sola per quella condizione, se no due flotte decise a restare
+## combatterebbero all'infinito.
+var extended: bool = false
 
 var kind: int = Kind.BATTLE
 var weather: int = TimeLapse.Weather.GOOD

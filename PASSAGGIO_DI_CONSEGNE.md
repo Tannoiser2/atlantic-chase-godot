@@ -12,10 +12,10 @@ Questo file dice **da dove ripartire e cosa non rifare**.
 
 Versione digitale di *Atlantic Chase* (GMT Games, 2020) in **Godot 4.7**,
 GDScript. Motore di regole puro e testabile headless, interfaccia sopra.
-**1700 verifiche su 15 suite, tutte verdi.** Repository `Tannoiser2/atlantic-chase-godot`, branch `master`.
+**1746 verifiche su 16 suite, tutte verdi.** Repository `Tannoiser2/atlantic-chase-godot`, branch `master`.
 
 ```bash
-godot --headless --path . --script res://tests/run_tests.gd   # 1700 verifiche
+godot --headless --path . --script res://tests/run_tests.gd   # 1746 verifiche
 godot --path . --script res://tools/smoke_ui.gd               # prova di fumo GUI
 sh tools/build_macos.sh                                       # app per macOS
 ```
@@ -172,12 +172,15 @@ modello già esistente. Sarebbe stata una regola inventata ogni volta.
   BL2 e BL3 trascritte
 
 **Non finito, e perché:**
-- la griglia della **Verifica Snafu**: sta sulla faccia A della carta di aiuto
-  (`AC_Adv_PlayerAid_A.pdf`), che non ho letto. Le altre due — Effetti Duraturi
-  e Disingaggio — sono trascritte.
-- il **collegamento al ciclo del Round**: `Lingering.lingering_checks()` e
-  `disengagement_checks()` esistono e sono testati, ma nessuno li chiama da
-  `Battle`. Manca la fase degli Effetti Duraturi nella sequenza.
+- il **Disingaggio all'uscita**: la tabella c'è, ma `Battle.finish()` non la
+  chiama ancora. È l'ultimo anello di `Lingering`.
+- la **Confusione** e l'**Inseguimento**: entrambe le regole sono lette e
+  scritte nei commenti (`Snafu.EXPLAIN`, `Attitude.can_pursue`), ma nessuna è
+  eseguibile.
+- gli effetti Snafu che **assegnano una scelta a un giocatore** (Confusione,
+  Niente Radar, Rotta Inaspettata, Arco Aperto, Problemi Meccanici, Sala
+  Caldaie) sono spiegati per esteso nel registro, ma vanno applicati a mano:
+  richiedono una decisione, e il motore la mostra invece di prenderla.
 - la **fase dell'Attitudine** esiste nel motore ma non nell'interfaccia: oggi
   le attitudini si impostano solo dallo schieramento dello scenario, e non si
   possono cambiare a ogni Round come vuole la regola.
@@ -248,7 +251,17 @@ modello già esistente. Sarebbe stata una regola inventata ogni volta.
   stesso tipo fanno tenere il **peggiore** *e* prendere **un Colpo** — non è un
   aggravamento gratis.
 
-**1700 verifiche su 15 suite.**
+- **Verifica Snafu** (`core/battle/snafu.gd`): entrambe le colonne, con la
+  regola che sopra la **Linea Artica** si legge la colonna Cattivo anche col
+  bel tempo.
+- **La sequenza avanzata del Round** è collegata: fase dell'**Attitudine**
+  prima del Fuoco, fase degli **Effetti Duraturi** fra Manovra e Fuga.
+  `BattleState.next_phase()` / `first_phase()` conoscono le due sequenze.
+- **Battaglia Estesa**: +1 Round con Buona Visibilità, +1 se alla fine
+  dell'Ultimo Round nessuna nave è in Corsa (una volta sola, se no due flotte
+  decise a restare combatterebbero all'infinito).
+
+**1746 verifiche su 16 suite.**
 
 #### Nota importante sui risultati avanzati
 In avanzato il risultato **non è più "quanti Colpi"** ma una casella di
@@ -263,10 +276,11 @@ separato. Chi collega gli effetti speciali deve partire da lì.
    e collegati.** La catena del combattimento avanzato è completa: tiro →
    colonna per attitudine → Risultato Speciale → dove ha colpito (colonna per
    raggio) → effetto → la nave cambia davvero.
-2. **La fase dell'Attitudine** nella vista di Battaglia — è la nuova *prima*
-   fase del Round e nell'interfaccia non esiste. Il motore è pronto:
-   `Attitude.setup_options()` dà le scelte legali,
-   `Attitude.active_chooses_for_target()` dice chi sceglie dopo una Sorpresa.
+2. **Le due fasi nuove nella VISTA di Battaglia.** Nel motore ci sono e sono
+   testate (`Battle.attitude_phase()`, `Battle.lingering_phase()`), ma
+   `ui/battle_view/battle_view.gd` conosce ancora solo le quattro fasi base:
+   `_advance_phase()` va esteso e servono i comandi per scegliere l'attitudine
+   di ogni nave e per dichiarare il Controllo Danni.
 3. ~~**Effetti Duraturi**~~ e ~~**Disingaggio**~~ — procedure **FATTE**,
    mancano solo le due griglie (vedi sopra). Da collegare al ciclo del Round in
    `Battle`: oggi nessuno chiama `Lingering.lingering_checks()`.

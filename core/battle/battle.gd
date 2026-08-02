@@ -32,16 +32,61 @@ func _init(p_state: BattleState, p_rng: DiceRNG,
 	tracker = p_tracker
 
 
+## La Verifica Snafu di questa Battaglia, se si gioca in avanzato. Vuota con
+## le regole base.
+var snafu: Dictionary = {}
+
+
 func start() -> void:
 	surprise_first_strike = state.deploy()
 	state.round_number = 1
-	state.phase = BattleState.Phase.GUNNERY
+	state.phase = state.first_phase()
 	state.note("Inizio Battaglia. Ultimo Round: %d (meteo %s)." % [
 		state.last_round,
 		"cattivo" if state.weather == TimeLapse.Weather.BAD else "buono"])
+	if not state.advanced:
+		return
+	# La Verifica Snafu si tira UNA VOLTA, prima del Round Uno, e decide con
+	# che disgrazia comincia la Battaglia.
+	snafu = Snafu.check(rng, state.weather)
+	state.note("Verifica Snafu: 2d6 = %d -> %s" % [int(snafu["sum"]),
+		String(snafu["label"])])
+	state.note("  " + String(snafu["explain"]))
+	if bool(snafu["extra_round"]):
+		state.last_round += 1
+		state.note("  Ultimo Round spostato a %d." % state.last_round)
 
 
-# ------------------------------------------------------ 1. Fuoco di Cannoni --
+# -------------------------------------------------------- 1. Attitudine --
+
+## Fase dell'Attitudine (Regole Avanzate p.3): i giocatori riassegnano
+## un'attitudine a ogni nave, in segreto, e le rivelano insieme.
+##
+## `choices` associa nave -> Attitude.Kind. Le navi non elencate tengono
+## quella che avevano: e' legale, il fascicolo dice "puo' essere la stessa
+## attitudine di prima".
+func attitude_phase(choices: Dictionary = {}) -> void:
+	state.phase = BattleState.Phase.ATTITUDE
+	for s_v: Variant in choices.keys():
+		var s: Ship = s_v
+		if s.sunk:
+			continue
+		# una nave ferma non puo' cambiare attitudine (carta di aiuto, riga
+		# "Stopped"): e' bloccata anche nelle intenzioni
+		if s.current_speed() == TimeLapse.Speed.STOPPED:
+			state.note("%s e' ferma: non puo' cambiare attitudine." % s.name)
+			continue
+		s.attitude = int(choices[s_v])
+	# le Comunicazioni fanno male proprio adesso, a ogni Round
+	for s in state.all_ships():
+		if s.sunk:
+			continue
+		for line in SpecialEffects.attitude_step(s):
+			state.note(line)
+	state.check_end()
+
+
+# ------------------------------------------------------ 2. Fuoco di Cannoni --
 
 ## `targeting` associa nave attaccante -> nave bersaglio.
 ## RB p.57: gli effetti si applicano dopo che TUTTE le navi hanno attaccato.
@@ -209,7 +254,51 @@ func maneuver_phase(moves: Dictionary) -> void:
 			state.note(txt)
 
 
-# ------------------------------------------------------------------ 4. Fuga --
+# ------------------------------------------------- 5. Effetti Duraturi --
+
+## Fase degli Effetti Duraturi (Regole Avanzate p.11). Si salta del tutto se
+## nessuna nave ha un effetto speciale.
+##
+## `damage_control` elenca le navi che dichiarano il Controllo Danni: tirano
+## tre dadi e tengono i due piu' alti, ma non spareranno nel Round successivo.
+## `resolver` e' opzionale e serve ai test: se e' nullo, il risultato si legge
+## sulla tabella.
+func lingering_phase(damage_control: Array = []) -> Array[Dictionary]:
+	state.phase = BattleState.Phase.LINGERING
+	var out: Array[Dictionary] = []
+	for s in state.all_ships():
+		if s.sunk:
+			continue
+		var dc: bool = damage_control.has(s)
+		if dc:
+			s.set_meta("damage_control", true)
+		# ogni effetto si verifica DA SOLO, con un tiro suo: due effetti
+		# fanno due tiri, non uno
+		for effect in Lingering.lingering_checks(s):
+			var roll := Lingering.roll(rng, dc, effect)
+			var res := Lingering.lingering_result(effect, int(roll["sum"]))
+			state.note("Effetti Duraturi - %s, %s: 2d6 = %d -> %s"
+				% [s.name, effect, int(roll["sum"]), res])
+			state.note("  " + Lingering.apply(s, effect, res))
+			roll["result"] = res
+			out.append(roll)
+			if s.sunk:
+				break
+	state.check_end()
+	return out
+
+
+## Una nave che ha dichiarato il Controllo Danni non spara nel Round dopo.
+func blocked_by_damage_control(ship: Ship) -> bool:
+	return bool(ship.get_meta("damage_control", false))
+
+
+func clear_damage_control() -> void:
+	for s in state.all_ships():
+		s.remove_meta("damage_control")
+
+
+# ------------------------------------------------------------------ 6. Fuga --
 
 ## `declare_active` / `declare_target`: chi annuncia di voler uscire.
 func break_away_phase(declare_active: bool, declare_target: bool) -> Dictionary:
@@ -234,11 +323,21 @@ func break_away_phase(declare_active: bool, declare_target: bool) -> Dictionary:
 func end_round() -> bool:
 	if state.check_end():
 		return true
+	clear_damage_control()
 	if state.round_number >= state.last_round:
-		state.end_battle("raggiunto l'Ultimo Round (%d)" % state.last_round)
-		return true
+		# BATTAGLIA ESTESA (Regole Avanzate p.13): se alla fine dell'Ultimo
+		# Round nessuna nave e' in Corsa, se ne gioca un altro. E' la regola
+		# piu' bella del fascicolo: la Battaglia finisce quando qualcuno vuole
+		# andarsene, e finche' tutti hanno voglia di combattere si combatte.
+		if state.advanced and not state.extended and Snafu.nobody_running(state):
+			state.extended = true
+			state.last_round += 1
+			state.note("Nessuna nave e' in Corsa: si gioca un Round in piu'.")
+		else:
+			state.end_battle("raggiunto l'Ultimo Round (%d)" % state.last_round)
+			return true
 	state.round_number += 1
-	state.phase = BattleState.Phase.GUNNERY
+	state.phase = state.first_phase()
 	state.note("--- Round %d ---" % state.round_number)
 	return false
 
