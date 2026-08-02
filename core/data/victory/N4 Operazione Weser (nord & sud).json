@@ -3,6 +3,13 @@
  "_source": "Fascicolo Scenari in Solitario, seconda edizione INGLESE (AC_Solo_scenarios_2022.pdf), pp.28-31. Trascritta a mano da render/testo del PDF aggiornato.",
  "mode": "DEBRIEFING",
  "solo_side": "KRIEGSMARINE",
+ "port_control": {
+  "Bergen": "BOTH",
+  "Trondheim": "BOTH",
+  "Narvik": "BOTH",
+  "Wilhelmshaven": "KRIEGSMARINE",
+  "Kiel": "KRIEGSMARINE"
+ },
  "_status": "Tabella degli Esiti verificata contro la seconda edizione inglese 2022; premi manuali conservati dove il motore non puo' valutare da solo.",
  "awards": [
   {

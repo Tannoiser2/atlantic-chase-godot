@@ -18,6 +18,14 @@ static func execute_code(code: String, state: GameState, graph: MapGraph,
 	var out := _empty("Solitario AI: nessuna decisione.")
 	var raw := code.strip_edges()
 	var normalized := _normalize_code(code)
+	if state.scenario_name.begins_with("N1"):
+		return _n1(normalized, state, graph, engine, port_control, side)
+	if state.scenario_name.begins_with("N2"):
+		return _n2(normalized, state, graph, engine, port_control, side)
+	if state.scenario_name.begins_with("N3"):
+		return _n3(normalized, state, graph, engine, port_control, side)
+	if state.scenario_name.begins_with("N4"):
+		return _n4(normalized, state, graph, engine, port_control, side)
 	if state.scenario_name.begins_with("B1"):
 		return _b1(normalized, state, graph, engine, port_control, side)
 	if state.scenario_name.begins_with("A1"):
@@ -33,14 +41,185 @@ static func execute_code(code: String, state: GameState, graph: MapGraph,
 			out = _air_or_attack(state, graph, engine, side)
 		"C":
 			out = _completion_or_route(state, graph, engine, port_control, side)
+		"CONV":
+			out = _completion_or_route(state, graph, engine, port_control, side)
 		"T":
 			out = _trajectory_move(state, graph, side)
 		"X":
 			out = _decisive_attack(state, graph, engine, side, raw)
+		"E":
+			out = _empty("Solitario AI: risultato Fine; verifica le condizioni di fine scenario e torna al giocatore.")
+			out["pass_initiative"] = true
 		_:
 			out["log"].append("Solitario AI: il codice '%s' non ha ancora una policy automatica." % code)
 			out["pass_initiative"] = true
 	return out
+
+
+static func _n1(code: String, state: GameState, graph: MapGraph,
+		engine: ActionEngine, port_control: Dictionary, side: int) -> Dictionary:
+	match code:
+		"C":
+			var tf := _first_damaged_force(state, side)
+			if tf == null:
+				tf = _shortest_force_with_convoy(state, side)
+			if tf == null:
+				tf = _shortest_force(state, side)
+			if tf == null:
+				return _n1("M", state, graph, engine, port_control, side)
+			var port := "Kiel" if _has_damaged(tf) or _has_convoy(tf) \
+				else _n1_port_table(state)
+			return _complete_or_route_to_port(state, graph, port_control, tf, port,
+				"Solitario AI N1: Completamento tedesco")
+		"D":
+			var tf_d := _nearest_eligible_denmark_strait_force(state, side)
+			if tf_d == null:
+				tf_d = _create_force_at(state, graph, side, "Kiel", ["Scheer"], false)
+			return _route_toward_hex(state, graph, tf_d, _denmark_strait_reference(graph),
+				"Solitario AI N1: D verso il riferimento calibrato del Denmark Strait")
+		"I":
+			var tf_i := _nearest_force_to_port(state, side, graph, "Narvik")
+			if tf_i == null:
+				tf_i = _create_unidentified_at(state, graph, side, "Kiel")
+			return _attack_or_route_selected(state, graph, engine, tf_i,
+				_n1_interception_target(state, graph, side),
+				"Solitario AI N1: Intercettazione tedesca")
+		"M":
+			return _n_complete_with_priority(state, graph, port_control, side,
+				"Murmansk", "Solitario AI N1: rotta/Completamento a Murmansk")
+		"N":
+			return _n_complete_with_priority(state, graph, port_control, side,
+				"Narvik", "Solitario AI N1: rotta/Completamento a Narvik")
+		"T":
+			return _n_complete_with_priority(state, graph, port_control, side,
+				"Trondheim", "Solitario AI N1: rotta/Completamento a Trondheim")
+		"X":
+			_remove_damaged_ships(state, side)
+			var tf_x := _best_type_priority(state, side, ["BC", "PB", "CA"])
+			if tf_x == null or _has_convoy(tf_x):
+				tf_x = _create_unidentified_at(state, graph, side, "Kiel")
+			return _attack_or_route_selected(state, graph, engine, tf_x,
+				_n1_battle_target(state, graph, side),
+				"Solitario AI N1: Bring on Battle")
+	return _completion_or_route(state, graph, engine, port_control, side)
+
+
+static func _n2(code: String, state: GameState, graph: MapGraph,
+		engine: ActionEngine, port_control: Dictionary, side: int) -> Dictionary:
+	match code:
+		"AA":
+			return _n_british_port_action(state, graph, engine, port_control, side,
+				"Bergen", "Andalsnes", "Solitario AI N2: AA")
+		"BD":
+			return _n_british_port_action(state, graph, engine, port_control, side,
+				"Trondheim", "Bud", "Solitario AI N2: Bd")
+		"C":
+			var tf_c := _first_damaged_force(state, side)
+			if tf_c == null:
+				tf_c = _longest_force(state, side)
+			return _complete_or_route_to_port(state, graph, port_control, tf_c,
+				"Scapa Flow", "Solitario AI N2: Completamento a Scapa Flow")
+		"N":
+			return _n_british_port_action(state, graph, engine, port_control, side,
+				"Narvik", "Narvik", "Solitario AI N2: N")
+		"P":
+			var out := _empty("Solitario AI N2: Passare.")
+			out["pass_initiative"] = true
+			return out
+		"R4":
+			return _n2_r4(state, graph, engine, side)
+		"T":
+			return _n_british_port_action(state, graph, engine, port_control, side,
+				"Trondheim", "Trondheim", "Solitario AI N2: T")
+		"X":
+			var bb := _shortest_force_with_type(state, side, "BB")
+			if bb == null:
+				bb = _create_force_at(state, graph, side, "Scapa Flow",
+					["Nelson", "Rodney", "Belfast"], false)
+			return _attack_or_route_selected(state, graph, engine, bb,
+				_best_contact_or_port_target(state, graph, side, "Narvik"),
+				"Solitario AI N2: Bring to Battle")
+		"MINE":
+			return _marker_not_modeled("Solitario AI N2: posa Mine britanniche")
+	return _air_or_attack(state, graph, engine, side)
+
+
+static func _n3(code: String, state: GameState, graph: MapGraph,
+		engine: ActionEngine, port_control: Dictionary, side: int) -> Dictionary:
+	match code:
+		"B":
+			return _n_british_port_action(state, graph, engine, port_control, side,
+				"Bergen", "Bergen", "Solitario AI N3: B")
+		"C":
+			var tf_c := _first_damaged_force(state, side)
+			if tf_c == null:
+				tf_c = _longest_force(state, side)
+			if tf_c == null:
+				var air := _best_legal_action(state, engine, side, "AIR_STRIKE")
+				if bool(air["ok"]):
+					return air
+				var no := _empty("Solitario AI N3: nessuna TF britannica; Passare.")
+				no["pass_initiative"] = true
+				return no
+			return _complete_or_route_to_port(state, graph, port_control, tf_c,
+				"Scapa Flow", "Solitario AI N3: Completamento a Scapa Flow")
+		"SA":
+			var stealth := _best_legal_action(state, engine, side, "STEALTH_ATTACK")
+			if bool(stealth["ok"]):
+				stealth["log"].append("Solitario AI N3: Attacco Furtivo.")
+				return stealth
+			return _n3_sr(state, graph, side)
+		"SR":
+			return _n3_sr(state, graph, side)
+		"X":
+			var bb := _shortest_force_with_type(state, side, "BB")
+			if bb == null:
+				bb = _create_force_at(state, graph, side, "Scapa Flow",
+					["Nelson", "Rodney", "Renown", "Sheffield", "Birmingham"], false)
+			_remove_damaged_ships(state, side)
+			return _attack_or_route_selected(state, graph, engine, bb,
+				_best_enemy_target(state, side, bb),
+				"Solitario AI N3: Bring on Battle")
+	return _air_or_attack(state, graph, engine, side)
+
+
+static func _n4(code: String, state: GameState, graph: MapGraph,
+		engine: ActionEngine, port_control: Dictionary, side: int) -> Dictionary:
+	match code:
+		"C":
+			var tf_c := _shortest_force_with_convoy(state, side)
+			if tf_c == null:
+				tf_c = _first_damaged_force(state, side)
+			if tf_c == null:
+				var air := _best_legal_action(state, engine, side, "AIR_STRIKE")
+				if bool(air["ok"]):
+					return air
+				tf_c = _longest_force(state, side)
+			var port := "Methil" if _has_convoy(tf_c) else "Scapa Flow"
+			return _complete_or_route_to_port(state, graph, port_control, tf_c, port,
+				"Solitario AI N4: Completamento britannico")
+		"CONV":
+			var convoy := _shortest_force_with_convoy(state, side)
+			if convoy == null:
+				convoy = _create_force_at(state, graph, side, "Bergen",
+					["Convoy x3"], false)
+			return _complete_or_route_to_port(state, graph, port_control, convoy,
+				"Methil", "Solitario AI N4: Convoglio britannico")
+		"MINE":
+			return _marker_not_modeled("Solitario AI N4: Mine/Base Aerea britannica")
+		"R4":
+			return _n4_r4(state, graph, engine, port_control, side)
+		"SA":
+			var stealth := _best_legal_action(state, engine, side, "STEALTH_ATTACK")
+			if bool(stealth["ok"]):
+				stealth["log"].append("Solitario AI N4: Attacco Furtivo.")
+				return stealth
+			var no := _empty("Solitario AI N4: nessun bersaglio furtivo; All Pass.")
+			no["pass_initiative"] = true
+			return no
+		"X":
+			return _n4_x(state, graph, engine, side)
+	return _air_or_attack(state, graph, engine, side)
 
 
 static func _a1(code: String, state: GameState, graph: MapGraph,
@@ -288,12 +467,126 @@ static func _empty(note: String = "") -> Dictionary:
 
 
 static func _normalize_code(code: String) -> String:
-	var c := code.strip_edges()
-	if c.begins_with("Conv"):
-		return "C"
+	var c := code.strip_edges().to_upper()
+	if c.begins_with("CONV"):
+		return "CONV"
 	if c.begins_with("X"):
 		return "X"
 	return c
+
+
+static func _n1_port_table(state: GameState) -> String:
+	var r := state.rng.d6("Solitario N1 Port Table")
+	if r == 1:
+		return "Murmansk"
+	if r == 2:
+		return "Kiel"
+	if r <= 4:
+		return "Trondheim"
+	return "Narvik"
+
+
+static func _n_complete_with_priority(state: GameState, graph: MapGraph,
+		port_control: Dictionary, side: int, port_name: String,
+		note: String) -> Dictionary:
+	var tf := _best_unidentified(state, side)
+	if tf == null:
+		tf = _shortest_force_with_convoy(state, side)
+	if tf == null:
+		tf = _create_unidentified_at(state, graph, side, "Kiel")
+	return _complete_or_route_to_port(state, graph, port_control, tf, port_name, note)
+
+
+static func _n_british_port_action(state: GameState, graph: MapGraph,
+		engine: ActionEngine, port_control: Dictionary, side: int,
+		port_name: String, printed_name: String, note: String) -> Dictionary:
+	var tf := _force_at_port(state, side, graph, port_name)
+	if tf == null:
+		tf = _longest_force(state, side)
+	if tf == null:
+		tf = _create_unidentified_at(state, graph, side, "Scapa Flow")
+	var same_hex := _enemy_in_same_hex(state, side, tf)
+	if same_hex != null:
+		return _attack_or_route_selected(state, graph, engine, tf, same_hex,
+			"%s: nemico nello stesso esagono di %s" % [note, printed_name])
+	return _complete_or_route_to_port(state, graph, port_control, tf, port_name,
+		"%s: Completamento a %s" % [note, printed_name])
+
+
+static func _n2_r4(state: GameState, graph: MapGraph,
+		engine: ActionEngine, side: int) -> Dictionary:
+	var tf1 := _create_force_at(state, graph, side, "Scapa Flow",
+		["Sheffield", "Birmingham", "Belfast", "Suffolk"], false)
+	var tf2 := _create_force_at(state, graph, side, "Scapa Flow",
+		["Nelson", "Rodney", "Berwick"], false)
+	var r1 := _route_toward_hex(state, graph, tf1, _port_hex(graph, "Trondheim"),
+		"Solitario AI N2: R4 TF1 verso Trondheim")
+	var r2 := _route_toward_hex(state, graph, tf2, _port_hex(graph, "Narvik"),
+		"Solitario AI N2: R4 TF2 verso Narvik")
+	var out := _empty("Solitario AI N2: Operazione R4 crea due TF britanniche.")
+	out["ok"] = bool(r1.get("ok", false)) or bool(r2.get("ok", false))
+	out["pass_initiative"] = true
+	out["log"].append_array(r1.get("log", []))
+	out["log"].append_array(r2.get("log", []))
+	return out
+
+
+static func _n3_sr(state: GameState, graph: MapGraph, side: int) -> Dictionary:
+	var target := _best_enemy_target(state, side, null)
+	if target == null:
+		var no := _empty("Solitario AI N3: Ricognizione Furtiva senza bersaglio; Passare.")
+		no["pass_initiative"] = true
+		return no
+	var h := _anchor_hex(target)
+	if target.trajectory.is_station():
+		target.trajectory.set_contact_at(h, true)
+	else:
+		var idx := target.trajectory.index_of_hex(h)
+		if idx >= 0:
+			target.trajectory.set_info(idx, true)
+	var out := _empty("Solitario AI N3: Submarine piazza Informazioni su %s in %s."
+		% [target.display_name(), str(h)])
+	out["ok"] = true
+	out["pass_initiative"] = true
+	return out
+
+
+static func _n4_r4(state: GameState, graph: MapGraph,
+		engine: ActionEngine, port_control: Dictionary, side: int) -> Dictionary:
+	var tf4 := _create_force_at(state, graph, side, "Liverpool",
+		["Convoy x3", "Sheffield"], false)
+	var tf5 := _create_force_at(state, graph, side, "Scapa Flow",
+		["Furious", "Belfast", "Birmingham"], false)
+	var r4 := _route_toward_hex(state, graph, tf4, _port_hex(graph, "Narvik"),
+		"Solitario AI N4: R4 TF4 verso Narvik")
+	var r5 := _route_toward_hex(state, graph, tf5, _port_hex(graph, "Narvik"),
+		"Solitario AI N4: R4 TF5 verso Narvik")
+	var out := _empty("Solitario AI N4: primo R4 crea le TF britanniche previste.")
+	out["ok"] = bool(r4.get("ok", false)) or bool(r5.get("ok", false))
+	out["pass_initiative"] = true
+	out["log"].append_array(r4.get("log", []))
+	out["log"].append_array(r5.get("log", []))
+	return out
+
+
+static func _n4_x(state: GameState, graph: MapGraph,
+		engine: ActionEngine, side: int) -> Dictionary:
+	_remove_damaged_ships(state, side)
+	var tf := _force_with_ship_name(state, side, "Renown")
+	if tf == null:
+		tf = _best_type_priority(state, side, ["BB", "BC", "CA"])
+	if tf == null:
+		tf = _create_force_at(state, graph, side, "Scapa Flow",
+			["Nelson", "Rodney"], false)
+	return _attack_or_route_selected(state, graph, engine, tf,
+		_best_contact_or_port_target(state, graph, side, "Narvik"),
+		"Solitario AI N4: Bring on Battle")
+
+
+static func _marker_not_modeled(note: String) -> Dictionary:
+	var out := _empty(note + ": Mine, basi aeree e forze furtive permanenti non sono ancora pedine modellate; il bot registra l'effetto e passa senza inventare pezzi.")
+	out["pass_initiative"] = true
+	return out
 
 
 static func _air_or_attack(state: GameState, graph: MapGraph,
@@ -597,6 +890,137 @@ static func _b1_convoy_destination(graph: MapGraph, tf: TaskForce) -> String:
 	if graph.ports.has("Africa") and current == (graph.ports["Africa"] as Dictionary)["hex"]:
 		return "Gibilterra"
 	return _nearest_named_port(graph, current, ["Clyde", "Liverpool", "Gibilterra"])
+
+
+static func _port_hex(graph: MapGraph, port_name: String) -> Vector2i:
+	if not graph.ports.has(port_name):
+		return Vector2i.MAX
+	return (graph.ports[port_name] as Dictionary)["hex"] as Vector2i
+
+
+static func _force_at_port(state: GameState, side: int,
+		graph: MapGraph, port_name: String) -> TaskForce:
+	var h := _port_hex(graph, port_name)
+	if h == Vector2i.MAX:
+		return null
+	for tf in state.forces_of(side):
+		if tf.trajectory.occupies(h):
+			return tf
+	return null
+
+
+static func _nearest_force_to_port(state: GameState, side: int,
+		graph: MapGraph, port_name: String) -> TaskForce:
+	var h := _port_hex(graph, port_name)
+	if h == Vector2i.MAX:
+		return null
+	var best: TaskForce = null
+	var bestd := 999999
+	for tf in state.forces_of(side):
+		var d := Hex.distance(_anchor_hex(tf), h)
+		if d < bestd:
+			bestd = d
+			best = tf
+	return best
+
+
+static func _longest_force(state: GameState, side: int) -> TaskForce:
+	var best: TaskForce = null
+	for tf in state.forces_of(side):
+		if best == null or tf.length() > best.length():
+			best = tf
+	return best
+
+
+static func _best_type_priority(state: GameState, side: int,
+		types: Array[String]) -> TaskForce:
+	for type_code in types:
+		var tf := _shortest_force_with_type(state, side, type_code)
+		if tf != null:
+			return tf
+	return null
+
+
+static func _force_with_ship_name(state: GameState, side: int,
+		ship_name: String) -> TaskForce:
+	for tf in state.forces_of(side):
+		for s in tf.ships:
+			if s.name == ship_name and not s.sunk:
+				return tf
+	return null
+
+
+static func _enemy_in_same_hex(state: GameState, side: int,
+		tf: TaskForce) -> TaskForce:
+	if tf == null:
+		return null
+	for enemy in state.forces_of(1 - side):
+		if _shared_hex(tf, enemy) != Vector2i.MAX:
+			return enemy
+	return null
+
+
+static func _best_contact_or_port_target(state: GameState, graph: MapGraph,
+		side: int, port_name: String) -> TaskForce:
+	var best_contact: TaskForce = null
+	var bestd := 999999
+	var port := _port_hex(graph, port_name)
+	for tf in state.forces_of(1 - side):
+		if tf.trajectory.contact_count() <= 0:
+			continue
+		var d := Hex.distance(_anchor_hex(tf), port) if port != Vector2i.MAX else 0
+		if d < bestd:
+			bestd = d
+			best_contact = tf
+	if best_contact != null:
+		return best_contact
+	return _nearest_enemy_to_hex(state, side, port)
+
+
+static func _nearest_enemy_to_hex(state: GameState, side: int,
+		h: Vector2i) -> TaskForce:
+	var best: TaskForce = null
+	var bestd := 999999
+	for tf in state.forces_of(1 - side):
+		var d := Hex.distance(_anchor_hex(tf), h)
+		if d < bestd:
+			bestd = d
+			best = tf
+	return best
+
+
+static func _nearest_eligible_denmark_strait_force(state: GameState,
+		side: int) -> TaskForce:
+	var best: TaskForce = null
+	var ref := Vector2i(13, -6)
+	var bestd := 999999
+	for tf in state.forces_of(side):
+		if _has_convoy(tf) or _has_damaged(tf):
+			continue
+		var d := Hex.distance(_anchor_hex(tf), ref)
+		if d < bestd:
+			bestd = d
+			best = tf
+	return best
+
+
+static func _denmark_strait_reference(graph: MapGraph) -> Vector2i:
+	return _port_hex(graph, "Hvalfjordur")
+
+
+static func _n1_interception_target(state: GameState, graph: MapGraph,
+		side: int) -> TaskForce:
+	for tf in state.forces_of(1 - side):
+		if tf.trajectory.is_station() and tf.trajectory.station_port != "Scapa Flow":
+			return tf
+	var trondheim := _port_hex(graph, "Trondheim")
+	return _nearest_enemy_to_hex(state, side, trondheim)
+
+
+static func _n1_battle_target(state: GameState, graph: MapGraph,
+		side: int) -> TaskForce:
+	var port := _n1_port_table(state)
+	return _nearest_enemy_to_hex(state, side, _port_hex(graph, port))
 
 
 static func _closer_port_to_enemy(graph: MapGraph, state: GameState,

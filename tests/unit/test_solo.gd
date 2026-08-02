@@ -51,6 +51,8 @@ func run() -> void:
 	test_solo_ai_xu_prefers_unidentified()
 	test_solo_ai_a1_x_creates_german_raider()
 	test_solo_ai_a1_c_routes_to_named_port()
+	test_solo_ai_has_policy_for_action_codes()
+	test_solo_norwegian_completion_ports()
 	test_fueling()
 	test_solo_battle_behavior()
 	test_solo_battle_view_preassigns_both_sides()
@@ -489,6 +491,55 @@ func test_solo_ai_a1_c_routes_to_named_port() -> void:
 	true_(bool(r["completion"]), "a Narvik puo' completare subito")
 	eq(String((r["completion_port"] as Dictionary)["name"]), "Narvik",
 		"sceglie il porto previsto piu' vicino")
+
+
+func test_solo_ai_has_policy_for_action_codes() -> void:
+	_begin("ogni codice azione solitario ha una policy AI")
+	var action_tables := ["actions", "actions_early", "actions_late", "british_actions"]
+	for id in SOLO_SCENARIOS:
+		var sc := Scenario.load_by_id(id)
+		var o := SoloOpponent.load_for(id)
+		var v := Victory.from_scenario(sc)
+		var imaginary := 1 - v.solo_side
+		for tid in action_tables:
+			if not o.has(tid):
+				continue
+			var t: SoloTable = o.table(tid)
+			var seen := {}
+			for r in t.rows:
+				for code_v: Variant in r["cells"]:
+					var code := String(code_v)
+					if seen.has(code):
+						continue
+					seen[code] = true
+					var st := GameState.new(graph, 17)
+					st.apply_dict(sc.to_state_dict())
+					var res := SoloAI.execute_code(code, st, graph,
+						ActionEngine.load_default(), sc.port_control(), imaginary)
+					false_(_solo_ai_log_contains(res, "non ha ancora una policy"),
+						"%s %s: codice %s coperto" % [id, tid, code])
+
+
+func test_solo_norwegian_completion_ports() -> void:
+	_begin("N2-N4: Completamenti norvegesi speciali dichiarati nei dati")
+	for id in ["N2 Operazione Weser (nord)", "N3 Operazione Weser (sud)",
+			"N4 Operazione Weser (nord & sud)"]:
+		var sc := Scenario.load_by_id(id)
+		var control := sc.port_control()
+		true_(not control.is_empty(), "%s: controllo porti speciale presente" % id)
+	eq(String(Scenario.load_by_id("N2 Operazione Weser (nord)")
+		.port_control()["Narvik"]), "BOTH", "N2: Narvik accetta entrambi")
+	eq(String(Scenario.load_by_id("N3 Operazione Weser (sud)")
+		.port_control()["Bergen"]), "BOTH", "N3: Bergen accetta entrambi")
+	eq(String(Scenario.load_by_id("N4 Operazione Weser (nord & sud)")
+		.port_control()["Trondheim"]), "BOTH", "N4: Trondheim accetta entrambi")
+
+
+func _solo_ai_log_contains(res: Dictionary, needle: String) -> bool:
+	for line_v: Variant in res.get("log", []):
+		if String(line_v).contains(needle):
+			return true
+	return false
 
 
 ## In BL1 il giocatore e' il tedesco, e la tabella che conta e' quella del
