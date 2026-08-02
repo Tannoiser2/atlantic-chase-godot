@@ -12,7 +12,7 @@ Tutti i test passano: **1775 verifiche, 16 suite, headless.**
 | **M0** Fondamenta | ✅ **completo** | Progetto Godot 4.7, mappa in 15 tile, camera, pipeline asset, runner di test |
 | **M1a** Calibrazione reticolo | ✅ **completo** | Validato al 100% contro le pedine ufficiali |
 | **M1b** Estrazione dati | ✅ **completo** | 22 `.vsav` decodificati, 70 zone, terreno classificato |
-| **M1c** Grafo + editor | ✅ **completo** | 156 esagoni, 9 lati "not adjacent", Canale di Kiel; editor operativo |
+| **M1c** Grafo + editor | ✅ **completo** | 155 esagoni, 9 lati "not adjacent", Canale di Kiel; editor operativo |
 | **M2** Core regole | ✅ **completo** | Traiettoria, Tempo, Totale, Interruzione, undo, RNG — tutto testato |
 | **M3** Mappa interattiva | ✅ **completo** | Selezione, costruzione traiettoria, anteprima, undo, HUD, log |
 | **M4** Motore azioni | ✅ **completo** | Tutte e 4 le tabelle trascritte e verificate; danno alle navi |
@@ -20,10 +20,41 @@ Tutti i test passano: **1775 verifiche, 16 suite, headless.**
 | **M6** Scenari | ✅ **completo** | 22 scenari con navi, comandanti, rinforzi e briefing |
 | **M7** Regole complete | ✅ **completo** | Tutte e 9 le azioni, Convogli, finale di partita, salvataggio; tutti e 22 gli scenari hanno le condizioni di vittoria |
 | **M9** Battaglia decisa dal giocatore | ✅ **completo** | Bersagli scelti a mano, linee di fuoco con raggio e valore dei cannoni |
-| **M10** Regole Avanzate | 🟡 **iniziato** | Attitudine, tabelle Fuoco e Siluri, velocità Ferma, Effetti Speciali. Manca collegarli alla Battaglia |
-| **M8** Solitario | 🟡 **iniziato** | Motore delle tabelle + TF non identificate; BL1 e BL2 trascritte. Mancano gli schieramenti e gli altri 13 scenari |
+| **M10** Regole Avanzate | ✅ **completo** | Attitudini, Fuoco a due colonne, Effetti Speciali, Tabelle dei Risultati, Effetti Duraturi, Disingaggio, Snafu, Confusione, Battaglia Estesa. Si accendono dalla schermata iniziale |
+| **M8** Solitario | 🟡 **iniziato** | Motore delle tabelle + TF non identificate; BL1, BL2 e (in parte) BL3 trascritte. Mancano gli schieramenti e gli altri 12 scenari. **E' il pezzo lasciato a Codex** |
+| **M11** Effetti di Battaglia | ✅ **completo** | Suoni sintetizzati, vampe, traccianti, schizzi, esplosioni, incendi, siluri, affondamenti |
 
-### Cosa è cambiato nell'ultima sessione
+### Cosa e' cambiato nell'ultima sessione
+
+- **Le Regole Avanzate si possono finalmente accendere.** Erano complete e
+  verdi nei test, ma `BattleState.advanced` restava a `false` e nessuno lo
+  metteva mai a `true`: circa 240 verifiche coprivano codice che in partita non
+  girava. Ora c'e' una casella nella schermata iniziale, la scelta viaggia
+  Session -> GameState -> BattleState e finisce nel salvataggio. La prova di
+  fumo gira due volte, base e avanzata (`-- adv`), ed e' la rete che impedisce
+  a questo difetto di tornare.
+- **L'attitudine e gli Effetti Speciali si vedono.** La vista chiedeva di
+  cambiare l'attitudine di una nave senza mostrare quale fosse.
+- **Le pedine erano sopra tutto il resto**: erano TextureRect figli del
+  Control, e i figli disegnano sopra il `_draw()` del genitore, quindi il badge
+  dei Colpi, il FUMO e il bordo di selezione finivano *sotto* la pedina.
+- **Effetti visivi e sonori della Battaglia**, che prima non esistevano
+  affatto. I suoni sono **sintetizzati** da `tools/make_sounds.py` con numpy:
+  nessun campione di terzi, nessuna licenza, seme fisso.
+- **Traiettorie**: corsie per non sovrapporsi, angoli curvi (Bezier col vertice
+  come punto di controllo), linea piu' sottile, badge col nome.
+- **Due esagoni tolti** perche' cadevano sopra le tabelle stampate: (21,-11)
+  sulla Gunnery Table e (18,-7) sulla Weather Check. **Attenzione**: non basta
+  guardare quanto un esagono esce dalla cornice - (4,7), (4,8) e (18,-12)
+  escono per oltre il 70% e sono usati dagli scenari UFFICIALI.
+- **Pannello "ora tocca a"**, coi motivi per cui un'azione non e' dichiarabile
+  raggruppati per motivo invece che elencati per azione.
+
+### Cosa e' cambiato nella sessione precedente
+
+#### (piu' vecchio)
+
+### Cosa e' cambiato allora
 
 - **Le ultime due azioni**: Riorganizzazione (dividere, unire, chiamare
   rinforzi) e Segnalazione. Tutte e nove le azioni del gioco sono ora
