@@ -207,8 +207,8 @@ func test_reinforcement() -> void:
 # ---------------------------------------------------------------- segnalare --
 
 ## Task Force con una Traiettoria che passa per `seg`.
-## Attenzione: la Stazione di partenza NON resta come segmento - una volta che
-## ci sono segmenti, la Traiettoria e' fatta solo di quelli.
+## Quando una Stazione diventa Traiettoria, l'esagono della Stazione resta come
+## primo segmento visibile.
 func _traj_tf(st: GameState, side: int, seg: Array[Vector2i]) -> TaskForce:
 	var tf := _tf(st, side, ["Bismarck", "Preugen"] as Array[String],
 		Vector2i(15, -5))
@@ -225,14 +225,14 @@ func test_signal_targets() -> void:
 	var path: Array[Vector2i] = [Vector2i(16, -5), Vector2i(17, -5),
 		Vector2i(18, -6)]
 	var km := _traj_tf(st, TaskForce.Side.KRIEGSMARINE, path)
-	eq(km.trajectory.length(), 3, "la Traiettoria ha tre segmenti")
+	eq(km.trajectory.length(), 4, "la Traiettoria conserva anche la partenza")
 
 	# senza segnalini Informazioni non c'e' niente da segnalare
 	true_(SignalAction.refusal(km).contains("Informazioni"),
 		"senza segnalini la Segnalazione e' rifiutata")
 	eq(SignalAction.target_hexes(km).size(), 0, "e nessun esagono bersaglio")
 
-	km.trajectory.set_info(1, true)
+	km.trajectory.set_info(2, true)
 	eq(SignalAction.refusal(km), "", "con un segnalino si puo'")
 	var hs := SignalAction.target_hexes(km)
 	eq(hs.size(), 1, "un solo esagono bersaglio")
@@ -261,7 +261,7 @@ func test_signal_resolve() -> void:
 		Vector2i(18, -6)]
 	var km := _traj_tf(st, TaskForce.Side.KRIEGSMARINE, path)
 	km.trajectory.set_info(0, true)
-	km.trajectory.set_info(2, true)
+	km.trajectory.set_info(3, true)
 	km.trajectory.set_contact_at(path[2], true)
 
 	# un esagono senza segnalino non e' un bersaglio legale
@@ -272,7 +272,7 @@ func test_signal_resolve() -> void:
 	true_(r["ok"], "la Segnalazione riesce")
 	true_(km.trajectory.is_station(), "la Traiettoria diventa una Stazione")
 	eq(km.trajectory.station_hex, path[2], "nell'esagono scelto")
-	eq(int(r["removed_segments"]), 3, "i tre segmenti sono rimossi")
+	eq(int(r["removed_segments"]), 4, "i quattro segmenti sono rimossi")
 	true_(r["contact"], "il Contatto del segmento bersaglio si trasferisce")
 	true_(km.trajectory.station_contact, "e la Stazione ce l'ha")
 	eq(km.trajectory.info_count(), 0,
@@ -282,7 +282,7 @@ func test_signal_resolve() -> void:
 	# e' passata non e' sapere dove si trova
 	var st2 := _state()
 	var km2 := _traj_tf(st2, TaskForce.Side.KRIEGSMARINE, path)
-	km2.trajectory.set_info(2, true)
+	km2.trajectory.set_info(3, true)
 	km2.trajectory.set_contact_at(path[0], true)
 	var r2 := SignalAction.resolve(km2, path[2])
 	true_(r2["ok"], "riesce lo stesso")
@@ -488,7 +488,7 @@ func test_savegame() -> void:
 	eq(st2.convoys_completed, 2, "e i Convogli arrivati")
 	eq(st2.vp_once.size(), 1, "e i premi una tantum gia' scattati")
 	eq(st2.task_forces.size(), 1, "e la Task Force")
-	eq(st2.task_forces[0].trajectory.length(), 1, "con la sua Traiettoria")
+	eq(st2.task_forces[0].trajectory.length(), 2, "con la sua Traiettoria")
 	eq(st2.task_forces[0].ships.size(), 2, "e le sue navi")
 
 	# Il RNG va dentro il salvataggio: senza, si potrebbe salvare prima di una

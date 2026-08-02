@@ -133,7 +133,11 @@ func extend(h: Vector2i, end: int, graph: MapGraph, port_hexes: Dictionary = {},
 		return false
 	var seg := {"hex": h, "info": info, "contact": false}
 	if is_station():
-		# la Stazione diventa Traiettoria: il primo segmento parte dalla Stazione
+		# La Stazione sulla mappa principale diventa il primo segmento visibile:
+		# senza questo, piazzare una Traiettoria fa sparire sia la Stazione sia
+		# il tratto nel suo esagono di partenza.
+		if not port_hexes.has(station_hex):
+			segments.append({"hex": station_hex, "info": false, "contact": station_contact})
 		segments.append(seg)
 		station_contact = false
 		station_port = ""

@@ -19,7 +19,7 @@ extends SceneTree
 ## una seccatura di dieci secondi che compra il non fidarsi di un OK falso.
 const EXPECTED := {
 	"res://tests/unit/test_hex_and_graph.gd": 284,
-	"res://tests/unit/test_trajectory.gd": 49,
+	"res://tests/unit/test_trajectory.gd": 51,
 	"res://tests/unit/test_rules.gd": 115,
 	"res://tests/unit/test_state_and_undo.gd": 39,
 	"res://tests/unit/test_actions.gd": 131,

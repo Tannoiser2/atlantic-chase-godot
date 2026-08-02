@@ -131,21 +131,21 @@ func test_undo_redo() -> void:
 				break
 		log.record("segmento %d" % (i + 1))
 
-	eq(st.task_forces[0].length(), 3, "tre segmenti aggiunti")
+	eq(st.task_forces[0].length(), 4, "tre estensioni dalla Stazione lasciano quattro segmenti")
 	eq(log.applied_count(), 3, "tre mosse registrate")
 
 	true_(log.undo(), "annulla")
-	eq(st.task_forces[0].length(), 2, "torna a due segmenti")
+	eq(st.task_forces[0].length(), 3, "torna a tre segmenti")
 	true_(log.undo(), "annulla ancora")
-	eq(st.task_forces[0].length(), 1, "un segmento")
+	eq(st.task_forces[0].length(), 2, "due segmenti")
 	true_(log.undo(), "annulla fino all'inizio")
 	eq(st.task_forces[0].length(), 0, "torna Stazione")
 	false_(log.can_undo(), "niente altro da annullare")
 
 	true_(log.redo(), "ripristina")
-	eq(st.task_forces[0].length(), 1, "un segmento di nuovo")
+	eq(st.task_forces[0].length(), 2, "due segmenti di nuovo")
 	true_(log.redo(), "ripristina ancora")
-	eq(st.task_forces[0].length(), 2, "due segmenti")
+	eq(st.task_forces[0].length(), 3, "tre segmenti")
 	eq(log.labels().size(), 2, "due mosse applicate")
 
 	# una nuova mossa dopo un undo taglia il ramo di redo

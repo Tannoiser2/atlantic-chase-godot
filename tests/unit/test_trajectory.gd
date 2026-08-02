@@ -48,14 +48,14 @@ func _chain(n: int) -> Trajectory:
 	var cur := origin
 	var visited := {origin: true}
 	for i in n:
+		t.segments.append({"hex": cur, "info": false, "contact": false})
 		var nxt := Vector2i.MAX
 		for cand in graph.adjacent_hexes(cur):
-			if not visited.has(cand) and not t.occupies(cand):
+			if not visited.has(cand):
 				nxt = cand
 				break
 		if nxt == Vector2i.MAX:
 			break
-		t.extend(nxt, 1, graph)
 		visited[nxt] = true
 		cur = nxt
 	return t
@@ -72,9 +72,11 @@ func test_station_vs_trajectory() -> void:
 
 	var nb := graph.adjacent_hexes(origin)[0]
 	true_(t.extend(nb, 1, graph), "estensione dalla Stazione")
-	true_(t.is_trajectory(), "con un segmento e' una Traiettoria")
-	false_(t.is_station(), "con un segmento non e' una Stazione")
-	eq(t.length(), 1, "un segmento")
+	true_(t.is_trajectory(), "con due segmenti e' una Traiettoria")
+	false_(t.is_station(), "con due segmenti non e' una Stazione")
+	eq(t.length(), 2, "la Traiettoria conserva anche l'esagono della Stazione")
+	eq(t.end_hex(0), origin, "il capo iniziale resta nell'esagono della Stazione")
+	eq(t.end_hex(1), nb, "il capo finale e' l'esagono appena aggiunto")
 
 
 func test_max_length() -> void:

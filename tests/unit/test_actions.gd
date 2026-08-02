@@ -40,10 +40,12 @@ func _tf(side: int, n: int, speed: int = TimeLapse.Speed.MEDIUM) -> TaskForce:
 	tf.speed = speed
 	tf.trajectory.station_hex = origin
 	var cur := origin
+	var visited := {origin: true}
 	for i in n:
+		tf.trajectory.segments.append({"hex": cur, "info": false, "contact": false})
 		for cand in graph.adjacent_hexes(cur):
-			if not tf.trajectory.occupies(cand):
-				tf.trajectory.extend(cand, 1, graph)
+			if not visited.has(cand):
+				visited[cand] = true
 				cur = cand
 				break
 	return tf

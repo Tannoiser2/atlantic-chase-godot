@@ -598,7 +598,10 @@ func _drag_step_legal(h: Vector2i) -> bool:
 	var from := drag_path[-1] if not drag_path.is_empty() else t.end_hex(drag_end)
 	if drag_path.has(h) or t.occupies(h):
 		return false
-	if t.length() + drag_path.size() >= Trajectory.MAX_SEGMENTS:
+	var projected := t.length() + drag_path.size() + 1
+	if t.is_station() and drag_path.is_empty() and not state.port_hexes().has(t.station_hex):
+		projected += 1
+	if projected > Trajectory.MAX_SEGMENTS:
 		return false
 	if state.port_hexes().has(h):
 		return false
@@ -628,8 +631,9 @@ func _finish_drag() -> void:
 	var infos := 0
 	for h in drag_path:
 		var info := state.triggers_info(h, selected_tf.side)
+		var before := t.length()
 		if t.extend(h, drag_end, graph, ports, info, selected_tf.side):
-			added += 1
+			added += t.length() - before
 			if info:
 				infos += 1
 		else:
