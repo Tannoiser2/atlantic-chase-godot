@@ -59,9 +59,19 @@ static func needs_enemy(key: String) -> bool:
 
 func _ready() -> void:
 	add_theme_stylebox_override("panel", _panel_style())
+	# Due righe, non una. Con nove azioni piu' i comandi di servizio la riga
+	# unica sfondava lo schermo a 1600px e l'ultimo pulsante finiva tagliato a
+	# meta': un comando che esiste ma non si puo' premere e' peggio di un
+	# comando che non c'e'.
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 4)
+	add_child(col)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 6)
-	add_child(row)
+	col.add_child(row)
+	var row2 := HBoxContainer.new()
+	row2.add_theme_constant_override("separation", 6)
+	col.add_child(row2)
 
 	for a in ACTIONS:
 		var b := _mk(row, "%s (%s)" % [a[1], a[2]])
@@ -69,39 +79,38 @@ func _ready() -> void:
 		b.pressed.connect(func() -> void: action_requested.emit(String(a[0])))
 		_act_buttons[a[0]] = b
 
-	_sep(row)
-	_mk(row, "Scorrere del Tempo (T)").pressed.connect(
+	_mk(row2, "Scorrere del Tempo (T)").pressed.connect(
 		func() -> void: time_lapse_requested.emit())
-	var dsp := _mk(row, "Disperdi (D)")
+	var dsp := _mk(row2, "Disperdi (D)")
 	dsp.tooltip_text = ("Disperdere un Convoglio: incassa un solo Colpo per "
 		+ "attacco, ma vale un punto in meno se arriva a destinazione. "
 		+ "La scelta non si puo' disfare.")
 	dsp.pressed.connect(func() -> void: disperse_requested.emit())
 
-	_sep(row)
-	_undo_btn = _mk(row, "Annulla")
+	_sep(row2)
+	_undo_btn = _mk(row2, "Annulla")
 	_undo_btn.pressed.connect(func() -> void: undo_requested.emit())
-	_redo_btn = _mk(row, "Rifai")
+	_redo_btn = _mk(row2, "Rifai")
 	_redo_btn.pressed.connect(func() -> void: redo_requested.emit())
 
-	_sep(row)
-	var out := _mk(row, "Esito (V)")
+	_sep(row2)
+	var out := _mk(row2, "Esito (V)")
 	out.tooltip_text = ("Punteggio, vincitore e le righe che il motore non "
 		+ "puo' valutare da solo: mine, basi aeree, regole opzionali.")
 	out.pressed.connect(func() -> void: outcome_requested.emit())
-	_mk(row, "Briefing (B)").pressed.connect(func() -> void: briefing_toggled.emit())
-	var prev := _mk(row, "<")
+	_mk(row2, "Briefing (B)").pressed.connect(func() -> void: briefing_toggled.emit())
+	var prev := _mk(row2, "<")
 	prev.tooltip_text = "Scenario precedente"
 	prev.pressed.connect(func() -> void: scenario_step.emit(-1))
-	var nxt := _mk(row, ">")
+	var nxt := _mk(row2, ">")
 	nxt.tooltip_text = "Scenario successivo"
 	nxt.pressed.connect(func() -> void: scenario_step.emit(1))
-	_mk(row, "Reticolo (G)").pressed.connect(func() -> void: grid_cycled.emit())
-	_mk(row, "Editor (E)").pressed.connect(func() -> void: editor_toggled.emit())
-	var h := _mk(row, "?")
+	_mk(row2, "Reticolo (G)").pressed.connect(func() -> void: grid_cycled.emit())
+	_mk(row2, "Editor (E)").pressed.connect(func() -> void: editor_toggled.emit())
+	var h := _mk(row2, "?")
 	h.tooltip_text = "Elenco dei comandi (F1)"
 	h.pressed.connect(func() -> void: help_toggled.emit())
-	_mk(row, "Menu").pressed.connect(func() -> void: menu_requested.emit())
+	_mk(row2, "Menu").pressed.connect(func() -> void: menu_requested.emit())
 
 
 const ICON_DIR := "res://assets/art/actions/"
