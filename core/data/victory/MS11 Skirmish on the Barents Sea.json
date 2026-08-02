@@ -1,0 +1,23 @@
+{
+ "_scenario": "MS11 Skirmish on the Barents Sea",
+ "_source": "Fascicolo Scenari per 2 Giocatori, edizione INGLESE (AC_TwoPlayer_Book_May_9_2021), p.50. Trascritta a mano.",
+ "mode": "OBJECTIVES",
+ "objectives": {
+  "ROYAL_NAVY": {
+   "label": "Royal Navy",
+   "decisive": "affondare 1 nave tedesca",
+   "marginal": "azzoppare 1 nave tedesca"
+  },
+  "KRIEGSMARINE": {
+   "label": "Kriegsmarine",
+   "decisive": "6 o piu' Colpi sul Convoglio",
+   "marginal": "4 o 5 Colpi sul Convoglio"
+  }
+ },
+ "notes": [
+  "I mini-scenari non contano Punti Vittoria: hanno quattro caselle - Decisiva e Marginale per ciascuna parte - e si guarda quali sono state riempite. Sono battaglie brevi, e conta se hai fatto la cosa, non quanto.",
+  "\"Azzoppare\" (cripple) vuol dire rendere Danneggiata una nave; con le Regole Avanzate di Battaglia vale anche una nave che ha subito un effetto speciale.",
+  "Lo Squadrone DD rappresenta sei cacciatorpediniere: e' rimosso dopo sei Colpi, e puo' lanciare siluri due volte.",
+  "I due incrociatori britannici entrano nella zona Lontana durante la fase di Fuga del Round Uno."
+ ]
+}

@@ -59,9 +59,26 @@ func test_all_nine_tables_load() -> void:
 		var v := Victory.from_scenario(sc)
 		true_(v.has_table, "%s: il motore la carica" % id)
 		true_(v.describe(_state()) != "", "%s: e sa descriverla" % id)
-	# i mini-scenari non le hanno ancora, e lo dicono
-	var ms := _v("MS1 Cornered")
-	false_(ms.has_table, "i mini-scenari non hanno ancora la tabella")
+	# anche i dodici mini-scenari ora ce l'hanno, ma di un quarto tipo
+	# ancora: obiettivi Decisivi e Marginali invece di punti
+	for id in ["MS1 Cornered", "MS5 With Friends Like These", "MS12 Finale"]:
+		var ms := _v(id)
+		true_(ms.has_table, "%s ha i suoi obiettivi" % id)
+		eq(ms.mode, Victory.Mode.OBJECTIVES, "%s: modalita' a obiettivi" % id)
+		eq(ms.objectives.size(), 2, "%s: due parti" % id)
+		for side_key in ["ROYAL_NAVY", "KRIEGSMARINE"]:
+			var o: Dictionary = ms.objectives[side_key]
+			ne(String(o.get("decisive", "")), "", "%s/%s: Decisiva" % [id, side_key])
+			ne(String(o.get("marginal", "")), "", "%s/%s: Marginale" % [id, side_key])
+	# in MS5 l'avversario non e' tedesco ma francese, ed e' scritto
+	eq(String((_v("MS5 With Friends Like These").objectives["KRIEGSMARINE"]
+		as Dictionary)["label"]), "Francesi", "Mers-el-Kebir: contro i francesi")
+	# e il punteggio non decide niente
+	var o5 := _v("MS1 Cornered").outcome(_state())
+	false_(o5["resolved"], "l'esito lo leggono i giocatori")
+	false_(o5["tie"], "e 0 a 0 non e' una parita': i punti non contano")
+	true_(_v("MS1 Cornered").describe(_state()).contains("Decisiva"),
+		"gli obiettivi vengono mostrati")
 
 
 ## Cinque tabelle su nove pagano MEZZO punto per un incrociatore britannico

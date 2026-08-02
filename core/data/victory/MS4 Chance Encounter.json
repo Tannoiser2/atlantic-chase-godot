@@ -1,0 +1,22 @@
+{
+ "_scenario": "MS4 Chance Encounter",
+ "_source": "Fascicolo Scenari per 2 Giocatori, edizione INGLESE (AC_TwoPlayer_Book_May_9_2021), p.43. Trascritta a mano.",
+ "mode": "OBJECTIVES",
+ "objectives": {
+  "ROYAL_NAVY": {
+   "label": "Royal Navy",
+   "decisive": "il Glorious si sgancia integro",
+   "marginal": "il Glorious si sgancia azzoppato"
+  },
+  "KRIEGSMARINE": {
+   "label": "Kriegsmarine",
+   "decisive": "affondare il Glorious",
+   "marginal": "azzoppare il Glorious"
+  }
+ },
+ "notes": [
+  "I mini-scenari non contano Punti Vittoria: hanno quattro caselle - Decisiva e Marginale per ciascuna parte - e si guarda quali sono state riempite. Sono battaglie brevi, e conta se hai fatto la cosa, non quanto.",
+  "\"Azzoppare\" (cripple) vuol dire rendere Danneggiata una nave; con le Regole Avanzate di Battaglia vale anche una nave che ha subito un effetto speciale.",
+  "Lo Squadrone DD rappresenta due cacciatorpediniere: e' distrutto al secondo Colpo, e puo' lanciare siluri una volta sola."
+ ]
+}

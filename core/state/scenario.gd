@@ -202,7 +202,9 @@ func has_victory_table() -> bool:
 	for k in ["awards", "conditions", "debriefing"]:
 		if not (victory_data.get(k, []) as Array).is_empty():
 			return true
-	return false
+	# gli obiettivi dei mini-scenari sono un Dictionary, non un Array: e' il
+	# genere di dettaglio che fa dire "non trascritto" a qualcosa che c'e'
+	return not (victory_data.get("objectives", {}) as Dictionary).is_empty()
 
 
 ## Numero di navi schierate, utile per un controllo rapido.

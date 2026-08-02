@@ -1,0 +1,23 @@
+{
+ "_scenario": "MS12 Finale",
+ "_source": "Fascicolo Scenari per 2 Giocatori, edizione INGLESE (AC_TwoPlayer_Book_May_9_2021), p.51. Trascritta a mano.",
+ "mode": "OBJECTIVES",
+ "objectives": {
+  "ROYAL_NAVY": {
+   "label": "Royal Navy",
+   "decisive": "affondare lo Scharnhorst",
+   "marginal": "azzoppare lo Scharnhorst, e meno di 3 Colpi sul Convoglio"
+  },
+  "KRIEGSMARINE": {
+   "label": "Kriegsmarine",
+   "decisive": "6 o piu' Colpi sul Convoglio, oppure affondare o azzoppare il Duke of York e segnare 3 o piu' Colpi sul Convoglio",
+   "marginal": "da 3 a 5 Colpi sul Convoglio, oppure azzoppare 3 navi, oppure affondare il Duke of York"
+  }
+ },
+ "notes": [
+  "I mini-scenari non contano Punti Vittoria: hanno quattro caselle - Decisiva e Marginale per ciascuna parte - e si guarda quali sono state riempite. Sono battaglie brevi, e conta se hai fatto la cosa, non quanto.",
+  "\"Azzoppare\" (cripple) vuol dire rendere Danneggiata una nave; con le Regole Avanzate di Battaglia vale anche una nave che ha subito un effetto speciale.",
+  "Si gioca in tre parti da due Round ciascuna. Per ogni parte il britannico tira 2d6 per sapere quale Forza usa: 2-7 Forza A, 8-10 Forza B, 11+ Forza C. Modificatori: +2 se il Convoglio e' gia' stato bersaglio di Fuoco di Cannoni, +3 se il BC tedesco e' azzoppato.",
+  "Lo Scharnhorst sceglie il suo atteggiamento in segreto, PRIMA che il britannico sappia quale Forza gli tocca."
+ ]
+}

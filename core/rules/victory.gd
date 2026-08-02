@@ -12,6 +12,11 @@ extends RefCounted
 ##   CONDITIONS  Op1 Homecoming non ha nessuna tabella VP: e' un elenco di
 ##               condizioni ("se il Bremen Completa a Kiel vincono i tedeschi").
 ##               Contare punti qui sarebbe inventarsi una regola che non c'e'.
+##   OBJECTIVES  i dodici mini-scenari non contano punti: hanno una griglia di
+##               obiettivi, Decisiva e Marginale per ciascuna parte, scritti a
+##               parole ("affondare il Graf Spee" / "azzopparlo"). Sono
+##               battaglie brevi, e quello che conta e' se hai fatto la cosa,
+##               non quanto.
 ##   DEBRIEFING  gli scenari in solitario non si vincono e non si perdono. Si
 ##               conta un punteggio - UNO SOLO, quello del giocatore, non due
 ##               contrapposti - e lo si cerca in una tabella di Esiti a soglie:
@@ -46,7 +51,7 @@ extends RefCounted
 ## `tiebreak.auto` false significa lo stesso: la condizione e' scritta a parole
 ## e la verificano i giocatori.
 
-enum Mode { VP, CONDITIONS, DEBRIEFING }
+enum Mode { VP, CONDITIONS, DEBRIEFING, OBJECTIVES }
 
 enum Event { SHIP_DAMAGED, SHIP_SUNK, SHIP_HIT, CONVOY_COMPLETED, HIT_ON_CONVOY,
 	SHIP_COMPLETED, CUSTOM }
@@ -65,6 +70,7 @@ const MODE_NAMES := {
 	"VP": Mode.VP,
 	"CONDITIONS": Mode.CONDITIONS,
 	"DEBRIEFING": Mode.DEBRIEFING,
+	"OBJECTIVES": Mode.OBJECTIVES,
 }
 
 var mode: int = Mode.VP
@@ -72,6 +78,11 @@ var awards: Array[Dictionary] = []
 var tiebreak: Dictionary = {}
 var conditions: Array = []
 var debriefing: Array = []
+
+## Solo in modalita' OBJECTIVES: per ciascuna parte, l'obiettivo Decisivo e
+## quello Marginale, come li scrive il fascicolo. Sono condizioni a parole e
+## le verificano i giocatori: il motore le mostra, non finge di valutarle.
+var objectives: Dictionary = {}
 var has_table: bool = false
 var notes: Array = []
 
@@ -88,6 +99,7 @@ static func from_scenario(sc: Scenario) -> Victory:
 	v.tiebreak = d.get("tiebreak", {})
 	v.conditions = d.get("conditions", [])
 	v.debriefing = d.get("debriefing", [])
+	v.objectives = d.get("objectives", {})
 	v.solo_side = TaskForce.Side.ROYAL_NAVY \
 		if String(d.get("solo_side", "KRIEGSMARINE")) == "ROYAL_NAVY" \
 		else TaskForce.Side.KRIEGSMARINE
@@ -104,7 +116,7 @@ static func from_scenario(sc: Scenario) -> Victory:
 			"once": bool(a.get("once", false)),
 		})
 	v.has_table = not (v.awards.is_empty() and v.conditions.is_empty()
-		and v.debriefing.is_empty())
+		and v.debriefing.is_empty() and v.objectives.is_empty())
 	return v
 
 
@@ -325,6 +337,13 @@ func outcome(state: GameState) -> Dictionary:
 	var out := {"mode": mode, "km": km, "rn": rn,
 		"tie": is_equal_approx(km, rn), "resolved": true, "winner": -1,
 		"tiebreak_text": String(tiebreak.get("condition", ""))}
+	if mode == Mode.OBJECTIVES:
+		# non c'e' un punteggio da confrontare: ci sono quattro caselle e i
+		# giocatori guardano quali hanno riempito
+		out["tie"] = false
+		out["winner"] = -1
+		out["resolved"] = false
+		return out
 	if mode == Mode.DEBRIEFING:
 		# nel solitario non c'e' un vincitore: c'e' un punteggio e una riga
 		out["tie"] = false
@@ -366,6 +385,18 @@ func describe(state: GameState) -> String:
 				var who := "Kriegsmarine" if w == "KRIEGSMARINE" \
 					else ("Royal Navy" if w == "ROYAL_NAVY" else w)
 				lines.append("  - %s -> vince %s" % [String(c.get("text", "")), who])
+		Mode.OBJECTIVES:
+			lines.append("Mini-scenario: non si contano punti, si guarda chi "
+				+ "ha raggiunto il suo obiettivo.")
+			for side_key in ["ROYAL_NAVY", "KRIEGSMARINE"]:
+				var o2: Dictionary = objectives.get(side_key, {})
+				if o2.is_empty():
+					continue
+				lines.append("[%s]" % String(o2.get("label",
+					"Royal Navy" if side_key == "ROYAL_NAVY"
+					else "Kriegsmarine")))
+				lines.append("  Decisiva:  %s" % String(o2.get("decisive", "-")))
+				lines.append("  Marginale: %s" % String(o2.get("marginal", "-")))
 		Mode.DEBRIEFING:
 			var o3 := outcome(state)
 			lines.append("Scenario in solitario: non si vince, si legge "

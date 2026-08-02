@@ -1,0 +1,21 @@
+{
+ "_scenario": "MS1 Cornered",
+ "_source": "Fascicolo Scenari per 2 Giocatori, edizione INGLESE (AC_TwoPlayer_Book_May_9_2021), p.40. Trascritta a mano.",
+ "mode": "OBJECTIVES",
+ "objectives": {
+  "ROYAL_NAVY": {
+   "label": "Royal Navy",
+   "decisive": "affondare il Graf Spee",
+   "marginal": "azzoppare il Graf Spee"
+  },
+  "KRIEGSMARINE": {
+   "label": "Kriegsmarine",
+   "decisive": "affondare una nave nemica, oppure azzopparne una e sganciarsi",
+   "marginal": "sganciarsi, oppure azzoppare una nave nemica"
+  }
+ },
+ "notes": [
+  "I mini-scenari non contano Punti Vittoria: hanno quattro caselle - Decisiva e Marginale per ciascuna parte - e si guarda quali sono state riempite. Sono battaglie brevi, e conta se hai fatto la cosa, non quanto.",
+  "\"Azzoppare\" (cripple) vuol dire rendere Danneggiata una nave; con le Regole Avanzate di Battaglia vale anche una nave che ha subito un effetto speciale."
+ ]
+}

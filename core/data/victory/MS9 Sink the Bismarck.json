@@ -1,0 +1,21 @@
+{
+ "_scenario": "MS9 Sink the Bismarck",
+ "_source": "Fascicolo Scenari per 2 Giocatori, edizione INGLESE (AC_TwoPlayer_Book_May_9_2021), p.48. Trascritta a mano.",
+ "mode": "OBJECTIVES",
+ "objectives": {
+  "ROYAL_NAVY": {
+   "label": "Royal Navy",
+   "decisive": "affondare il Bismarck",
+   "marginal": "azzoppare il Bismarck"
+  },
+  "KRIEGSMARINE": {
+   "label": "Kriegsmarine",
+   "decisive": "affondare 1 nave nemica, oppure azzopparne 2",
+   "marginal": "azzoppare 1 nave nemica"
+  }
+ },
+ "notes": [
+  "I mini-scenari non contano Punti Vittoria: hanno quattro caselle - Decisiva e Marginale per ciascuna parte - e si guarda quali sono state riempite. Sono battaglie brevi, e conta se hai fatto la cosa, non quanto.",
+  "\"Azzoppare\" (cripple) vuol dire rendere Danneggiata una nave; con le Regole Avanzate di Battaglia vale anche una nave che ha subito un effetto speciale."
+ ]
+}

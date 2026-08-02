@@ -189,11 +189,12 @@ func test_victory_table() -> void:
 		"e viene mostrata: " + String(o2["tiebreak_text"]))
 
 	# uno scenario senza tabella lo dichiara invece di inventare punteggi
-	var ms := Scenario.load_by_id("MS1 Cornered")
-	false_(ms.has_victory_table(), "i mini-scenari non hanno ancora la tabella")
-	var v2 := Victory.from_scenario(ms)
-	true_(v2.describe(GameState.new(graph, 1)).contains("non trascritta"),
-		"e il motore lo dice")
+	# tutti e 22 gli scenari hanno ora le loro condizioni di vittoria
+	for id in Scenario.list_ids():
+		if id == "Campaign":
+			continue      # la Campagna non e' uno scenario, e' la riserva navi
+		true_(Scenario.load_by_id(id).has_victory_table(),
+			"%s ha le sue condizioni di vittoria" % id)
 
 
 ## I dodici mini-scenari non sono partite sulla mappa operazionale: sono
