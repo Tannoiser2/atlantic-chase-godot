@@ -114,6 +114,16 @@ func display_name() -> String:
 	return "%s %s-%d" % [s, color, slot]
 
 
+## Etichetta corta per il badge sulla mappa. Deve stare dentro un rettangolino
+## di pochi pixel, quindi si tronca - NON si tiene solo la prima parola: gli
+## scenari chiamano le Task Force "RN Brown-0", e la prima parola sarebbe la
+## bandiera, cioe' l'unica cosa che il badge non ha bisogno di dire.
+func short_name() -> String:
+	if name != "":
+		return name if name.length() <= 12 else name.substr(0, 11) + "."
+	return "%s %d" % ["KM" if side == Side.KRIEGSMARINE else "RN", slot]
+
+
 func to_dict() -> Dictionary:
 	var sh: Array = []
 	for s in ships:

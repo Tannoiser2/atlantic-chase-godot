@@ -23,8 +23,29 @@ DIRS = [(1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1), (0, 1)]
 def main():
     g = json.load(open(GRAPH))
     a = json.load(open(ANN))
-    play = {(h["q"], h["r"]) for h in g["hexes"]}
     problems = []
+
+    # Esagoni tolti a mano perche' cadono sopra le TABELLE stampate sulla mappa.
+    # Il criterio automatico li teneva: hanno un po' di azzurro sotto, ma e' lo
+    # sfondo del pannello, non mare. Vedi il commento in map_annotations.json:
+    # NON basta guardare quanto un esagono esce dalla cornice.
+    drop = set()
+    for key in a.get("force_unplayable", {}):
+        if key.startswith("_"):
+            continue
+        q, r = (int(x) for x in key.split(","))
+        drop.add((q, r))
+    if drop:
+        before = len(g["hexes"])
+        g["hexes"] = [h for h in g["hexes"] if (h["q"], h["r"]) not in drop]
+        for h in g["hexes"]:
+            h["neighbors"] = [n for n in h["neighbors"]
+                              if (n["q"], n["r"]) not in drop]
+        g["hex_count"] = len(g["hexes"])
+        print("[annot] esagoni sopra le tabelle rimossi: %d (%d -> %d)"
+              % (len(drop), before, len(g["hexes"])))
+
+    play = {(h["q"], h["r"]) for h in g["hexes"]}
 
     def check(aq, ar, bq, br, what):
         A, B = (aq, ar), (bq, br)
