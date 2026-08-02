@@ -17,6 +17,8 @@ func run() -> void:
 	test_stopped_cannot_change_attitude()
 	test_pursuit()
 	test_disengagement_on_finish()
+	test_confusion()
+	test_confusion_assigned_at_start()
 
 
 func _rng(v: Array) -> DiceRNG:
@@ -240,3 +242,83 @@ func test_disengagement_on_finish() -> void:
 	var rngC := DiceRNG.new(11)
 	Battle.new(st3, rngC).finish()
 	false_(s3.sunk, "con le regole base non si verifica il Disingaggio")
+
+
+## Il segnalino Confusione: un jolly da giocare una volta sola.
+func test_confusion() -> void:
+	_begin("Confusione")
+	var st := _battle(true)
+	var km := TaskForce.Side.KRIEGSMARINE
+	var rn := TaskForce.Side.ROYAL_NAVY
+
+	eq(st.confusion_side, -1, "all'inizio non ce l'ha nessuno")
+	false_(Snafu.confusion_available(st, km), "e non e' disponibile")
+
+	st.confusion_side = km
+	true_(Snafu.confusion_available(st, km), "ora il tedesco ce l'ha")
+	false_(Snafu.confusion_available(st, rn), "il britannico no")
+
+	# spostare un Colpo su un'altra nave PROPRIA
+	var a := _ship("Bismarck")
+	var b := _ship("Preugen")
+	a.hits = 2
+	var r := Snafu.confusion_transfer(st, km, a, b)
+	true_(r["ok"], "il trasferimento riesce")
+	eq(a.hits, 1, "il Colpo lascia la prima nave")
+	true_(b.hits > 0 or b.damaged, "e arriva alla seconda")
+	true_(st.confusion_used, "e il segnalino e' speso")
+	false_(Snafu.confusion_available(st, km), "una volta sola")
+
+	# un secondo uso e' rifiutato
+	var again := Snafu.confusion_transfer(st, km, a, b)
+	false_(again["ok"], "il secondo uso e' rifiutato")
+
+	# spostare un EFFETTO, non un Colpo
+	var st2 := _battle(true)
+	st2.confusion_side = km
+	var c := _ship("Hipper")
+	var d := _ship("Lutzow")
+	SpecialEffects.apply(c, SpecialEffects.RUDDER)
+	var r2 := Snafu.confusion_transfer(st2, km, c, d, SpecialEffects.RUDDER)
+	true_(r2["ok"], "anche un effetto si sposta")
+	false_(SpecialEffects.has(c, SpecialEffects.RUDDER), "lascia la prima")
+	true_(SpecialEffects.has(d, SpecialEffects.RUDDER), "e arriva alla seconda")
+
+	# non si sposta niente su una nave affondata
+	var st3 := _battle(true)
+	st3.confusion_side = km
+	var e := _ship("Scharnhorst")
+	var f := _ship("Gneisenau")
+	e.hits = 1
+	f.sunk = true
+	false_(Snafu.confusion_transfer(st3, km, e, f)["ok"],
+		"non si scarica un danno su un relitto")
+
+	# gli usi che non spostano danni consumano comunque il jolly
+	var st4 := _battle(true)
+	st4.confusion_side = rn
+	var sp := Snafu.confusion_spend(st4, rn,
+		Snafu.ConfusionUse.MANEUVER_CONTROL)
+	true_(sp["ok"], "si puo' spendere per comandare una nave nemica")
+	true_(st4.confusion_used, "e si consuma lo stesso")
+
+
+## Con un risultato Confusione il segnalino viene assegnato all'apertura.
+func test_confusion_assigned_at_start() -> void:
+	_begin("assegnazione del segnalino")
+	var st := _battle(true)
+	var rng := DiceRNG.new(1)
+	# 1+1 = 2 sulla colonna Buono: Confusione. Poi un dado PARI: va all'Attivo.
+	rng.push_forced([1, 1, 4])
+	var b := Battle.new(st, rng)
+	b.start()
+	eq(int(b.snafu["result"]), Snafu.Result.CONFUSION, "il Snafu da' Confusione")
+	eq(st.confusion_side, TaskForce.Side.KRIEGSMARINE,
+		"e con un dado PARI il segnalino va al giocatore Attivo")
+
+	var st2 := _battle(true)
+	var rng2 := DiceRNG.new(1)
+	rng2.push_forced([1, 1, 3])
+	Battle.new(st2, rng2).start()
+	eq(st2.confusion_side, TaskForce.Side.ROYAL_NAVY,
+		"con un dado DISPARI va all'Inattivo")

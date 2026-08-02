@@ -57,6 +57,12 @@ var advanced: bool = false
 ## combatterebbero all'infinito.
 var extended: bool = false
 
+## Il segnalino Confusione (Verifica Snafu): chi ce l'ha, e se lo ha gia' speso.
+## -1 = nessuno ce l'ha. Vale una volta sola in tutta la Battaglia, ed e'
+## l'unico elemento del gioco che permette di toccare le navi altrui.
+var confusion_side: int = -1
+var confusion_used: bool = false
+
 var kind: int = Kind.BATTLE
 var weather: int = TimeLapse.Weather.GOOD
 

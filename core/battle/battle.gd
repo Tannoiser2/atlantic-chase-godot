@@ -54,6 +54,14 @@ func start() -> void:
 	if bool(snafu["extra_round"]):
 		state.last_round += 1
 		state.note("  Ultimo Round spostato a %d." % state.last_round)
+	if int(snafu["result"]) == Snafu.Result.CONFUSION:
+		# chi riceve il segnalino si decide con un dado: PARI, l'Attivo
+		var to_active := Snafu.beneficiary_is_active(rng)
+		var tf := state.active_tf if to_active else state.target_tf
+		state.confusion_side = tf.side if tf != null else -1
+		state.note("  Il segnalino Confusione va a %s."
+			% ("Kriegsmarine" if state.confusion_side
+				== TaskForce.Side.KRIEGSMARINE else "Royal Navy"))
 
 
 # -------------------------------------------------------- 1. Attitudine --

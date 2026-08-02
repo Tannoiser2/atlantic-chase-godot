@@ -66,6 +66,11 @@ var targeting: Dictionary = {}
 ## bersaglio. Null = nessuna in attesa.
 var _assigning: Ship = null
 
+## Le navi che hanno dichiarato il Controllo Danni per gli Effetti Duraturi:
+## tirano tre dadi e tengono i due piu' alti, ma non spareranno nel Round
+## successivo. Si dichiara PRIMA di tirare, e per questo va raccolto qui.
+var _damage_control: Array[Ship] = []
+
 var _log: RichTextLabel
 var _header: RichTextLabel
 var _hint: Label
@@ -168,9 +173,21 @@ func _rebuild_buttons() -> void:
 				items.append(["Bersagli automatici", "A", _auto_assign, false])
 				if not targeting.is_empty():
 					items.append(["Azzera bersagli", "R", _clear_targets, false])
+			BattleState.Phase.ATTITUDE:
+				items.append(["Conferma Attitudini", "SPAZIO", _advance_phase,
+					true])
+				items.append(["Cambia attitudine", "A", _cycle_attitude, false])
+			BattleState.Phase.LINGERING:
+				items.append(["Tira gli Effetti Duraturi", "SPAZIO",
+					_advance_phase, true])
+				items.append(["Controllo Danni: %s" % (
+					selected.name if selected != null else "-"), "C",
+					_toggle_damage_control, false])
 			BattleState.Phase.MANEUVER:
 				items.append(["Fine Manovra", "SPAZIO", _advance_phase, true])
 				items.append(["Fumo", "S", _smoke_selected, false])
+				if selected != null and Attitude.can_pursue(selected):
+					items.append(["Insegui", "I", _pursue_selected, false])
 			BattleState.Phase.BREAK_AWAY:
 				items.append(["Nessuna Fuga", "SPAZIO", _advance_phase, true])
 				items.append(["Fuga: %s" % _side_label(true), "F",
@@ -298,6 +315,65 @@ func _side_label(active: bool) -> String:
 	if tf == null:
 		return "Attiva" if active else "Bersaglio"
 	return "Kriegsmarine" if tf.side == TaskForce.Side.KRIEGSMARINE else "Royal Navy"
+
+
+## Cicla l'attitudine della nave selezionata fra le tre.
+##
+## Il fascicolo vorrebbe che si scegliessero in segreto e si rivelassero
+## insieme; qui si assegnano a vista, che e' l'unico modo sensato quando i due
+## giocatori guardano lo stesso schermo.
+func _cycle_attitude() -> void:
+	if selected == null:
+		state.note("Attitudine: seleziona prima una nave.")
+		refresh()
+		return
+	if selected.current_speed() == TimeLapse.Speed.STOPPED:
+		state.note("%s e' ferma: non puo' cambiare attitudine." % selected.name)
+		refresh()
+		return
+	selected.attitude = (selected.attitude + 1) % 3
+	state.note("%s: %s - %s" % [selected.name,
+		Attitude.label(selected.attitude),
+		Attitude.describe(selected.attitude)])
+	refresh()
+
+
+func _toggle_damage_control() -> void:
+	if selected == null:
+		state.note("Controllo Danni: seleziona prima una nave.")
+	elif not selected.has_special_effect():
+		state.note("%s non ha effetti speciali da riparare." % selected.name)
+	elif _damage_control.has(selected):
+		_damage_control.erase(selected)
+		state.note("%s: Controllo Danni annullato." % selected.name)
+	else:
+		_damage_control.append(selected)
+		state.note("%s dichiara il Controllo Danni: tre dadi invece di due, "
+			% selected.name + "ma non sparera' nel Round successivo.")
+	refresh()
+
+
+## Inseguimento: la nave selezionata si tira dietro una nave nemica.
+func _pursue_selected() -> void:
+	if selected == null or not Attitude.can_pursue(selected):
+		state.note("Inseguire: serve una nave in Avvicinamento in zona Vicina "
+			+ "o Ravvicinata.")
+		refresh()
+		return
+	var enemies := state.target_ships() if state.active_ships().has(selected) \
+		else state.active_ships()
+	var best: Ship = null
+	for e in enemies:
+		if Attitude.pursuit_refusal(selected, e) == "":
+			best = e
+			break
+	if best == null:
+		state.note("%s non riesce a tirarsi dietro nessuno." % selected.name)
+		refresh()
+		return
+	var r := Attitude.pursue(selected, best)
+	state.note(String(r["log"]) if bool(r["ok"]) else String(r["error"]))
+	refresh()
 
 
 func _smoke_selected() -> void:
@@ -628,6 +704,16 @@ func handle_key(k: InputEventKey) -> bool:
 		KEY_A:
 			if _is_targeting_phase():
 				_auto_assign()
+			elif state.phase == BattleState.Phase.ATTITUDE:
+				_cycle_attitude()
+			return true
+		KEY_C:
+			if state.phase == BattleState.Phase.LINGERING:
+				_toggle_damage_control()
+			return true
+		KEY_I:
+			if state.phase == BattleState.Phase.MANEUVER:
+				_pursue_selected()
 			return true
 		KEY_R:
 			if _is_targeting_phase():
@@ -654,6 +740,18 @@ func _advance_phase() -> void:
 		closed.emit()
 		return
 	match state.phase:
+		BattleState.Phase.ATTITUDE:
+			# le attitudini le ha gia' scritte il giocatore cliccando le navi;
+			# qui si applicano gli effetti che scattano in questa fase
+			battle.attitude_phase({})
+			if not state.ended:
+				state.phase = BattleState.Phase.GUNNERY
+				_preassign()
+		BattleState.Phase.LINGERING:
+			battle.lingering_phase(_damage_control)
+			_damage_control.clear()
+			if not state.ended:
+				state.phase = BattleState.Phase.BREAK_AWAY
 		BattleState.Phase.GUNNERY:
 			# I bersagli sono quelli scelti dal GIOCATORE (RB p.57: ogni nave
 			# "ha l'opportunita' di attaccare una volta" e "deve attaccare una
@@ -682,10 +780,14 @@ func _advance_phase() -> void:
 				state.phase = BattleState.Phase.MANEUVER
 		BattleState.Phase.MANEUVER:
 			state.note("Manovra conclusa.")
-			state.phase = BattleState.Phase.BREAK_AWAY
+			state.phase = state.next_phase()
 		BattleState.Phase.BREAK_AWAY:
 			_do_break_away(false, false)
 			_preassign()
+			# in avanzato il Round riparte dall'Attitudine, non dal Fuoco
+			if not state.ended and state.advanced \
+					and state.phase == BattleState.Phase.GUNNERY:
+				state.phase = BattleState.Phase.ATTITUDE
 		_:
 			closed.emit()
 			return
@@ -767,8 +869,14 @@ func _hint_for_phase() -> String:
 				return ("Siluri: clicca una nave in zona Ravvicinata, poi il "
 					+ "bersaglio.  A: automatici.  SPAZIO: nessun lancio")
 			return "SPAZIO: lancia i siluri"
+		BattleState.Phase.ATTITUDE:
+			return ("Clicca una nave e premi A per cambiarle attitudine.  "
+				+ "SPAZIO: conferma e passa al Fuoco")
+		BattleState.Phase.LINGERING:
+			return ("Effetti Duraturi: C dichiara il Controllo Danni sulla "
+				+ "nave selezionata (tre dadi, ma non sparera').  SPAZIO: tira")
 		BattleState.Phase.MANEUVER:
-			return "Trascina una nave nella zona adiacente (o clic nave + clic zona).  S: Fumo.  SPAZIO: fine Manovra"
+			return "Trascina una nave nella zona adiacente.  S: Fumo.  I: Insegui.  SPAZIO: fine Manovra"
 		BattleState.Phase.BREAK_AWAY:
 			return "F: la TF Attiva tenta la Fuga   G: la TF Bersaglio tenta la Fuga   SPAZIO: nessuno tenta"
 	return ""

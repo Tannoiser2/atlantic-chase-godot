@@ -120,6 +120,82 @@ static func beneficiary_is_active(rng: DiceRNG) -> bool:
 	return rng.d6("chi beneficia del risultato Snafu") % 2 == 0
 
 
+# ------------------------------------------------------------ Confusione --
+
+## Il segnalino Confusione: un jolly da giocare UNA VOLTA in tutta la Battaglia.
+##
+## Chi lo ha puo' fare una di tre cose, e sono tre cose molto diverse fra loro:
+##
+##   nel FUOCO       spostare un Colpo o un Effetto Speciale da una sua nave a
+##                   un'altra SUA nave - non a una nemica. Va deciso nel
+##                   momento in cui il risultato esce, senza aspettare di
+##                   sapere quale effetto e';
+##   nella MANOVRA   comandare una nave NEMICA per quel movimento: muoverla,
+##                   non muoverla, farle fare Fumo o no;
+##   nell'ATTITUDINE decidere l'attitudine di una nave nemica.
+##
+## E' l'unico elemento del gioco che permette di toccare le navi altrui, ed e'
+## per questo che vale una volta sola.
+enum ConfusionUse { GUNNERY_TRANSFER, MANEUVER_CONTROL, ATTITUDE_CONTROL }
+
+const CONFUSION_USES := {
+	ConfusionUse.GUNNERY_TRANSFER: ("sposta un Colpo o un Effetto Speciale su "
+		+ "un'altra nave TUA"),
+	ConfusionUse.MANEUVER_CONTROL: "comanda una nave nemica durante la Manovra",
+	ConfusionUse.ATTITUDE_CONTROL: "decide l'attitudine di una nave nemica",
+}
+
+
+## Chi ha il segnalino puo' ancora usarlo?
+static func confusion_available(state: BattleState, side: int) -> bool:
+	return state.confusion_side == side and not state.confusion_used
+
+
+## Sposta un Colpo o un Effetto da una propria nave a un'altra propria nave.
+## Ritorna { ok, error, log }.
+static func confusion_transfer(state: BattleState, side: int, from: Ship,
+		to: Ship, effect: String = "") -> Dictionary:
+	if not confusion_available(state, side):
+		return {"ok": false, "log": "", "error":
+			"la Confusione non e' disponibile: o non e' tua o e' gia' stata usata"}
+	if from == null or to == null or from == to:
+		return {"ok": false, "log": "", "error": "servono due navi diverse"}
+	if to.sunk:
+		return {"ok": false, "log": "", "error":
+			"non si puo' spostare un danno su una nave affondata"}
+	var txt := ""
+	if effect == "":
+		if from.hits <= 0:
+			return {"ok": false, "log": "", "error":
+				"%s non ha Colpi da spostare" % from.name}
+		from.hits -= 1
+		txt = "%s passa un Colpo a %s. %s" % [from.name, to.name,
+			to.apply_hits(1)]
+	else:
+		if not from.special_effects.has(effect):
+			return {"ok": false, "log": "", "error":
+				"%s non ha l'effetto %s" % [from.name, effect]}
+		from.special_effects.erase(effect)
+		var r := SpecialEffects.apply(to, effect)
+		txt = "%s passa %s a %s. %s" % [from.name, effect, to.name,
+			String(r["log"])]
+	state.confusion_used = true
+	return {"ok": true, "error": "", "log": "Confusione: " + txt}
+
+
+## Consuma il segnalino per un uso che non sposta danni (Manovra o Attitudine):
+## il controllo della nave nemica lo esercita il giocatore, qui si registra
+## solo che il jolly e' stato speso.
+static func confusion_spend(state: BattleState, side: int,
+		use: int) -> Dictionary:
+	if not confusion_available(state, side):
+		return {"ok": false, "log": "", "error":
+			"la Confusione non e' disponibile"}
+	state.confusion_used = true
+	return {"ok": true, "error": "", "log": "Confusione usata: %s."
+		% String(CONFUSION_USES.get(use, ""))}
+
+
 # ------------------------------------------------------------ durata della Battaglia --
 
 ## Quanti Round dura la Battaglia, con le Regole Avanzate.

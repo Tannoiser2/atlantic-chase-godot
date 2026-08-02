@@ -12,10 +12,10 @@ Questo file dice **da dove ripartire e cosa non rifare**.
 
 Versione digitale di *Atlantic Chase* (GMT Games, 2020) in **Godot 4.7**,
 GDScript. Motore di regole puro e testabile headless, interfaccia sopra.
-**1756 verifiche su 16 suite, tutte verdi.** Repository `Tannoiser2/atlantic-chase-godot`, branch `master`.
+**1775 verifiche su 16 suite, tutte verdi.** Repository `Tannoiser2/atlantic-chase-godot`, branch `master`.
 
 ```bash
-godot --headless --path . --script res://tests/run_tests.gd   # 1756 verifiche
+godot --headless --path . --script res://tests/run_tests.gd   # 1775 verifiche
 godot --path . --script res://tools/smoke_ui.gd               # prova di fumo GUI
 sh tools/build_macos.sh                                       # app per macOS
 ```
@@ -183,9 +183,6 @@ modello già esistente. Sarebbe stata una regola inventata ogni volta.
   BL2 e BL3 trascritte
 
 **Non finito, e perché:**
-- la **Confusione**: la regola è letta e scritta per esteso in
-  `Snafu.EXPLAIN`, ma il segnalino non esiste come oggetto di gioco. Serve
-  ricordare chi ce l'ha e permettergli di usarlo una volta.
 - gli effetti Snafu che **assegnano una scelta a un giocatore** (Confusione,
   Niente Radar, Rotta Inaspettata, Arco Aperto, Problemi Meccanici, Sala
   Caldaie) sono spiegati per esteso nel registro, ma vanno applicati a mano:
@@ -278,7 +275,16 @@ modello già esistente. Sarebbe stata una regola inventata ogni volta.
   Ora `run_tests.gd` ha un conto atteso per suite: una verifica che non gira è
   un test fallito. **Quando aggiungi test, alza i numeri in `EXPECTED`.**
 
-**1756 verifiche su 16 suite.**
+- **Le due fasi nuove nella VISTA**: Attitudine (clic sulla nave, `A` per
+  ciclare) ed Effetti Duraturi (`C` dichiara il Controllo Danni). Il Round
+  avanzato riparte dall'Attitudine, non dal Fuoco. E l'**Inseguimento** ha il
+  suo comando (`I`) nella Manovra.
+- **La Confusione** è un oggetto di gioco: `BattleState.confusion_side` /
+  `confusion_used`, assegnata all'apertura con il tiro previsto (PARI →
+  Attivo), spendibile una volta sola per spostare un Colpo o un Effetto su una
+  nave **propria**, o per comandare una nave nemica.
+
+**1775 verifiche su 16 suite. Il motore delle Regole Avanzate è completo.**
 
 #### Nota importante sui risultati avanzati
 In avanzato il risultato **non è più "quanti Colpi"** ma una casella di
@@ -293,11 +299,10 @@ separato. Chi collega gli effetti speciali deve partire da lì.
    e collegati.** La catena del combattimento avanzato è completa: tiro →
    colonna per attitudine → Risultato Speciale → dove ha colpito (colonna per
    raggio) → effetto → la nave cambia davvero.
-2. **Le due fasi nuove nella VISTA di Battaglia.** Nel motore ci sono e sono
-   testate (`Battle.attitude_phase()`, `Battle.lingering_phase()`), ma
-   `ui/battle_view/battle_view.gd` conosce ancora solo le quattro fasi base:
-   `_advance_phase()` va esteso e servono i comandi per scegliere l'attitudine
-   di ogni nave e per dichiarare il Controllo Danni.
+2. ~~**Le due fasi nuove nella vista**~~ e ~~**la Confusione**~~ — **FATTE.**
+   Il motore e l'interfaccia delle Regole Avanzate sono completi. Resta solo
+   che `BattleState.advanced` non è ancora attivabile dal giocatore: va
+   acceso da codice. Serve una scelta nella schermata iniziale o nel menu.
 3. ~~**Effetti Duraturi**~~ e ~~**Disingaggio**~~ — procedure **FATTE**,
    mancano solo le due griglie (vedi sopra). Da collegare al ciclo del Round in
    `Battle`: oggi nessuno chiama `Lingering.lingering_checks()`.
