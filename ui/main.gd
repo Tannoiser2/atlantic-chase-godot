@@ -1929,6 +1929,7 @@ func _update_preview(h: Vector2i) -> void:
 var _lbl_title: Label
 var _lbl_info: RichTextLabel
 var _lbl_log: RichTextLabel
+var _lbl_roster: RichTextLabel
 
 ## Pannello "ora tocca a": chi sta agendo, cosa aspetta il gioco, e cosa NON si
 ## puo' fare con il motivo accanto.
@@ -1973,6 +1974,26 @@ func _build_hud() -> void:
 	_lbl_info.custom_minimum_size = Vector2(340, 0)
 	_lbl_info.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vb.add_child(_lbl_info)
+
+	var roster_panel := PanelContainer.new()
+	roster_panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	roster_panel.offset_left = -520
+	roster_panel.offset_right = -12
+	roster_panel.offset_top = 62
+	roster_panel.offset_bottom = 430
+	roster_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	roster_panel.add_theme_stylebox_override("panel", _panel_style())
+	hud.add_child(roster_panel)
+
+	_lbl_roster = RichTextLabel.new()
+	_lbl_roster.bbcode_enabled = true
+	_lbl_roster.fit_content = false
+	_lbl_roster.scroll_active = true
+	_lbl_roster.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_lbl_roster.add_theme_font_size_override("normal_font_size", 14)
+	_lbl_roster.add_theme_font_size_override("bold_font_size", 14)
+	_lbl_roster.add_theme_font_size_override("italics_font_size", 14)
+	roster_panel.add_child(_lbl_roster)
 
 	var logpanel := PanelContainer.new()
 	logpanel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
@@ -2396,6 +2417,7 @@ func _refresh() -> void:
 			lines.append("  Totale Traiettoria vs %s: [b]%d[/b]"
 				% [enemy.display_name(), TrajectoryTotal.compute(d)])
 	_lbl_info.text = "\n".join(lines)
+	_refresh_roster()
 
 	_refresh_now()
 
@@ -2404,3 +2426,89 @@ func _refresh() -> void:
 	for m in _messages:
 		lg.append("  " + m)
 	_lbl_log.text = "\n".join(lg)
+
+
+func _refresh_roster() -> void:
+	if _lbl_roster == null:
+		return
+	var out: Array[String] = []
+	out.append("[b]Task Force in gioco[/b]")
+	if state == null or state.task_forces.is_empty():
+		out.append("[color=#c8b8a0]Nessuna TF sulla mappa.[/color]")
+	else:
+		_append_roster_side(out, TaskForce.Side.KRIEGSMARINE, "Kriegsmarine")
+		_append_roster_side(out, TaskForce.Side.ROYAL_NAVY, "Royal Navy")
+	_append_reinforcements(out)
+	_lbl_roster.text = "\n".join(out)
+
+
+func _append_roster_side(out: Array[String], side: int, label: String) -> void:
+	var forces := state.forces_of(side)
+	if forces.is_empty():
+		return
+	out.append("")
+	out.append("[b]%s[/b]" % label)
+	for tf in forces:
+		var col := traj_layer.color_for(tf).to_html(false) if traj_layer != null else "ffffff"
+		var selected := " [color=#8fd0ff](selezionata)[/color]" if tf == selected_tf else ""
+		out.append("[color=#%s]*[/color] [b]%s[/b]%s - %s"
+			% [col, tf.display_name(), selected, _tf_roster_position(tf)])
+		out.append("  %s" % _tf_roster_contents(tf))
+		if tf.leader != "" and not tf.unidentified:
+			out.append("  Cmd: %s" % tf.leader)
+
+
+func _tf_roster_position(tf: TaskForce) -> String:
+	var t := tf.trajectory
+	if t.is_station():
+		var port := " %s" % t.station_port if t.station_port != "" else ""
+		return "Stazione%s %s" % [port, _hex_text(t.station_hex)]
+	var head := t.end_hex(0)
+	var tail := t.end_hex(1)
+	return "Traiettoria %d seg, testa %s, coda %s" \
+		% [t.length(), _hex_text(head), _hex_text(tail)]
+
+
+func _tf_roster_contents(tf: TaskForce) -> String:
+	if tf.unidentified:
+		return "[color=#ffd27f]TF non identificata: navi nascoste[/color]"
+	if tf.ships.is_empty():
+		return "[color=#c8b8a0]Nessuna nave elencata[/color]"
+	var names: Array[String] = []
+	for sh in tf.ships:
+		names.append(sh.display())
+	return ", ".join(names)
+
+
+func _append_reinforcements(out: Array[String]) -> void:
+	if scenario == null or scenario.reinforcements.is_empty():
+		return
+	var any := false
+	for k_v: Variant in scenario.reinforcements.keys():
+		var ships: Array = scenario.reinforcements[k_v]
+		if not ships.is_empty():
+			any = true
+			break
+	out.append("")
+	out.append("[b]Box Rinforzi[/b]")
+	if not any:
+		out.append("[color=#c8b8a0]Tutti i gruppi disponibili sono gia' entrati o vuoti.[/color]")
+		return
+	var ports := scenario.reinforcement_ports()
+	for k_v: Variant in scenario.reinforcements.keys():
+		var group := String(k_v)
+		var ships: Array = scenario.reinforcements[k_v]
+		if ships.is_empty():
+			continue
+		var port_txt := ""
+		if ports.has(group):
+			var p: Dictionary = ports[group]
+			port_txt = " -> %s" % String(p.get("port", "porto"))
+		else:
+			port_txt = " -> porto non trascritto"
+		out.append("[b]%s[/b]%s" % [group, port_txt])
+		out.append("  %s" % ", ".join(ships))
+
+
+func _hex_text(h: Vector2i) -> String:
+	return "(%d,%d)" % [h.x, h.y]
