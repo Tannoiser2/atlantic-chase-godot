@@ -12,10 +12,10 @@ Questo file dice **da dove ripartire e cosa non rifare**.
 
 Versione digitale di *Atlantic Chase* (GMT Games, 2020) in **Godot 4.7**,
 GDScript. Motore di regole puro e testabile headless, interfaccia sopra.
-**1746 verifiche su 16 suite, tutte verdi.** Repository `Tannoiser2/atlantic-chase-godot`, branch `master`.
+**1756 verifiche su 16 suite, tutte verdi.** Repository `Tannoiser2/atlantic-chase-godot`, branch `master`.
 
 ```bash
-godot --headless --path . --script res://tests/run_tests.gd   # 1746 verifiche
+godot --headless --path . --script res://tests/run_tests.gd   # 1756 verifiche
 godot --path . --script res://tools/smoke_ui.gd               # prova di fumo GUI
 sh tools/build_macos.sh                                       # app per macOS
 ```
@@ -101,6 +101,17 @@ altrimenti Godot rifiuta l'export con un errore generico. E i preset di export
 vanno tenuti **minimali**: una sola chiave che Godot 4.7 non riconosce fa
 fallire tutto l'export con "errori di configurazione" e nessun dettaglio.
 
+### Un errore a runtime dentro un test non fa fallire la suite
+GDScript non ha eccezioni: un errore interrompe la funzione e l'esecuzione
+riprende dalla successiva. Un test a metà smette di verificare e nessuno se ne
+accorge. Per questo `tests/run_tests.gd` ha `EXPECTED`, il conto atteso per
+suite: **se aggiungi test, alza quei numeri**.
+
+E quando una suite fallisce, cerca `SCRIPT ERROR` nell'output completo: il
+messaggio vero (`Parse Error` in un file di `core/`) è quasi sempre lì, e
+l'errore che vedi nel test è solo una conseguenza — `Nonexistent function
+'new' in base 'GDScript'` vuol dire che quella classe **non ha compilato**.
+
 ### Le lambda GDScript catturano i locali per valore
 Un test che verificava un valore passato a un `Callable` era impossibile da
 scrivere così; serve un contenitore (Array) per farlo uscire.
@@ -172,11 +183,9 @@ modello già esistente. Sarebbe stata una regola inventata ogni volta.
   BL2 e BL3 trascritte
 
 **Non finito, e perché:**
-- il **Disingaggio all'uscita**: la tabella c'è, ma `Battle.finish()` non la
-  chiama ancora. È l'ultimo anello di `Lingering`.
-- la **Confusione** e l'**Inseguimento**: entrambe le regole sono lette e
-  scritte nei commenti (`Snafu.EXPLAIN`, `Attitude.can_pursue`), ma nessuna è
-  eseguibile.
+- la **Confusione**: la regola è letta e scritta per esteso in
+  `Snafu.EXPLAIN`, ma il segnalino non esiste come oggetto di gioco. Serve
+  ricordare chi ce l'ha e permettergli di usarlo una volta.
 - gli effetti Snafu che **assegnano una scelta a un giocatore** (Confusione,
   Niente Radar, Rotta Inaspettata, Arco Aperto, Problemi Meccanici, Sala
   Caldaie) sono spiegati per esteso nel registro, ma vanno applicati a mano:
@@ -261,7 +270,15 @@ modello già esistente. Sarebbe stata una regola inventata ogni volta.
   dell'Ultimo Round nessuna nave è in Corsa (una volta sola, se no due flotte
   decise a restare combatterebbero all'infinito).
 
-**1746 verifiche su 16 suite.**
+- **Disingaggio** collegato a `Battle.finish()` e **Inseguimento**
+  (`Attitude.pursue()`), l'ultima regola di Manovra che mancava.
+- **Il runner dei test aveva un buco serio**, ora chiuso: un errore a runtime
+  dentro un test lo interrompeva e basta, la suite proseguiva e il totale
+  scendeva **in silenzio** (56 verifiche diventate 23, e stampava `TUTTO OK`).
+  Ora `run_tests.gd` ha un conto atteso per suite: una verifica che non gira è
+  un test fallito. **Quando aggiungi test, alza i numeri in `EXPECTED`.**
+
+**1756 verifiche su 16 suite.**
 
 #### Nota importante sui risultati avanzati
 In avanzato il risultato **non è più "quanti Colpi"** ma una casella di

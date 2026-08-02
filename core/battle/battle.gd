@@ -24,17 +24,16 @@ var surprise_first_strike: bool = false
 ## Colpi si contano qui e da nessun'altra parte.
 var tracker: VictoryTracker = null
 
+## La Verifica Snafu di questa Battaglia, se si gioca in avanzato. Vuota con
+## le regole base.
+var snafu: Dictionary = {}
+
 
 func _init(p_state: BattleState, p_rng: DiceRNG,
 		p_tracker: VictoryTracker = null) -> void:
 	state = p_state
 	rng = p_rng
 	tracker = p_tracker
-
-
-## La Verifica Snafu di questa Battaglia, se si gioca in avanzato. Vuota con
-## le regole base.
-var snafu: Dictionary = {}
 
 
 func start() -> void:
@@ -349,6 +348,11 @@ func end_round() -> bool:
 ## l'Iniziativa. Le navi superstiti tornano alla loro Casella Task Force.
 func finish() -> Dictionary:
 	var out := {"sunk": [] as Array[String], "survivors": [] as Array[String]}
+	# La Verifica del Disingaggio viene PRIMA di tutto il resto: decide chi
+	# torna a casa e chi si autoaffonda a un passo dall'uscita, e una nave che
+	# non ce la fa non deve comparire fra i superstiti.
+	if state.advanced:
+		_disengagement()
 	for tf in [state.active_tf, state.target_tf]:
 		if tf == null:
 			continue
@@ -365,6 +369,37 @@ func finish() -> Dictionary:
 	state.note("Uscita: entrambe le Task Force diventano Stazioni in %s con un "
 		% str(state.hex) + "segnalino Contatto. I giocatori Cercano l'Iniziativa.")
 	return out
+
+
+## Verifica del Disingaggio (Regole Avanzate p.14): all'uscita ogni nave con
+## effetti speciali tira per sapere se ce la fa.
+##
+## E' l'ultimo momento in cui una Battaglia puo' ancora uccidere: un incendio
+## che ferma la nave da' autoaffondamento su tutte e quattro le colonne, quindi
+## una nave che esce in fiamme non torna a casa, punto.
+##
+## `german_vulnerable` e' la regola opzionale: il tedesco tira tre dadi e tiene
+## i due piu' bassi. Vale solo negli scenari operativi e nella Campagna, e non
+## se la Battaglia e' avvenuta vicino a casa - quindi la decisione sta fuori di
+## qui, e chi chiama la passa.
+func _disengagement(german_vulnerable: bool = false) -> void:
+	for tf in [state.active_tf, state.target_tf]:
+		if tf == null:
+			continue
+		var vulnerable: bool = german_vulnerable \
+			and tf.side == TaskForce.Side.KRIEGSMARINE
+		for s in tf.ships:
+			if s.sunk:
+				continue
+			for effect in Lingering.disengagement_checks(s):
+				var roll := Lingering.disengagement_roll(rng, vulnerable)
+				var res := Lingering.disengagement_result(effect,
+					int(roll["sum"]))
+				state.note("Disingaggio - %s, %s: 2d6 = %d -> %s"
+					% [s.name, effect, int(roll["sum"]), res])
+				state.note("  " + Lingering.apply_disengagement(s, effect, res))
+				if s.sunk:
+					break
 
 
 # ----------------------------------------------------- scelte automatiche --

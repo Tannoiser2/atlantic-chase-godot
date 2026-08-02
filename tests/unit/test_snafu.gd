@@ -15,6 +15,8 @@ func run() -> void:
 	test_extended()
 	test_round_sequence()
 	test_stopped_cannot_change_attitude()
+	test_pursuit()
+	test_disengagement_on_finish()
 
 
 func _rng(v: Array) -> DiceRNG:
@@ -117,7 +119,8 @@ func test_extended() -> void:
 	# la Battaglia si allunga UNA volta sola per questa condizione, se no due
 	# flotte decise a restare combatterebbero all'infinito
 	var st2 := _battle(true)
-	var b := Battle.new(st2, DiceRNG.new(7))
+	var rng2 := DiceRNG.new(7)
+	var b := Battle.new(st2, rng2)
 	st2.last_round = 1
 	st2.round_number = 1
 	false_(b.end_round(), "nessuno in Corsa: si continua")
@@ -165,7 +168,75 @@ func test_stopped_cannot_change_attitude() -> void:
 	SpecialEffects.apply(s, SpecialEffects.FLOOD_STOPPED)
 	eq(s.current_speed(), TimeLapse.Speed.STOPPED, "la nave e' ferma")
 
-	var b := Battle.new(st, DiceRNG.new(3))
+	var rng3 := DiceRNG.new(3)
+	var b := Battle.new(st, rng3)
 	b.attitude_phase({s: Attitude.Kind.RUNNING})
 	ne(s.attitude, Attitude.Kind.RUNNING,
 		"e non puo' decidere di scappare: e' bloccata anche nelle intenzioni")
+
+
+## Inseguimento: l'unico modo di muovere una nave avversaria.
+func test_pursuit() -> void:
+	_begin("Inseguimento")
+	var p := _ship("Hood", Attitude.Kind.CLOSING)
+	p.battle_zone = BattleState.Zone.NEAR
+	var t := _ship("Bismarck", Attitude.Kind.RUNNING)
+	t.battle_zone = BattleState.Zone.FAR
+	t.speed = TimeLapse.Speed.SLOW
+
+	eq(Attitude.pursuit_refusal(p, t), "", "una nave piu' veloce puo' tirarsela dietro")
+	var r := Attitude.pursue(p, t)
+	true_(r["ok"], "l'inseguimento riesce")
+	eq(t.battle_zone, BattleState.Zone.NEAR, "e il bersaglio si avvicina")
+
+	# oltre la Ravvicinata non si tira
+	t.battle_zone = BattleState.Zone.CLOSE
+	true_(Attitude.pursuit_refusal(p, t).contains("Ravvicinata"),
+		"da Ravvicinata non si va oltre")
+
+	# serve essere piu' veloci
+	t.battle_zone = BattleState.Zone.FAR
+	t.speed = TimeLapse.Speed.FAST
+	true_(Attitude.pursuit_refusal(p, t).contains("non e' piu' veloce"),
+		"con la stessa velocita' non si insegue")
+
+	# ma contro una nave che ACQUISISCE basta pareggiare: chi punta non sta
+	# badando a mantenere le distanze
+	t.attitude = Attitude.Kind.ACQUIRING
+	eq(Attitude.pursuit_refusal(p, t), "",
+		"contro chi acquisisce basta essere altrettanto veloci")
+
+	# e solo l'Avvicinamento insegue
+	p.attitude = Attitude.Kind.RUNNING
+	true_(Attitude.pursuit_refusal(p, t).contains("Avvicinamento"),
+		"chi scappa non insegue")
+
+
+## Il Disingaggio all'uscita: l'ultimo momento in cui una Battaglia uccide.
+func test_disengagement_on_finish() -> void:
+	_begin("Disingaggio all'uscita")
+	var st := _battle(true)
+	var s: Ship = st.active_ships()[0]
+	SpecialEffects.apply(s, SpecialEffects.FIRE_STOPPED)
+
+	var rngA := DiceRNG.new(11)
+	var b := Battle.new(st, rngA)
+	b.finish()
+	true_(s.sunk,
+		"una nave che esce con un incendio che la ferma non torna a casa: "
+		+ "autoaffondamento su tutte e quattro le colonne")
+
+	# senza effetti speciali non si tira niente
+	var st2 := _battle(true)
+	var s2: Ship = st2.active_ships()[0]
+	var rngB := DiceRNG.new(11)
+	Battle.new(st2, rngB).finish()
+	false_(s2.sunk, "chi esce integro non rischia niente")
+
+	# e con le regole base il Disingaggio non esiste
+	var st3 := _battle(false)
+	var s3: Ship = st3.active_ships()[0]
+	s3.special_effects.append(SpecialEffects.FIRE_STOPPED)
+	var rngC := DiceRNG.new(11)
+	Battle.new(st3, rngC).finish()
+	false_(s3.sunk, "con le regole base non si verifica il Disingaggio")

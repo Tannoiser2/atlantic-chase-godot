@@ -175,6 +175,52 @@ static func break_away_modifier(state: BattleState, escaping_active: bool) -> in
 	return m
 
 
+## INSEGUIMENTO (Regole Avanzate p.10, carta di aiuto).
+##
+## Nella Manovra, una nave in Avvicinamento in zona Vicina o Ravvicinata puo'
+## rinunciare a muoversi e TIRARSI DIETRO una nave nemica: da Lontana a Vicina,
+## o da Vicina a Ravvicinata.
+##
+## E' l'unico modo di muovere una nave avversaria, ed e' la risposta a chi
+## scappa: non la insegui andandole dietro, la tieni agganciata.
+##
+## La nave tirata dev'essere piu' LENTA di chi insegue - ma se sta acquisendo
+## basta che chi insegue sia altrettanto veloce: una nave che punta non sta
+## badando a mantenere le distanze.
+static func pursuit_refusal(pursuer: Ship, target: Ship) -> String:
+	if not can_pursue(pursuer):
+		return ("solo una nave in Avvicinamento, e solo dalla zona Vicina o "
+			+ "Ravvicinata, puo' Inseguire")
+	if target == null or target.sunk:
+		return "nessun bersaglio da inseguire"
+	if target.battle_zone == BattleState.Zone.CLOSE:
+		return "%s e' gia' in zona Ravvicinata: non si puo' tirare oltre" % target.name
+	var need_strictly_faster := target.attitude != Kind.ACQUIRING
+	var p := pursuer.current_speed()
+	var t := target.current_speed()
+	if need_strictly_faster and p <= t:
+		return ("%s non e' piu' veloce di %s: non riesce a tirarsela dietro"
+			% [pursuer.name, target.name])
+	if not need_strictly_faster and p < t:
+		return ("%s e' piu' lenta di %s, che sta acquisendo: non basta"
+			% [pursuer.name, target.name])
+	return ""
+
+
+## Esegue l'Inseguimento: la nave bersaglio si avvicina di una zona.
+static func pursue(pursuer: Ship, target: Ship) -> Dictionary:
+	var why := pursuit_refusal(pursuer, target)
+	if why != "":
+		return {"ok": false, "error": why, "log": ""}
+	var from := target.battle_zone
+	target.battle_zone = BattleState.Zone.NEAR \
+		if from == BattleState.Zone.FAR else BattleState.Zone.CLOSE
+	return {"ok": true, "error": "", "log":
+		"%s insegue %s e se la tira dietro: da %s a %s." % [pursuer.name,
+			target.name, BattleState.ZONE_LABELS[from],
+			BattleState.ZONE_LABELS[target.battle_zone]]}
+
+
 ## Riassunto leggibile di cosa comporta questa attitudine, per l'interfaccia.
 static func describe(kind: int) -> String:
 	match kind:
