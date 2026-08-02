@@ -420,7 +420,8 @@ func _declare_action(key: String) -> void:
 	elif initiative_changed:
 		if bool(engine.action(key).get("causes_time_lapse", false)):
 			await _time_lapse_designated_active(dec)
-		_change_initiative_to(1 - selected_tf.side)
+		if _change_initiative_to(1 - selected_tf.side):
+			await _maybe_run_solo_opponent_turn("risultato dell'azione")
 	else:
 		await _post_table_action_flow(key, dec)
 	_refresh()
@@ -515,11 +516,14 @@ func _handle_interruption_cancel(res: Dictionary, dec: ActionEngine.Declaration)
 	match int(ir.get("result", Interruption.Result.ALERT)):
 		Interruption.Result.SLIP_AWAY:
 			await _handle_slip_away(dec)
-			_seek_initiative()
+			if _seek_initiative():
+				await _maybe_run_solo_opponent_turn("Interruzione")
 		Interruption.Result.VIE_FOR_INITIATIVE:
-			_seek_initiative()
+			if _seek_initiative():
+				await _maybe_run_solo_opponent_turn("Interruzione")
 		Interruption.Result.INITIATIVE_CHANGE:
-			_change_initiative_to(1 - dec.active.side)
+			if _change_initiative_to(1 - dec.active.side):
+				await _maybe_run_solo_opponent_turn("Interruzione")
 
 
 func _handle_slip_away(dec: ActionEngine.Declaration) -> void:
@@ -565,9 +569,11 @@ func _post_table_action_flow(key: String, dec: ActionEngine.Declaration) -> void
 		await _time_lapse_designated_active(dec)
 	match key:
 		"NAVAL_SEARCH":
-			await _offer_steal_initiative("Ricerca Navale")
+			if await _offer_steal_initiative("Ricerca Navale"):
+				await _maybe_run_solo_opponent_turn("Ricerca Navale")
 		"ENGAGE", "AIR_STRIKE", "STEALTH_ATTACK":
-			_seek_initiative()
+			if _seek_initiative():
+				await _maybe_run_solo_opponent_turn("Cercare l'Iniziativa")
 
 
 func _time_lapse_designated_active(dec: ActionEngine.Declaration) -> void:
@@ -585,16 +591,18 @@ func _do_time_lapse_for(tf: TaskForce) -> void:
 	traj_layer.selected_tf_id = selected_tf.id if selected_tf != null else -1
 
 
-func _report_initiative(r: Dictionary) -> void:
+func _report_initiative(r: Dictionary) -> bool:
 	for line_v: Variant in r.get("log", []):
 		_msg(String(line_v))
 	if bool(r.get("changed", false)):
 		_select_first_initiative_force()
+		return true
+	return false
 
 
-func _change_initiative_to(side: int) -> void:
+func _change_initiative_to(side: int) -> bool:
 	if state.initiative == side:
-		return
+		return false
 	state.initiative = side
 	state.initiative_count = 0
 	var w := Initiative.weather_check(state)
@@ -602,10 +610,11 @@ func _change_initiative_to(side: int) -> void:
 		% Initiative.side_name(side))
 	_msg(String(w["log"]))
 	_select_first_initiative_force()
+	return true
 
 
-func _seek_initiative() -> void:
-	_report_initiative(Initiative.seek(state))
+func _seek_initiative() -> bool:
+	return _report_initiative(Initiative.seek(state))
 
 
 func _offer_steal_initiative(reason: String) -> bool:
@@ -692,7 +701,8 @@ func _close_battle(b: Battle) -> void:
 		if tf != null and state.task_force(tf.id) != null:
 			await _do_time_lapse_for(tf)
 	_battle_post_time_lapse.clear()
-	_seek_initiative()
+	if _seek_initiative():
+		await _maybe_run_solo_opponent_turn("fine Battaglia")
 	if _battle_layer != null:
 		_battle_layer.queue_free()
 		_battle_layer = null
@@ -1076,6 +1086,33 @@ func _solo_selector_label(table_id: String) -> String:
 	return "%d Completamenti riusciti" % state.convoys_completed
 
 
+func _solo_player_side() -> int:
+	if victory != null and victory.mode == Victory.Mode.DEBRIEFING:
+		return victory.solo_side
+	return -1
+
+
+func _solo_imaginary_side() -> int:
+	var player_side := _solo_player_side()
+	if player_side < 0:
+		return -1
+	return 1 - player_side
+
+
+func _solo_is_imaginary_turn() -> bool:
+	var imaginary := _solo_imaginary_side()
+	return solo != null and imaginary >= 0 and state.initiative == imaginary
+
+
+func _maybe_run_solo_opponent_turn(reason: String = "") -> void:
+	if not _solo_is_imaginary_turn():
+		return
+	if reason != "":
+		_msg("Solitario: l'Iniziativa e' dell'avversario immaginario (%s)."
+			% reason)
+	await _solo_roll_action(true)
+
+
 func _solo_modifiers(t: SoloTable) -> Array:
 	var active: Array = []
 	while true:
@@ -1099,17 +1136,18 @@ func _solo_modifiers(t: SoloTable) -> Array:
 	return active
 
 
-func _solo_roll_action() -> void:
+func _solo_roll_action(auto: bool = false) -> void:
 	if solo == null:
 		return
 	solo.set_phase(state.solo_phase, state.solo_phase_reason)
-	var tid := "actions_late" if solo.phase == SoloOpponent.Phase.LATE else "actions_early"
-	if not solo.has(tid):
-		tid = "actions"
+	var tid := solo.action_table_id()
 	var t := solo.table(tid)
 	if t == null:
 		_msg("Solitario: lo scenario non ha una Tabella delle Azioni.")
 		return
+	if auto:
+		_msg("Solitario: tiro automatico della Tabella delle Azioni. "
+			+ "Applica la procedura; le scelte discorsive restano al giocatore.")
 	var mods := await _solo_modifiers(t)
 	var result := solo.act(state.rng, _solo_selector_for(tid), mods)
 	_msg("Solitario - %s (%s)" % [t.title, _solo_selector_label(tid)])
@@ -1430,7 +1468,8 @@ func _reorg_reinforce() -> bool:
 		return false
 	if bool(r["initiative_passes"]):
 		await _do_time_lapse()
-		_report_initiative(Initiative.pass_to_inactive(state))
+		if _report_initiative(Initiative.pass_to_inactive(state)):
+			await _maybe_run_solo_opponent_turn("Rinforzi falliti")
 		return true
 	if bool(r["success"]):
 		scenario.reinforcements[keys[i]] = []
@@ -1504,7 +1543,8 @@ func _do_signal() -> void:
 			opts2)
 		if j == 0:
 			await _do_time_lapse_for(active)
-	await _offer_steal_initiative("Segnalazione")
+	if await _offer_steal_initiative("Segnalazione"):
+		await _maybe_run_solo_opponent_turn("Segnalazione")
 
 
 ## Completamento (RB p.29): le navi entrano in porto e lasciano il gioco.
@@ -1519,6 +1559,7 @@ func _do_completion() -> void:
 	if await _offer_steal_initiative("Completamento"):
 		_msg("Completamento fallito: l'Inattivo ha preso l'Iniziativa.")
 		await _do_time_lapse_for(completing_tf)
+		await _maybe_run_solo_opponent_turn("Completamento impedito")
 		return
 
 	var chosen: Dictionary = opts[0]
@@ -1557,7 +1598,8 @@ func _do_pass() -> void:
 	else:
 		_msg("%s e' gia' una Stazione: nessuno Scorrere del Tempo."
 			% selected_tf.display_name())
-	_report_initiative(Initiative.pass_to_inactive(state))
+	if _report_initiative(Initiative.pass_to_inactive(state)):
+		await _maybe_run_solo_opponent_turn("Passare")
 	_refresh()
 
 
@@ -1813,8 +1855,8 @@ func _action_unavailable_reason(key: String) -> String:
 		return "nessuna Task Force selezionata"
 	if selected_tf.side != state.initiative:
 		if solo != null and state.forces_of(state.initiative).is_empty():
-			return ("l'Iniziativa e' dell'avversario immaginario: usa O per "
-				+ "la Tabella Solitario")
+			return ("l'Iniziativa e' dell'avversario immaginario: la Tabella "
+				+ "Solitario viene tirata automaticamente; O la riapre")
 		return "l'Iniziativa e' di %s" % Initiative.side_name(state.initiative)
 	# Passare, Completamento e Traiettoria si dichiarano anche senza nemici in
 	# vista: pretendere un bersaglio le renderebbe indichiarabili
@@ -1879,7 +1921,8 @@ func _refresh_now() -> void:
 	if not has_init:
 		if solo != null and state.forces_of(state.initiative).is_empty():
 			out.append("[color=#ff9a3c]L'Iniziativa e' dell'avversario immaginario: "
-				+ "premi O e leggi la Tabella Solitario.[/color]")
+				+ "la Tabella Solitario viene tirata automaticamente quando "
+				+ "riceve il turno; O la riapre/manuale.[/color]")
 		else:
 			out.append("[color=#ff9a3c]Questa TF non puo' agire: l'Iniziativa e' di "
 				+ "[b]%s[/b].[/color]" % Initiative.side_name(state.initiative))
@@ -1908,7 +1951,8 @@ func _refresh_now() -> void:
 		else:
 			out.append("Traiettoria di [b]%d[/b] segmenti. Per modificarla dichiara "
 				% t.length()
-				+ "[b]Traiettoria (5)[/b]. T applica lo Scorrere del Tempo; "
+				+ "[b]Traiettoria (5)[/b]. T applica solo lo Scorrere del Tempo; "
+				+ "[b]7 Passare[/b] lo fa come azione e passa l'Iniziativa. "
 				+ "F cambia il capo preparato.")
 
 	# le azioni, divise in due e i motivi raggruppati
@@ -2060,7 +2104,7 @@ func _build_help(root: Control) -> void:
   5 / Traiettoria                             arma il tracciamento della rotta
   [b]trascina dalla TF sugli esagoni[/b]             disegna la rotta armata in un gesto solo
   clic su un esagono adiacente                estende di un esagono, solo dopo 5
-  T / Scorrere del Tempo                      rimuove segmenti secondo velocita' e meteo
+  T / Scorrere del Tempo                      rimuove segmenti; non passa l'Iniziativa
   Tab / Shift+Tab                             TF successiva / precedente
   F                                           cambia capo attivo (testa/coda)
   ESC                                         annulla l'azione Traiettoria armata
@@ -2072,7 +2116,9 @@ func _build_help(root: Control) -> void:
   7  Passare         8  Riorganizzare
   9  Segnalazione
   T  Scorrere del Tempo sulla TF selezionata
-  O   avversario immaginario (modo solitario)
+  O   avversario immaginario (modo solitario; riapre le tabelle)
+  Nel solitario, quando l'avversario immaginario riceve l'Iniziativa,
+     la sua Tabella delle Azioni viene tirata automaticamente.
   0   apre una Battaglia di prova
   Ctrl+W  alterna meteo buono/cattivo
   Ctrl+Z / Ctrl+Shift+Z   annulla / ripristina

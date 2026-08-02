@@ -71,6 +71,20 @@ func set_phase(new_phase: int, reason: String = "") -> void:
 	phase_reason = reason if phase == Phase.LATE else ""
 
 
+## Quale tabella decide la prossima azione dell'avversario immaginario.
+## Alcuni scenari della seconda edizione non la chiamano genericamente
+## "Actions", ma "British Actions": e' comunque la Tabella delle Azioni.
+func action_table_id() -> String:
+	var tid := "actions_late" if phase == Phase.LATE else "actions_early"
+	if has(tid):
+		return tid
+	if has("actions"):
+		return "actions"
+	if has("british_actions"):
+		return "british_actions"
+	return ""
+
+
 ## Passa alla tabella "Tardi". Idempotente: si passa una volta sola.
 func go_late(reason: String) -> bool:
 	if phase == Phase.LATE:
@@ -88,9 +102,7 @@ func go_late(reason: String) -> bool:
 ## Ritorna il risultato di SoloTable.roll_and_read piu' `table` e `phase`.
 func act(rng: DiceRNG, selector: int,
 		active_modifiers: Array = []) -> Dictionary:
-	var tid := "actions_late" if phase == Phase.LATE else "actions_early"
-	if not has(tid):
-		tid = "actions"          # gli scenari con una tabella sola
+	var tid := action_table_id()
 	var t: SoloTable = table(tid)
 	if t == null:
 		return {"ok": false, "error":

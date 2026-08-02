@@ -31,6 +31,7 @@ func run() -> void:
 	graph = MapGraph.load_default()
 	test_tables_load()
 	test_all_solo_transcriptions_load()
+	test_all_solo_action_tables_are_reachable()
 	test_action_table_rows()
 	test_phase_switch()
 	test_phase_sync()
@@ -81,6 +82,21 @@ func test_all_solo_transcriptions_load() -> void:
 		true_(String(sc.briefing.get("victory", "")).contains("solitario")
 			or String(sc.briefing.get("victory", "")).contains("Modo"),
 			"%s: briefing dichiara il modo solitario" % id)
+
+
+func test_all_solo_action_tables_are_reachable() -> void:
+	_begin("tutti gli scenari solitari hanno una tabella azione raggiungibile")
+	for id in SOLO_SCENARIOS:
+		var o := SoloOpponent.load_for(id)
+		ne(o.action_table_id(), "", "%s: Tabella delle Azioni scelta dal motore" % id)
+	eq(SoloOpponent.load_for("BL1 Raiders of the North Atlantic").action_table_id(),
+		"british_actions", "BL1 usa la Tabella delle Azioni Britanniche")
+	eq(SoloOpponent.load_for("B1 Operazione Berlino").action_table_id(),
+		"british_actions", "B1 usa la Tabella di Azione Britannica")
+	eq(SoloOpponent.load_for("A1 Convogli PQ").action_table_id(),
+		"actions", "A1 usa la tabella azioni generica")
+	eq(SoloOpponent.load_for("BL2 Contain and Destroy").action_table_id(),
+		"actions_early", "BL2 parte dalla tabella Presto")
 
 
 ## La riga si sceglie contando i Completamenti riusciti dell'altra parte: piu'
