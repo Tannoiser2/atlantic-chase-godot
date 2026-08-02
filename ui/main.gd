@@ -1072,7 +1072,7 @@ func _do_time_lapse() -> void:
 		var desc := ("Velocita' [b]%s[/b], meteo [b]%s[/b]: lo Scorrere del Tempo "
 			+ "chiede di rimuovere [b]%d[/b] segmenti.\n"
 			+ "I segmenti si tolgono solo dai capi.") % [
-				TimeLapse.SPEED_LABELS[selected_tf.speed],
+				TimeLapse.speed_label(selected_tf.speed),
 				"cattivo" if state.weather == 1 else "buono", amount]
 		var i: int = await Choice.ask(self, "Scorrere del Tempo - %s"
 			% selected_tf.display_name(), desc, options)
@@ -1098,7 +1098,7 @@ func _do_time_lapse() -> void:
 		traj.become_station(hex_choice)
 		note = " -> diventa Stazione in %s" % str(hex_choice)
 	_msg("Scorrere del Tempo (%s, meteo %s): richiesti %d, %s%s"
-		% [TimeLapse.SPEED_LABELS[selected_tf.speed],
+		% [TimeLapse.speed_label(selected_tf.speed),
 			"cattivo" if state.weather == 1 else "buono",
 			amount, chosen["label"], note])
 	log.record("Scorrere del Tempo (%s)" % selected_tf.display_name())
@@ -1118,7 +1118,7 @@ func _ship_chooser(candidates: Array, reason: String) -> Variant:
 		options.append({"label": sh.display(),
 			"detail": "Difesa %d, Colpi %d, %s" % [
 				sh.defense_damaged if sh.damaged else sh.defense, sh.hits,
-				TimeLapse.SPEED_LABELS[sh.current_speed()]]})
+				TimeLapse.speed_label(sh.current_speed())]})
 	var i: int = await Choice.ask(self, "Scegli la nave", reason, options, false)
 	return candidates[i] if i >= 0 else candidates[0]
 
@@ -1483,7 +1483,7 @@ func _refresh() -> void:
 		lines.append("  %s, [b]%d[/b] segmenti su %d" % [kind, t.length(),
 			Trajectory.MAX_SEGMENTS])
 		lines.append("  velocita': %s    capo attivo: %s"
-			% [TimeLapse.SPEED_LABELS[selected_tf.speed],
+			% [TimeLapse.speed_label(selected_tf.speed),
 				"testa" if active_end == 0 else "coda"])
 		lines.append("  Informazioni: [b]%d[/b]    Contatto: %d"
 			% [t.info_count(), t.contact_count()])

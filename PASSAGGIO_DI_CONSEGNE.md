@@ -172,7 +172,25 @@ modello già esistente. Sarebbe stata una regola inventata ogni volta.
   fonte: l'italiano è una traduzione amatoriale, e sulle tabelle di vittoria
   aveva già perso delle intestazioni di colonna.
 
-**1463 verifiche su 12 suite.**
+- **Tabella del Fuoco avanzata** (`core/battle/advanced_gunnery.gd`): due
+  colonne, Risultati Gravi e Catastrofici, "azzoppata", divisione del fuoco.
+- **Velocità FERMA** aggiunta a `TimeLapse.Speed` — con valore **-1**, non 0:
+  metterla in testa avrebbe rinumerato l'enum, e gli scenari salvano la
+  velocità come intero (`"speed": 2` sarebbe passato da media a lenta in tutti
+  e 22 i file, in silenzio). Usare `TimeLapse.speed_label()`, non
+  `SPEED_LABELS[...]`, perché un indice negativo prende l'ultimo elemento.
+
+**1502 verifiche su 12 suite.**
+
+Restano delle Avanzate: la **fase dell'Attitudine** nella vista, il collegamento
+di `AdvancedGunnery` a `Gunnery.attack()`, la **Tabella dei Siluri avanzata**
+(letta: 8- splash, 9-10 S.R., 11+ C.R., modificatori fermo +3 / molto lento +2 /
+lento +1 / attacco da Vicina -2 / bersaglio in Corsa -2) con la **Tabella della
+Linea di Galleggiamento** (2-5 Timone Fuori Uso, 6-7 Allagamento fermo, 8-12
+Allagamento molto lento — colonna Grave; la colonna Catastrofica non l'ho
+ancora letta), gli **Effetti Speciali** (Batterie, Plancia, Comunicazioni,
+Incendio…), la **Verifica Snafu**, la **Verifica di Disingaggio**, la
+**Battaglia Estesa**, l'**Inseguimento** e la **Confusione**.
 
 ### 5.1 ~~la Battaglia decide da sola~~ — FATTO
 

@@ -17,11 +17,27 @@ extends RefCounted
 ## Inoltre i segmenti si rimuovono solo dai capi, quindi un segnalino
 ## Informazioni in mezzo alla Traiettoria e' semplicemente irraggiungibile.
 
-enum Speed { VERY_SLOW, SLOW, MEDIUM, FAST }
+## FERMA e' una velocita' delle sole Regole Avanzate, imposta da un effetto
+## speciale (incendio, allagamento).
+##
+## Vale -1 e non 0 di proposito. Metterla in testa avrebbe rinumerato tutto
+## l'enum, e gli scenari salvano la velocita' come INTERO: "speed": 2 sarebbe
+## passato da media a lenta in tutti e 22 i file, in silenzio. Con -1 la
+## numerazione esistente resta intatta E l'ordine resta giusto, quindi i
+## confronti "<= lenta" continuano a funzionare senza toccare niente.
+enum Speed { STOPPED = -1, VERY_SLOW = 0, SLOW, MEDIUM, FAST }
 enum Weather { GOOD, BAD }
 
 const SPEED_KEYS := ["very_slow", "slow", "medium", "fast"]
 const SPEED_LABELS := ["molto lenta", "lenta", "media", "veloce"]
+
+
+## Il nome della velocita'. Non si indicizza SPEED_LABELS direttamente perche'
+## FERMA vale -1: l'indice negativo prenderebbe l'ultimo elemento.
+static func speed_label(speed: int) -> String:
+	if speed == Speed.STOPPED:
+		return "ferma"
+	return SPEED_LABELS[clampi(speed, 0, SPEED_LABELS.size() - 1)]
 
 ## Segmenti rimossi con meteo Buono, per velocita'.
 const GOOD_REMOVAL := [2, 2, 3, 4]

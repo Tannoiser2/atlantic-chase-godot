@@ -733,7 +733,7 @@ func refresh() -> void:
 				"na" if gc == null else str(gc), "na" if gf == null else str(gf),
 				selected.defense_damaged if selected.damaged else selected.defense,
 				selected.hits,
-				TimeLapse.SPEED_LABELS[selected.current_speed()],
+				TimeLapse.speed_label(selected.current_speed()),
 				"  [danneggiata]" if selected.damaged else ""])
 	_header.text = "\n".join(lines)
 

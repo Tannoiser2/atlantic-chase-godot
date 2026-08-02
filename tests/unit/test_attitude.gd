@@ -9,7 +9,7 @@ var graph: MapGraph
 
 
 func name() -> String:
-	return "Attitudine (Regole Avanzate)"
+	return "Regole Avanzate di Battaglia"
 
 
 func run() -> void:
@@ -21,6 +21,10 @@ func run() -> void:
 	test_break_away_modifier()
 	test_serialization()
 	test_scenario_attitudes()
+	test_advanced_gunnery_table()
+	test_crippled()
+	test_split_fire()
+	test_stopped_speed()
 
 
 func _ship(n: String, zone: int, att: int, torp: bool = true) -> Ship:
@@ -254,3 +258,120 @@ func test_scenario_attitudes() -> void:
 	eq(ms2.make_battle_state().target_tf.ships[0].attitude,
 		Attitude.Kind.CLOSING,
 		"e il motore lascia il valore predefinito invece di decidere")
+
+
+## La Tabella del Fuoco avanzata: due colonne al posto di una.
+func test_advanced_gunnery_table() -> void:
+	_begin("Tabella del Fuoco avanzata")
+	var R := AdvancedGunnery.Result
+
+	# colonna Avvicinamento / Corsa / Divide
+	var c := AdvancedGunnery.COLUMN_CLOSING
+	eq(AdvancedGunnery.read(c, 6), R.SPLASH, "6 o meno: Splash")
+	eq(AdvancedGunnery.read(c, 8), R.SPLASH, "8: ancora Splash")
+	eq(AdvancedGunnery.read(c, 9), R.HIT, "9: Colpo")
+	eq(AdvancedGunnery.read(c, 10), R.HIT, "10: Colpo")
+	eq(AdvancedGunnery.read(c, 11), R.SEVERE, "11: Risultato Grave")
+	eq(AdvancedGunnery.read(c, 14), R.SEVERE, "e sopra il 12 resta Grave")
+
+	# colonna Acquisizione: meglio di una casella su tutta la tabella
+	var a := AdvancedGunnery.COLUMN_ACQUIRING
+	eq(AdvancedGunnery.read(a, 6), R.SPLASH, "6 o meno: Splash anche qui")
+	eq(AdvancedGunnery.read(a, 7), R.HIT, "7: dove l'altra fa Splash, colpisce")
+	eq(AdvancedGunnery.read(a, 9), R.SEVERE, "9: dove l'altra colpisce, e' Grave")
+	eq(AdvancedGunnery.read(a, 12), R.CATASTROPHIC, "12: Catastrofico")
+
+	# ed e' l'unica che arriva al Catastrofico
+	var found := false
+	for row_v: Variant in c:
+		if int((row_v as Array)[1]) == R.CATASTROPHIC:
+			found = true
+	false_(found, "l'altra colonna non arriva mai al Catastrofico")
+
+
+## "Azzoppata" = Danneggiata OPPURE con un effetto speciale. Perde la colonna
+## Acquisizione ma non l'attitudine, e puo' ancora dividere il fuoco.
+func test_crippled() -> void:
+	_begin("navi azzoppate")
+	var s := _ship("Suffolk", BattleState.Zone.FAR, Attitude.Kind.ACQUIRING)
+	false_(AdvancedGunnery.is_crippled(s), "integra non e' azzoppata")
+	eq(AdvancedGunnery.column_for(s), AdvancedGunnery.COLUMN_ACQUIRING,
+		"e usa la colonna Acquisizione")
+
+	s.damaged = true
+	true_(AdvancedGunnery.is_crippled(s), "danneggiata e' azzoppata")
+	eq(AdvancedGunnery.column_for(s), AdvancedGunnery.COLUMN_CLOSING,
+		"e perde la colonna")
+
+	var s2 := _ship("Hipper", BattleState.Zone.FAR, Attitude.Kind.ACQUIRING)
+	s2.special_effects.append("Incendio")
+	true_(AdvancedGunnery.is_crippled(s2),
+		"anche un effetto speciale azzoppa")
+
+	# chi divide il fuoco rinuncia alla colonna: i due benefici sono
+	# alternativi, non cumulabili
+	var s3 := _ship("Bismarck", BattleState.Zone.FAR, Attitude.Kind.ACQUIRING)
+	eq(AdvancedGunnery.column_for(s3, 1), AdvancedGunnery.COLUMN_ACQUIRING,
+		"un bersaglio solo: colonna Acquisizione")
+	eq(AdvancedGunnery.column_for(s3, 2), AdvancedGunnery.COLUMN_CLOSING,
+		"due bersagli: si rinuncia alla colonna")
+
+
+## Dividere il fuoco: valore 1 o piu', due parti non negative che sommano al
+## valore. Il caso limite che il fascicolo cita: 1 si divide in 1 e 0.
+func test_split_fire() -> void:
+	_begin("dividere il fuoco")
+	var s := _ship("Bismarck", BattleState.Zone.FAR, Attitude.Kind.ACQUIRING)
+	s.gun_close = 2
+	eq(AdvancedGunnery.split_refusal(s, "close", [2, 0]), "",
+		"2 si divide in 2 e 0")
+	eq(AdvancedGunnery.split_refusal(s, "close", [1, 1]), "", "oppure 1 e 1")
+	ne(AdvancedGunnery.split_refusal(s, "close", [1, 0]), "",
+		"ma le parti devono sommare al valore")
+	ne(AdvancedGunnery.split_refusal(s, "close", [3, -1]), "",
+		"e nessuna puo' essere negativa")
+	ne(AdvancedGunnery.split_refusal(s, "close", [2]), "",
+		"i bersagli sono esattamente due")
+
+	s.gun_close = 1
+	eq(AdvancedGunnery.split_refusal(s, "close", [1, 0]), "",
+		"un valore di 1 si divide in 1 e 0: lo dice il fascicolo")
+
+	s.gun_close = 0
+	ne(AdvancedGunnery.split_refusal(s, "close", [0, 0]), "",
+		"ma uno zero non si divide")
+
+	s.gun_close = 2
+	s.attitude = Attitude.Kind.CLOSING
+	ne(AdvancedGunnery.split_refusal(s, "close", [1, 1]), "",
+		"e solo l'Acquisizione puo' dividere")
+
+
+## FERMA e' una velocita' nuova, e vale -1 apposta.
+func test_stopped_speed() -> void:
+	_begin("velocita' Ferma")
+	# la numerazione esistente NON deve essere cambiata: gli scenari salvano
+	# la velocita' come intero, e "speed": 2 deve restare "media"
+	eq(int(TimeLapse.Speed.VERY_SLOW), 0, "molto lenta resta 0")
+	eq(int(TimeLapse.Speed.SLOW), 1, "lenta resta 1")
+	eq(int(TimeLapse.Speed.MEDIUM), 2, "media resta 2")
+	eq(int(TimeLapse.Speed.FAST), 3, "veloce resta 3")
+	eq(int(TimeLapse.Speed.STOPPED), -1, "e Ferma vale -1")
+
+	# l'ordine resta giusto, quindi i confronti esistenti funzionano
+	true_(TimeLapse.Speed.STOPPED < TimeLapse.Speed.VERY_SLOW,
+		"ferma e' piu' lenta di molto lenta")
+	eq(TimeLapse.speed_label(TimeLapse.Speed.STOPPED), "ferma",
+		"e ha il suo nome")
+	eq(TimeLapse.speed_label(TimeLapse.Speed.MEDIUM), "media", "come le altre")
+
+	var s := _ship("Bismarck", BattleState.Zone.FAR, Attitude.Kind.CLOSING)
+	eq(AdvancedGunnery.target_speed_modifier(s), 0, "veloce: nessun modificatore")
+	s.speed = TimeLapse.Speed.SLOW
+	eq(AdvancedGunnery.target_speed_modifier(s), 1, "lenta: +1")
+	s.speed = TimeLapse.Speed.VERY_SLOW
+	eq(AdvancedGunnery.target_speed_modifier(s), 2, "molto lenta: +2")
+	s.speed = TimeLapse.Speed.STOPPED
+	eq(AdvancedGunnery.target_speed_modifier(s), 3, "ferma: +3")
+	true_(s.is_slow_or_slower(),
+		"e una nave ferma conta come lenta o peggio, senza toccare il confronto")
