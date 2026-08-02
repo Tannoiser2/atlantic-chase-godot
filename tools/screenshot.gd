@@ -24,6 +24,9 @@ func _initialize() -> void:
 	for a in args:
 		if a.begins_with("scen:"):
 			Session.scenario_id = a.substr(5)
+	# "adv": gioca con le Regole Avanzate di Battaglia, come la casella nella
+	# schermata iniziale
+	Session.advanced_battle = args.has("adv")
 	var packed: PackedScene = load(scene_path)
 	_root_node = packed.instantiate()
 	root.add_child(_root_node)
@@ -65,6 +68,16 @@ func _process(_delta: float) -> bool:
 		_root_node._do_time_lapse()
 	if _frames == 6 and _args.size() >= 6 and _args[5] == "help":
 		_root_node._toggle_help()
+	# "rounds:N": preme SPAZIO N volte prima dello scatto, per fotografare una
+	# Battaglia a meta' invece che allo schieramento
+	if _frames == 8:
+		for a in _args:
+			if a.begins_with("rounds:"):
+				for n in int(a.substr(7)):
+					var k := InputEventKey.new()
+					k.keycode = KEY_SPACE
+					k.pressed = true
+					_root_node._unhandled_input(k)
 	if _frames == 26 and _root_node != null and _root_node.get("_battle_view") != null:
 		_root_node._battle_view.queue_redraw()
 	if _frames < 34:

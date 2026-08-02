@@ -29,6 +29,25 @@ enum Kind { ACQUIRING, CLOSING, RUNNING }
 
 const LABELS := ["Acquisizione", "Avvicinamento", "Corsa"]
 
+## Iniziale per le pedine: sulla Mappa di Battaglia non c'e' posto per la
+## parola intera, ma l'attitudine deve essere visibile senza cliccare - e'
+## quella che decide con che colonna spari e se puoi fuggire.
+const INITIALS := ["A", "V", "C"]
+
+## Colori delle tre attitudini, scelti per quello che significano: chi Acquisisce
+## osserva (azzurro freddo), chi si Avvicina attacca (rosso), chi Corre scappa
+## (giallo, il colore dell'allarme).
+const COLORS := [Color(0.20, 0.45, 0.72), Color(0.72, 0.18, 0.15),
+	Color(0.85, 0.68, 0.10)]
+
+
+static func initial(kind: int) -> String:
+	return INITIALS[clampi(kind, 0, INITIALS.size() - 1)]
+
+
+static func color(kind: int) -> Color:
+	return COLORS[clampi(kind, 0, COLORS.size() - 1)]
+
 ## Come la scrive il fascicolo scenari sulle pedine, in inglese.
 const FROM_MARKER := {
 	"ACQUIRING": Kind.ACQUIRING,

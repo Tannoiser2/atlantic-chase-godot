@@ -10,6 +10,12 @@ extends RefCounted
 static var scenario_id: String = ""
 static var seed_value: int = 0
 
+## Regole Avanzate di Battaglia: si accettano prima di cominciare e valgono per
+## tutta la partita. Vive qui e non in GameState solo per arrivare dalla
+## schermata iniziale; GameState ne tiene la propria copia, che e' quella che
+## finisce nel salvataggio.
+static var advanced_battle: bool = false
+
 
 static func start(p_scenario_id: String, p_seed: int = 0) -> void:
 	scenario_id = p_scenario_id

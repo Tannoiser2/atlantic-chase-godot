@@ -16,6 +16,7 @@ var _brief: RichTextLabel
 ## generata, e in quel caso sparisce invece di lasciare un riquadro vuoto.
 var _art: TextureRect
 var _start_btn: Button
+var _adv: CheckBox
 var _ids: Array[String] = []
 
 
@@ -96,6 +97,18 @@ func _build() -> void:
 	_brief = RichTextLabel.new()
 	_brief.bbcode_enabled = true
 	briefpanel.add_child(_brief)
+
+	# Le Regole Avanzate di Battaglia sono un modulo opzionale che i due
+	# giocatori accettano PRIMA di cominciare, non una scelta da fare battaglia
+	# per battaglia: quindi si sceglie qui, una volta sola.
+	_adv = CheckBox.new()
+	_adv.text = "  Regole Avanzate di Battaglia"
+	_adv.tooltip_text = ("Attitudini (Acquisizione, Accostata, Corsa), Verifica "
+		+ "Snafu, Effetti Speciali al posto dei soli Colpi, Effetti Duraturi, "
+		+ "Disingaggio, Battaglia Estesa.\nCambia solo le Battaglie: la partita "
+		+ "sulla mappa resta identica.")
+	_adv.button_pressed = Session.advanced_battle
+	right.add_child(_adv)
 
 	var buttons := HBoxContainer.new()
 	buttons.add_theme_constant_override("separation", 12)
@@ -188,6 +201,7 @@ func _start() -> void:
 	var i := _list.get_selected_items()
 	if i.is_empty() or _ids.is_empty():
 		return
+	Session.advanced_battle = _adv.button_pressed
 	Session.start(_ids[i[0]])
 	get_tree().change_scene_to_file(GAME_SCENE)
 

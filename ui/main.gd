@@ -116,6 +116,10 @@ func _load_scenario_at(idx: int) -> void:
 		_msg(scenario.load_error)
 		return
 	state.apply_dict(scenario.to_state_dict())
+	# apply_dict riparte dal dizionario dello scenario, che non sa nulla delle
+	# Regole Avanzate: la scelta va rimessa dopo, se no cambiare scenario la
+	# perde in silenzio.
+	state.advanced_battle = Session.advanced_battle
 	selected_tf = state.task_forces[0] if not state.task_forces.is_empty() else null
 	traj_layer.selected_tf_id = selected_tf.id if selected_tf else -1
 	log = CommandLog.new(state)
@@ -445,6 +449,9 @@ func _open_scenario_battle() -> void:
 
 
 func _show_battle(bstate: BattleState) -> void:
+	# Va deciso PRIMA di start(): la Verifica Snafu si tira una volta sola,
+	# prima del Round Uno, e con le regole base non si tira affatto.
+	bstate.advanced = state.advanced_battle
 	var b := Battle.new(bstate, state.rng, vp_tracker)
 	b.start()
 

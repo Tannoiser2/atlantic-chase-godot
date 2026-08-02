@@ -48,10 +48,18 @@ var _drag_pos: Vector2 = Vector2.ZERO
 var _drag_target_band: int = -1
 var _bands: Array[Rect2] = []
 var _ship_rects: Array = []          ## [{rect, ship}]
-## Le pedine sono nodi TextureRect, non disegnate in _draw(): con
-## draw_texture_rect() su questo renderer uscivano bianche, e come nodi si
-## possono comunque evidenziare e in futuro dotare di tooltip.
-var _ship_nodes: Node2D
+## Le pedine si disegnavano come TextureRect figli di questo Control. Non
+## andava bene: i figli di un Control disegnano SOPRA il suo _draw(), quindi il
+## badge dei Colpi, la velatura FUMO e il bordo di selezione finivano sotto la
+## pedina e non si vedevano.
+##
+## Ora si disegnano dentro _draw() con draw_texture_rect, e l'ordine e' quello
+## in cui sono scritte le righe. Un commento piu' vecchio diceva che cosi' le
+## pedine uscivano BIANCHE: era vero, ma la causa era un'altra - le texture
+## salgono in VRAM al primo disegno, e chi guardava era uno screenshot scattato
+## troppo presto. Ricaricare la texture a ogni _draw() con load() peggiorava le
+## cose; questa cache la tiene, e dal secondo fotogramma in poi si vede.
+var _tex_cache: Dictionary = {}
 ## Chi spara a chi, deciso dal GIOCATORE. Nave che spara -> bersaglio.
 ##
 ## Prima questa vista chiamava sempre Battle.auto_targeting(), che il motore
@@ -88,9 +96,6 @@ func setup(p_battle: Battle) -> void:
 	position = Vector2.ZERO
 	size = get_viewport_rect().size
 	get_viewport().size_changed.connect(_on_viewport_resized)
-	_ship_nodes = Node2D.new()
-	_ship_nodes.name = "Pedine"
-	add_child(_ship_nodes)
 	_build_ui()
 	_preassign()
 	refresh()
@@ -414,9 +419,6 @@ func _draw() -> void:
 		total += w
 	_bands.clear()
 	_ship_rects.clear()
-	if _ship_nodes != null:
-		for c in _ship_nodes.get_children():
-			c.queue_free()
 
 	var y := area.position.y
 	var font := ThemeDB.fallback_font
@@ -549,12 +551,14 @@ func _draw_ships_in(band: Rect2, is_active: bool, zone: int) -> void:
 	# Prinz Eugen 116x56): si scalano a un'altezza comune mantenendo il
 	# rapporto, altrimenti le piu' piccole risultano stirate.
 	var ch := 66.0
-	var gap := 14.0
+	# con le Regole Avanzate ogni pedina si porta dietro la linguetta
+	# dell'attitudine sul fianco sinistro: senza spazio in piu' finirebbe sopra
+	# la pedina precedente
+	var gap: float = 32.0 if state.advanced else 14.0
 	var widths: Array[float] = []
 	var texs: Array = []
 	for s in ships:
-		var path := roster.counter_path(s.name, s.damaged)
-		var tex: Texture2D = load(path) if path != "" else null
+		var tex := _counter_texture(s)
 		texs.append(tex)
 		widths.append(ch * (tex.get_size().x / tex.get_size().y) if tex != null else 136.0)
 	var total := 0.0
@@ -571,14 +575,7 @@ func _draw_ships_in(band: Rect2, is_active: bool, zone: int) -> void:
 		var r := Rect2(Vector2(x, y), Vector2(cw, ch))
 		var tex: Texture2D = texs[i]
 		if tex != null:
-			var tr := TextureRect.new()
-			tr.texture = tex
-			tr.position = r.position
-			tr.size = r.size
-			tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-			tr.stretch_mode = TextureRect.STRETCH_SCALE
-			tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			_ship_nodes.add_child(tr)
+			draw_texture_rect(tex, r, false)
 		else:
 			draw_rect(r, Color(0.75, 0.72, 0.6))
 			draw_string(font, r.position + Vector2(8, 24), s.name,
@@ -596,8 +593,72 @@ func _draw_ships_in(band: Rect2, is_active: bool, zone: int) -> void:
 			draw_string(font, badge.position + Vector2(8, 17), str(s.hits),
 				HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color.WHITE)
 
+		if state.advanced:
+			_draw_attitude_tab(r, s, font)
+			_draw_effect_chips(r, s, font)
+
 		_ship_rects.append({"rect": r, "ship": s})
 		x += cw + gap
+
+
+## La linguetta dell'attitudine, sul fianco sinistro della pedina.
+##
+## Con le Regole Avanzate l'attitudine decide con quale colonna della Tabella
+## dei Cannoni si spara, se si possono lanciare siluri e se ci si puo' sganciare:
+## chiedere di cambiarla senza mostrarla qual e' - come faceva prima questa
+## vista - vuol dire chiedere al buio.
+func _draw_attitude_tab(r: Rect2, s: Ship, font: Font) -> void:
+	var w := 20.0
+	var tab := Rect2(r.position + Vector2(-w - 3, 0), Vector2(w, r.size.y))
+	draw_rect(tab, Attitude.color(s.attitude))
+	draw_rect(tab, Color(0, 0, 0, 0.55), false, 1.0)
+	var letter := Attitude.initial(s.attitude)
+	var tw := font.get_string_size(letter, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x
+	draw_string(font, tab.position + Vector2((w - tw) * 0.5, r.size.y * 0.5 + 6),
+		letter, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color.WHITE)
+
+
+## Gli Effetti Speciali, sotto la pedina.
+##
+## Sono la sostanza delle Regole Avanzate: una nave puo' essere intatta sulla
+## carta e fuori combattimento perche' non ha piu' il timone o la plancia. Se
+## non si vedono, il giocatore non capisce perche' la sua nave non spara.
+##
+## Le sigle sono le iniziali di quello che c'e' scritto sul marcatore; il nome
+## per esteso resta nel registro, che e' dove si legge cosa e' successo.
+func _draw_effect_chips(r: Rect2, s: Ship, font: Font) -> void:
+	if s.special_effects.is_empty():
+		return
+	var x := r.position.x
+	var y := r.position.y + r.size.y + 3.0
+	for e_v: Variant in s.special_effects:
+		var e := String(e_v)
+		var short := e.substr(0, 3).to_upper()
+		# gli incendi e gli allagamenti hanno due gravita': si distinguono con
+		# un punto esclamativo, che e' quella che ferma la nave
+		if e.contains("ferma"):
+			short += "!"
+		var tw := font.get_string_size(short, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x
+		var chip := Rect2(Vector2(x, y), Vector2(tw + 10, 18))
+		var col := Color(0.55, 0.16, 0.10) if e.contains("Incendio") \
+			else (Color(0.12, 0.30, 0.55) if e.contains("Allagamento")
+				else Color(0.25, 0.24, 0.22))
+		draw_rect(chip, Color(col.r, col.g, col.b, 0.95))
+		draw_rect(chip, Color(1, 1, 1, 0.5), false, 1.0)
+		draw_string(font, chip.position + Vector2(5, 13), short,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color.WHITE)
+		x += chip.size.x + 4.0
+
+
+## Le pedine si ricaricano a ogni ridisegno: load() rilegge dal disco ogni
+## volta, e con una ventina di navi su schermo si sente.
+func _counter_texture(s: Ship) -> Texture2D:
+	var path := roster.counter_path(s.name, s.damaged)
+	if path == "":
+		return null
+	if not _tex_cache.has(path):
+		_tex_cache[path] = load(path)
+	return _tex_cache[path]
 
 
 # ------------------------------------------------------------------- input --

@@ -57,6 +57,14 @@ var vp_once: Array[String] = []
 ## casa.
 var convoys_completed: int = 0
 
+## Si gioca col fascicolo delle Regole Avanzate di Battaglia?
+##
+## E' una scelta di partita, non di battaglia: si accetta prima di cominciare e
+## vale fino alla fine. Sta in GameState e non solo in Session perche' deve
+## finire nel salvataggio - ricaricare una partita avanzata come base
+## cambierebbe le tabelle sotto i piedi al giocatore.
+var advanced_battle: bool = false
+
 
 func add_vp(side: int, amount: float, reason: String = "") -> void:
 	vp[side] = float(vp.get(side, 0.0)) + amount
@@ -203,6 +211,7 @@ func to_dict() -> Dictionary:
 		"vp_rn": vp_of(TaskForce.Side.ROYAL_NAVY),
 		"vp_once": vp_once.duplicate(),
 		"convoys_completed": convoys_completed,
+		"advanced_battle": advanced_battle,
 		"rng": rng.to_dict(),
 	}
 
@@ -216,6 +225,9 @@ func apply_dict(d: Dictionary) -> void:
 	vp[TaskForce.Side.KRIEGSMARINE] = float(d.get("vp_km", 0.0))
 	vp[TaskForce.Side.ROYAL_NAVY] = float(d.get("vp_rn", 0.0))
 	convoys_completed = int(d.get("convoys_completed", 0))
+	# le partite salvate prima che le Regole Avanzate esistessero sono
+	# tutte partite base: false e' il default giusto
+	advanced_battle = bool(d.get("advanced_battle", false))
 	vp_once.clear()
 	for k_v: Variant in d.get("vp_once", []):
 		vp_once.append(String(k_v))
