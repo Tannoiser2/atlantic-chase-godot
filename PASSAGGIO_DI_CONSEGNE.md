@@ -64,6 +64,10 @@ pianta. Per questo esistono `Gunnery.FireRange` e `SignalAction`.
 **Diagnosi:** carica gli script uno per uno con un piccolo `SceneTree` e guarda
 dove si ferma (`tools/smoke_ui.gd` è nato così).
 
+### Un `const` che alias-a una classe globale fa lo stesso
+`const SE := SpecialEffects` in cima a un file pianta il parser senza nessun
+messaggio. Scrivi il nome per esteso.
+
 ### Un metodo statico che nomina la propria classe fa lo stesso
 `ChoiceDialog.new()` dentro `ChoiceDialog` → "Identifier not found" → blocco
 silenzioso. Per questo `Choice.ask()` sta in una classe separata.
