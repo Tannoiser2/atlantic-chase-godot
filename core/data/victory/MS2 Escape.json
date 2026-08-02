@@ -17,6 +17,14 @@
  "notes": [
   "I mini-scenari non contano Punti Vittoria: hanno quattro caselle - Decisiva e Marginale per ciascuna parte - e si guarda quali sono state riempite. Sono battaglie brevi, e conta se hai fatto la cosa, non quanto.",
   "\"Azzoppare\" (cripple) vuol dire rendere Danneggiata una nave; con le Regole Avanzate di Battaglia vale anche una nave che ha subito un effetto speciale.",
-  "Il Graf Spee puo' tentare la Fuga solo dalla zona Vicina."
- ]
+  "Il Graf Spee puo' tentare la Fuga solo dalla zona Vicina.",
+  "ATTITUDINI DI PARTENZA (Regole Avanzate di Battaglia): britannici 'Far: any attitude', Graf Spee 'Far: Closing'. Non stanno nel salvataggio VASSAL - l'attitudine si indica girando la pedina, e la rotazione il modulo non la registra - quindi sono lette a mano dalla mappa dello scenario. \"ANY\" vuol dire che il fascicolo lascia scegliere al giocatore."
+ ],
+ "attitudes": {
+  "Achilles": "ANY",
+  "Ajax": "ANY",
+  "Cumberland": "ANY",
+  "Exeter": "ANY",
+  "Graf Spee": "CLOSING"
+ }
 }

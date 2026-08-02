@@ -18,6 +18,13 @@
   "I mini-scenari non contano Punti Vittoria: hanno quattro caselle - Decisiva e Marginale per ciascuna parte - e si guarda quali sono state riempite. Sono battaglie brevi, e conta se hai fatto la cosa, non quanto.",
   "\"Azzoppare\" (cripple) vuol dire rendere Danneggiata una nave; con le Regole Avanzate di Battaglia vale anche una nave che ha subito un effetto speciale.",
   "Il Convoglio non puo' disperdersi finche' il Malaya non e' azzoppato, affondato o non si e' sganciato.",
-  "COMBINATO CON MS7: giocati uno dopo l'altro, l'esito si legge sulla riga inferiore della tabella. Britannico: Decisiva 'azzoppare o affondare entrambi i BC', Marginale '6 o meno Colpi sui Convogli'. Tedesco: Decisiva '12 o piu' Colpi sui Convogli', Marginale 'da 7 a 11 Colpi sul Convoglio'."
- ]
+  "COMBINATO CON MS7: giocati uno dopo l'altro, l'esito si legge sulla riga inferiore della tabella. Britannico: Decisiva 'azzoppare o affondare entrambi i BC', Marginale '6 o meno Colpi sui Convogli'. Tedesco: Decisiva '12 o piu' Colpi sui Convogli', Marginale 'da 7 a 11 Colpi sul Convoglio'.",
+  "ATTITUDINI DI PARTENZA (Regole Avanzate di Battaglia): Convoglio e Malaya 'Far: Closing' (il Convoglio parte con il Fumo), i due BC 'Far: Closing'. Non stanno nel salvataggio VASSAL - l'attitudine si indica girando la pedina, e la rotazione il modulo non la registra - quindi sono lette a mano dalla mappa dello scenario. \"ANY\" vuol dire che il fascicolo lascia scegliere al giocatore."
+ ],
+ "attitudes": {
+  "Convoy x3": "CLOSING",
+  "Malaya": "CLOSING",
+  "Scharnhorst": "CLOSING",
+  "Gneisenau": "CLOSING"
+ }
 }

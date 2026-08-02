@@ -18,6 +18,15 @@
   "I mini-scenari non contano Punti Vittoria: hanno quattro caselle - Decisiva e Marginale per ciascuna parte - e si guarda quali sono state riempite. Sono battaglie brevi, e conta se hai fatto la cosa, non quanto.",
   "\"Azzoppare\" (cripple) vuol dire rendere Danneggiata una nave; con le Regole Avanzate di Battaglia vale anche una nave che ha subito un effetto speciale.",
   "Lo Squadrone DD rappresenta sei cacciatorpediniere: e' rimosso dopo sei Colpi, e puo' lanciare siluri due volte.",
-  "I due incrociatori britannici entrano nella zona Lontana durante la fase di Fuga del Round Uno."
- ]
+  "I due incrociatori britannici entrano nella zona Lontana durante la fase di Fuga del Round Uno.",
+  "ATTITUDINI DI PARTENZA (Regole Avanzate di Battaglia): Convoglio e DD 'Far: any attitude(s)', i due incrociatori entrano dopo 'Far: Closing', Lutzow e Hipper 'Near: Closing'. Non stanno nel salvataggio VASSAL - l'attitudine si indica girando la pedina, e la rotazione il modulo non la registra - quindi sono lette a mano dalla mappa dello scenario. \"ANY\" vuol dire che il fascicolo lascia scegliere al giocatore."
+ ],
+ "attitudes": {
+  "Convoy x3": "ANY",
+  "DD Squadron": "ANY",
+  "Fiji": "CLOSING",
+  "Sheffield": "CLOSING",
+  "Lutzow": "CLOSING",
+  "Hipper": "CLOSING"
+ }
 }

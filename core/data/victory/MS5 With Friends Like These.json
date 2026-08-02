@@ -18,6 +18,18 @@
   "I mini-scenari non contano Punti Vittoria: hanno quattro caselle - Decisiva e Marginale per ciascuna parte - e si guarda quali sono state riempite. Sono battaglie brevi, e conta se hai fatto la cosa, non quanto.",
   "\"Azzoppare\" (cripple) vuol dire rendere Danneggiata una nave; con le Regole Avanzate di Battaglia vale anche una nave che ha subito un effetto speciale.",
   "Qui l'avversario non e' tedesco ma FRANCESE: e' Mers-el-Kebir, e il giocatore che nelle altre partite comanda la Kriegsmarine qui comanda la flotta di Vichy.",
-  "La Batteria Costiera non si muove, non produce Fumo e non e' mai Danneggiata."
- ]
+  "La Batteria Costiera non si muove, non produce Fumo e non e' mai Danneggiata.",
+  "ATTITUDINI DI PARTENZA (Regole Avanzate di Battaglia): britannici 'Far: any attitude', francesi 'Near: Running'. Non stanno nel salvataggio VASSAL - l'attitudine si indica girando la pedina, e la rotazione il modulo non la registra - quindi sono lette a mano dalla mappa dello scenario. \"ANY\" vuol dire che il fascicolo lascia scegliere al giocatore."
+ ],
+ "attitudes": {
+  "Resolution": "ANY",
+  "Valiant": "ANY",
+  "Hood": "ANY",
+  "Arethusa": "ANY",
+  "Strasbourg": "RUNNING",
+  "Dunkerque": "RUNNING",
+  "Bretagne": "RUNNING",
+  "Provence": "RUNNING",
+  "Shore Battery": "ANY"
+ }
 }

@@ -18,6 +18,17 @@
   "I mini-scenari non contano Punti Vittoria: hanno quattro caselle - Decisiva e Marginale per ciascuna parte - e si guarda quali sono state riempite. Sono battaglie brevi, e conta se hai fatto la cosa, non quanto.",
   "\"Azzoppare\" (cripple) vuol dire rendere Danneggiata una nave; con le Regole Avanzate di Battaglia vale anche una nave che ha subito un effetto speciale.",
   "Si gioca in tre parti da due Round ciascuna. Per ogni parte il britannico tira 2d6 per sapere quale Forza usa: 2-7 Forza A, 8-10 Forza B, 11+ Forza C. Modificatori: +2 se il Convoglio e' gia' stato bersaglio di Fuoco di Cannoni, +3 se il BC tedesco e' azzoppato.",
-  "Lo Scharnhorst sceglie il suo atteggiamento in segreto, PRIMA che il britannico sappia quale Forza gli tocca."
- ]
+  "Lo Scharnhorst sceglie il suo atteggiamento in segreto, PRIMA che il britannico sappia quale Forza gli tocca.",
+  "ATTITUDINI DI PARTENZA (Regole Avanzate di Battaglia): Forza A (Convoglio e DD) e Forza B (i tre CA) 'either attitude'; Forza C (CA e Duke of York) 'Closing'; lo Scharnhorst sceglie in SEGRETO, prima che il britannico sappia quale Forza gli tocca. Non stanno nel salvataggio VASSAL - l'attitudine si indica girando la pedina, e la rotazione il modulo non la registra - quindi sono lette a mano dalla mappa dello scenario. \"ANY\" vuol dire che il fascicolo lascia scegliere al giocatore."
+ ],
+ "attitudes": {
+  "Convoy x3": "ANY",
+  "DD Squadron": "ANY",
+  "Belfast": "ANY",
+  "Norfolk": "ANY",
+  "Sheffield": "ANY",
+  "Fiji": "ANY",
+  "Doy": "CLOSING",
+  "Scharnhorst": "ANY"
+ }
 }

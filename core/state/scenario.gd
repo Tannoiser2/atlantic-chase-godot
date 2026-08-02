@@ -135,6 +135,12 @@ func make_battle_state(weather_override: int = -1) -> BattleState:
 			sh = Ship.new(String(e.get("ship", "")))
 		sh.battle_zone = int(zones.get(String(e.get("zone", "FAR")),
 			BattleState.Zone.FAR))
+		# l'attitudine di partenza, se lo scenario la indica. "ANY" resta al
+		# valore predefinito (Avvicinamento): la scelta e' del giocatore, e il
+		# motore non la fa al posto suo.
+		var att := String(attitudes().get(sh.name, ""))
+		if att != "" and att != "ANY":
+			sh.attitude = Attitude.from_marker(att)
 		if int(e.get("side", 1)) == TaskForce.Side.KRIEGSMARINE:
 			km.ships.append(sh)
 		else:
@@ -163,6 +169,16 @@ func _load_victory() -> void:
 ## scenari chiudono singoli porti: Murmansk in Op9, South America in Op6 e Op8.
 func port_control() -> Dictionary:
 	return victory_data.get("port_control", {})
+
+
+## Attitudine di partenza di ogni nave, per nome (Regole Avanzate p.3).
+##
+## Non sta nel salvataggio VASSAL: l'attitudine si indica GIRANDO la pedina, e
+## la rotazione il modulo non la registra. E' quindi un dato letto a mano dalla
+## mappa dello scenario stampata nel fascicolo, come le tabelle di vittoria.
+## Il valore "ANY" vuol dire che il fascicolo lascia scegliere al giocatore.
+func attitudes() -> Dictionary:
+	return victory_data.get("attitudes", {})
 
 
 ## Regole che cambiano da scenario a scenario, lette a mano dal fascicolo.

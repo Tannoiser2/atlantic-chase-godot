@@ -69,6 +69,24 @@ var hit_limit: int = HITS_TO_DESTROY_UNARMORED
 var battle_zone: int = 0        ## indice in BattleState.Zone
 var smoke: bool = false
 
+## Attitudine, solo con le Regole Avanzate di Battaglia: indice in
+## Attitude.Kind. Sulla pedina si indica girandola, perche' la freccia rossa
+## stampata punti verso il nemico, via da lui, o parallela.
+##
+## Con le regole BASE non esiste: e' come se ogni nave fosse in Avvicinamento,
+## ed e' il valore di partenza proprio per questo - il modello base resta
+## corretto senza toccare niente.
+var attitude: int = 1           ## Attitude.Kind.CLOSING
+
+## Effetti Speciali assegnati (Regole Avanzate). Ogni voce e' il codice del
+## risultato: una nave con un effetto speciale e' "gravemente danneggiata" e
+## perde alcuni benefici, per esempio la colonna Acquisizione.
+var special_effects: Array[String] = []
+
+
+func has_special_effect() -> bool:
+	return not special_effects.is_empty()
+
 
 func _init(p_name: String = "", p_speed: int = TimeLapse.Speed.MEDIUM,
 		p_kind: int = Kind.WARSHIP) -> void:
@@ -197,7 +215,8 @@ func to_dict() -> Dictionary:
 		"gun_close": gun_close, "gun_far": gun_far,
 		"gun_close_damaged": gun_close_damaged, "gun_far_damaged": gun_far_damaged,
 		"speed_damaged": speed_damaged,
-		"has_torpedo": has_torpedo, "hit_limit": hit_limit}
+		"has_torpedo": has_torpedo, "hit_limit": hit_limit,
+		"attitude": attitude, "special_effects": special_effects.duplicate()}
 
 
 static func from_dict(d: Dictionary) -> Ship:
@@ -218,6 +237,10 @@ static func from_dict(d: Dictionary) -> Ship:
 	s.gun_far_damaged = d.get("gun_far_damaged", null)
 	s.speed_damaged = int(d.get("speed_damaged", -1))
 	s.has_torpedo = bool(d.get("has_torpedo", false))
+	s.attitude = int(d.get("attitude", 1))
+	s.special_effects.clear()
+	for e_v: Variant in d.get("special_effects", []):
+		s.special_effects.append(String(e_v))
 	s.hit_limit = int(d.get("hit_limit", HITS_TO_DESTROY_UNARMORED))
 	return s
 
