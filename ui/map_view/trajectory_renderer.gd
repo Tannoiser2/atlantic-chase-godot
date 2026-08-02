@@ -68,10 +68,10 @@ func _draw() -> void:
 	if state == null or graph == null:
 		return
 
-		_compute_lanes()
-		for tf in state.task_forces:
-			_draw_task_force(tf)
-		_draw_rendezvous_markers()
+	_compute_lanes()
+	for tf in state.task_forces:
+		_draw_task_force(tf)
+	_draw_rendezvous_markers()
 
 	if not preview_hexes.is_empty():
 		_draw_preview()
