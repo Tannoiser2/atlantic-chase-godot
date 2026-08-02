@@ -1,0 +1,20 @@
+{
+ "name": "BL3 Raiders of the North Sea",
+ "source": "Fascicolo Scenari in Solitario, seconda edizione INGLESE (AC_Solo_scenarios_2022.pdf), pp.12-15. Trascritta a mano da render/testo del PDF aggiornato.",
+ "weather": 1,
+ "initiative": 0,
+ "round": 1,
+ "task_forces": [],
+ "reinforcements": {},
+ "info_triggers": [],
+ "briefing": {
+  "title": "BL3 Raiders of the North Sea",
+  "end": "Vedi il fascicolo solitario e il file core/data/solo corrispondente.",
+  "victory": "Modo solitario BL3: scenario non giocabile sulla mappa grande finche' non viene calibrato l'inserto; Debriefing trascritto come riferimento.",
+  "historical": "Scenario solitario trascritto dal fascicolo; schieramento non proveniente da VASSAL."
+ },
+ "setup_notes": [
+  "Mappa Inserto del Mare del Nord: griglia non calibrata in questo progetto. Le tabelle sono trascritte, ma lo schieramento non e' convertibile sulla Mappa Operazionale senza calibrare l'inserto."
+ ],
+ "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati."
+}

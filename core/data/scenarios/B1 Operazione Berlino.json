@@ -1,0 +1,20 @@
+{
+ "name": "B1 Operazione Berlino",
+ "source": "Fascicolo Scenari in Solitario, seconda edizione INGLESE (AC_Solo_scenarios_2022.pdf), pp.41-44. Trascritta a mano da render/testo del PDF aggiornato.",
+ "weather": 0,
+ "initiative": 0,
+ "round": 1,
+ "task_forces": [],
+ "reinforcements": {},
+ "info_triggers": [],
+ "briefing": {
+  "title": "B1 Operazione Berlino",
+  "end": "Vedi le istruzioni Fine dello scenario nel file solo e nel fascicolo.",
+  "victory": "Modo solitario: calcolare i VP manuali e leggere la Tabella dell'Esito.",
+  "historical": "Trascritto dal fascicolo solitario italiano; testo completo in core/data/solo."
+ },
+ "setup_notes": [
+  "Meteo Buono; iniziativa tedesca. TF tedesche con Gneisenau/Scharnhorst e Scheer; Scheer sta rientrando e deve Completare a Kiel. Tre RV come mappa; ogni TF tedesca inizia adiacente a un RV. Convogli: Halifax-Clyde/Liverpool 11 segmenti; Clyde/Liverpool-Gibilterra 10 segmenti. Hipper rinforzo A a Brest; Raeder e Lutjens/Gneisenau."
+ ],
+ "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati."
+}

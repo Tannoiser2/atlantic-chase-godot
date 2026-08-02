@@ -1,0 +1,20 @@
+{
+ "name": "N2 Operazione Weser (nord)",
+ "source": "Fascicolo Scenari in Solitario, seconda edizione INGLESE (AC_Solo_scenarios_2022.pdf), pp.21-24. Trascritta a mano da render/testo del PDF aggiornato.",
+ "weather": 1,
+ "initiative": 0,
+ "round": 1,
+ "task_forces": [],
+ "reinforcements": {},
+ "info_triggers": [],
+ "briefing": {
+  "title": "N2 Operazione Weser (nord)",
+  "end": "Vedi le istruzioni Fine dello scenario nel file solo e nel fascicolo.",
+  "victory": "Modo solitario: calcolare i VP manuali e leggere la Tabella dell'Esito.",
+  "historical": "Trascritto dal fascicolo solitario italiano; testo completo in core/data/solo."
+ },
+ "setup_notes": [
+  "Meteo Sfavorevole; iniziativa tedesca con conta iniziativa a 2; mappa aggiuntiva Mare di Norvegia. Nessuna TF britannica iniziale. Convoglio tedesco per Narvik e Squadrone DD per Trondheim; Raeder presente."
+ ],
+ "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati."
+}

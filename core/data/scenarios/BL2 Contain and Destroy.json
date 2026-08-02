@@ -1,0 +1,20 @@
+{
+ "name": "BL2 Contain and Destroy",
+ "source": "Fascicolo Scenari in Solitario, seconda edizione INGLESE (AC_Solo_scenarios_2022.pdf), pp.8-11. Trascritta a mano da render/testo del PDF aggiornato.",
+ "weather": 0,
+ "initiative": 1,
+ "round": 1,
+ "task_forces": [],
+ "reinforcements": {},
+ "info_triggers": [],
+ "briefing": {
+  "title": "BL2 Contain and Destroy",
+  "end": "Vedi il fascicolo solitario e il file core/data/solo corrispondente.",
+  "victory": "Modo solitario BL2: il giocatore britannico calcola un solo punteggio e legge la Tabella dell'Esito.",
+  "historical": "Scenario solitario trascritto dal fascicolo; schieramento non proveniente da VASSAL."
+ },
+ "setup_notes": [
+  "Meteo Buono; iniziativa britannica. Mappa operazionale. Nessuna TF tedesca iniziale. Rodney e Valiant nel Gruppo Rinforzi A a Scapa Flow; navi francesi nel Gruppo Rinforzi B. Stazione TF britannica adiacente a qualsiasi porto controllato dal britannico eccetto Scapa Flow e Methil; Convoglio Halifax-Clyde/Liverpool 11 segmenti; Convoglio Africa-Portsmouth 8 segmenti; Forbes e Gensoul come indicato."
+ ],
+ "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati."
+}

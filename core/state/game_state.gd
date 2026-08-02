@@ -65,6 +65,12 @@ var convoys_completed: int = 0
 ## cambierebbe le tabelle sotto i piedi al giocatore.
 var advanced_battle: bool = false
 
+## Stato del modo solitario. Le tabelle dell'avversario immaginario passano da
+## Presto a Tardi durante la partita, quindi la scelta deve sopravvivere a
+## undo, salvataggi e ricariche come qualunque altro stato di gioco.
+var solo_phase: int = SoloOpponent.Phase.EARLY
+var solo_phase_reason: String = ""
+
 
 func add_vp(side: int, amount: float, reason: String = "") -> void:
 	vp[side] = float(vp.get(side, 0.0)) + amount
@@ -212,6 +218,8 @@ func to_dict() -> Dictionary:
 		"vp_once": vp_once.duplicate(),
 		"convoys_completed": convoys_completed,
 		"advanced_battle": advanced_battle,
+		"solo_phase": solo_phase,
+		"solo_phase_reason": solo_phase_reason,
 		"rng": rng.to_dict(),
 	}
 
@@ -228,6 +236,8 @@ func apply_dict(d: Dictionary) -> void:
 	# le partite salvate prima che le Regole Avanzate esistessero sono
 	# tutte partite base: false e' il default giusto
 	advanced_battle = bool(d.get("advanced_battle", false))
+	solo_phase = int(d.get("solo_phase", SoloOpponent.Phase.EARLY))
+	solo_phase_reason = String(d.get("solo_phase_reason", ""))
 	vp_once.clear()
 	for k_v: Variant in d.get("vp_once", []):
 		vp_once.append(String(k_v))

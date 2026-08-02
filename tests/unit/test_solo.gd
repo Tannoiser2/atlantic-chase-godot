@@ -4,6 +4,24 @@ extends TestCase
 
 var graph: MapGraph
 
+const SOLO_SCENARIOS := [
+	"BL1 Raiders of the North Atlantic",
+	"BL2 Contain and Destroy",
+	"BL3 Raiders of the North Sea",
+	"N1 Operazione Wilfred",
+	"N2 Operazione Weser (nord)",
+	"N3 Operazione Weser (sud)",
+	"N4 Operazione Weser (nord & sud)",
+	"N5 Meglio Tardi che Mai",
+	"N6 Il Dilemma delle Operazioni",
+	"B1 Operazione Berlino",
+	"B2 La Battaglia dell'Atlantico",
+	"B3 Operazione Reno",
+	"B4 Decisione sui Mari",
+	"A1 Convogli PQ",
+	"A2 L'Ultima Battaglia",
+]
+
 
 func name() -> String:
 	return "Solitario"
@@ -12,10 +30,13 @@ func name() -> String:
 func run() -> void:
 	graph = MapGraph.load_default()
 	test_tables_load()
+	test_all_solo_transcriptions_load()
 	test_action_table_rows()
 	test_phase_switch()
+	test_phase_sync()
 	test_modifiers()
 	test_identify()
+	test_a1_identify_from_second_edition()
 	test_unidentified_speed()
 	test_fueling()
 
@@ -36,6 +57,24 @@ func test_tables_load() -> void:
 	# uno scenario senza tabelle non esplode, ritorna null
 	eq(SoloOpponent.load_for("Op5 Rheinubung"), null,
 		"le Operazioni non hanno un avversario immaginario")
+
+
+func test_all_solo_transcriptions_load() -> void:
+	_begin("tutti gli scenari solitari trascritti si caricano")
+	for id in SOLO_SCENARIOS:
+		var o := SoloOpponent.load_for(id)
+		ne(o, null, "%s ha il file solo" % id)
+		eq(o.scenario_id, id, "%s: id scenario" % id)
+		true_(o.tables.size() >= 1, "%s: almeno una tabella" % id)
+		var sc := Scenario.load_by_id(id)
+		eq(sc.load_error, "", "%s: scenario manuale caricato" % id)
+		true_(sc.has_victory_table(), "%s: tabella Esito/Debriefing" % id)
+		var v := Victory.from_scenario(sc)
+		eq(v.mode, Victory.Mode.DEBRIEFING, "%s: modo Debriefing" % id)
+		true_(v.debriefing.size() >= 3, "%s: soglie di Esito" % id)
+		true_(String(sc.briefing.get("victory", "")).contains("solitario")
+			or String(sc.briefing.get("victory", "")).contains("Modo"),
+			"%s: briefing dichiara il modo solitario" % id)
 
 
 ## La riga si sceglie contando i Completamenti riusciti dell'altra parte: piu'
@@ -92,6 +131,17 @@ func test_phase_switch() -> void:
 	eq(String(o.act(_rng([3]), 1)["code"]), "T", "meteo cattivo, dado 3")
 
 
+func test_phase_sync() -> void:
+	_begin("stato solitario sincronizzato")
+	var o := SoloOpponent.load_for("BL2 Contain and Destroy")
+	o.set_phase(SoloOpponent.Phase.LATE, "un Convoglio e' stato distrutto")
+	eq(o.phase, SoloOpponent.Phase.LATE, "fase Tardi impostata")
+	eq(o.phase_reason, "un Convoglio e' stato distrutto", "ragione conservata")
+	o.set_phase(SoloOpponent.Phase.EARLY, "ignorata")
+	eq(o.phase, SoloOpponent.Phase.EARLY, "si puo' rimettere Presto caricando uno scenario")
+	eq(o.phase_reason, "", "la ragione Presto resta vuota")
+
+
 ## Il modificatore c'e' ma non si applica da solo: il motore non sa se una nave
 ## tedesca e' danneggiata finche' non glielo si dice.
 func test_modifiers() -> void:
@@ -141,6 +191,20 @@ func test_identify() -> void:
 	# le fa il giocatore
 	var t: SoloTable = o.table("identify")
 	true_(t.note.contains("sostituisci"), "le sostituzioni sono riportate")
+
+
+func test_a1_identify_from_second_edition() -> void:
+	_begin("A1: identificazione tedesca dalla seconda edizione")
+	var o := SoloOpponent.load_for("A1 Convogli PQ")
+	var t: SoloTable = o.table("identify")
+	ne(t, null, "la tabella c'e'")
+	eq(String(t.read(0, 1)["code"]), "BC", "1: BC")
+	eq(String(t.read(0, 2)["code"]), "BC/DD", "2: BC e DD")
+	eq(String(t.read(0, 3)["code"]), "BB", "3: BB")
+	eq(String(t.read(0, 4)["code"]), "BB", "4: BB")
+	eq(String(t.read(0, 5)["code"]), "CA", "5: CA")
+	eq(String(t.read(0, 6)["code"]), "PB", "6: PB")
+	true_(t.note.contains("1 BB"), "i limiti della seconda edizione sono scritti")
 
 
 ## Una TF non identificata e' "molto lenta" per definizione.

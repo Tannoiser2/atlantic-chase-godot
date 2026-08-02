@@ -23,9 +23,12 @@ func run() -> void:
 func test_list() -> void:
 	_begin("elenco")
 	var ids := Scenario.list_ids()
-	eq(ids.size(), 22, "22 scenari (12 mini + 9 operazioni + campagna)")
+	eq(ids.size(), 37,
+		"37 scenari (22 VASSAL + 15 solitari trascritti dal fascicolo)")
 	true_(ids.has("Op5 Rheinubung"), "Rheinubung c'e'")
 	true_(ids.has("MS1 Cornered"), "il primo mini-scenario c'e'")
+	true_(ids.has("N1 Operazione Wilfred"), "il primo solitario N c'e'")
+	true_(ids.has("A2 L'Ultima Battaglia"), "l'ultimo solitario c'e'")
 
 
 ## Ogni scenario deve caricarsi e produrre uno stato coerente: traiettorie
@@ -67,7 +70,7 @@ func test_all_load_and_are_valid() -> void:
 		if sc.has_import_warnings():
 			flagged.append(String(sid_v))
 	true_(flagged.size() <= 3,
-		"solo %d scenari su 22 hanno avvisi: %s" % [flagged.size(), str(flagged)])
+		"solo %d scenari VASSAL hanno avvisi: %s" % [flagged.size(), str(flagged)])
 
 
 func test_rheinubung_setup() -> void:

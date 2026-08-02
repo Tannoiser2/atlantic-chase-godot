@@ -1,0 +1,20 @@
+{
+ "name": "A1 Convogli PQ",
+ "source": "Fascicolo Scenari in Solitario, seconda edizione INGLESE (AC_Solo_scenarios_2022.pdf), pp.59-62. Trascritta a mano da render/testo del PDF aggiornato.",
+ "weather": 0,
+ "initiative": 1,
+ "round": 1,
+ "task_forces": [],
+ "reinforcements": {},
+ "info_triggers": [],
+ "briefing": {
+  "title": "A1 Convogli PQ",
+  "end": "Vedi le istruzioni Fine dello scenario nel file solo e nel fascicolo.",
+  "victory": "Modo solitario: calcolare i VP manuali e leggere la Tabella dell'Esito.",
+  "historical": "Trascritto dal fascicolo solitario italiano; testo completo in core/data/solo."
+ },
+ "setup_notes": [
+  "Meteo Buono; iniziativa britannica. Nessuna TF tedesca iniziale; forza U-Boat iniziale come mappa. Convogli Hvalfjordur-Murmansk 10 segmenti e Halifax-Clyde/Liverpool 11 segmenti. Rinforzo A casuale: 1-2 Clyde/Liverpool-Murmansk, 3-5 Hvalfjordur-Murmansk, 6 Hvalfjordur-Archangel; rinforzo B costa -3 VP. Tovey, Pound, Somerville come mappa."
+ ],
+ "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati."
+}

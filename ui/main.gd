@@ -54,6 +54,7 @@ var scenario: Scenario = null
 ## quel caso si gioca lo stesso, semplicemente nessuno segna punti.
 var victory: Victory = null
 var vp_tracker: VictoryTracker = null
+var solo: SoloOpponent = null
 
 var _messages: Array[String] = []
 
@@ -125,8 +126,14 @@ func _load_scenario_at(idx: int) -> void:
 	log = CommandLog.new(state)
 	victory = Victory.from_scenario(scenario)
 	vp_tracker = VictoryTracker.new(victory, state)
+	solo = SoloOpponent.load_for(scenario.id)
+	if solo != null:
+		solo.set_phase(state.solo_phase, state.solo_phase_reason)
 	_msg("Scenario: %s  -  %d Task Force, %d navi"
 		% [scenario.title, state.task_forces.size(), scenario.ship_count()])
+	if solo != null:
+		_msg("Solitario: tabelle caricate (%s). Premi O per l'avversario immaginario."
+			% ("Tardi" if solo.phase == SoloOpponent.Phase.LATE else "Presto"))
 	if scenario.has_import_warnings():
 		for w_v: Variant in scenario.import_warnings:
 			_msg("  [avviso di import] %s" % String(w_v))
@@ -282,6 +289,8 @@ func _on_key(k: InputEventKey) -> void:
 				await _do_load()
 		KEY_V:
 			_show_outcome()
+		KEY_O:
+			await _do_solo()
 		KEY_B:
 			_briefing_panel.visible = not _briefing_panel.visible
 		KEY_0:
@@ -742,6 +751,8 @@ func _do_load() -> void:
 		return
 	_load_scenario_at(idx)
 	state.apply_dict(doc["state"])
+	if solo != null:
+		solo.set_phase(state.solo_phase, state.solo_phase_reason)
 	log = CommandLog.new(state)
 	_resync_selection()
 	_msg("Partita ripresa: %s, round %d." % [scenario.title, state.round_number])
@@ -760,6 +771,247 @@ func _show_outcome() -> void:
 		else {}, graph, _port_control())
 	if late != "":
 		_msg(late)
+
+
+# --------------------------------------------------------------- solitario --
+
+func _do_solo() -> void:
+	if solo == null:
+		_msg("Solitario: questo scenario non ha tabelle trascritte.")
+		return
+	while true:
+		var opts: Array = [
+			{"label": "Tira Tabella delle Azioni",
+				"detail": "fase %s" % _solo_phase_label()},
+			{"label": "Identifica la TF selezionata",
+				"detail": _solo_identify_detail()},
+			{"label": "Passa alla tabella Tardi",
+				"detail": state.solo_phase_reason if state.solo_phase == SoloOpponent.Phase.LATE else ""},
+			{"label": "Leggi un'altra tabella",
+				"detail": "Rifornimento, Murmansk, Incidente Internazionale, ecc."},
+			{"label": "Crea TF non identificata in porto",
+				"detail": "strumento manuale per le procedure del fascicolo"},
+			{"label": "Chiudi", "detail": ""},
+		]
+		var i: int = await Choice.ask(self, "Solitario - %s" % scenario.title,
+			"L'avversario immaginario tira e mostra le procedure trascritte; "
+			+ "le scelte discorsive restano al giocatore.", opts)
+		match i:
+			0:
+				await _solo_roll_action()
+			1:
+				_solo_identify_selected()
+			2:
+				await _solo_go_late()
+			3:
+				await _solo_roll_any_table()
+			4:
+				await _solo_create_unidentified_tf()
+			_:
+				return
+		_refresh()
+
+
+func _solo_phase_label() -> String:
+	if state.solo_phase == SoloOpponent.Phase.LATE:
+		return "Tardi" + (" - " + state.solo_phase_reason
+			if state.solo_phase_reason != "" else "")
+	return "Presto"
+
+
+func _solo_selector_for(table_id: String) -> int:
+	if table_id == "actions_late":
+		return state.weather
+	return state.convoys_completed
+
+
+func _solo_selector_label(table_id: String) -> String:
+	if table_id == "actions_late":
+		return "meteo %s" % ("cattivo" if state.weather == TimeLapse.Weather.BAD else "buono")
+	return "%d Completamenti riusciti" % state.convoys_completed
+
+
+func _solo_modifiers(t: SoloTable) -> Array:
+	var active: Array = []
+	while true:
+		var opts: Array = []
+		for m in t.modifiers:
+			var label := String(m["label"])
+			opts.append({"label": "%s %s" % ["[x]" if active.has(label) else "[ ]", label],
+				"detail": "%+d" % int(m["value"])})
+		opts.append({"label": "Tira", "detail": "modificatore totale %+d" % t.modifier_total(active)})
+		var i: int = await Choice.ask(self, "Modificatori",
+			"Attiva solo le condizioni vere adesso.", opts)
+		if i < 0:
+			return []
+		if i >= t.modifiers.size():
+			return active
+		var label := String((t.modifiers[i] as Dictionary)["label"])
+		if active.has(label):
+			active.erase(label)
+		else:
+			active.append(label)
+	return active
+
+
+func _solo_roll_action() -> void:
+	if solo == null:
+		return
+	solo.set_phase(state.solo_phase, state.solo_phase_reason)
+	var tid := "actions_late" if solo.phase == SoloOpponent.Phase.LATE else "actions_early"
+	if not solo.has(tid):
+		tid = "actions"
+	var t := solo.table(tid)
+	if t == null:
+		_msg("Solitario: lo scenario non ha una Tabella delle Azioni.")
+		return
+	var mods := await _solo_modifiers(t)
+	var result := solo.act(state.rng, _solo_selector_for(tid), mods)
+	_msg("Solitario - %s (%s)" % [t.title, _solo_selector_label(tid)])
+	for line in SoloTable.describe(result).split("\n"):
+		_msg("  " + line)
+	log.record("Solitario: %s" % String(result.get("code", "")))
+	state.changed.emit()
+
+
+func _solo_roll_any_table() -> void:
+	var keys: Array[String] = []
+	var opts: Array = []
+	for k_v: Variant in solo.tables.keys():
+		var k := String(k_v)
+		var t: SoloTable = solo.table(k)
+		keys.append(k)
+		opts.append({"label": t.title if t.title != "" else k,
+			"detail": k})
+	var i: int = await Choice.ask(self, "Tabella solitario",
+		"Quale tabella vuoi leggere?", opts)
+	if i < 0:
+		return
+	var t: SoloTable = solo.table(keys[i])
+	var selector := _solo_selector_for(keys[i])
+	if t.rows.size() > 1 and not keys[i].begins_with("actions"):
+		var rows: Array = []
+		for r in t.rows:
+			rows.append({"label": String(r["label"]), "detail": ""})
+		var j: int = await Choice.ask(self, "Riga della tabella",
+			"Per questa tabella scegli la riga stampata applicabile.", rows)
+		if j < 0:
+			return
+		selector = int((t.rows[j] as Dictionary)["min"])
+	var mods := await _solo_modifiers(t)
+	var result := t.roll_and_read(state.rng, selector, mods)
+	_msg("Solitario - %s" % (t.title if t.title != "" else keys[i]))
+	for line in SoloTable.describe(result).split("\n"):
+		_msg("  " + line)
+	log.record("Solitario: %s" % String(result.get("code", "")))
+	state.changed.emit()
+
+
+func _solo_identify_detail() -> String:
+	if selected_tf == null:
+		return "nessuna TF selezionata"
+	if not selected_tf.unidentified:
+		return "%s e' gia' identificata" % selected_tf.display_name()
+	return selected_tf.display_name()
+
+
+func _solo_identify_selected() -> void:
+	if selected_tf == null:
+		_msg("Solitario: nessuna TF selezionata.")
+		return
+	var result := solo.identify(state.rng, selected_tf)
+	_msg("Solitario - Identificare la TF")
+	for line in SoloTable.describe(result).split("\n"):
+		_msg("  " + line)
+	var t := solo.table("identify")
+	if t != null and t.note != "":
+		_msg("  Nota: %s" % t.note)
+	if bool(result.get("ok", false)):
+		_msg("  Aggiungi le navi indicate manualmente: il motore non sceglie sostituzioni non stampate.")
+	log.record("Solitario: identificazione")
+	state.changed.emit()
+
+
+func _solo_go_late() -> void:
+	if state.solo_phase == SoloOpponent.Phase.LATE:
+		_msg("Solitario: la tabella Tardi e' gia' attiva.")
+		return
+	var opts: Array = [
+		{"label": "c'e' stata una Battaglia", "detail": ""},
+		{"label": "un Convoglio e' stato distrutto", "detail": ""},
+		{"label": "qualcuno ha eseguito un Attacco Aereo", "detail": ""},
+		{"label": "istruzione dello scenario", "detail": ""},
+	]
+	var i: int = await Choice.ask(self, "Solitario - tabella Tardi",
+		"Il passaggio e' permanente e finisce nel salvataggio.", opts)
+	if i < 0:
+		return
+	state.solo_phase = SoloOpponent.Phase.LATE
+	state.solo_phase_reason = String(opts[i]["label"])
+	solo.set_phase(state.solo_phase, state.solo_phase_reason)
+	_msg("Solitario: passa a Tardi (%s)." % state.solo_phase_reason)
+	log.record("Solitario: Tardi")
+	state.changed.emit()
+
+
+func _solo_create_unidentified_tf() -> void:
+	var side := await _pick_side("Solitario - parte della nuova TF")
+	if side < 0:
+		return
+	var port := await _pick_port("Solitario - porto iniziale")
+	if port.is_empty():
+		return
+	var h := graph.port_hex(port)
+	if h == Vector2i.MAX:
+		_msg("Solitario: porto non calibrato sulla mappa: %s" % port)
+		return
+	var tf := TaskForce.new(0, side)
+	tf.unidentified = true
+	tf.color = _solo_color_for(side)
+	tf.slot = _solo_next_slot(tf.color)
+	tf.name = "%s non identificata %d" % [
+		"KM" if side == TaskForce.Side.KRIEGSMARINE else "RN", tf.slot]
+	tf.trajectory.become_station(h)
+	tf.trajectory.station_port = port
+	tf.recompute_speed()
+	state.add_task_force(tf)
+	selected_tf = tf
+	traj_layer.selected_tf_id = tf.id
+	_msg("Solitario: creata %s in %s (%s)." % [tf.display_name(), port, str(h)])
+	log.record("Solitario: nuova TF non identificata")
+	state.changed.emit()
+
+
+func _pick_side(title: String) -> int:
+	var i: int = await Choice.ask(self, title, "Scegli la parte.",
+		[{"label": "Kriegsmarine", "detail": ""},
+			{"label": "Royal Navy", "detail": ""}])
+	return i if i >= 0 else -1
+
+
+func _pick_port(title: String) -> String:
+	var names: Array[String] = []
+	for k_v: Variant in graph.ports.keys():
+		names.append(String(k_v))
+	names.sort()
+	var opts: Array = []
+	for p in names:
+		var h := graph.port_hex(p)
+		opts.append({"label": p, "detail": str(h)})
+	var i: int = await Choice.ask(self, title, "Scegli un porto gia' calibrato sulla mappa.", opts)
+	return names[i] if i >= 0 else ""
+
+
+func _solo_color_for(side: int) -> String:
+	return "GE" if side == TaskForce.Side.KRIEGSMARINE else "Brown"
+
+
+func _solo_next_slot(color: String) -> int:
+	var slot := 0
+	for tf in state.task_forces:
+		if tf.color == color:
+			slot = maxi(slot, tf.slot + 1)
+	return slot
 
 
 ## Dispersione di un Convoglio (RB p.11). Non e' un'azione: e' una scelta che
@@ -1532,6 +1784,7 @@ func _build_help(root: Control) -> void:
   1  Ingaggiare      2  Ricerca Navale
   3  Attacco Aereo   4  Attacco Furtivo
   T   Scorrere del Tempo sulla TF selezionata
+  O   avversario immaginario (modo solitario)
   0   apre una Battaglia di prova
   Ctrl+W  alterna meteo buono/cattivo
   Ctrl+Z / Ctrl+Shift+Z   annulla / ripristina
@@ -1590,6 +1843,9 @@ func _refresh() -> void:
 		else {}, graph, _port_control())
 	if late != "":
 		lines.append("[color=#ff9a3c]%s[/color]" % late)
+	if solo != null:
+		lines.append("Solitario: [b]%s[/b]    O: avversario immaginario"
+			% _solo_phase_label())
 	if selected_tf != null:
 		var t := selected_tf.trajectory
 		var kind := "Stazione" if t.is_station() else "Traiettoria"

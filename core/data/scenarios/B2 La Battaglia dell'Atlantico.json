@@ -1,0 +1,20 @@
+{
+ "name": "B2 La Battaglia dell'Atlantico",
+ "source": "Fascicolo Scenari in Solitario, seconda edizione INGLESE (AC_Solo_scenarios_2022.pdf), pp.45-48. Trascritta a mano da render/testo del PDF aggiornato.",
+ "weather": 0,
+ "initiative": 1,
+ "round": 1,
+ "task_forces": [],
+ "reinforcements": {},
+ "info_triggers": [],
+ "briefing": {
+  "title": "B2 La Battaglia dell'Atlantico",
+  "end": "Vedi le istruzioni Fine dello scenario nel file solo e nel fascicolo.",
+  "victory": "Modo solitario: calcolare i VP manuali e leggere la Tabella dell'Esito.",
+  "historical": "Trascritto dal fascicolo solitario italiano; testo completo in core/data/solo."
+ },
+ "setup_notes": [
+  "Meteo Buono; iniziativa britannica. Nessuna TF tedesca iniziale. Convogli Halifax-Clyde/Liverpool 11 segmenti e Clyde/Liverpool-Gibilterra 10 segmenti. Malaya in una delle TF; Tovey in una TF iniziale; Pound presente; Somerville nel rinforzo B."
+ ],
+ "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati."
+}

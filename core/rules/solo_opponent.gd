@@ -66,6 +66,11 @@ func table(table_id: String) -> SoloTable:
 	return tables.get(table_id, null)
 
 
+func set_phase(new_phase: int, reason: String = "") -> void:
+	phase = Phase.LATE if new_phase == Phase.LATE else Phase.EARLY
+	phase_reason = reason if phase == Phase.LATE else ""
+
+
 ## Passa alla tabella "Tardi". Idempotente: si passa una volta sola.
 func go_late(reason: String) -> bool:
 	if phase == Phase.LATE:

@@ -46,6 +46,7 @@ var victory_data: Dictionary = {}
 ## due contendenti, senza Traiettorie ne' Stazioni - ed e' per questo che a
 ## lungo sono sembrati "vuoti": l'importatore cercava rotte che non esistono.
 var battle_setup: Dictionary = {}
+var setup_notes: Array = []
 
 var load_error: String = ""
 
@@ -88,6 +89,7 @@ func load_from(path: String) -> bool:
 	info_triggers = d.get("info_triggers", [])
 	briefing = d.get("briefing", {})
 	import_warnings = d.get("import_warnings", [])
+	setup_notes = d.get("setup_notes", [])
 	var bs: Variant = d.get("battle_setup", null)
 	battle_setup = bs if typeof(bs) == TYPE_DICTIONARY else {}
 	var sp: Variant = d.get("ship_pool", null)
@@ -209,6 +211,13 @@ func completion_is_mandatory() -> bool:
 ## caso: entrare nel porto sbagliato e' peggio che non entrare.
 func reinforcement_ports() -> Dictionary:
 	return victory_data.get("reinforcement_ports", {})
+
+
+## Note manuali sullo schieramento, usate soprattutto dagli scenari solitari:
+## molte rotte sono stampate come "Halifax -> Clyde/Liverpool, 11 segmenti",
+## non come esagoni. Mostrarlo e' piu' onesto che lasciare "0 TF, 0 navi".
+func raw_setup_notes() -> Array:
+	return setup_notes
 
 
 ## Le condizioni di vittoria di questo scenario sono state trascritte?

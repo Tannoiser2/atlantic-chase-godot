@@ -1,0 +1,20 @@
+{
+ "name": "B3 Operazione Reno",
+ "source": "Fascicolo Scenari in Solitario, seconda edizione INGLESE (AC_Solo_scenarios_2022.pdf), pp.49-53. Trascritta a mano da render/testo del PDF aggiornato.",
+ "weather": 0,
+ "initiative": 0,
+ "round": 1,
+ "task_forces": [],
+ "reinforcements": {},
+ "info_triggers": [],
+ "briefing": {
+  "title": "B3 Operazione Reno",
+  "end": "Vedi le istruzioni Fine dello scenario nel file solo e nel fascicolo.",
+  "victory": "Modo solitario: calcolare i VP manuali e leggere la Tabella dell'Esito.",
+  "historical": "Trascritto dal fascicolo solitario italiano; testo completo in core/data/solo."
+ },
+ "setup_notes": [
+  "Meteo Buono; iniziativa tedesca. Bismarck con Lutjens; RV come mappa; Convogli Halifax-Clyde/Liverpool 11 segmenti e Clyde/Liverpool-Gibilterra 10 segmenti. Due BC nel Rinforzo A a Brest, entrano solo col risultato b del Rifornimento. Raeder presente."
+ ],
+ "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati."
+}

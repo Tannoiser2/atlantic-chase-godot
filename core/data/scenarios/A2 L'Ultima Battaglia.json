@@ -1,0 +1,20 @@
+{
+ "name": "A2 L'Ultima Battaglia",
+ "source": "Fascicolo Scenari in Solitario, seconda edizione INGLESE (AC_Solo_scenarios_2022.pdf), pp.63-68. Trascritta a mano da render/testo del PDF aggiornato.",
+ "weather": 0,
+ "initiative": 0,
+ "round": 1,
+ "task_forces": [],
+ "reinforcements": {},
+ "info_triggers": [],
+ "briefing": {
+  "title": "A2 L'Ultima Battaglia",
+  "end": "Vedi le istruzioni Fine dello scenario nel file solo e nel fascicolo.",
+  "victory": "Modo solitario: calcolare i VP manuali e leggere la Tabella dell'Esito.",
+  "historical": "Trascritto dal fascicolo solitario italiano; testo completo in core/data/solo."
+ },
+ "setup_notes": [
+  "Meteo Buono; iniziativa tedesca. TF e Mine britanniche iniziali come mappa; U-Boat tedesco entro 3 da porto tedesco e non in spazio con Stazione/porto/base nemica. Convogli New York-Clyde/Liverpool 12 segmenti e Hvalfjordur-Murmansk 10 segmenti. Le forze tedesche sono scelte spendendo VP; massimo due gruppi rinforzi; RV opzionali. Raeder presente."
+ ],
+ "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati."
+}

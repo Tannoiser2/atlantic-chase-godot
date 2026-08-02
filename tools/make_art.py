@@ -142,6 +142,48 @@ SCENARIOS = {
     "BL1 Raiders of the North Atlantic":
         "a lone commerce raider slipping through the blockade in heavy "
         "weather, merchant smoke far off",
+    "BL2 Contain and Destroy":
+        "royal navy cruisers patrolling a grey north sea blockade line, "
+        "distant german merchant smoke near neutral norwegian waters",
+    "BL3 Raiders of the North Sea":
+        "german battlecruisers breaking into the north sea under low cloud, "
+        "british patrol silhouettes on the horizon",
+    "N1 Operazione Wilfred":
+        "british destroyers laying mines off the norwegian coast, steep fjords "
+        "and snow clouds, neutral waters tense and quiet",
+    "N2 Operazione Weser (nord)":
+        "german troop convoy forcing its way toward Narvik through arctic "
+        "snow squalls, destroyers escorting close",
+    "N3 Operazione Weser (sud)":
+        "german destroyers and transports racing toward Bergen at dawn, "
+        "norwegian coast in cold mist",
+    "N4 Operazione Weser (nord & sud)":
+        "multiple german naval groups converging on the norwegian coast, "
+        "convoys, destroyers, and cruisers in rough northern seas",
+    "N5 Meglio Tardi che Mai":
+        "british reinforcement convoy approaching Narvik under threat, "
+        "mountain coast, mines and warships in a cold sea",
+    "N6 Il Dilemma delle Operazioni":
+        "british convoys in the north sea while german raiders threaten the "
+        "route to Norway, stormy grey horizon",
+    "B1 Operazione Berlino":
+        "two german battlecruisers hunting atlantic convoys after a secret "
+        "rendezvous at sea, tanker silhouette in heavy weather",
+    "B2 La Battaglia dell'Atlantico":
+        "british convoy escorts guarding merchant ships across the atlantic, "
+        "distant threat of german surface raiders",
+    "B3 Operazione Reno":
+        "the Bismarck and a heavy cruiser sortieing from a foggy french coast, "
+        "atlantic convoy smoke far ahead",
+    "B4 Decisione sui Mari":
+        "home fleet battleships searching for the Bismarck in heavy atlantic "
+        "seas, aircraft carrier silhouette astern",
+    "A1 Convogli PQ":
+        "arctic convoy steaming toward Murmansk through ice and midnight sun, "
+        "u-boat periscope wake and escorting cruisers",
+    "A2 L'Ultima Battaglia":
+        "last german surface raiders in norwegian waters stalking arctic "
+        "convoys, dark mountains, cold polar light",
 }
 
 # --- le azioni ---------------------------------------------------------------

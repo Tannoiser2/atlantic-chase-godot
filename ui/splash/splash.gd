@@ -156,8 +156,13 @@ func _populate() -> void:
 	for i in _ids.size():
 		var sc := Scenario.load_by_id(_ids[i])
 		var label := sc.title if sc.title != "" else _ids[i]
-		# i mini-scenari si giocano tutti sulla Mappa di Battaglia
-		var tag := "  [mini]" if _ids[i].begins_with("MS") else ""
+		# I mini-scenari sono Battaglie gia' schierate; i solitari invece
+		# vengono dal fascicolo, non dai salvataggi VASSAL.
+		var tag := ""
+		if _ids[i].begins_with("MS"):
+			tag = "  [mini]"
+		elif SoloOpponent.load_for(_ids[i]) != null:
+			tag = "  [solo]"
 		_list.add_item("%s%s" % [label, tag])
 		if _ids[i].begins_with("Op5"):
 			default_index = i
@@ -176,6 +181,8 @@ func _on_selected(index: int) -> void:
 		sc.task_forces.size(), sc.ship_count()]
 	if sc.reinforcement_count() > 0:
 		txt += ", %d navi di rinforzo" % sc.reinforcement_count()
+	for n_v: Variant in sc.raw_setup_notes():
+		txt += "\n- " + String(n_v)
 	if sc.has_import_warnings():
 		txt += "\n\n[color=#ff9a3c][b]Avvisi di import[/b][/color]"
 		for w_v: Variant in sc.import_warnings:

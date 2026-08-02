@@ -79,6 +79,8 @@ func test_serialization_roundtrip() -> void:
 	st.scenario_name = "prova"
 	st.weather = TimeLapse.Weather.BAD
 	st.round_number = 3
+	st.solo_phase = SoloOpponent.Phase.LATE
+	st.solo_phase_reason = "c'e' stata una Battaglia"
 	var tf := _tf(TaskForce.Side.KRIEGSMARINE, origin)
 	tf.name = "Bismarck TF"
 	tf.speed = TimeLapse.Speed.FAST
@@ -99,6 +101,8 @@ func test_serialization_roundtrip() -> void:
 	eq(st2.scenario_name, "prova", "nome scenario")
 	eq(st2.weather, TimeLapse.Weather.BAD, "meteo")
 	eq(st2.round_number, 3, "round")
+	eq(st2.solo_phase, SoloOpponent.Phase.LATE, "fase solitario")
+	eq(st2.solo_phase_reason, "c'e' stata una Battaglia", "ragione della fase solitario")
 	eq(st2.task_forces.size(), 1, "una TF")
 	eq(st2.task_forces[0].name, "Bismarck TF", "nome TF")
 	eq(st2.task_forces[0].speed, TimeLapse.Speed.FAST, "velocita'")

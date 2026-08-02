@@ -1,0 +1,20 @@
+{
+ "name": "N3 Operazione Weser (sud)",
+ "source": "Fascicolo Scenari in Solitario, seconda edizione INGLESE (AC_Solo_scenarios_2022.pdf), pp.25-27. Trascritta a mano da render/testo del PDF aggiornato.",
+ "weather": 1,
+ "initiative": 0,
+ "round": 1,
+ "task_forces": [],
+ "reinforcements": {},
+ "info_triggers": [],
+ "briefing": {
+  "title": "N3 Operazione Weser (sud)",
+  "end": "Vedi le istruzioni Fine dello scenario nel file solo e nel fascicolo.",
+  "victory": "Modo solitario: calcolare i VP manuali e leggere la Tabella dell'Esito.",
+  "historical": "Trascritto dal fascicolo solitario italiano; testo completo in core/data/solo."
+ },
+ "setup_notes": [
+  "Meteo Sfavorevole; iniziativa tedesca con conta iniziativa a 2; mappa aggiuntiva Mare del Nord. Nessuna TF britannica iniziale. Convoglio tedesco per Bergen e Squadrone DD per Kristiansand; segmento tedesco a Kristiansand con Informazioni; Raeder presente."
+ ],
+ "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati."
+}

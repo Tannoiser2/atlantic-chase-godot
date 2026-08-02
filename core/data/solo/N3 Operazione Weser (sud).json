@@ -1,0 +1,116 @@
+{
+ "_scenario": "N3 Operazione Weser (sud)",
+ "_source": "Fascicolo Scenari in Solitario, seconda edizione INGLESE (AC_Solo_scenarios_2022.pdf), pp.25-27. Trascritta a mano da render/testo del PDF aggiornato.",
+ "_role": "Il giocatore e' il TEDESCO; le tabelle rappresentano l'avversario BRITANNICO.",
+ "_status": "Tabelle dello scenario verificate contro la seconda edizione inglese 2022. Dove un dato non e' calibrabile o manca, resta dichiarato invece di essere inventato.",
+ "tables": [
+  {
+   "id": "actions",
+   "title": "Tabella di Azione Britannica",
+   "rows": [
+    {
+     "label": "0 Completamenti tedeschi",
+     "min": 0,
+     "max": 0,
+     "cells": [
+      "B",
+      "B",
+      "SA",
+      "SR",
+      "",
+      "C"
+     ]
+    },
+    {
+     "label": "1",
+     "min": 1,
+     "max": 1,
+     "cells": [
+      "X",
+      "B",
+      "B",
+      "SA",
+      "SR",
+      "C"
+     ]
+    },
+    {
+     "label": "2",
+     "min": 2,
+     "max": 2,
+     "cells": [
+      "X",
+      "X",
+      "B",
+      "SA",
+      "SA",
+      "C"
+     ]
+    },
+    {
+     "label": "3+",
+     "min": 3,
+     "max": 99,
+     "cells": [
+      "X",
+      "X",
+      "X",
+      "SA",
+      "SA",
+      "C"
+     ]
+    }
+   ],
+   "modifiers": [
+    {
+     "label": "ogni nave britannica Danneggiata in gioco",
+     "value": 2
+    },
+    {
+     "label": "ogni nave britannica affondata o Convoglio distrutto",
+     "value": 1
+    },
+    {
+     "label": "ogni Reazione Aggressiva Norvegese",
+     "value": -1
+    }
+   ],
+   "legend": {
+    "B": "Procedura 'B' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore.",
+    "C": "Procedura 'C' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore.",
+    "CONTATTO": "Procedura 'CONTATTO' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore.",
+    "SA": "Procedura 'SA' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore.",
+    "SR": "Procedura 'SR' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore.",
+    "X": "Procedura 'X' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore."
+   }
+  },
+  {
+   "id": "identify",
+   "title": "Navi Britanniche non Identificate",
+   "rows": [
+    {
+     "label": "Inizio",
+     "min": 0,
+     "max": 0,
+     "cells": [
+      "BC/CA",
+      "CA/CA",
+      "CA/Convoglio",
+      "CL/Convoglio",
+      "Convoglio",
+      "Convoglio"
+     ]
+    }
+   ],
+   "legend": {
+    "BC/CA": "Procedura 'BC/CA' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore.",
+    "CA/CA": "Procedura 'CA/CA' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore.",
+    "CA/Convoglio": "Procedura 'CA/Convoglio' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore.",
+    "CL/Convoglio": "Procedura 'CL/Convoglio' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore.",
+    "Convoglio": "Procedura 'Convoglio' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore."
+   },
+   "note": "Se istruita a Portare in Battaglia, sostituire Convoglio con BB; BB lenta, non Nelson/Rodney."
+  }
+ ],
+ "scenario_text": "--- AC_Solo_scenarios_2022.pdf page 26 ---\n25\n\n       N3: Operation Weser (south)                                                                            German player\n      April 1940. Grand Admiral Raeder sends task forces carrying troops and supplies to Bergen and Kristiansand in\n      Norway, hoping to pre-empt a British invasion or cooperation between Norway and Britain. It is feared the Royal Navy\n      will contest this move, but it is hoped speed and surprise will carry the day.\n      Note: the Blucher’s debacle before Oslo is not depicted here.\n\n      Objective\n      The Convoy carries troops and supplies and the DD Squadron also carries troops. They must be delivered to Norway,\n      before withdrawing safely to Germany (to Kiel or Wilhelmshaven). The Convoy must complete in Bergen while the DD\n      Squadron must complete in Kristiansand, and all ships must complete in Wilhelmshaven or Kiel. Do not allow any to\n      be damaged or sunk. The Kriegsmarine can ill afford losses.\n      Set-Up                                                 The End\n      Weather: Bad                                           The scenario ends when the Germans have no Task Forces in play.\n      Initiative: German (the player); set the\n      Initiative Tally marker on the ‘2’ space\n      of the track;\n      Map: North Sea Inset Map\n      Enemy: No British TFs at start\n\n C\n\n\n\n M\n\n                                          Raeder                                      Attach an Intel marker to the\n                                                                                      German Trajectory segment\n Y\n\n\n\nCM\n                                                                                      in Kristiansand.\nMY\n                                    start with Raeder                                                      L\n                                                                                                         TE\nCY\n                                                                                                      IN\nCMY\n\n\n\n K\n\n\n\n\n                          CL            1/0\n                         1 Konigsbergf\n                      -2/na\n                                                                   DD       0/na                                          Su\n                                                                                                                             bm\n                                                                    SQUADRON                                                     in\n               CONVOYvs\n                                                                               s                                               ar e\n                                                    CL       1/0 5 Hits destroys\n                      CL           1/0\n                            Köln                    1 Karlsruhe f the DD Squadron\n                      1             f\n\n        The German Convoy is destroyed\n        when it suffers 4 Hits. It can’t\n        disperse.\n\n\n\n                          For Norwegian Reaction, see p. 27.\n\n\n\n              British Convoys\n              May not disperse. Are destroyed\n              when they suffer 2 Hits.\n\n--- AC_Solo_scenarios_2022.pdf page 27 ---\n26\n\n      British Actions                                                                                             British Action Table\n      When the British have the Initiative, use the British Action Table                         1d6               1or less   2   3     4      5      6+\n      to determine their actions.\n                                                                                                           none      B        B   SA SR               C\n\n\n                                                                                  Number of successful\n           Modifiers (British Action Table):\n            +2 each British ship in play that is Damaged\n            +1 each sunk British ship or destroyed Convoy                                                  1         X        B   B   SA SR           C\n            -1 each Aggressive Norwegian Reaction\n\n\n\n\n                                                                               German Completion actions\n                                                                                                           2         X        X   B   SA SA           C\n\n      Legend of Action Table Results:\n                                                                                                           3+        X        X   X   SA SA           C\n                 TRAJECTORY ACTION to BERGEN.\n                 Selection: Select a British TF in Bergen. If none, select\n                 the longest Trajectory. If no TF is in play, create a new\n                 unidentified TF in Methil.                                                           STEALTH ATTACK.\n                 Action: First, the selected TF performs a Trajectory                                 Selection: Select the British Submarine stealth\n                 action to Bergen (if already in Bergen, skip to step 2).                             force. If not in play, treat as ‘SR’ result instead.\n                 Then (step 2), if a German TF is in the same hex as the                              Action: Submarine performs a Stealth attack, and\n                 selected British TF (in any hex, not just Bergen), the TF                            gets a +3 modifier on the Stealth Attack Table. If\n                                                                                                      it does not have a target in its hex (no German TF\n                 attempts to bring to Battle that German TF (if the           SA                      Station, or none with an Intel or Contact marker),\n C\n                 selected TF has a Convoy or damaged ship, replace\n M\n         B       Convoy/damaged ship with a CA; the Convoy turned                                     treat as ‘SR’ result instead. British use Coordina-\n Y\n                 back to port, or was never really there despite intelli-                             tion if there is a British TF in the target hex. After\n                 gence to the contrary). If no German TF is in its hex, the                           the attack and the Submarine marker is removed\nCM\n\n                 selected TF’s action depends on what is in the British                               from play, it is eligible to return to play when ’SA’\nMY\n                 TF: if a Convoy or unidentified, it attempts a Comple-                               or ’SR’ is the Action Table result.\nCY               tion action in Bergen (if prevented by Trajectory\nCMY\n                 length or Intel attachment, it Passes instead). If it                                STEALTH RECON.\n K\n                 contains any other ship type, it Passes.                                             Selection: Select the British Submarine stealth\n                 Time Lapse: Remove segments farthest from Bergen.                                    force. It does not matter where it is.\n                COMPLETION ACTION to SCAPA FLOW.                                                      Action: Place the Submarine stealth force in a\n                                                                                                      hex with a German TF (if a Trajectory, attach an\n                Selection: Select a British TF with a Damaged                 SR                      Intel marker to the segment, if it does not already\n                ship. If none, select the longest Trajectory. If no\n                British TF is in play, perform an Air Strike action (if                               have one). If more than one option for place-\n                Bad Weather or no German TF in range, and the                                         ment, choose the hex nearest Bergen. If the Sub\n                German Convoy and DD Squadron delivered                                               force is already in Bergen, treat as CONTACT\n                troops to Norway, the scenario ends; otherwise,                                       instead.\n                the British Pass).\n         C      Action: Selected TF performs a Completion                                              BRING ON BATTLE.\n                action to Scapa Flow (it may need to perform a                                         Selection: Select a British TF with a BB in it. If none,\n                Trajectory action first, using the most direct                                         create a new TF in Scapa Flow (place 2 BBs, 1BC,\n                route avoiding Intel triggers (if possible).                                           and 2CAs in it).\n                Time Lapse: Remove segments farthest from                                              Action: First, remove all Damaged British ships\n                Scapa Flow.                                                                            from TFs (if this empties a TF, remove that TF from\n                After Completion action: IC                                                            play). Then, the selected TF performs actions\n                                                                              X                        designed to bring on a Battle targeting a German\n                CONTACT.                                                                               TF nearest to the Submarine force (if the Subma-\n                Each German TF in Bergen and Kristiansand gets                                         rine force is not on the map, nearest to Bergen\n                a Contact marker attached (attach to station or                                        instead).If multiple targets, select the one that will\n                segment in the port hex). Then: IC                                                     give the British the most advantageous modifier.\n                                                                                                       Time Lapse: Remove segments nearest to Scapa\n                If a German TF already has a Contact marker\n                                                                                                       Flow.\n                attached: IC\n\n--- AC_Solo_scenarios_2022.pdf page 28 ---\n27\n\n        Unidentified British Ships\n        When you need to identify British ships (and the action result was                                           Identify British TF\n        not ‘X’), use this table:\n                                                                                                  1d6            1         2        4          5          5-6\n        If the British TF is instructed by the Action Table result to bring on Battle,                          BC     CA        CA            CL        Convoy\n        replace ‘Convoy’ with a BB. A BB must be slow (not the Rodney or Nelson).\n                                                                                                                CA     CA      Convoy Convoy\n\n\n\n      Norwegian Reaction: German Completion Actions\n      When a German Convoy or DD performs a successful Completion                                                    Norwegian Reaction\n      action in a hex with Bergen or Kristiansand, check for a reaction by                         1d6                 1        2          3         4      5+\n      rolling a die and referring to the Norwegian Reaction table on the right.\n       Legend of results...                                                                                                                          –          –\n           –\n                                                                                                               YES     !\n                                                                                                  British TF\n                 No reaction (no additional game effect).\n                Hit    Convoy or DD suffers a Hit. This is an Aggressive Reaction.\n                                                                                                   in hex?\n                       Convoy or DD suffers two Hits. You may redirect one of the Hits\n                       to another German ship in the hex (its TF must be a Station). This\n                                                                                                               NO      !                                        –\n        Two Hits\n                       is an Aggressive Reaction.\n                       The Completion action is cancelled. The German Convoy or DD                Modifiers:\n            !          suffers two Hits and it must Complete in Kiel or Wilhelmshaven.\n                                                                                                  +1 if one or more German CL is in the hex.\n                       This is an Aggressive Reaction. British have Initiative.\n C\n\n\n\n M\n\n\n\n Y\n         Determine Outcome\nCM\n         When the scenario ends, use the following tables to tally Victory Points (VP). Then, refer to the N3 Debriefing Table for the\n         outcome.\n                  Mission objectives...                                                                                    Kriegsmarine assets...\nMY\n\n\n\nCY\n\n\n\nCMY\n                  Convoy completed                  DD completed                 Each Hit on a                                    Each\n                      in Bergen           VP       in Kristiansand?     VP        German...           VP                       German ship?         VP\n                          yes             5            yes              5         Convoy             -2                             sunk            -4\n K\n\n\n\n\n                           no             -3            no              -2              DD            -3                        damaged             -2\n\n\n                                                   British casualties...\n                     Each\n              British Task Force                           British Convoys suffered:         VP      Each British BB, BC, CA & CL suffered:         VP\n            Completed in Bergen?         VP                                  no Hits         0                       no Hits                        0\n                                                      total Hits of\n                       yes               -4                                  1-2 Hits        2                       Damaged                        1\n                                                      all Convoys\n                        no               0                                   3+ Hits         3                         Sunk                         2\n\n\n      N3 Debriefing Table\n         VP                                                       O U T C O M E\n         10\n       or more Blitzkrieg! Norway will soon be secure. Despite superiority of force, the British seem helpless.\n                      If no German ship was damaged or sunk, the operation in the south went according to plan. Hits to the Convoy or DD\n                      Squadron are costly, delaying the inevitable German victory. Thanks to overwhelming air superiority, however,\n         5-9          German ground forces capture Bergen and push north. If the Convoy suffered a Hit, reinforcements will be needed. If\n                      there was no Aggressive Reaction, and you earned more than 5 VP, upgrade the Outcome one row to Blitzkrieg!\n                      Operation Weser now hinges on successes at Oslo and the north. If neither Convoy nor DD Squadron completed in\n          4           Norway without suffering Hits, Bergen may eventually fall. If a German ship was sunk, however, or if an ‘X’ result was\n        or less       garnered on the Action Table and 2 or more Hits were suffered by the Convoy, the Battle for Norway is in doubt."
+}
