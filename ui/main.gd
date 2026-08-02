@@ -147,6 +147,8 @@ func _load_scenario_at(idx: int) -> void:
 	_refresh()
 	if scenario.is_battle_scenario():
 		_open_scenario_battle()
+	elif _solo_is_imaginary_turn():
+		call_deferred("_kick_solo_opponent_turn", "inizio scenario")
 
 
 func _process(delta: float) -> void:
@@ -329,6 +331,9 @@ func _on_key(k: InputEventKey) -> void:
 ## Supporto Aereo entrano nel Totale Traiettoria (RB p.17), quindi le sceglie il
 ## giocatore. Le domande si saltano quando non c'e' nulla da scegliere.
 func _declare_action(key: String) -> void:
+	if _solo_is_imaginary_turn():
+		await _maybe_run_solo_opponent_turn("turno dell'avversario immaginario")
+		return
 	var why := _action_unavailable_reason(key)
 	if why != "":
 		_msg("%s: %s" % [String(engine.action(key).get("label", key)), why])
@@ -478,6 +483,13 @@ func _eligible_targets_for_action(key: String, active: TaskForce) -> Array[TaskF
 		if engine.legality_error(dec, state) == "":
 			out.append(tf)
 	return out
+
+
+func _sample_target_for_action(key: String, active: TaskForce) -> TaskForce:
+	var eligible := _eligible_targets_for_action(key, active)
+	if not eligible.is_empty():
+		return eligible[0]
+	return _nearest_enemy(active)
 
 
 func _designated_active_info_count(dec: ActionEngine.Declaration) -> int:
@@ -763,6 +775,7 @@ func _on_left_click(h: Vector2i, shift: bool) -> void:
 
 	# 1) se c'e' una TF nell'esagono e non stiamo estendendo, selezionala
 	var here := state.forces_in(h)
+	here = _controllable_forces(here)
 	if not here.is_empty() and (selected_tf == null or not _can_extend_to(h)):
 		var idx := here.find(selected_tf)
 		selected_tf = here[(idx + 1) % here.size()] if idx >= 0 else here[0]
@@ -899,6 +912,8 @@ func _finish_drag() -> void:
 func _can_extend_to(h: Vector2i) -> bool:
 	if selected_tf == null:
 		return false
+	if not _can_control_tf(selected_tf):
+		return false
 	return selected_tf.trajectory.extend_error(
 		h, active_end, graph, state.port_hexes(), selected_tf.side) == ""
 
@@ -906,6 +921,9 @@ func _can_extend_to(h: Vector2i) -> bool:
 func _try_extend(h: Vector2i) -> void:
 	if not _trajectory_action_armed:
 		_msg("Per tracciare una rotta dichiara prima l'azione Traiettoria (5).")
+		return
+	if not _can_control_tf(selected_tf):
+		_msg("Traiettoria: questa Task Force appartiene all'avversario immaginario.")
 		return
 	var traj := selected_tf.trajectory
 	var ports := state.port_hexes()
@@ -943,9 +961,12 @@ func _after_trajectory_action(active: TaskForce) -> void:
 func _cycle_tf(step: int) -> void:
 	if state.task_forces.is_empty():
 		return
-	var i := state.task_forces.find(selected_tf)
-	i = wrapi(i + step, 0, state.task_forces.size())
-	selected_tf = state.task_forces[i]
+	var pool := _controllable_forces(state.task_forces)
+	if pool.is_empty():
+		pool = state.task_forces
+	var i := pool.find(selected_tf)
+	i = wrapi(i + step, 0, pool.size())
+	selected_tf = pool[i]
 	traj_layer.selected_tf_id = selected_tf.id
 	_cancel_trajectory_action(false)
 	_focus_selected()
@@ -971,18 +992,40 @@ func _resync_selection() -> void:
 
 func _select_first_initiative_force() -> void:
 	selected_tf = null
-	for tf in state.task_forces:
+	for tf in _controllable_forces(state.task_forces):
 		if tf.side == state.initiative:
 			selected_tf = tf
 			break
+	var pool := _controllable_forces(state.task_forces)
+	if selected_tf == null and not pool.is_empty():
+		selected_tf = pool[0]
 	if selected_tf == null and not state.task_forces.is_empty():
 		selected_tf = state.task_forces[0]
 	if traj_layer != null:
 		traj_layer.selected_tf_id = selected_tf.id if selected_tf != null else -1
 
 
+func _can_control_tf(tf: TaskForce) -> bool:
+	var player := _solo_player_side()
+	if player < 0:
+		return true
+	return tf != null and tf.side == player
+
+
+func _controllable_forces(forces: Array) -> Array[TaskForce]:
+	var out: Array[TaskForce] = []
+	for tf_v: Variant in forces:
+		var tf: TaskForce = tf_v
+		if _can_control_tf(tf):
+			out.append(tf)
+	return out
+
+
 func _arm_trajectory_action() -> void:
 	if selected_tf == null:
+		return
+	if not _can_control_tf(selected_tf):
+		_msg("Traiettoria: questa Task Force appartiene all'avversario immaginario.")
 		return
 	_trajectory_action_armed = true
 	traj_layer.clear_preview()
@@ -1147,6 +1190,10 @@ func _maybe_run_solo_opponent_turn(reason: String = "") -> void:
 		_msg("Solitario: l'Iniziativa e' dell'avversario immaginario (%s)."
 			% reason)
 	await _solo_roll_action(true)
+
+
+func _kick_solo_opponent_turn(reason: String = "") -> void:
+	await _maybe_run_solo_opponent_turn(reason)
 
 
 func _solo_modifiers(t: SoloTable) -> Array:
@@ -1717,6 +1764,9 @@ func _do_pass() -> void:
 func _do_time_lapse() -> void:
 	if selected_tf == null:
 		return
+	if not _can_control_tf(selected_tf):
+		_msg("Scorrere del Tempo: questa Task Force appartiene all'avversario immaginario.")
+		return
 	var traj := selected_tf.trajectory
 	if traj.is_station():
 		_msg("%s e' gia' una Stazione" % selected_tf.display_name())
@@ -1977,8 +2027,12 @@ func _build_hud() -> void:
 func _action_unavailable_reason(key: String) -> String:
 	if mode == Mode.EDITOR:
 		return "sei in modalita' editor del grafo"
+	if _solo_is_imaginary_turn():
+		return "e' il turno dell'avversario immaginario: l'app tira la Tabella Solitario"
 	if selected_tf == null:
 		return "nessuna Task Force selezionata"
+	if not _can_control_tf(selected_tf):
+		return "questa Task Force appartiene all'avversario immaginario"
 	if selected_tf.side != state.initiative:
 		if solo != null and state.forces_of(state.initiative).is_empty():
 			return ("l'Iniziativa e' dell'avversario immaginario: la Tabella "
@@ -1994,7 +2048,7 @@ func _action_unavailable_reason(key: String) -> String:
 	var dec := ActionEngine.Declaration.new()
 	dec.action_key = key
 	dec.active = selected_tf
-	dec.target = _nearest_enemy(selected_tf)
+	dec.target = _sample_target_for_action(key, selected_tf)
 	var err := engine.legality_error(dec, state)
 	if err != "":
 		return err
