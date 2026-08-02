@@ -47,6 +47,11 @@ const CURVE_STEPS := 8
 ## Ricalcolata a ogni _draw() perche' le Traiettorie cambiano di continuo.
 var _lanes: Dictionary = {}
 
+## Scostamento delle Stazioni quando piu' Task Force condividono lo stesso
+## esagono. Brest in BL1 e' il caso tipico: se si disegna tutto al centro, una
+## Stazione sparisce sotto l'altra pur essendo correttamente piazzata.
+var _station_lanes: Dictionary = {}
+
 
 func setup(p_graph: MapGraph, p_state: GameState) -> void:
 	graph = p_graph
@@ -86,16 +91,29 @@ func _draw() -> void:
 ## facendo, la linea si spezzerebbe a ogni esagono condiviso.
 func _compute_lanes() -> void:
 	_lanes.clear()
+	_station_lanes.clear()
 	var occupied: Dictionary = {}          # Vector2i -> { corsia: true }
+	var stations_by_hex: Dictionary = {}   # Vector2i -> Array[TaskForce]
 
 	# le Stazioni si prendono la corsia zero del loro esagono: sono cerchi
 	# piantati sul centro, e le linee di passaggio devono scansarle
 	for tf in state.task_forces:
 		if tf.trajectory.is_station():
 			var h := tf.trajectory.station_hex
+			if not stations_by_hex.has(h):
+				stations_by_hex[h] = []
+			(stations_by_hex[h] as Array).append(tf)
 			if not occupied.has(h):
 				occupied[h] = {}
 			(occupied[h] as Dictionary)[0] = true
+
+	for h_v: Variant in stations_by_hex.keys():
+		var tfs: Array = stations_by_hex[h_v]
+		for i in tfs.size():
+			var lane := 0
+			if i > 0:
+				lane = int(ceil(i / 2.0)) * (1 if i % 2 == 1 else -1)
+			_station_lanes[(tfs[i] as TaskForce).id] = lane
 
 	for tf in state.task_forces:
 		if tf.trajectory.is_station():
@@ -173,7 +191,12 @@ func _draw_task_force(tf: TaskForce) -> void:
 		w *= 1.6
 
 	if traj.is_station():
-		_draw_station(graph.center_of(traj.station_hex), col, is_sel, tf)
+		var station_pos := graph.center_of(traj.station_hex)
+		var station_lane: int = int(_station_lanes.get(tf.id, 0))
+		if station_lane != 0:
+			station_pos += Vector2(graph.inradius * 0.44,
+				-graph.inradius * 0.24) * float(station_lane)
+		_draw_station(station_pos, col, is_sel, tf)
 		return
 
 	# linea attraverso i centri degli esagoni dei segmenti, scostata sulla

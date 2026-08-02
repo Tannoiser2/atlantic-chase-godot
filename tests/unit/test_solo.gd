@@ -31,6 +31,7 @@ func run() -> void:
 	graph = MapGraph.load_default()
 	test_tables_load()
 	test_all_solo_transcriptions_load()
+	test_bl1_setup_has_printed_routes_and_stations()
 	test_all_solo_action_tables_are_reachable()
 	test_action_table_rows()
 	test_phase_switch()
@@ -98,6 +99,45 @@ func test_all_solo_transcriptions_load() -> void:
 		true_(String(sc.briefing.get("victory", "")).contains("solitario")
 			or String(sc.briefing.get("victory", "")).contains("Modo"),
 			"%s: briefing dichiara il modo solitario" % id)
+
+
+func test_bl1_setup_has_printed_routes_and_stations() -> void:
+	_begin("BL1: setup stampato sul fascicolo")
+	var sc := Scenario.load_by_id("BL1 Raiders of the North Atlantic")
+	eq(sc.load_error, "", "scenario BL1 caricato")
+	var st := GameState.new(graph, 1)
+	st.apply_dict(sc.to_state_dict())
+
+	var halifax := _tf_named(st, "Convoglio Halifax-Clyde")
+	ne(halifax, null, "convoglio Halifax-Clyde piazzato")
+	eq(halifax.trajectory.length(), 11, "Halifax-Clyde ha 11 segmenti")
+	eq(halifax.trajectory.end_hex(0), Vector2i(5, 4), "Halifax-Clyde parte da Halifax")
+	eq(halifax.trajectory.end_hex(1), Vector2i(15, -4),
+		"Halifax-Clyde arriva a Clyde/Liverpool")
+	true_(_trajectory_is_contiguous(halifax), "Halifax-Clyde e' continua")
+
+	var africa := _tf_named(st, "Convoglio Africa-Portsmouth")
+	ne(africa, null, "convoglio Africa-Portsmouth piazzato")
+	eq(africa.trajectory.length(), 8, "Africa-Portsmouth ha 8 segmenti")
+	eq(africa.trajectory.end_hex(0), Vector2i(12, 4),
+		"Africa-Portsmouth parte dalla striscia Africa")
+	eq(africa.trajectory.end_hex(1), Vector2i(16, -3),
+		"Africa-Portsmouth arriva a Portsmouth")
+	true_(_trajectory_is_contiguous(africa), "Africa-Portsmouth e' continua")
+	true_(graph.ports_in(africa.trajectory.end_hex(0)).has("Africa"),
+		"il capo iniziale tocca il porto Africa")
+	true_(graph.ports_in(africa.trajectory.end_hex(1)).has("Portsmouth"),
+		"il capo finale tocca Portsmouth")
+
+	var brest := _forces_at(st, Vector2i(15, -2))
+	eq(brest.size(), 2, "a Brest ci sono due Stazioni")
+	true_(_forces_include_ship(brest, "Widder"), "Brest contiene la Stazione tedesca")
+	true_(_forces_include_ship(brest, "Dunkerque"), "Brest contiene la Forza francese")
+
+	var wilhelmshaven := _forces_at(st, Vector2i(17, -5))
+	eq(wilhelmshaven.size(), 1, "Wilhelmshaven contiene una Stazione")
+	true_(_forces_include_ship(wilhelmshaven, "Lutzow"),
+		"Wilhelmshaven contiene la Stazione tedesca")
 
 
 func test_all_solo_action_tables_are_reachable() -> void:
@@ -540,6 +580,37 @@ func _solo_ai_log_contains(res: Dictionary, needle: String) -> bool:
 	for line_v: Variant in res.get("log", []):
 		if String(line_v).contains(needle):
 			return true
+	return false
+
+
+func _tf_named(st: GameState, tf_name: String) -> TaskForce:
+	for tf in st.task_forces:
+		if tf.name == tf_name:
+			return tf
+	return null
+
+
+func _trajectory_is_contiguous(tf: TaskForce) -> bool:
+	var hexes := tf.trajectory.hexes()
+	for i in range(1, hexes.size()):
+		if not graph.is_adjacent(hexes[i - 1], hexes[i]):
+			return false
+	return true
+
+
+func _forces_at(st: GameState, h: Vector2i) -> Array[TaskForce]:
+	var out: Array[TaskForce] = []
+	for tf in st.task_forces:
+		if tf.trajectory.is_station() and tf.trajectory.station_hex == h:
+			out.append(tf)
+	return out
+
+
+func _forces_include_ship(tfs: Array[TaskForce], ship_name: String) -> bool:
+	for tf in tfs:
+		for ship in tf.ships:
+			if ship.name == ship_name:
+				return true
 	return false
 
 

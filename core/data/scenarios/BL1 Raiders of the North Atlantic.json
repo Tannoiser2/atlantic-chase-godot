@@ -141,11 +141,60 @@
    "leader": "",
    "speed": 2,
    "trajectory": {
-    "segments": [],
-    "station_q": 11,
-    "station_r": 5,
+    "segments": [
+     {
+      "q": 12,
+      "r": 4,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 13,
+      "r": 3,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 13,
+      "r": 2,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 13,
+      "r": 1,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 14,
+      "r": 0,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 15,
+      "r": -1,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 15,
+      "r": -2,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 16,
+      "r": -3,
+      "info": false,
+      "contact": false
+     }
+    ],
+    "station_q": 12,
+    "station_r": 4,
     "station_contact": false,
-    "station_port": "Africa"
+    "station_port": ""
    }
   },
   {
@@ -182,9 +231,9 @@
   "historical": "Scenario solitario trascritto dal fascicolo; schieramento non proveniente da VASSAL."
  },
  "setup_notes": [
-  "Meteo Buono; iniziativa tedesca. Mappa operazionale. Schieramento e RV dal fascicolo: corsari tedeschi e convogli britannici con rotte stampate; le rotte porto-porta e i segnalini RV non sono convertiti in esagoni inventati.",
+  "Meteo Buono; iniziativa tedesca. Mappa operazionale. Schieramento dal fascicolo: corsari tedeschi e convogli britannici con rotte stampate.",
   "Graf Spee e' nel Gruppo Rinforzi A a Kiel. I marker RV hanno stato e disegno, ma le coordinate stampate non sono ancora calibrate sul grafo principale.",
-  "La rotta Africa-Portsmouth da 8 segmenti resta da disegnare a mano: sul grafo principale calibrato non c'e una catena esatta di 8 segmenti fino a Portsmouth."
+  "La rotta Africa-Portsmouth usa la striscia porto Africa sull'esagono 12,4 e termina a Portsmouth in 8 segmenti, come da fascicolo."
  ],
- "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati."
+ "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. BL1 ha le rotte stampate convertite sul grafo principale dove la mappa calibrata le consente."
 }
