@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **1536 verifiche, 12 suite, headless.**
+Tutti i test passano: **1595 verifiche, 13 suite, headless.**
 
 ---
 
@@ -20,7 +20,7 @@ Tutti i test passano: **1536 verifiche, 12 suite, headless.**
 | **M6** Scenari | ✅ **completo** | 22 scenari con navi, comandanti, rinforzi e briefing |
 | **M7** Regole complete | ✅ **completo** | Tutte e 9 le azioni, Convogli, finale di partita, salvataggio; tutti e 22 gli scenari hanno le condizioni di vittoria |
 | **M9** Battaglia decisa dal giocatore | ✅ **completo** | Bersagli scelti a mano, linee di fuoco con raggio e valore dei cannoni |
-| **M10** Regole Avanzate | 🟡 **iniziato** | Attitudine, tabelle Fuoco e Siluri a due colonne, velocità Ferma. Mancano gli Effetti Speciali |
+| **M10** Regole Avanzate | 🟡 **iniziato** | Attitudine, tabelle Fuoco e Siluri, velocità Ferma, Effetti Speciali. Manca collegarli alla Battaglia |
 | **M8** Solitario | 🟡 **iniziato** | Motore delle tabelle + TF non identificate; BL1 e BL2 trascritte. Mancano gli schieramenti e gli altri 13 scenari |
 
 ### Cosa è cambiato nell'ultima sessione

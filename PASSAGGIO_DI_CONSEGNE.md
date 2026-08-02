@@ -188,7 +188,11 @@ modello già esistente. Sarebbe stata una regola inventata ogni volta.
   sul *player aid* avanzato e **non è stata letta**: il codice lo dichiara nel
   campo `effect` invece di inventarla.
 
-**1536 verifiche su 12 suite.**
+- **Effetti Speciali** (`core/battle/special_effects.gd`): tutti e dieci i
+  tipi, con la regola di aggravamento (un effetto che si ripete non si
+  accumula: aggrava o diventa un Colpo).
+
+**1595 verifiche su 13 suite.**
 
 #### Nota importante sui risultati avanzati
 In avanzato il risultato **non è più "quanti Colpi"** ma una casella di
@@ -199,12 +203,16 @@ separato. Chi collega gli effetti speciali deve partire da lì.
 
 **Restano delle Avanzate**, in ordine di utilità:
 
-1. **Gli Effetti Speciali** — è il pezzo che manca per chiudere il ciclo: oggi
-   un Risultato Grave produce il *nome* dell'effetto (`"Allagamento (ferma)"`)
-   ma nessuno lo applica alla nave. `Ship.special_effects` è già lì e vuoto.
-   Tipi letti dal fascicolo inglese (pp. 7-9): Batterie, Plancia,
-   Comunicazioni, Incendio (molto lenta), Incendio (ferma), Timone Fuori Uso,
-   Allagamento. Ognuno ha una regola sua e resta finché non è riparato.
+1. ~~**Gli Effetti Speciali**~~ — **FATTO** (`core/battle/special_effects.gd`).
+   Resta da **collegarli**: oggi `AdvancedTorpedo.attack()` produce il *nome*
+   dell'effetto nel campo `effect`, ma nessuno chiama `SpecialEffects.apply()`.
+   E `Gunnery.attack()` in modalità avanzata segnala `special: true` senza
+   tirare sulle tabelle Belt / Superstructure / Waterline (quelle colonne non
+   sono state lette, vedi punto 6). Il collegamento va fatto in
+   `Battle._apply_hits()`, dov'è già il punto unico in cui il danno si applica.
+   Da collegare anche: `SpecialEffects.gunnery_modifier()` dentro
+   `Gunnery.modifiers()`, `speed_override()` dentro `Ship.current_speed()`,
+   `can_fire()` dentro `Gunnery.attack()`.
 2. **La fase dell'Attitudine** nella vista di Battaglia — è la nuova *prima*
    fase del Round e nell'interfaccia non esiste. Il motore è pronto:
    `Attitude.setup_options()` dà le scelte legali,
