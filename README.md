@@ -226,3 +226,9 @@ un errore esplicito che una regola sbagliata applicata in silenzio.
 ## Stato
 
 Vedi `STATO.md` per il dettaglio di cosa è completo, parziale o assente.
+
+**Se riprendi il lavoro da qui**, leggi prima
+[`PASSAGGIO_DI_CONSEGNE.md`](PASSAGGIO_DI_CONSEGNE.md): dice da dove ripartire,
+quali trappole sono già state pagate (GDScript che si blocca in silenzio, JSON
+che degrada gli interi a 64 bit, e altre) e cosa **non** è un problema anche se
+sembra.

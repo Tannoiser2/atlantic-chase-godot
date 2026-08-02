@@ -1,0 +1,327 @@
+# Passaggio di consegne
+
+Documento per chi riprende il lavoro su questo progetto (Codex o altri).
+Scritto il 2 agosto 2026, dopo il commit `c5ba0e8`.
+
+Leggi anche `README.md` (come è fatto) e `STATO.md` (stato per milestone).
+Questo file dice **da dove ripartire e cosa non rifare**.
+
+---
+
+## 1. In una riga
+
+Versione digitale di *Atlantic Chase* (GMT Games, 2020) in **Godot 4.7**,
+GDScript. Motore di regole puro e testabile headless, interfaccia sopra.
+**1378 verifiche su 11 suite, tutte verdi.** Repository `Tannoiser2/atlantic-chase-godot`, branch `master`.
+
+```bash
+godot --headless --path . --script res://tests/run_tests.gd   # 1378 verifiche
+godot --path . --script res://tools/smoke_ui.gd               # prova di fumo GUI
+sh tools/build_macos.sh                                       # app per macOS
+```
+
+---
+
+## 2. I quattro principi da non rompere
+
+Sono la ragione per cui il progetto è arrivato fin qui senza bug silenziosi.
+Vale la pena rispettarli anche quando sembrano scomodi.
+
+**1. Il motore di gioco non sa che Godot esiste.** Tutto in `core/` è
+`RefCounted`, nessun `Node`. Gira headless, si testa in millisecondi, e potrà
+servire a un bot o a un server senza toccarlo. Se ti viene voglia di mettere un
+`Node` in `core/`, stai sbagliando strada.
+
+**2. Non si indovina mai una regola.** Dove un dato manca, il codice **lo
+dichiara** invece di inventare. Esempi vivi nel codice:
+`ActionEngine.is_verified()` rifiuta di risolvere un'azione la cui tabella non
+è stata letta; `_reinforcement_port()` dice "questo Gruppo non ha un porto
+trascritto" invece di sceglierne uno; `Victory.unevaluated()` distingue un
+premio che non scatta *perché la nave non corrisponde* da uno che non scatta
+*perché manca un dato*. Una voce assente in `Scenario.rules()` significa "non
+trascritta", **non** "no".
+
+**3. I commenti spiegano il PERCHÉ, non il cosa.** Il codice dice già cosa fa.
+I commenti dicono perché quella scelta e non un'altra, e soprattutto **quali
+strade sono state provate e non funzionano** — così nessuno le ripercorre.
+
+**4. Le tabelle si leggono dalle immagini a risoluzione nativa**, non
+dall'estrazione testuale dei PDF, che perde le celle e sposta le righe
+(verificato: la tabella dell'Interruzione estratta dal PDF ha bande sbagliate).
+Il fascicolo **inglese** è la fonte per le tabelle di vittoria: la traduzione
+italiana perde le intestazioni di colonna.
+
+---
+
+## 3. Trappole già pagate — non ripagarle
+
+Ognuna di queste è costata tempo. Sono tutte reali e riproducibili.
+
+### GDScript si blocca in silenzio se un `class_name` ombreggia un tipo Godot
+`enum Range` dentro `Gunnery` e una classe chiamata `Signal` fanno **fallire il
+parser senza nessun messaggio**: i test escono con zero output e il processo si
+pianta. Per questo esistono `Gunnery.FireRange` e `SignalAction`.
+**Diagnosi:** carica gli script uno per uno con un piccolo `SceneTree` e guarda
+dove si ferma (`tools/smoke_ui.gd` è nato così).
+
+### Un metodo statico che nomina la propria classe fa lo stesso
+`ChoiceDialog.new()` dentro `ChoiceDialog` → "Identifier not found" → blocco
+silenzioso. Per questo `Choice.ask()` sta in una classe separata.
+
+### Dopo aver aggiunto un `class_name` serve `--import`
+I nuovi `class_name` non sono nel registro globale finché non giri
+`godot --headless --path . --import`. Senza, ottieni "Could not find type X" su
+file che sono corretti.
+
+### JSON non ha interi
+Lo stato del RNG è un `uint64`; salvato come numero diventa un float e perde i
+bit bassi. Ricaricare dava una partita *simile*, non la stessa. Va salvato come
+**stringa** (vedi `DiceRNG.to_dict`). Stessa attenzione ovunque tu serializzi
+interi grandi.
+
+### La cwd della shell si azzera fra un comando e l'altro
+Ogni comando Bash riparte dalla home del progetto padre. Usa percorsi assoluti
+o `cd` esplicito in ogni invocazione.
+
+### `Control` figlio di `CanvasLayer` non eredita il rettangolo del viewport
+Va dimensionato a mano (`size = get_viewport_rect().size`). E **non** mettere
+anche un preset di ancoraggio: i due meccanismi litigano e Godot avvisa.
+
+### `draw_texture_rect()` in `_draw()` disegna rettangoli bianchi
+Su questo renderer (`gl_compatibility`). Le pedine sono nodi `TextureRect`, non
+disegni. Verificato che i dati della texture erano corretti campionando i pixel.
+
+### L'export macOS richiede ETC2 ASTC
+`rendering/textures/vram_compression/import_etc2_astc=true` in `project.godot`,
+altrimenti Godot rifiuta l'export con un errore generico. E i preset di export
+vanno tenuti **minimali**: una sola chiave che Godot 4.7 non riconosce fa
+fallire tutto l'export con "errori di configurazione" e nessun dettaglio.
+
+### Le lambda GDScript catturano i locali per valore
+Un test che verificava un valore passato a un `Callable` era impossibile da
+scrivere così; serve un contenitore (Array) per farlo uscire.
+
+### SDXL sotto i ~700 px smette di comporre
+Le prime icone, generate a 256, erano macchie astratte. Si genera a 1024 e si
+rimpicciolisce (`tools/make_art.py`).
+
+---
+
+## 4. Mappa del codice
+
+```
+core/                    logica pura, nessun Node
+  map/hex.gd             coordinate assiali su reticolo RUOTATO (44.28°)
+  map/map_graph.gd       157 esagoni, lati negati, Canale di Kiel, 22 porti
+  state/                 trajectory, ship, ship_roster, task_force,
+                         game_state (serializzabile), scenario
+  rules/                 time_lapse, trajectory_total, interruption,
+                         action_engine, results, completion, convoy,
+                         endgame, reorganize, signal_action,
+                         victory, victory_tracker,
+                         solo_table, solo_opponent
+  battle/                battle_state, gunnery, torpedo, maneuver,
+                         break_away, battle
+  engine/                rng (con seme e tiri imposti), command_log (undo),
+                         savegame, session
+  data/                  map_graph.json, tables.json, actions.json,
+                         ships.json (+ ships_overrides.json), battle_tables.json
+                         scenarios/  22 scenari generati dai .vsav
+                         victory/    condizioni di vittoria, scritte a mano
+                         solo/       tabelle dell'avversario immaginario
+ui/                      splash, main (mappa+editor), hud, map_view,
+                         battle_view
+tools/                   pipeline Python + strumenti Godot (vedi §8)
+tests/                   11 suite, runner headless
+```
+
+### Il reticolo esagonale
+Il modulo VASSAL **non contiene la griglia**. È stata ricostruita
+dall'immagine: passo 213.50 px, rotazione 44.28°, origine (1745, 1692), 156
+esagoni giocabili. **Validata al 100%** agganciando le 238 pedine dei 22
+salvataggi ufficiali. Non rimetterla in discussione senza una ragione forte.
+
+### I quattro modelli di vittoria
+`core/rules/victory.gd`, enum `Mode`:
+
+| modo | dove | come funziona |
+|---|---|---|
+| `VP` | Op2–Op9 | si contano i punti, clausola di parità per scenario |
+| `CONDITIONS` | Op1 | elenco ordinato di condizioni, la prima che si verifica vince |
+| `OBJECTIVES` | i 12 mini-scenari | quattro caselle Decisiva/Marginale, testo |
+| `DEBRIEFING` | il solitario | **un** punteggio, letto su una tabella a soglie |
+
+Ogni volta che ne è saltato fuori uno nuovo la tentazione era piegarlo al
+modello già esistente. Sarebbe stata una regola inventata ogni volta.
+
+---
+
+## 5. Da dove ripartire — in ordine
+
+### 5.1 PRIORITÀ ALTA — la Battaglia decide da sola (bug di correttezza)
+
+**Sintomo:** in Battaglia il giocatore preme SPAZIO e basta. Non sceglie chi
+spara a chi, né chi silura chi.
+
+**Causa:** il motore è progettato bene — il commento in `core/battle/battle.gd`
+dice *"Le decisioni (chi spara a chi, chi manovra dove, chi tenta la Fuga) NON
+sono prese qui: il chiamante le passa"* — ma
+`ui/battle_view/battle_view.gd::_advance_phase()` chiama sempre
+`battle.auto_targeting()` e `battle.auto_torpedoes()`, che sono pensati come
+ripiego "per far girare la battaglia", non come modo di giocare.
+
+**Cosa fare:** nella vista di Battaglia, fase Fuoco di Cannoni, far assegnare i
+bersagli al giocatore (clic sulla nave che spara, poi clic sul bersaglio; linea
+disegnata fra le due). Un pulsante *"Bersagli automatici"* riempie quelli non
+assegnati con `auto_targeting()`. Stessa cosa per i siluri.
+`Battle.gunnery_phase(targeting)` accetta già il Dictionary: **il motore non va
+toccato**, è solo interfaccia.
+
+RB p.57: gli effetti si applicano dopo che TUTTE le navi hanno attaccato
+(eccezione: Round Uno dopo una SORPRESA con TF Attiva più veloce — già
+implementata come `surprise_first_strike`).
+
+### 5.2 PRIORITÀ ALTA — le Regole Avanzate di Battaglia non sono implementate
+
+`docs/regolamento/(2) Atlantic Chase ADV RB ITA.pdf`. **Niente di quel
+fascicolo è nel codice.** Verificato: nessuna traccia di attitudini, Snafu,
+Verifiche di Disimpegno, effetti speciali, Confusione.
+
+Non è opzionale come sembra: gli schieramenti dei mini-scenari e degli scenari
+solitari che ho già importato **contengono i marcatori di attitudine**
+(`CLOSING`, `RUNNING`, `ACQUIRING`) e li sto ignorando. Vedi le immagini nel
+fascicolo scenari alle pagine dei MS.
+
+Da implementare, nell'ordine in cui il fascicolo li introduce:
+- **Attitudini** (Closing / Running / Acquiring) e come cambiano manovra e raggio
+- **Snafu Check** a inizio Battaglia (molti MS hanno istruzioni speciali che lo
+  modificano — sono già trascritte in `core/data/victory/MS*.json`, nelle note)
+- **Verifica di Disimpegno** a fine Battaglia, con i risultati `port` / `scuttle` / `oil`
+- **Effetti speciali** (una nave "azzoppata" con le regole avanzate è anche una
+  che ha subito un effetto speciale — lo dicono le note dei MS)
+- **Marcatore Confusione**, **Inseguire** per gli Squadroni DD
+
+### 5.3 PRIORITÀ MEDIA — effetti visivi e sonori in Battaglia
+
+Oggi la Battaglia è corretta ma muta: si preme un tasto e appare una riga di
+testo nel registro. Da aggiungere (richiesta esplicita dell'utente):
+- **salve di cannoni**: una traccia dalla nave che spara a quella colpita,
+  colorata secondo il raggio (le sei zone hanno già i loro `Rect2` in
+  `battle_view._bands`, quindi le posizioni ci sono già)
+- **colonne d'acqua** per i mancati / *splash*, **fuoco e fumo** sulle navi
+  danneggiate, **affondamento** (la pedina che scende e sparisce)
+- **scie di siluri** dalla zona Ravvicinata
+- **suoni**: cannonata, esplosione, siluro, allarme
+- pausa fra l'attacco e l'applicazione dei Colpi, così si vede cosa succede
+  invece di trovarsi il risultato già fatto
+
+Nota di metodo: gli effetti vanno in `ui/battle_view/`, **non** nel motore. Il
+motore restituisce già tutto quello che serve — `Gunnery.attack()` ritorna
+`{ok, hits, target, firer, ...}` e `Battle.gunnery_phase()` l'elenco completo
+dei risultati. Basta animarli.
+
+Per generare eventuali immagini serve ComfyUI (vedi `tools/make_art.py`); per i
+suoni non c'è ancora niente in progetto.
+
+### 5.4 PRIORITÀ MEDIA — finire il modo solitario
+
+Fatto: motore delle tabelle (`SoloTable`, `SoloOpponent`), Task Force **non
+identificate**, e le tabelle di **BL1, BL2, BL3** trascritte per intero.
+
+Restano:
+- **le tabelle degli altri 12 scenari**: N1–N6 (pp. 17-40 del fascicolo solo),
+  B1–B4 (pp. 41-58), A1–A2 (pp. 59-68). Il formato è pronto e testato: si
+  aggiungono file in `core/data/solo/` e in `core/data/victory/`. Vedi
+  `core/data/solo/BL2 Contain and Destroy.json` come modello completo.
+- **gli schieramenti**: gli scenari solitari **non stanno nel modulo VASSAL**,
+  quindi non c'è nessun `.vsav` da cui ricavarli. Vanno letti dalle mappe
+  stampate nel fascicolo. Le posizioni sono date come nomi di porto e rotte di
+  convoglio ("Halifax to Clyde/Liverpool, 11 segments"), non come esagoni: i
+  porti si risolvono con `MapGraph.port_hex()`, le rotte le disegna il giocatore.
+- **BL3 non è giocabile**: usa la **Mappa Inserto del Mare del Nord**, un'altra
+  mappa con un'altra griglia, che questo progetto non ha calibrato. Il file
+  `core/data/solo/BL3 ....json` lo dichiara nel campo `_map`. Calibrarla
+  vorrebbe dire rifare per l'inserto quello che `tools/refine_lattice.py` ha
+  fatto per la mappa grande.
+
+### 5.5 PRIORITÀ BASSA
+
+- **Le dieci righe da spuntare a mano** (mine, marcatore Base Aerea, zona di
+  sicurezza USA, "la TF dell'Hipper ha eseguito un'azione Traiettoria") sono
+  elencate dal tasto **V** (Esito), ma non c'è una schermata di fine partita che
+  le presenti come lista spuntabile e sommi il risultato.
+- **Gesti touch mai provati su un iPad vero.** Il codice c'è (pinch a due dita,
+  tocco prolungato al posto del clic destro), l'export web funziona
+  (`sh tools/serve_web.sh`), ma non li ha mai toccati un dito.
+- **La prova di fumo copre solo la Battaglia.** Se un bug come quello dei tasti
+  è passato inosservato per settimane, è probabile che altri percorsi
+  dell'interfaccia siano rotti allo stesso modo, in silenzio. Estendere
+  `tools/smoke_ui.gd` alle altre schermate è il modo più economico di scoprirlo.
+
+---
+
+## 6. Cosa NON è un problema (anche se sembra)
+
+- **`Campaign.json` non ha Task Force.** Corretto: la Campagna non è uno
+  scenario, è la riserva navi delle nove Operazioni (15 tedesche, 59 alleate),
+  esposta da `Scenario.ship_pool()`.
+- **I mini-scenari non hanno Traiettorie né Stazioni.** Corretto: sono
+  **Battaglie già schierate**, e le navi partono nelle bande della Mappa di
+  Battaglia. `Scenario.is_battle_scenario()` / `make_battle_state()`.
+- **Tre scenari hanno un avviso di import** ("la rotta attraversa il lato
+  negato 13,-6 | 13,-7"). È vero e va lasciato: nel modulo VASSAL le pedine
+  sono piazzate a occhio su una mappa senza griglia, quindi ogni tanto una
+  rotta ricostruita taglia dove non dovrebbe. Meglio l'avviso che il silenzio.
+- **`Scheerb.png` è un doppione.** Refuso del modulo VASSAL: il vero lato
+  danneggiato è `Sheerb.png`. Già gestito in `ships_overrides.json`.
+
+---
+
+## 7. Questioni aperte con l'utente
+
+- **Il repository è PUBBLICO** e contiene materiale © GMT Games: mappa, pedine,
+  i due fascicoli scenari inglesi integrali e sei traduzioni italiane marcate
+  *"PER SOLO USO PERSONALE – vietata la vendita"*. Il `README.md` lo dichiara in
+  cima e spiega come tornare a un repository di solo codice. **Non ho attivato
+  GitHub Pages** e ho spiegato perché: servirebbe a pubblicare quel materiale a
+  un indirizzo aperto. Se l'utente insiste, la strada pulita è un repository
+  separato con solo il codice.
+- Le immagini in `assets/art/` sono generate in locale con SDXL e **non** sono
+  di GMT: quelle si possono pubblicare.
+
+---
+
+## 8. Strumenti
+
+```bash
+sh tools/rebuild_all.sh          # rifà tutta la catena dal modulo VASSAL
+tools/.venv/bin/python tools/import_scenarios.py    # 22 scenari dai .vsav
+tools/.venv/bin/python tools/extract_briefings.py   # SEMPRE dopo l'import!
+tools/.venv/bin/python tools/write_victory.py       # le 9 tabelle VP
+tools/.venv/bin/python tools/make_art.py            # illustrazioni (ComfyUI)
+godot --path . --script res://tools/screenshot.gd -- out.png [0-3] "scen:<id>"
+godot --path . --script res://tools/smoke_ui.gd     # prova di fumo GUI
+sh tools/build_macos.sh          # app macOS firmata e senza quarantena
+sh tools/serve_web.sh            # export web + server locale (iPad)
+```
+
+**`extract_briefings.py` va rilanciato dopo ogni `import_scenarios.py`**,
+altrimenti i briefing spariscono: l'import rigenera i file e li sovrascrive.
+È già successo.
+
+Il venv Python è in `tools/.venv` (numpy, scipy, pillow, pymupdf).
+ComfyUI è in `~/ComfyUI` con SDXL base 1.0.
+
+---
+
+## 9. Convenzioni di stile
+
+- Codice e commenti **in italiano**, senza accenti nei commenti del codice
+  (`perche'`, `piu'`) — le stringhe mostrate all'utente invece li usano.
+- Messaggi di commit: titolo che dice **la cosa**, corpo che spiega **perché** e
+  cosa si è scoperto. Guarda `git log` — sono lunghi di proposito, e sono la
+  documentazione migliore del progetto.
+- I test hanno messaggi che spiegano l'intento, non il meccanismo:
+  `"due attacchi da due Colpi fanno due Colpi, non quattro"`, non
+  `"hits_taken == 2"`.
+- Ogni regola trascritta cita la sua pagina del regolamento (`RB p.29`).
