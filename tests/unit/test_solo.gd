@@ -39,6 +39,7 @@ func run() -> void:
 	test_a1_identify_from_second_edition()
 	test_unidentified_speed()
 	test_fueling()
+	test_solo_battle_behavior()
 
 
 func _rng(forced: Array) -> DiceRNG:
@@ -259,3 +260,32 @@ func test_fueling() -> void:
 		"che peggiora se hai distrutto molti Convogli")
 	eq(String(m.read(0, 1)["code"]), "confisca", "con 1 le navi sono confiscate")
 	eq(String(m.read(0, 6)["code"]), "salvi", "con 6 rientrano a Kiel")
+
+
+func test_solo_battle_behavior() -> void:
+	_begin("comportamento in Battaglia dell'avversario immaginario")
+	var st := BattleState.new()
+	var km := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
+	var rn := TaskForce.new(2, TaskForce.Side.ROYAL_NAVY)
+	var hipper := ShipRoster.shared().make("Hipper")
+	var convoy := ShipRoster.shared().make("Convoy x3")
+	var hood := ShipRoster.shared().make("Hood")
+	hipper.battle_zone = BattleState.Zone.NEAR
+	convoy.battle_zone = BattleState.Zone.NEAR
+	hood.battle_zone = BattleState.Zone.NEAR
+	km.ships = [hipper]
+	rn.ships = [convoy, hood]
+	st.active_tf = km
+	st.target_tf = rn
+
+	var tgt := SoloBattle.targeting(st, TaskForce.Side.KRIEGSMARINE)
+	eq(tgt[hipper], convoy, "il bersaglio prioritario e' il Convoglio")
+
+	var moves_rn := SoloBattle.maneuver_moves(st, TaskForce.Side.ROYAL_NAVY)
+	eq(int((moves_rn[hood] as Dictionary)["zone"]), BattleState.Zone.CLOSE,
+		"la Royal Navy immaginaria chiude la distanza")
+	eq(int((moves_rn[convoy] as Dictionary)["zone"]), BattleState.Zone.FAR,
+		"ma i Convogli si allontanano")
+
+	true_(SoloBattle.wants_break_away(st, TaskForce.Side.KRIEGSMARINE),
+		"i tedeschi tentano la Fuga davanti a una BB/BC britannica integra")

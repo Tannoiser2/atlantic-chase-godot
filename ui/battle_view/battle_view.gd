@@ -37,6 +37,7 @@ const BAND_COLORS := {
 var battle: Battle
 var state: BattleState
 var roster: ShipRoster
+var solo_player_side: int = -1
 
 var selected: Ship = null
 
@@ -89,9 +90,10 @@ var _hint: Label
 var _buttons: HBoxContainer
 
 
-func setup(p_battle: Battle) -> void:
+func setup(p_battle: Battle, p_solo_player_side: int = -1) -> void:
 	battle = p_battle
 	state = p_battle.state
+	solo_player_side = p_solo_player_side
 	roster = ShipRoster.shared()
 	# Un Control figlio di un CanvasLayer non eredita il rettangolo del viewport.
 	# Si dimensiona a mano: mettere ANCHE il preset di ancoraggio fa litigare i
@@ -282,8 +284,7 @@ func _assign_target(firer: Ship, target: Ship) -> void:
 func _auto_assign() -> void:
 	if not _is_targeting_phase():
 		return
-	var auto: Dictionary = battle.auto_torpedoes() \
-		if state.phase == BattleState.Phase.TORPEDO else battle.auto_targeting()
+	var auto: Dictionary = _auto_targeting_for_phase()
 	var added := 0
 	for f_v: Variant in auto.keys():
 		if not targeting.has(f_v):
@@ -306,10 +307,16 @@ func _preassign() -> void:
 	_assigning = null
 	if not _is_targeting_phase():
 		return
-	var auto: Dictionary = battle.auto_torpedoes() \
-		if state.phase == BattleState.Phase.TORPEDO else battle.auto_targeting()
+	var auto: Dictionary = _auto_targeting_for_phase()
 	for f_v: Variant in auto.keys():
 		targeting[f_v] = auto[f_v]
+
+
+func _auto_targeting_for_phase() -> Dictionary:
+	var torpedoes := state.phase == BattleState.Phase.TORPEDO
+	if _solo_imaginary_side() >= 0:
+		return SoloBattle.targeting(state, _solo_imaginary_side(), torpedoes)
+	return battle.auto_torpedoes() if torpedoes else battle.auto_targeting()
 
 
 func _clear_targets() -> void:
@@ -943,10 +950,13 @@ func _advance_phase() -> void:
 			if not state.ended:
 				state.phase = BattleState.Phase.MANEUVER
 		BattleState.Phase.MANEUVER:
+			_apply_solo_maneuver()
 			state.note("Manovra conclusa.")
 			state.phase = state.next_phase()
 		BattleState.Phase.BREAK_AWAY:
-			_do_break_away(false, false)
+			_resolve_break_away(false, false)
+			if not state.ended:
+				battle.end_round()
 			_preassign()
 			# in avanzato il Round riparte dall'Attitudine, non dal Fuoco
 			if not state.ended and state.advanced \
@@ -973,11 +983,22 @@ func _player_targeting() -> Dictionary:
 
 
 func _do_break_away(active: bool, target: bool) -> void:
-	battle.break_away_phase(active, target)
+	_resolve_break_away(active, target)
 	if not state.ended:
 		if battle.end_round():
 			pass
 	refresh()
+
+
+func _resolve_break_away(active: bool, target: bool) -> void:
+	var imaginary := _solo_imaginary_side()
+	if imaginary >= 0 and SoloBattle.wants_break_away(state, imaginary):
+		if state.active_tf != null and state.active_tf.side == imaginary:
+			active = true
+		if state.target_tf != null and state.target_tf.side == imaginary:
+			target = true
+		state.note("Solitario: l'avversario immaginario tenta la Fuga.")
+	battle.break_away_phase(active, target)
 
 
 # ------------------------------------------------------------------ refresh --
@@ -1022,6 +1043,10 @@ func _hint_for_phase() -> String:
 			if _assigning != null:
 				return "%s: clicca il bersaglio (cerchiati in rosso).  Clic nel vuoto per annullare." % _assigning.name
 			var left := _unassigned().size()
+			if _solo_imaginary_side() >= 0:
+				return ("Solitario: i bersagli dell'avversario immaginario sono gia' assegnati. "
+					+ "Clicca le tue navi per cambiare/assegnare i tuoi bersagli. "
+					+ "A: riapplica la dottrina solitaria. SPAZIO: fuoco simultaneo.")
 			if left > 0:
 				return ("Clicca una nave che spara, poi il suo bersaglio.  "
 					+ "%d senza bersaglio.  A: automatici.  SPAZIO: fuoco" % left)
@@ -1029,6 +1054,8 @@ func _hint_for_phase() -> String:
 		BattleState.Phase.TORPEDO:
 			if _assigning != null:
 				return "%s: clicca il bersaglio dei siluri." % _assigning.name
+			if _solo_imaginary_side() >= 0:
+				return "Solitario: i siluri dell'avversario sono assegnati se legali. Scegli i tuoi; SPAZIO risolve."
 			if targeting.is_empty():
 				return ("Siluri: clicca una nave in zona Ravvicinata, poi il "
 					+ "bersaglio.  A: automatici.  SPAZIO: nessun lancio")
@@ -1040,7 +1067,28 @@ func _hint_for_phase() -> String:
 			return ("Effetti Duraturi: C dichiara il Controllo Danni sulla "
 				+ "nave selezionata (tre dadi, ma non sparera').  SPAZIO: tira")
 		BattleState.Phase.MANEUVER:
-			return "Trascina una nave nella zona adiacente.  S: Fumo.  I: Insegui.  SPAZIO: fine Manovra"
+			if _solo_imaginary_side() >= 0:
+				return "Manovra: muovi le tue navi. SPAZIO muove l'avversario immaginario secondo il fascicolo e chiude la fase."
+			return "Manovra: muovi anche l'altro lato, in ordine di velocita' alternando i giocatori. S: Fumo. I: Insegui. SPAZIO: fine fase"
 		BattleState.Phase.BREAK_AWAY:
+			if _solo_imaginary_side() >= 0:
+				return "Fuga: dichiara la tua con F/G se vuoi. SPAZIO applica anche la scelta dell'avversario immaginario."
 			return "F: la TF Attiva tenta la Fuga   G: la TF Bersaglio tenta la Fuga   SPAZIO: nessuno tenta"
 	return ""
+
+
+func _solo_imaginary_side() -> int:
+	if solo_player_side < 0:
+		return -1
+	return 1 - solo_player_side
+
+
+func _apply_solo_maneuver() -> void:
+	var imaginary := _solo_imaginary_side()
+	if imaginary < 0:
+		return
+	var moves := SoloBattle.maneuver_moves(state, imaginary)
+	if moves.is_empty():
+		return
+	state.note("Solitario: manovra dell'avversario immaginario.")
+	battle.maneuver_phase(moves)

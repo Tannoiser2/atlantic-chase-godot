@@ -473,7 +473,9 @@ func _show_battle(bstate: BattleState) -> void:
 	add_child(_battle_layer)
 	_battle_view = BattleView.new()
 	_battle_layer.add_child(_battle_view)
-	_battle_view.setup(b)
+	var solo_side := victory.solo_side if victory != null \
+		and victory.mode == Victory.Mode.DEBRIEFING else -1
+	_battle_view.setup(b, solo_side)
 	_battle_view.closed.connect(_close_battle.bind(b))
 	var where := " in %s" % str(bstate.hex) if bstate.hex != Vector2i.ZERO else ""
 	_msg("%s aperta%s." % [BattleState.KIND_LABELS[bstate.kind], where])
