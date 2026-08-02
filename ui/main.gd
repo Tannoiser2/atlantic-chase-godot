@@ -1201,6 +1201,10 @@ func _update_preview(h: Vector2i) -> void:
 var _lbl_title: Label
 var _lbl_info: RichTextLabel
 var _lbl_log: RichTextLabel
+
+## Pannello "ora tocca a": chi sta agendo, cosa aspetta il gioco, e cosa NON si
+## puo' fare con il motivo accanto.
+var _lbl_now: RichTextLabel
 var _help: PanelContainer
 var _briefing_panel: PanelContainer
 var _lbl_briefing: RichTextLabel
@@ -1257,6 +1261,33 @@ func _build_hud() -> void:
 	_lbl_log.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	logpanel.add_child(_lbl_log)
 
+	# Pannello "ora tocca a": sta in basso a destra, sopra il registro.
+	#
+	# Nasce da una critica precisa all'interfaccia: i motivi per cui un'azione
+	# non si puo' dichiarare c'erano gia', ma uno alla volta, nel tooltip di
+	# ogni pulsante. Per sapere perche' sei azioni su nove erano spente
+	# bisognava passare il mouse su sei pulsanti, uno dopo l'altro. Qui si
+	# vedono insieme, RAGGRUPPATE PER MOTIVO: quasi sempre e' un motivo solo che
+	# ne blocca quattro, e detto cosi' si capisce cosa fare.
+	var nowpanel := PanelContainer.new()
+	nowpanel.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	nowpanel.offset_left = -600
+	nowpanel.offset_right = -12
+	nowpanel.offset_top = -430
+	nowpanel.offset_bottom = -178
+	nowpanel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	nowpanel.add_theme_stylebox_override("panel", _panel_style())
+	hud.add_child(nowpanel)
+	_lbl_now = RichTextLabel.new()
+	_lbl_now.bbcode_enabled = true
+	# un punto piu' piccolo del resto: e' un pannello di servizio, non deve
+	# rubare l'occhio alla mappa
+	_lbl_now.add_theme_font_size_override("normal_font_size", 14)
+	_lbl_now.add_theme_font_size_override("bold_font_size", 14)
+	_lbl_now.add_theme_font_size_override("italics_font_size", 14)
+	_lbl_now.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	nowpanel.add_child(_lbl_now)
+
 	_build_action_bar(hud)
 	_build_briefing(hud)
 	_build_help(hud)
@@ -1293,6 +1324,83 @@ func _action_unavailable_reason(key: String) -> String:
 	if late != "":
 		return late
 	return ""
+
+
+## Il pannello "ora tocca a".
+##
+## Tre domande, in quest'ordine, che sono quelle che si fa chi guarda lo
+## schermo senza sapere cosa succede:
+##
+##   chi sta agendo?      il lato della Task Force selezionata - qui non c'e'
+##                        un turno imposto, agisce chi si seleziona
+##   cosa aspetta il gioco?   una frase, quella giusta per la situazione
+##   cosa non posso fare, e perche'?
+##
+## L'ultima e' la ragione per cui questo pannello esiste. I motivi c'erano gia'
+## tutti, ma nel tooltip di ogni pulsante, uno alla volta.
+func _refresh_now() -> void:
+	if _lbl_now == null:
+		return
+	var out: Array[String] = []
+
+	if mode == Mode.EDITOR:
+		_lbl_now.text = ("[b]EDITOR DEL GRAFO[/b]\nSi modifica la mappa, non si "
+			+ "gioca. E per tornare alla partita.")
+		return
+
+	if selected_tf == null:
+		_lbl_now.text = ("[b]Ora tocca a...[/b]  nessuno\n"
+			+ "[color=#ffd27f]Clicca una Task Force sulla mappa.[/color] "
+			+ "Finche' non ne scegli una, nessuna azione e' dichiarabile: "
+			+ "in Atlantic Chase si dichiara sempre PER una forza.")
+		return
+
+	var side_name := "Kriegsmarine" if selected_tf.side \
+		== TaskForce.Side.KRIEGSMARINE else "Royal Navy"
+	var has_init := state.initiative == selected_tf.side
+	out.append("[b]Ora tocca a...[/b]  [b]%s[/b] - %s%s"
+		% [side_name, selected_tf.display_name(),
+			"   [color=#8fd0ff](ha l'Iniziativa)[/color]" if has_init else ""])
+
+	# che cosa aspetta il gioco, adesso
+	var t := selected_tf.trajectory
+	if t.is_station():
+		out.append("E' una [b]Stazione[/b]: trascina da qui a un esagono "
+			+ "adiacente per cominciare una Traiettoria, o dichiara un'azione.")
+	elif t.length() >= Trajectory.MAX_SEGMENTS:
+		out.append("Traiettoria al massimo (%d segmenti): per allungarla serve "
+			% Trajectory.MAX_SEGMENTS
+			+ "prima uno [b]Scorrere del Tempo[/b] (T).")
+	else:
+		out.append("Traiettoria di [b]%d[/b] segmenti, capo attivo [b]%s[/b]: "
+			% [t.length(), "testa" if active_end == 0 else "coda"]
+			+ "trascina dal capo per allungarla. TAB cambia capo.")
+
+	# le azioni, divise in due e i motivi raggruppati
+	var ok_names: Array[String] = []
+	var by_reason: Dictionary = {}
+	for a in ActionBar.ACTIONS:
+		var key := String(a[0])
+		var label := String(a[1])
+		var why := _action_unavailable_reason(key)
+		if why == "":
+			ok_names.append("%s (%s)" % [label, String(a[2])])
+		else:
+			if not by_reason.has(why):
+				by_reason[why] = []
+			(by_reason[why] as Array).append(label)
+
+	out.append("")
+	if ok_names.is_empty():
+		out.append("[color=#ff9a3c][b]Nessuna azione dichiarabile.[/b][/color]")
+	else:
+		out.append("[b]Puoi dichiarare:[/b] [color=#a8e6a1]%s[/color]"
+			% ", ".join(ok_names))
+	for why_v: Variant in by_reason.keys():
+		out.append("[color=#c8b8a0]%s[/color] - [i]%s[/i]"
+			% [", ".join(by_reason[why_v] as Array), String(why_v)])
+
+	_lbl_now.text = "\n".join(out)
 
 
 ## Chi controlla i porti nello scenario in corso.
@@ -1514,6 +1622,8 @@ func _refresh() -> void:
 			lines.append("  Totale Traiettoria vs %s: [b]%d[/b]"
 				% [enemy.display_name(), TrajectoryTotal.compute(d)])
 	_lbl_info.text = "\n".join(lines)
+
+	_refresh_now()
 
 	var lg: Array[String] = []
 	lg.append("[b]Mosse:[/b] %d    (F1 = comandi)" % log.applied_count() if log else "")
