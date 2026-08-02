@@ -1,0 +1,183 @@
+{
+ "_scenario": "BL3 Raiders of the North Sea",
+ "_source": "Fascicolo Scenari in Solitario, edizione INGLESE (AC_Solo_scenarios_2022, pp.12-15). Trascritta a mano.",
+ "_role": "Il giocatore e' il TEDESCO; le tabelle sono l'avversario britannico.",
+ "_map": "ATTENZIONE: questo scenario NON si gioca sulla Mappa Operazionale ma sulla MAPPA INSERTO DEL MARE DEL NORD, che e' un'altra mappa con un'altra griglia. Il reticolo di questo progetto e' calibrato solo sulla mappa grande: finche' non e' calibrata anche l'inserto, BL3 non e' giocabile qui, e le sue tabelle servono da riferimento.",
+ "tables": [
+  {
+   "id": "actions_early",
+   "title": "Tabella delle Azioni Britanniche - Presto",
+   "rows": [
+    {
+     "label": "0 Completamenti britannici",
+     "min": 0,
+     "max": 0,
+     "cells": [
+      "A",
+      "A",
+      "convoy",
+      "convoy",
+      "C",
+      "C"
+     ]
+    },
+    {
+     "label": "1",
+     "min": 1,
+     "max": 1,
+     "cells": [
+      "A",
+      "A",
+      "A",
+      "convoy",
+      "C",
+      "C"
+     ]
+    },
+    {
+     "label": "2 o piu'",
+     "min": 2,
+     "max": 99,
+     "cells": [
+      "E",
+      "E",
+      "A",
+      "convoy",
+      "convoy",
+      "C"
+     ]
+    }
+   ],
+   "legend": {
+    "A": "ATTACCO AEREO. Meteo Cattivo: trattalo come una 'X' se c'e' una TF britannica in gioco con un CA (quella e' la TF scelta). Se non ci sono CA in gioco, crea invece una TF a Portsmouth con 2 CA; esegue un'azione Traiettoria verso Scapa Flow (rotta piu' diretta), poi Incidente Internazionale. -- Meteo Buono: esegui un Attacco Aereo contro una TF tedesca a portata di una base aerea britannica (scegli il bersaglio che da' al britannico il modificatore di Supporto Aereo piu' favorevole). Se non c'e' bersaglio a portata, esegui una Ricognizione Furtiva contro la TF tedesca piu' vicina (la piu' vicina alla forza Sottomarina; se il Sottomarino non e' in gioco, mettilo nell'esagono di Heligoland). Se il Sottomarino e' gia' in un esagono con una TF tedesca ed e' un bersaglio ammissibile, esegue invece un Attacco Furtivo con modificatore +4. -- Scorrere del Tempo: rimuovi i segmenti piu' VICINI a Wilhelmshaven.",
+    "C": "AZIONE DI COMPLETAMENTO ... e dove? Scelta: una TF britannica con un Convoglio (se piu' d'una, quella con la Traiettoria piu' CORTA). Se non ci sono Convogli in gioco, una TF non identificata; se nessuna, una TF britannica qualsiasi. -- Nessuna TF britannica? Trattalo come una 'A'. -- Azione: la TF scelta tenta il Completamento in un porto. Con la tabella PRESTO tenta a Methil; con la TARDI a Scapa Flow. Puo' dover fare prima un'azione Traiettoria (rotta piu' diretta), evitando porti e basi aeree nemiche ma non le Stazioni nemiche. Se la lunghezza della Traiettoria o i segnalini Informazioni impediscono il Completamento, esegue invece un Passare. -- Scorrere del Tempo: rimuovi i segmenti piu' LONTANI dal porto di destinazione. Dopo un Completamento riuscito: Incidente Internazionale.",
+    "convoy": "CONVOGLIO. Scelta: una TF britannica con un Convoglio. Se non ce n'e' nessuna in gioco, tira un dado: 1-4 crea una nuova TF a Bergen e mettici un Convoglio; 5-6 creala invece a Methil. Poi: Incidente Internazionale. -- Azione: la TF scelta tenta il Completamento a Methil (se e' stata creata a Methil, tenta invece a Bergen). Puo' dover fare prima un'azione Traiettoria (rotta piu' diretta, EVITANDO i segnalini Informazioni) e poi il Completamento. Se ha un segnalino Informazioni che impedisce il Completamento, esegue un Passare per rimuoverlo. -- Scorrere del Tempo: rimuovi i segmenti piu' LONTANI dal porto di Completamento. Dopo un Completamento riuscito: Incidente Internazionale.",
+    "E": "FINE? -- Meteo Cattivo: rimuovi tutte le navi britanniche Danneggiate, poi Incidente Internazionale. Se non c'e' niente da rimuovere, rimuovi una TF con un Convoglio britannico (conta come un Convoglio che ha Completato), poi Incidente Internazionale. Se non c'e' niente da rimuovere, lo scenario finisce: vai al Debriefing. -- Meteo Buono: lo scenario finisce, vai al Debriefing. Le tue navi sono richiamate da un Fuhrer nervoso.",
+    "X": "AZIONE DECISIVA. Scelta: prima rimuovi tutte le navi britanniche Danneggiate. Poi scegli una TF britannica con un BC (se piu' d'una, quella con la Traiettoria piu' CORTA). Se non ci sono BC in gioco, una TF con un BB; se nessuna, una TF non identificata; se nessuna, crea una nuova TF non identificata a Scapa Flow. -- Azione: tira un dado e leggi la Tabella dell'Azione Decisiva (sotto-tabella 'decisive'). -- Scorrere del Tempo: rimuovi i segmenti piu' VICINI a Scapa Flow."
+   },
+   "note": "Si comincia con questa. Si passa alla 'Tardi' dopo che c'e' stata o e' stata innescata una Battaglia (con un risultato Battaglia, Ridurre le Distanze o Schermaglia), oppure dopo un Attacco Aereo eseguito da una delle due parti - ma NON dopo un Attacco Furtivo."
+  },
+  {
+   "id": "actions_late",
+   "title": "Tabella delle Azioni Britanniche - Tardi",
+   "rows": [
+    {
+     "label": "Meteo Buono",
+     "min": 0,
+     "max": 0,
+     "cells": [
+      "E",
+      "E",
+      "A",
+      "X",
+      "C",
+      "C"
+     ]
+    },
+    {
+     "label": "Meteo Cattivo",
+     "min": 1,
+     "max": 1,
+     "cells": [
+      "E",
+      "E",
+      "X",
+      "X",
+      "X",
+      "C"
+     ]
+    }
+   ],
+   "legend": {
+    "A": "ATTACCO AEREO. Meteo Cattivo: trattalo come una 'X' se c'e' una TF britannica in gioco con un CA (quella e' la TF scelta). Se non ci sono CA in gioco, crea invece una TF a Portsmouth con 2 CA; esegue un'azione Traiettoria verso Scapa Flow (rotta piu' diretta), poi Incidente Internazionale. -- Meteo Buono: esegui un Attacco Aereo contro una TF tedesca a portata di una base aerea britannica (scegli il bersaglio che da' al britannico il modificatore di Supporto Aereo piu' favorevole). Se non c'e' bersaglio a portata, esegui una Ricognizione Furtiva contro la TF tedesca piu' vicina (la piu' vicina alla forza Sottomarina; se il Sottomarino non e' in gioco, mettilo nell'esagono di Heligoland). Se il Sottomarino e' gia' in un esagono con una TF tedesca ed e' un bersaglio ammissibile, esegue invece un Attacco Furtivo con modificatore +4. -- Scorrere del Tempo: rimuovi i segmenti piu' VICINI a Wilhelmshaven.",
+    "C": "AZIONE DI COMPLETAMENTO ... e dove? Scelta: una TF britannica con un Convoglio (se piu' d'una, quella con la Traiettoria piu' CORTA). Se non ci sono Convogli in gioco, una TF non identificata; se nessuna, una TF britannica qualsiasi. -- Nessuna TF britannica? Trattalo come una 'A'. -- Azione: la TF scelta tenta il Completamento in un porto. Con la tabella PRESTO tenta a Methil; con la TARDI a Scapa Flow. Puo' dover fare prima un'azione Traiettoria (rotta piu' diretta), evitando porti e basi aeree nemiche ma non le Stazioni nemiche. Se la lunghezza della Traiettoria o i segnalini Informazioni impediscono il Completamento, esegue invece un Passare. -- Scorrere del Tempo: rimuovi i segmenti piu' LONTANI dal porto di destinazione. Dopo un Completamento riuscito: Incidente Internazionale.",
+    "convoy": "CONVOGLIO. Scelta: una TF britannica con un Convoglio. Se non ce n'e' nessuna in gioco, tira un dado: 1-4 crea una nuova TF a Bergen e mettici un Convoglio; 5-6 creala invece a Methil. Poi: Incidente Internazionale. -- Azione: la TF scelta tenta il Completamento a Methil (se e' stata creata a Methil, tenta invece a Bergen). Puo' dover fare prima un'azione Traiettoria (rotta piu' diretta, EVITANDO i segnalini Informazioni) e poi il Completamento. Se ha un segnalino Informazioni che impedisce il Completamento, esegue un Passare per rimuoverlo. -- Scorrere del Tempo: rimuovi i segmenti piu' LONTANI dal porto di Completamento. Dopo un Completamento riuscito: Incidente Internazionale.",
+    "E": "FINE? -- Meteo Cattivo: rimuovi tutte le navi britanniche Danneggiate, poi Incidente Internazionale. Se non c'e' niente da rimuovere, rimuovi una TF con un Convoglio britannico (conta come un Convoglio che ha Completato), poi Incidente Internazionale. Se non c'e' niente da rimuovere, lo scenario finisce: vai al Debriefing. -- Meteo Buono: lo scenario finisce, vai al Debriefing. Le tue navi sono richiamate da un Fuhrer nervoso.",
+    "X": "AZIONE DECISIVA. Scelta: prima rimuovi tutte le navi britanniche Danneggiate. Poi scegli una TF britannica con un BC (se piu' d'una, quella con la Traiettoria piu' CORTA). Se non ci sono BC in gioco, una TF con un BB; se nessuna, una TF non identificata; se nessuna, crea una nuova TF non identificata a Scapa Flow. -- Azione: tira un dado e leggi la Tabella dell'Azione Decisiva (sotto-tabella 'decisive'). -- Scorrere del Tempo: rimuovi i segmenti piu' VICINI a Scapa Flow."
+   },
+   "modifiers": [
+    {
+     "label": "una nave britannica in gioco e' Danneggiata o e' stata affondata",
+     "value": -1
+    }
+   ]
+  },
+  {
+   "id": "decisive",
+   "title": "Tabella dell'Azione Decisiva",
+   "rows": [
+    {
+     "label": "TF scelta: BC o BB",
+     "min": 0,
+     "max": 0,
+     "cells": [
+      "a",
+      "a",
+      "b",
+      "c",
+      "d",
+      "d"
+     ]
+    },
+    {
+     "label": "TF scelta: non identificata o CA",
+     "min": 1,
+     "max": 1,
+     "cells": [
+      "e",
+      "e",
+      "f",
+      "g",
+      "h",
+      "i"
+     ]
+    }
+   ],
+   "legend": {
+    "a": "La TF scelta agisce per portare in Battaglia la TF tedesca piu' vicina.",
+    "b": "Come 'a', ma in piu' una TF britannica con uno o piu' CA esegue un'azione Traiettoria per fare da Coordinante. Se non c'e' nessuna TF britannica con un CA in gioco, creane una non identificata a Portsmouth (che esegue un'azione Traiettoria per potersi coordinare).",
+    "c": "La TF scelta agisce per portare la TF tedesca piu' vicina in Battaglia a Scapa Flow.",
+    "d": "Come 'c', ma in piu' una TF britannica con uno o piu' CA esegue un'azione Traiettoria per fare da Coordinante. Se non c'e' nessuna TF britannica con un CA in gioco, creane una non identificata a Portsmouth.",
+    "e": "La TF scelta esegue un'azione Traiettoria verso la TF tedesca piu' vicina, EVITANDO i segnalini Informazioni se possibile, e preferibilmente entro la portata di Attacco Aereo di una base aerea britannica. Poi il britannico esegue un Attacco Aereo contro il bersaglio tedesco piu' vicino (se possibile la TF britannica fara' da Coordinante). Con Meteo Cattivo, o se nessun bersaglio e' a portata, trattalo come 'f'.",
+    "f": "La TF scelta agisce per portare in Battaglia la TF tedesca piu' vicina a una TF britannica con un Convoglio. Se non ci sono Convogli in gioco, mettine uno nella TF e trattalo come un risultato 'Convoglio'.",
+    "g": "La TF scelta esegue un'azione Traiettoria verso la TF tedesca piu' vicina (se la TF tedesca ha un segnalino Informazioni, punta a quell' esagono; se e' in un esagono con una base aerea o un porto tedesco, applica invece 'h'). Poi metti la forza Sottomarina britannica nell'esagono bersaglio e assegna un segnalino Informazioni alla TF tedesca (a meno che non sia una Stazione). Il Sottomarino esegue subito un Attacco Furtivo. Se non puo' attaccare, applica 'h'.",
+    "h": "La TF scelta agisce per portare in Battaglia a Wilhelmshaven la TF tedesca piu' vicina.",
+    "i": "Metti la forza Sottomarina in un esagono con una TF tedesca (scegli quello piu' vicino a Bergen). Vale anche se l'esagono ha una base aerea o un porto tedesco. Se la TF tedesca e' una Traiettoria, assegnale un segnalino Informazioni; se e' una Stazione, assegnale invece un segnalino Contatto. Poi la TF scelta agisce per portare in Battaglia la TF tedesca nell'esagono del Sottomarino."
+   },
+   "note": "Sotto-tabella del risultato 'X'. La riga dipende da che cos'e' la Task Force scelta. Scorrere del Tempo: rimuovi i segmenti piu' VICINI a Scapa Flow."
+  },
+  {
+   "id": "identify",
+   "title": "Identificare la TF britannica",
+   "rows": [
+    {
+     "label": "Presto",
+     "min": 0,
+     "max": 0,
+     "cells": [
+      "BC/BC/CA",
+      "CA/CA",
+      "CA/CA",
+      "CL + Convoglio",
+      "DD",
+      "Convoglio"
+     ]
+    },
+    {
+     "label": "Tardi",
+     "min": 1,
+     "max": 1,
+     "cells": [
+      "BC/BB/BB/CL",
+      "BB/BB/CA/CA",
+      "BB/BB/CA/CA",
+      "BC/CV/CA",
+      "CA/CA/CA",
+      "Convoglio + CL"
+     ]
+    }
+   ],
+   "note": "Un risultato BB dev'essere il Nelson o il Rodney; se sono gia' in gioco, o ci sono gia' stati, scegli una BB molto lenta. Se la TF britannica e' istruita a portare in Battaglia, sostituisci 'Convoglio' con una BB. Lo Squadrone DD affonda con due Colpi."
+  }
+ ]
+}

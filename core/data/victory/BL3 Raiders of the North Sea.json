@@ -1,0 +1,209 @@
+{
+ "_scenario": "BL3 Raiders of the North Sea",
+ "_source": "Fascicolo Scenari in Solitario, edizione INGLESE (AC_Solo_scenarios_2022, p.15). Trascritta a mano.",
+ "mode": "DEBRIEFING",
+ "solo_side": "KRIEGSMARINE",
+ "awards": [
+  {
+   "side": "KRIEGSMARINE",
+   "event": "CUSTOM",
+   "points": 1,
+   "manual": true,
+   "label": "Un Convoglio britannico coinvolto in Battaglia (una volta sola, non per ogni Battaglia)"
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "CUSTOM",
+   "points": -1,
+   "manual": true,
+   "label": "NESSUN Convoglio britannico coinvolto in Battaglia"
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "CUSTOM",
+   "points": -1,
+   "manual": true,
+   "label": "Una TF tedesca bersaglio di un Attacco Aereo (una volta sola)"
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "CUSTOM",
+   "points": -1,
+   "manual": true,
+   "label": "Ogni Completamento riuscito di una TF britannica con un Convoglio"
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_HIT",
+   "points": -1,
+   "match": {
+    "owner": "KRIEGSMARINE",
+    "types": [
+     "BC"
+    ]
+   },
+   "label": "ogni Colpo su un BC tedesco"
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_SUNK",
+   "points": -3,
+   "match": {
+    "owner": "KRIEGSMARINE",
+    "types": [
+     "CA",
+     "CL"
+    ]
+   },
+   "label": "incrociatore tedesco affondato"
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_DAMAGED",
+   "points": -1,
+   "match": {
+    "owner": "KRIEGSMARINE",
+    "types": [
+     "CA",
+     "CL"
+    ]
+   },
+   "label": "incrociatore tedesco danneggiato"
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_SUNK",
+   "points": -5,
+   "match": {
+    "owner": "KRIEGSMARINE",
+    "types": [
+     "BC"
+    ]
+   },
+   "label": "BC tedesco affondato"
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_DAMAGED",
+   "points": -1,
+   "match": {
+    "owner": "KRIEGSMARINE",
+    "types": [
+     "BC"
+    ]
+   },
+   "label": "BC tedesco danneggiato"
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "CUSTOM",
+   "points": -1,
+   "manual": true,
+   "label": "Nessun Convoglio britannico ha subito un Colpo"
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "CUSTOM",
+   "points": 3,
+   "manual": true,
+   "label": "Un Convoglio britannico distrutto"
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "CUSTOM",
+   "points": 5,
+   "manual": true,
+   "label": "Due Convogli britannici distrutti"
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_DAMAGED",
+   "points": 1,
+   "match": {
+    "owner": "ROYAL_NAVY",
+    "types": [
+     "BB",
+     "BC",
+     "CV"
+    ]
+   },
+   "label": "BB, BC o CV britannica danneggiata"
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_SUNK",
+   "points": 3,
+   "match": {
+    "owner": "ROYAL_NAVY",
+    "types": [
+     "BB",
+     "BC",
+     "CV"
+    ]
+   },
+   "label": "BB, BC o CV britannica affondata"
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_DAMAGED",
+   "points": 1,
+   "match": {
+    "owner": "ROYAL_NAVY",
+    "types": [
+     "CA",
+     "CL"
+    ]
+   },
+   "label": "incrociatore britannico danneggiato"
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "SHIP_SUNK",
+   "points": 2,
+   "match": {
+    "owner": "ROYAL_NAVY",
+    "types": [
+     "CA",
+     "CL"
+    ]
+   },
+   "label": "incrociatore britannico affondato"
+  }
+ ],
+ "debriefing": [
+  {
+   "min": 6,
+   "label": "Vittoria in mare!",
+   "text": "Se nessuna nave tedesca e' stata Colpita e' una vittoria clamorosa: la fiducia del Fuhrer cresce e Raeder puo' destinare piu' mezzi alle incursioni nel Mare del Nord. Se invece una nave tedesca e' stata Colpita, una spia riferisce che l'Ammiragliato prepara un piano per una battaglia decisiva: \"le zanne della Kriegsmarine vanno strappate\"."
+  },
+  {
+   "min": 4,
+   "label": "Corsari vittoriosi",
+   "text": "Se un Convoglio ha subito uno o piu' Colpi, Raeder ha dimostrato che le navi di superficie sono decisive per interrompere i rifornimenti britannici. Se c'e' stata Battaglia contro una BB, un BC o un CA britannico e nessuna nave tedesca e' stata Colpita, il Fuhrer e' entusiasta: Marschall riceve la Croce di Cavaliere."
+  },
+  {
+   "min": 2,
+   "label": "Battaglia in mare",
+   "text": "Se una nave tedesca e' affondata la delusione del Fuhrer e' palpabile. Se nessuna e' affondata ma una o piu' sono Danneggiate, la disponibilita' di mezzi cala molto per i mesi a venire. Se nessuna e' stata affondata ne' Danneggiata, Hitler lo prende come un incoraggiamento, ma guardando alle campagne decisive a Occidente ordina a Raeder di smettere con le operazioni che coinvolgono incrociatori o navi maggiori."
+  },
+  {
+   "min": 0,
+   "label": "Che cosa e' andato storto?",
+   "text": "Se uno o piu' Colpi sono andati a segno sui Convogli, Raeder e' incoraggiato anche se il Fuhrer e' deluso. Se una nave tedesca e' affondata, o due o piu' sono Danneggiate, Hitler e' furioso e Raeder sara' sollevato dal comando. Se pero' e' affondato un BC o una BB britannica, Raeder riesce a dimostrare che l'operazione non e' stata un fallimento completo, e per ora resta al suo posto."
+  },
+  {
+   "label": "Sconfitta!",
+   "text": "Se un BC tedesco e' affondato e' un disastro. Se no, la sconfitta e' imbarazzante ma la Kriegsmarine resta intatta: il Fuhrer e' preoccupato e valuta i possibili successori di Raeder. Se due Convogli britannici sono stati distrutti e' una vittoria di Pirro: la vulnerabilita' britannica e' esposta e il morale cala, ma la Kriegsmarine e' svuotata. Non ci potra' essere nessuna invasione della Norvegia."
+  }
+ ],
+ "rules": {
+  "convoy_dispersal": false
+ },
+ "notes": [
+  "Questo scenario si gioca sulla MAPPA INSERTO DEL MARE DEL NORD, non sulla Mappa Operazionale: e' un'altra mappa con un'altra griglia, e questo progetto ha calibrato solo quella grande.",
+  "I VP sono CUMULATIVI: se lo Scharnhorst subisce due Colpi e viene Danneggiato si perdono 3 VP, uno per Colpo piu' uno per il danno.",
+  "Bergen e' un porto NEUTRALE: le TF britanniche non identificate e quelle con un Convoglio possono Completare li', ma non innesca Informazioni per nessuna delle due parti e in questo scenario non ha una casella porto.",
+  "Servono 2 Colpi per distruggere un Convoglio o un DD britannico. I Convogli non possono disperdersi.",
+  "Regola speciale: le TF non si trasferiscono nelle Caselle Porto; restano sulla mappa a meno che non abbiano Completato."
+ ]
+}
