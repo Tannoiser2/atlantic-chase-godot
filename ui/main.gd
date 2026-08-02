@@ -38,6 +38,7 @@ var drag_end: int = 1
 var drag_path: Array[Vector2i] = []
 var _press_hex: Vector2i = Vector2i.MAX
 var _press_shift: bool = false
+var _trajectory_action_armed: bool = false
 
 ## Su schermo tattile non esiste il tasto destro: un tocco prolungato sullo
 ## stesso esagono fa la stessa cosa, cioe' rimuove un segmento dal capo piu'
@@ -307,6 +308,8 @@ func _on_key(k: InputEventKey) -> void:
 			_toggle_help()
 		KEY_HOME:
 			_focus_selected()
+		KEY_ESCAPE:
+			_cancel_trajectory_action()
 	_refresh()
 
 
@@ -335,9 +338,10 @@ func _declare_action(key: String) -> void:
 			await _do_signal()
 			return
 		"TRAJECTORY":
+			_arm_trajectory_action()
 			_msg("Traiettoria: trascina dalla Task Force selezionata per "
 				+ "disegnare la rotta, oppure clicca un esagono adiacente a "
-				+ "un capo. Il tasto destro toglie l'ultimo segmento.")
+				+ "un capo. ESC annulla senza tracciare altro.")
 			return
 
 	var enemies := state.forces_of(1 - selected_tf.side)
@@ -517,6 +521,7 @@ func _on_left_click(h: Vector2i, shift: bool) -> void:
 		var idx := here.find(selected_tf)
 		selected_tf = here[(idx + 1) % here.size()] if idx >= 0 else here[0]
 		traj_layer.selected_tf_id = selected_tf.id
+		_cancel_trajectory_action(false)
 		_msg("selezionata %s (%d segmenti)"
 			% [selected_tf.display_name(), selected_tf.length()])
 		return
@@ -524,6 +529,9 @@ func _on_left_click(h: Vector2i, shift: bool) -> void:
 	# 2) altrimenti prova a estendere la Traiettoria selezionata
 	if selected_tf == null:
 		_msg("nessuna Task Force selezionata")
+		return
+	if not _trajectory_action_armed:
+		_msg("Per tracciare una rotta dichiara prima l'azione Traiettoria (5).")
 		return
 	_try_extend(h)
 
@@ -537,30 +545,16 @@ func _on_right_click(h: Vector2i) -> void:
 		return
 	if selected_tf == null:
 		return
-	var traj := selected_tf.trajectory
-	if traj.is_station():
-		_msg("%s e' una Stazione: non ci sono segmenti da rimuovere"
-			% selected_tf.display_name())
-		return
-	# rimuove dal capo piu' vicino al clic
-	var d0 := graph.center_of(traj.end_hex(0)).distance_to(graph.center_of(h))
-	var d1 := graph.center_of(traj.end_hex(1)).distance_to(graph.center_of(h))
-	var end := 0 if d0 <= d1 else 1
-	var freed := traj.remove_end(end)
-	if traj.length() == 0:
-		traj.become_station(freed)
-		_msg("%s ha esaurito i segmenti: diventa Stazione in %s"
-			% [selected_tf.display_name(), str(freed)])
-	else:
-		_msg("rimosso un segmento dalla %s" % ("testa" if end == 0 else "coda"))
-	log.record("rimozione segmento (%s)" % selected_tf.display_name())
-	state.changed.emit()
+	_msg("I segmenti si rimuovono con Scorrere del Tempo (T). "
+		+ "Per correggere l'ultima rotta usa Ctrl+Z.")
 
 
 ## Inizia un trascinamento se il punto premuto e' una TF selezionabile o un
 ## capo della Traiettoria gia' selezionata.
 func _begin_drag(h: Vector2i) -> void:
 	if mode != Mode.PLAY or selected_tf == null:
+		return
+	if not _trajectory_action_armed:
 		return
 	var t := selected_tf.trajectory
 	var on_own := t.occupies(h)
@@ -647,6 +641,7 @@ func _finish_drag() -> void:
 		log.record("estensione di %d segmenti (%s)"
 			% [added, selected_tf.display_name()])
 		state.changed.emit()
+		_trajectory_action_armed = false
 	_refresh()
 
 
@@ -658,6 +653,9 @@ func _can_extend_to(h: Vector2i) -> bool:
 
 
 func _try_extend(h: Vector2i) -> void:
+	if not _trajectory_action_armed:
+		_msg("Per tracciare una rotta dichiara prima l'azione Traiettoria (5).")
+		return
 	var traj := selected_tf.trajectory
 	var ports := state.port_hexes()
 	# prova prima il capo attivo, poi l'altro: evita di dover premere F di continuo
@@ -678,6 +676,7 @@ func _try_extend(h: Vector2i) -> void:
 			log.record("estensione (%s)" % selected_tf.display_name(),
 				{"tf": selected_tf.id, "hex": [h.x, h.y]})
 			state.changed.emit()
+			_trajectory_action_armed = false
 			return
 	_msg("mossa illegale: %s" % traj.extend_error(h, active_end, graph, ports, selected_tf.side))
 
@@ -689,6 +688,7 @@ func _cycle_tf(step: int) -> void:
 	i = wrapi(i + step, 0, state.task_forces.size())
 	selected_tf = state.task_forces[i]
 	traj_layer.selected_tf_id = selected_tf.id
+	_cancel_trajectory_action(false)
 	_focus_selected()
 	_msg("selezionata %s" % selected_tf.display_name())
 
@@ -706,6 +706,26 @@ func _resync_selection() -> void:
 		return
 	selected_tf = state.task_force(selected_tf.id)
 	traj_layer.selected_tf_id = selected_tf.id if selected_tf else -1
+	if selected_tf == null:
+		_cancel_trajectory_action(false)
+
+
+func _arm_trajectory_action() -> void:
+	if selected_tf == null:
+		return
+	_trajectory_action_armed = true
+	traj_layer.clear_preview()
+
+
+func _cancel_trajectory_action(report: bool = true) -> void:
+	if not _trajectory_action_armed:
+		return
+	_trajectory_action_armed = false
+	dragging = false
+	drag_path.clear()
+	traj_layer.clear_preview()
+	if report:
+		_msg("Traiettoria annullata.")
 
 
 # --------------------------------------------------------- Scorrere del Tempo --
@@ -1434,7 +1454,8 @@ func _save_graph() -> void:
 # ------------------------------------------------------------------ anteprima --
 
 func _update_preview(h: Vector2i) -> void:
-	if mode != Mode.PLAY or selected_tf == null or not graph.has_hex(h):
+	if mode != Mode.PLAY or selected_tf == null or not _trajectory_action_armed \
+			or not graph.has_hex(h):
 		traj_layer.clear_preview()
 		return
 	var traj := selected_tf.trajectory
@@ -1617,16 +1638,29 @@ func _refresh_now() -> void:
 	# che cosa aspetta il gioco, adesso
 	var t := selected_tf.trajectory
 	if t.is_station():
-		out.append("E' una [b]Stazione[/b]: trascina da qui a un esagono "
-			+ "adiacente per cominciare una Traiettoria, o dichiara un'azione.")
+		if _trajectory_action_armed:
+			out.append("[color=#8fd0ff][b]Azione Traiettoria attiva.[/b][/color] "
+				+ "Trascina dalla Stazione o clicca un esagono adiacente. "
+				+ "Dopo il primo tratto l'azione si chiude; ESC annulla.")
+		else:
+			out.append("E' una [b]Stazione[/b]. Per tracciare una rotta dichiara "
+				+ "[b]Traiettoria (5)[/b]; altrimenti puoi solo selezionare e "
+				+ "dichiarare altre azioni.")
 	elif t.length() >= Trajectory.MAX_SEGMENTS:
 		out.append("Traiettoria al massimo (%d segmenti): per allungarla serve "
 			% Trajectory.MAX_SEGMENTS
 			+ "prima uno [b]Scorrere del Tempo[/b] (T).")
 	else:
-		out.append("Traiettoria di [b]%d[/b] segmenti, capo attivo [b]%s[/b]: "
-			% [t.length(), "testa" if active_end == 0 else "coda"]
-			+ "trascina dal capo per allungarla. TAB cambia capo.")
+		if _trajectory_action_armed:
+			out.append("[color=#8fd0ff][b]Azione Traiettoria attiva.[/b][/color] "
+				+ "La rotta ha [b]%d[/b] segmenti, capo attivo [b]%s[/b]: "
+				% [t.length(), "testa" if active_end == 0 else "coda"]
+				+ "trascina dal capo o clicca un esagono adiacente. F cambia capo; ESC annulla.")
+		else:
+			out.append("Traiettoria di [b]%d[/b] segmenti. Per modificarla dichiara "
+				% t.length()
+				+ "[b]Traiettoria (5)[/b]. T applica lo Scorrere del Tempo; "
+				+ "F cambia il capo preparato.")
 
 	# le azioni, divise in due e i motivi raggruppati
 	var ok_names: Array[String] = []
@@ -1774,11 +1808,13 @@ func _build_help(root: Control) -> void:
 
 [b]Traiettorie[/b]
   clic su una Task Force                      seleziona
-  [b]trascina dalla TF sugli esagoni[/b]             disegna la rotta in un gesto solo
-  clic su un esagono adiacente                estende di un esagono
-  clic destro                                 rimuove un segmento dal capo piu' vicino
+  5 / Traiettoria                             arma il tracciamento della rotta
+  [b]trascina dalla TF sugli esagoni[/b]             disegna la rotta armata in un gesto solo
+  clic su un esagono adiacente                estende di un esagono, solo dopo 5
+  T / Scorrere del Tempo                      rimuove segmenti secondo velocita' e meteo
   Tab / Shift+Tab                             TF successiva / precedente
   F                                           cambia capo attivo (testa/coda)
+  ESC                                         annulla l'azione Traiettoria armata
 
 [b]Azioni[/b]  (anche dai pulsanti in alto)
   1  Ingaggiare      2  Ricerca Navale
@@ -1798,8 +1834,8 @@ func _build_help(root: Control) -> void:
 
 [b]Touch (iPad)[/b]
   due dita             sposta la mappa e zooma (pinch)
-  un dito              seleziona e disegna la Traiettoria
-  tocco prolungato     come il clic destro: rimuove un segmento
+  un dito              seleziona; dopo 5 disegna la Traiettoria
+  tocco prolungato     in gioco ricorda di usare T per Scorrere del Tempo
 
 [b]Scenario e vista[/b]
   [ e ]        scenario precedente / successivo
