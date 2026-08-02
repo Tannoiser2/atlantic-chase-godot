@@ -272,6 +272,26 @@ def main():
                 else:
                     stations[(ms.group(1), int(ms.group(2)))] = h
 
+        # --- riserva navi della Campagna ---
+        #
+        # Campaign.vsav non ha nessuno schieramento, e per un po' e' sembrato
+        # rotto come i mini-scenari. Non lo e': la Campagna non e' uno
+        # scenario, e' il contenitore che tiene il conto di quali navi sono
+        # disponibili nelle nove Operazioni. Le sue 74 pedine stanno sui due
+        # Campaign Display, che sono tabelloni a parte, non la mappa.
+        pool = defaultdict(list)
+        with open(os.path.join(REP, "vsav", fn)) as fh:
+            for row in csv.DictReader(fh):
+                if "Campaign Display" not in row["map"] or row["kind"] != "piece":
+                    continue
+                nm = ship_names.get(row["image"])
+                if nm is None:
+                    continue
+                side = "KRIEGSMARINE" if row["map"].startswith("Kriegsmarine") \
+                    else "ROYAL_NAVY"
+                if nm not in pool[side]:
+                    pool[side].append(nm)
+
         # --- navi schierate dentro la Mappa di Battaglia ---
         battle_ships = []
         with open(os.path.join(REP, "vsav", fn)) as fh:
@@ -419,6 +439,8 @@ def main():
             "round": 1,
             "task_forces": tfs,
             "battle_setup": battle_setup,
+            "ship_pool": ({k: sorted(v) for k, v in pool.items()}
+                          if pool else None),
             "info_triggers": [],
             "import_warnings": problems,
         }

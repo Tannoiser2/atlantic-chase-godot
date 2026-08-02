@@ -67,6 +67,7 @@
    }
   ]
  },
+ "ship_pool": null,
  "info_triggers": [],
  "import_warnings": [],
  "briefing": {

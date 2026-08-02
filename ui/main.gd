@@ -271,6 +271,13 @@ func _on_key(k: InputEventKey) -> void:
 			_declare_action("SIGNAL")
 		KEY_D:
 			await _do_disperse()
+		KEY_S:
+			if k.ctrl_pressed or k.meta_pressed:
+				await _do_save()
+			else:
+				await _do_load()
+		KEY_V:
+			_show_outcome()
 		KEY_B:
 			_briefing_panel.visible = not _briefing_panel.visible
 		KEY_0:
@@ -686,6 +693,67 @@ func _resync_selection() -> void:
 
 
 # --------------------------------------------------------- Scorrere del Tempo --
+
+# --------------------------------------------------------- salva / ricarica --
+
+func _do_save() -> void:
+	if scenario == null:
+		return
+	var slot := "%s - round %d" % [scenario.id, state.round_number]
+	var r := SaveGame.save(state, scenario.id, scenario.title, slot)
+	if not bool(r["ok"]):
+		_msg("Salvataggio: %s" % String(r["error"]))
+		return
+	_msg("Partita salvata come \"%s\"." % slot)
+
+
+func _do_load() -> void:
+	var saves := SaveGame.list_saves()
+	if saves.is_empty():
+		_msg("Nessuna partita salvata. Ctrl+S per salvare.")
+		return
+	var opts: Array = []
+	for sv in saves:
+		opts.append({"label": String(sv["name"]),
+			"detail": "%s  -  round %d  -  %s" % [String(sv["scenario"]),
+				int(sv["round"]), String(sv["saved_at"])]})
+	opts.append({"label": "Annulla", "detail": ""})
+	var i: int = await Choice.ask(self, "Riprendere una partita",
+		"Il salvataggio contiene anche lo stato dei dadi: ricaricare "
+		+ "restituisce la stessa partita, non una simile.", opts)
+	if i < 0 or i >= saves.size():
+		return
+	var doc := SaveGame.read(String(saves[i]["path"]))
+	if not bool(doc["ok"]):
+		_msg("Ricarica: %s" % String(doc["error"]))
+		return
+	# prima si carica lo SCENARIO giusto, poi ci si applica sopra lo stato: se
+	# no si applicherebbe una partita a una mappa che non e' la sua
+	var idx := scenario_ids.find(String(doc["scenario"]))
+	if idx < 0:
+		_msg("Ricarica: lo scenario \"%s\" non esiste piu'." % String(doc["scenario"]))
+		return
+	_load_scenario_at(idx)
+	state.apply_dict(doc["state"])
+	log = CommandLog.new(state)
+	_resync_selection()
+	_msg("Partita ripresa: %s, round %d." % [scenario.title, state.round_number])
+	_focus_selected()
+	_refresh()
+
+
+## Esito della partita, con le righe che il motore non puo' valutare da solo.
+func _show_outcome() -> void:
+	if victory == null:
+		return
+	_msg("--- ESITO ---")
+	for line in victory.describe(state).split("\n"):
+		_msg(line)
+	var late := Endgame.notice(state, scenario.rules() if scenario != null
+		else {}, graph, _port_control())
+	if late != "":
+		_msg(late)
+
 
 ## Dispersione di un Convoglio (RB p.11). Non e' un'azione: e' una scelta che
 ## il proprietario fa quando ha l'Iniziativa, e non si puo' disfare.
@@ -1263,6 +1331,7 @@ func _build_action_bar(root: Control) -> void:
 	_bar.action_requested.connect(_declare_action)
 	_bar.time_lapse_requested.connect(_do_time_lapse)
 	_bar.disperse_requested.connect(_do_disperse)
+	_bar.outcome_requested.connect(_show_outcome)
 	_bar.undo_requested.connect(func() -> void:
 		if log.undo():
 			_msg("annullato")

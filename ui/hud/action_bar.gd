@@ -14,6 +14,7 @@ extends PanelContainer
 signal action_requested(key: String)
 signal time_lapse_requested()
 signal disperse_requested()
+signal outcome_requested()
 signal undo_requested()
 signal redo_requested()
 signal briefing_toggled()
@@ -84,6 +85,10 @@ func _ready() -> void:
 	_redo_btn.pressed.connect(func() -> void: redo_requested.emit())
 
 	_sep(row)
+	var out := _mk(row, "Esito (V)")
+	out.tooltip_text = ("Punteggio, vincitore e le righe che il motore non "
+		+ "puo' valutare da solo: mine, basi aeree, regole opzionali.")
+	out.pressed.connect(func() -> void: outcome_requested.emit())
 	_mk(row, "Briefing (B)").pressed.connect(func() -> void: briefing_toggled.emit())
 	var prev := _mk(row, "<")
 	prev.tooltip_text = "Scenario precedente"

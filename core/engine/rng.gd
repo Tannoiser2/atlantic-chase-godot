@@ -73,12 +73,24 @@ func last_pair() -> Array[int]:
 	return out
 
 
+## Lo stato interno e' un intero SENZA SEGNO a 64 bit, e JSON non ha interi:
+## salvandolo come numero diventa un float a doppia precisione e perde i bit
+## bassi, cioe' proprio quelli che contano. Ricaricando, la partita ripartiva
+## da un punto vicino ma diverso della sequenza, e i tiri successivi non
+## coincidevano piu'. Va scritto come STRINGA, che JSON conserva esatta.
 func to_dict() -> Dictionary:
-	return {"seed": seed_value, "state": _rng.state, "log_size": log.size()}
+	return {"seed": seed_value, "state": str(_rng.state),
+		"forced": _forced.duplicate(), "log_size": log.size()}
 
 
 func restore(d: Dictionary) -> void:
 	seed_value = int(d.get("seed", 0))
 	_rng.seed = seed_value
 	if d.has("state"):
-		_rng.state = int(d["state"])
+		var raw: Variant = d["state"]
+		# i salvataggi vecchi lo scrivevano come numero: si leggono lo stesso
+		_rng.state = String(raw).to_int() if typeof(raw) == TYPE_STRING \
+			else int(raw)
+	_forced.clear()
+	for v_v: Variant in d.get("forced", []):
+		_forced.append(int(v_v))

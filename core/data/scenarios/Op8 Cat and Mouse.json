@@ -438,6 +438,7 @@
   }
  ],
  "battle_setup": null,
+ "ship_pool": null,
  "info_triggers": [],
  "import_warnings": [
   "Tan-2: la rotta attraversa il lato negato (13, -6)-(13, -7) (piazzamento impreciso nel .vsav)"

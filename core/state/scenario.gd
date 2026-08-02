@@ -90,9 +90,22 @@ func load_from(path: String) -> bool:
 	import_warnings = d.get("import_warnings", [])
 	var bs: Variant = d.get("battle_setup", null)
 	battle_setup = bs if typeof(bs) == TYPE_DICTIONARY else {}
+	var sp: Variant = d.get("ship_pool", null)
+	_pool = sp if typeof(sp) == TYPE_DICTIONARY else {}
 	title = String(briefing.get("title", id))
 	_load_victory()
 	return true
+
+
+## La riserva navi, presente solo nella Campagna: le navi disponibili alle nove
+## Operazioni, per parte. La Campagna non e' uno scenario da giocare - non ha
+## nessuno schieramento - e' il contenitore che tiene il conto di chi c'e'
+## ancora.
+func ship_pool() -> Dictionary:
+	return _pool
+
+
+var _pool: Dictionary = {}
 
 
 ## Questo scenario e' una Battaglia gia' schierata invece di una partita sulla

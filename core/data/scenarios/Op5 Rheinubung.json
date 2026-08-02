@@ -261,6 +261,7 @@
   }
  ],
  "battle_setup": null,
+ "ship_pool": null,
  "info_triggers": [],
  "import_warnings": [],
  "briefing": {

@@ -23,6 +23,8 @@ func run() -> void:
 	test_scenario_rules()
 	test_endgame()
 	test_convoy_counter()
+	test_savegame()
+	test_campaign_pool()
 
 
 func _state() -> GameState:
@@ -453,3 +455,70 @@ func test_convoy_counter() -> void:
 	var st2 := _state()
 	st2.apply_dict(st.to_dict())
 	eq(st2.convoys_completed, 1, "il conteggio si salva")
+
+
+## Salvare e riprendere una partita.
+func test_savegame() -> void:
+	_begin("salvataggio")
+	var st := _state()
+	var tf := _tf(st, TaskForce.Side.KRIEGSMARINE,
+		["Bismarck", "Preugen"] as Array[String], Vector2i(15, -5))
+	tf.trajectory.extend(Vector2i(16, -5), 1, graph)
+	st.add_vp(TaskForce.Side.ROYAL_NAVY, 3.5)
+	st.convoys_completed = 2
+	st.round_number = 4
+	st.weather = TimeLapse.Weather.BAD
+	st.vp_once.append("primo Completamento a Bergen")
+	# si consumano alcuni tiri, cosi' il RNG non e' piu' all'inizio
+	st.rng.d6x2("prova")
+	st.rng.d6("prova")
+
+	var r := SaveGame.save(st, "Op5 Rheinubung", "Rheinubung", "_prova")
+	true_(r["ok"], "il salvataggio riesce: " + String(r["error"]))
+
+	var doc := SaveGame.read(String(r["path"]))
+	true_(doc["ok"], "e si rilegge")
+	eq(String(doc["scenario"]), "Op5 Rheinubung", "con il suo scenario")
+
+	var st2 := _state()
+	st2.apply_dict(doc["state"])
+	eq(st2.round_number, 4, "il round torna")
+	eq(st2.weather, TimeLapse.Weather.BAD, "e il meteo")
+	eq(st2.vp_of(TaskForce.Side.ROYAL_NAVY), 3.5, "e i mezzi punti")
+	eq(st2.convoys_completed, 2, "e i Convogli arrivati")
+	eq(st2.vp_once.size(), 1, "e i premi una tantum gia' scattati")
+	eq(st2.task_forces.size(), 1, "e la Task Force")
+	eq(st2.task_forces[0].trajectory.length(), 1, "con la sua Traiettoria")
+	eq(st2.task_forces[0].ships.size(), 2, "e le sue navi")
+
+	# Il RNG va dentro il salvataggio: senza, si potrebbe salvare prima di una
+	# Battaglia e ripeterla finche' non va bene. Ricaricare deve restituire la
+	# stessa partita, non una simile.
+	var a := st.rng.d6x2("dopo")
+	var b := st2.rng.d6x2("dopo")
+	eq(b, a, "lo stesso tiro dopo il ricaricamento")
+
+	# un salvataggio di un'altra versione viene rifiutato, non interpretato
+	var bad := FileAccess.open(SaveGame.path_for("_rotto"), FileAccess.WRITE)
+	bad.store_string('{"format": 999, "state": {}}')
+	bad.close()
+	var doc2 := SaveGame.read(SaveGame.path_for("_rotto"))
+	false_(doc2["ok"], "formato sconosciuto rifiutato")
+	true_(String(doc2["error"]).contains("altra versione"), "e lo dice")
+
+	SaveGame.erase(String(r["path"]))
+	SaveGame.erase(SaveGame.path_for("_rotto"))
+
+
+## La Campagna non e' uno scenario: e' la riserva navi delle nove Operazioni.
+func test_campaign_pool() -> void:
+	_begin("riserva navi della Campagna")
+	var sc := Scenario.load_by_id("Campaign")
+	eq(sc.task_forces.size(), 0, "nessuno schieramento, ed e' corretto")
+	false_(sc.is_battle_scenario(), "e non e' nemmeno una Battaglia")
+	var pool := sc.ship_pool()
+	eq(pool.size(), 2, "due riserve, una per parte")
+	eq((pool.get("KRIEGSMARINE", []) as Array).size(), 15, "quindici navi tedesche")
+	eq((pool.get("ROYAL_NAVY", []) as Array).size(), 59, "e cinquantanove alleate")
+	true_((pool["KRIEGSMARINE"] as Array).has("Bismarck"), "col Bismarck")
+	true_((pool["ROYAL_NAVY"] as Array).has("Hood"), "e con l'Hood")
