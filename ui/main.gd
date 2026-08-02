@@ -123,8 +123,7 @@ func _load_scenario_at(idx: int) -> void:
 	# Regole Avanzate: la scelta va rimessa dopo, se no cambiare scenario la
 	# perde in silenzio.
 	state.advanced_battle = Session.advanced_battle
-	selected_tf = state.task_forces[0] if not state.task_forces.is_empty() else null
-	traj_layer.selected_tf_id = selected_tf.id if selected_tf else -1
+	_select_first_initiative_force()
 	log = CommandLog.new(state)
 	victory = Victory.from_scenario(scenario)
 	vp_tracker = VictoryTracker.new(victory, state)
@@ -401,8 +400,9 @@ func _declare_action(key: String) -> void:
 	var pending_battle := Results.Battle.NONE
 	var initiative_changed := false
 	for code_v: Variant in res["results"] as Array:
-		var applied := Results.apply(String(code_v), selected_tf, target,
-			dec.target_hex, state, _ship_chooser)
+		var code := String(code_v)
+		var applied := Results.apply(code, selected_tf, target,
+			dec.target_hex, state, _ship_chooser, _designated_active_info_count(dec))
 		_msg("    %s" % applied["text"])
 		if bool(applied.get("initiative_changes", false)):
 			initiative_changed = true
@@ -418,6 +418,8 @@ func _declare_action(key: String) -> void:
 				_battle_post_time_lapse.append(tf)
 		_open_battle(pending_battle, selected_tf, target, dec.target_hex)
 	elif initiative_changed:
+		if bool(engine.action(key).get("causes_time_lapse", false)):
+			await _time_lapse_designated_active(dec)
 		_change_initiative_to(1 - selected_tf.side)
 	else:
 		await _post_table_action_flow(key, dec)
@@ -463,6 +465,14 @@ func _eligible_targets_for_action(key: String, active: TaskForce) -> Array[TaskF
 		if engine.legality_error(dec, state) == "":
 			out.append(tf)
 	return out
+
+
+func _designated_active_info_count(dec: ActionEngine.Declaration) -> int:
+	var n := 0
+	for tf in dec.designated_active():
+		if tf != null:
+			n += tf.info_count()
+	return n
 
 
 func _enemy_action_unavailable_reason(key: String, active: TaskForce) -> String:
@@ -552,14 +562,18 @@ func _handle_slip_away(dec: ActionEngine.Declaration) -> void:
 
 func _post_table_action_flow(key: String, dec: ActionEngine.Declaration) -> void:
 	if bool(engine.action(key).get("causes_time_lapse", false)):
-		for tf in dec.designated_active():
-			if tf != null and tf != dec.target:
-				await _do_time_lapse_for(tf)
+		await _time_lapse_designated_active(dec)
 	match key:
 		"NAVAL_SEARCH":
 			await _offer_steal_initiative("Ricerca Navale")
 		"ENGAGE", "AIR_STRIKE", "STEALTH_ATTACK":
 			_seek_initiative()
+
+
+func _time_lapse_designated_active(dec: ActionEngine.Declaration) -> void:
+	for tf in dec.designated_active():
+		if tf != null and tf != dec.target:
+			await _do_time_lapse_for(tf)
 
 
 func _do_time_lapse_for(tf: TaskForce) -> void:
@@ -574,6 +588,8 @@ func _do_time_lapse_for(tf: TaskForce) -> void:
 func _report_initiative(r: Dictionary) -> void:
 	for line_v: Variant in r.get("log", []):
 		_msg(String(line_v))
+	if bool(r.get("changed", false)):
+		_select_first_initiative_force()
 
 
 func _change_initiative_to(side: int) -> void:
@@ -585,6 +601,7 @@ func _change_initiative_to(side: int) -> void:
 	_msg("L'Iniziativa passa a %s; il conteggio torna a zero."
 		% Initiative.side_name(side))
 	_msg(String(w["log"]))
+	_select_first_initiative_force()
 
 
 func _seek_initiative() -> void:
@@ -904,6 +921,18 @@ func _resync_selection() -> void:
 	traj_layer.selected_tf_id = selected_tf.id if selected_tf else -1
 	if selected_tf == null:
 		_cancel_trajectory_action(false)
+
+
+func _select_first_initiative_force() -> void:
+	selected_tf = null
+	for tf in state.task_forces:
+		if tf.side == state.initiative:
+			selected_tf = tf
+			break
+	if selected_tf == null and not state.task_forces.is_empty():
+		selected_tf = state.task_forces[0]
+	if traj_layer != null:
+		traj_layer.selected_tf_id = selected_tf.id if selected_tf != null else -1
 
 
 func _arm_trajectory_action() -> void:
@@ -1782,6 +1811,11 @@ func _action_unavailable_reason(key: String) -> String:
 		return "sei in modalita' editor del grafo"
 	if selected_tf == null:
 		return "nessuna Task Force selezionata"
+	if selected_tf.side != state.initiative:
+		if solo != null and state.forces_of(state.initiative).is_empty():
+			return ("l'Iniziativa e' dell'avversario immaginario: usa O per "
+				+ "la Tabella Solitario")
+		return "l'Iniziativa e' di %s" % Initiative.side_name(state.initiative)
 	# Passare, Completamento e Traiettoria si dichiarano anche senza nemici in
 	# vista: pretendere un bersaglio le renderebbe indichiarabili
 	if not engine.is_verified(key):
@@ -1812,8 +1846,8 @@ func _action_unavailable_reason(key: String) -> String:
 ## Tre domande, in quest'ordine, che sono quelle che si fa chi guarda lo
 ## schermo senza sapere cosa succede:
 ##
-##   chi sta agendo?      il lato della Task Force selezionata - qui non c'e'
-##                        un turno imposto, agisce chi si seleziona
+##   chi sta agendo?      il lato che ha l'Iniziativa; la TF selezionata puo'
+##                        essere ispezionata, ma agisce solo se e' di quel lato
 ##   cosa aspetta il gioco?   una frase, quella giusta per la situazione
 ##   cosa non posso fare, e perche'?
 ##
@@ -1841,7 +1875,14 @@ func _refresh_now() -> void:
 	var has_init := state.initiative == selected_tf.side
 	out.append("[b]Ora tocca a...[/b]  [b]%s[/b] - %s%s"
 		% [side_name, selected_tf.display_name(),
-			"   [color=#8fd0ff](ha l'Iniziativa)[/color]" if has_init else ""])
+		"   [color=#8fd0ff](ha l'Iniziativa)[/color]" if has_init else ""])
+	if not has_init:
+		if solo != null and state.forces_of(state.initiative).is_empty():
+			out.append("[color=#ff9a3c]L'Iniziativa e' dell'avversario immaginario: "
+				+ "premi O e leggi la Tabella Solitario.[/color]")
+		else:
+			out.append("[color=#ff9a3c]Questa TF non puo' agire: l'Iniziativa e' di "
+				+ "[b]%s[/b].[/color]" % Initiative.side_name(state.initiative))
 
 	# che cosa aspetta il gioco, adesso
 	var t := selected_tf.trajectory

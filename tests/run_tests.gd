@@ -23,7 +23,7 @@ const EXPECTED := {
 	"res://tests/unit/test_rules.gd": 115,
 	"res://tests/unit/test_initiative.gd": 16,
 	"res://tests/unit/test_state_and_undo.gd": 39,
-	"res://tests/unit/test_actions.gd": 137,
+	"res://tests/unit/test_actions.gd": 139,
 	"res://tests/unit/test_battle.gd": 145,
 	"res://tests/unit/test_ships.gd": 71,
 	"res://tests/unit/test_scenarios.gd": 187,

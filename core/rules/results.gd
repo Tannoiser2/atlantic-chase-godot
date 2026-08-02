@@ -21,16 +21,19 @@ enum Battle { NONE, FULL, SURPRISE, LIMITED }
 
 static func apply(code: String, active: TaskForce, target: TaskForce,
 		target_hex: Vector2i, state: GameState,
-		chooser: Callable = Callable()) -> Dictionary:
+		chooser: Callable = Callable(),
+		designated_active_info: int = -1) -> Dictionary:
 	var out := {"code": code, "text": "", "battle": Battle.NONE,
 		"initiative_changes": false, "steal_initiative_offer": false}
 	match code:
 		"MISS":
 			# RB p.53: nessun effetto, ma se una TF designata ha Informazioni
 			# l'Iniziativa cambia di mano.
-			if active != null and active.info_count() > 0:
+			var info := designated_active_info if designated_active_info >= 0 \
+				else (active.info_count() if active != null else 0)
+			if info > 0:
 				out["initiative_changes"] = true
-				out["text"] = ("Mancato, ma la TF Attiva ha un segnalino "
+				out["text"] = ("Mancato, ma una TF Attiva designata ha un segnalino "
 					+ "Informazioni: l'Iniziativa cambia di mano.")
 			else:
 				out["text"] = "Mancato: nessun effetto."

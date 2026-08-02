@@ -430,6 +430,10 @@ func test_result_speed_dependent() -> void:
 	fast.trajectory.set_info(0, true)
 	var r5 := Results.apply("MISS", fast, slow, h, st)
 	true_(r5["initiative_changes"], "Mancato + Informazioni -> cambio di Iniziativa")
+	var r6 := Results.apply("MISS", fast, slow, h, st, Callable(), 0)
+	false_(r6["initiative_changes"], "il totale designato esplicito prevale sulla sola TF Attiva")
+	var r7 := Results.apply("MISS", slow, fast, h, st, Callable(), 1)
+	true_(r7["initiative_changes"], "Informazioni su Coordinatrice/Supporto contano")
 
 
 ## Diverse regole lasciano scegliere al giocatore Attivo. Il core non conosce
