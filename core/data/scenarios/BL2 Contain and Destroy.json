@@ -130,28 +130,6 @@
     "station_contact": false,
     "station_port": "Africa"
    }
-  },
-  {
-   "id": 4,
-   "side": 1,
-   "color": "Red",
-   "slot": 0,
-   "name": "Forza francese",
-   "ships": [
-    "Strasbourg",
-    "Dunkerque",
-    "Gloire",
-    "Montcalm"
-   ],
-   "leader": "Gensoul",
-   "speed": 2,
-   "trajectory": {
-    "segments": [],
-    "station_q": 15,
-    "station_r": -2,
-    "station_contact": false,
-    "station_port": "Brest"
-   }
   }
  ],
  "reinforcements": {
@@ -174,7 +152,7 @@
   "historical": "Scenario solitario trascritto dal fascicolo; schieramento non proveniente da VASSAL."
  },
  "setup_notes": [
-  "Meteo Buono; iniziativa britannica. Mappa operazionale. Nessuna TF tedesca iniziale. Rodney e Valiant nel Gruppo Rinforzi A a Scapa Flow; navi francesi nel Gruppo Rinforzi B. Stazione TF britannica adiacente a qualsiasi porto controllato dal britannico eccetto Scapa Flow e Methil; Convoglio Halifax-Clyde/Liverpool 11 segmenti; Convoglio Africa-Portsmouth 8 segmenti; Forbes e Gensoul come indicato.",
+  "Meteo Buono; iniziativa britannica. Mappa operazionale. Nessuna TF tedesca iniziale. Rodney e Valiant nel Gruppo Rinforzi A a Scapa Flow; navi francesi e Gensoul nel Gruppo Rinforzi B. Stazione TF britannica adiacente a qualsiasi porto controllato dal britannico eccetto Scapa Flow e Methil; Convoglio Halifax-Clyde/Liverpool 11 segmenti; Convoglio Africa-Portsmouth 8 segmenti.",
   "Nessuna TF tedesca iniziale, come da fascicolo.",
   "La rotta Africa-Portsmouth da 8 segmenti resta da disegnare a mano: sul grafo principale calibrato non c'e una catena esatta di 8 segmenti fino a Portsmouth."
  ],

@@ -18,6 +18,7 @@ func run() -> void:
 	test_victory_points()
 	test_victory_table()
 	test_enemy_presence_is_explained()
+	test_bl2_french_force_is_reinforcement_only()
 	test_battle_scenarios()
 
 
@@ -225,6 +226,20 @@ func test_enemy_presence_is_explained() -> void:
 	true_(solo_one_side >= 10,
 		"%d scenari solitari partono con una sola parte e usano la tabella" % solo_one_side)
 	true_(two_sided >= 10, "%d scenari partono con entrambe le parti in mappa" % two_sided)
+
+
+func test_bl2_french_force_is_reinforcement_only() -> void:
+	_begin("BL2: francesi solo come rinforzo")
+	var sc := Scenario.load_by_id("BL2 Contain and Destroy")
+	var setup_ships := {}
+	for tf_v: Variant in sc.task_forces:
+		var tf: Dictionary = tf_v
+		for ship_v: Variant in tf.get("ships", []):
+			setup_ships[String(ship_v)] = true
+	var group_b: Array = sc.reinforcements.get("RN Reinforcement B", [])
+	for ship in ["Strasbourg", "Dunkerque", "Gloire", "Montcalm"]:
+		false_(setup_ships.has(ship), "BL2: %s non parte come TF sulla mappa" % ship)
+		true_(group_b.has(ship), "BL2: %s resta nel Gruppo Rinforzi B" % ship)
 
 
 ## I dodici mini-scenari non sono partite sulla mappa operazionale: sono
