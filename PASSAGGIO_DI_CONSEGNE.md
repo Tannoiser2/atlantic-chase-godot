@@ -180,17 +180,41 @@ modello già esistente. Sarebbe stata una regola inventata ogni volta.
   e 22 i file, in silenzio). Usare `TimeLapse.speed_label()`, non
   `SPEED_LABELS[...]`, perché un indice negativo prende l'ultimo elemento.
 
-**1502 verifiche su 12 suite.**
+- **Interruttore** `BattleState.advanced`: da spento nulla cambia, le regole
+  base restano quelle di sempre. `Gunnery.attack(..., advanced)` legge la
+  tabella avanzata quando è acceso.
+- **Tabella dei Siluri avanzata** (`core/battle/advanced_torpedo.gd`) con la
+  **Linea di Galleggiamento** (colonna Grave). La colonna **Catastrofica** sta
+  sul *player aid* avanzato e **non è stata letta**: il codice lo dichiara nel
+  campo `effect` invece di inventarla.
 
-Restano delle Avanzate: la **fase dell'Attitudine** nella vista, il collegamento
-di `AdvancedGunnery` a `Gunnery.attack()`, la **Tabella dei Siluri avanzata**
-(letta: 8- splash, 9-10 S.R., 11+ C.R., modificatori fermo +3 / molto lento +2 /
-lento +1 / attacco da Vicina -2 / bersaglio in Corsa -2) con la **Tabella della
-Linea di Galleggiamento** (2-5 Timone Fuori Uso, 6-7 Allagamento fermo, 8-12
-Allagamento molto lento — colonna Grave; la colonna Catastrofica non l'ho
-ancora letta), gli **Effetti Speciali** (Batterie, Plancia, Comunicazioni,
-Incendio…), la **Verifica Snafu**, la **Verifica di Disingaggio**, la
-**Battaglia Estesa**, l'**Inseguimento** e la **Confusione**.
+**1536 verifiche su 12 suite.**
+
+#### Nota importante sui risultati avanzati
+In avanzato il risultato **non è più "quanti Colpi"** ma una casella di
+tabella, e le due cose non coincidono. Un *Risultato Grave* NON è "tre Colpi":
+è un tiro in più su un'altra tabella, che può finire in un effetto speciale.
+Per questo `hits` resta 0 su Grave e Catastrofico, e c'è un campo `special`
+separato. Chi collega gli effetti speciali deve partire da lì.
+
+**Restano delle Avanzate**, in ordine di utilità:
+
+1. **Gli Effetti Speciali** — è il pezzo che manca per chiudere il ciclo: oggi
+   un Risultato Grave produce il *nome* dell'effetto (`"Allagamento (ferma)"`)
+   ma nessuno lo applica alla nave. `Ship.special_effects` è già lì e vuoto.
+   Tipi letti dal fascicolo inglese (pp. 7-9): Batterie, Plancia,
+   Comunicazioni, Incendio (molto lenta), Incendio (ferma), Timone Fuori Uso,
+   Allagamento. Ognuno ha una regola sua e resta finché non è riparato.
+2. **La fase dell'Attitudine** nella vista di Battaglia — è la nuova *prima*
+   fase del Round e nell'interfaccia non esiste. Il motore è pronto:
+   `Attitude.setup_options()` dà le scelte legali,
+   `Attitude.active_chooses_for_target()` dice chi sceglie dopo una Sorpresa.
+3. **Fase degli Effetti Duraturi** (Controllo Danni) e **Battaglia Estesa**
+4. **Verifica Snafu** al piazzamento e **Verifica di Disingaggio** all'uscita
+5. **Inseguimento** (`Attitude.can_pursue` c'è già) e **Confusione**
+6. Le **colonne Catastrofiche** delle tabelle Belt / Superstructure /
+   Waterline, che stanno sul *player aid* avanzato (`AC_Adv_Battle_Rules...pdf`
+   p.10 e seguenti) e non sono state lette.
 
 ### 5.1 ~~la Battaglia decide da sola~~ — FATTO
 

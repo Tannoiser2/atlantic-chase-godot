@@ -26,6 +26,7 @@ func run() -> void:
 	test_split_fire()
 	test_stopped_speed()
 	test_advanced_toggle()
+	test_advanced_torpedo()
 
 
 func _ship(n: String, zone: int, att: int, torp: bool = true) -> Ship:
@@ -425,3 +426,59 @@ func _forced(values: Array) -> DiceRNG:
 	var r := DiceRNG.new(1)
 	r.push_forced(values)
 	return r
+
+
+## Siluri avanzati: solo in Avvicinamento, anche dalla zona Vicina, e senza
+## la casella "Colpo" - o mancano o fanno un danno grave.
+func test_advanced_torpedo() -> void:
+	_begin("Siluri avanzati")
+	var f := _ship("Galatea", BattleState.Zone.CLOSE, Attitude.Kind.CLOSING)
+	var t := _ship("Hipper", BattleState.Zone.CLOSE, Attitude.Kind.CLOSING)
+
+	true_(AdvancedTorpedo.can_attack(f), "in Avvicinamento e Ravvicinata: si'")
+	f.battle_zone = BattleState.Zone.NEAR
+	true_(AdvancedTorpedo.can_attack(f),
+		"e anche dalla zona Vicina, che le regole base non permettono")
+	f.battle_zone = BattleState.Zone.FAR
+	false_(AdvancedTorpedo.can_attack(f), "ma non da Lontano")
+	f.battle_zone = BattleState.Zone.CLOSE
+	f.attitude = Attitude.Kind.RUNNING
+	false_(AdvancedTorpedo.can_attack(f), "e nemmeno in Corsa")
+	f.attitude = Attitude.Kind.ACQUIRING
+	false_(AdvancedTorpedo.can_attack(f), "ne' in Acquisizione")
+	f.attitude = Attitude.Kind.CLOSING
+
+	# la tabella: niente casella "Colpo"
+	eq(AdvancedTorpedo.read(8), AdvancedGunnery.Result.SPLASH, "8: Splash")
+	eq(AdvancedTorpedo.read(9), AdvancedGunnery.Result.SEVERE, "9: Grave")
+	eq(AdvancedTorpedo.read(11), AdvancedGunnery.Result.CATASTROPHIC, "11: Catastrofico")
+	var has_hit := false
+	for row_v: Variant in AdvancedTorpedo.TABLE:
+		if int((row_v as Array)[1]) == AdvancedGunnery.Result.HIT:
+			has_hit = true
+	false_(has_hit, "un siluro o manca o fa un danno grave")
+
+	# i modificatori
+	eq(AdvancedTorpedo.modifier_total(f, t), 0, "bersaglio veloce, da Ravvicinata")
+	t.attitude = Attitude.Kind.RUNNING
+	eq(AdvancedTorpedo.modifier_total(f, t), -2, "bersaglio in Corsa: -2")
+	t.speed = TimeLapse.Speed.STOPPED
+	eq(AdvancedTorpedo.modifier_total(f, t), 1, "ma se e' fermo +3, quindi +1")
+	f.battle_zone = BattleState.Zone.NEAR
+	eq(AdvancedTorpedo.modifier_total(f, t), -1, "e attaccando da Vicina altri -2")
+
+	# la Linea di Galleggiamento
+	eq(AdvancedTorpedo.waterline_severe(2), "Timone Fuori Uso", "2-5")
+	eq(AdvancedTorpedo.waterline_severe(6), "Allagamento (ferma)", "6-7")
+	eq(AdvancedTorpedo.waterline_severe(8), "Allagamento (molto lenta)", "8-12")
+
+	# un attacco intero
+	f.battle_zone = BattleState.Zone.CLOSE
+	t.attitude = Attitude.Kind.CLOSING
+	t.speed = TimeLapse.Speed.FAST
+	var a := AdvancedTorpedo.attack(f, t, _forced([5, 5, 4, 4]))
+	true_(a["ok"], "l'attacco si risolve")
+	eq(int(a["sum"]), 10, "2d6 = 10")
+	eq(int(a["result"]), AdvancedGunnery.Result.SEVERE, "Risultato Grave")
+	eq(String(a["effect"]), "Allagamento (molto lenta)",
+		"e il secondo tiro da' l'effetto")

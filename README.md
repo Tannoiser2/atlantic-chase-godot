@@ -135,7 +135,7 @@ gli header di cross-origin isolation e basta un server statico banale.
 godot --headless --path . --script res://tests/run_tests.gd
 ```
 
-1378 verifiche su 11 suite. Esce con codice 1 al primo fallimento, quindi è
+1536 verifiche su 12 suite. Esce con codice 1 al primo fallimento, quindi è
 usabile direttamente in CI.
 
 I test coprono il **motore**, che non sa che Godot esiste. La strada che i
@@ -165,7 +165,8 @@ core/           logica pura, zero dipendenze da Node
   rules/        Scorrere del Tempo, Totale Traiettoria, Interruzione,
                 motore delle Azioni, Risultati Comuni, Completamento,
                 Punti Vittoria
-  battle/       Mappa di Battaglia: raggi, cannoni, siluri, manovra, fuga
+  battle/       Mappa di Battaglia: raggi, cannoni, siluri, manovra, fuga;
+                Regole Avanzate: attitudine, tabelle a due colonne
   engine/       RNG con seme, registro comandi con undo/redo
   data/         map_graph.json, tables.json, actions.json, ships.json,
                 scenarios/, victory/, solo/
