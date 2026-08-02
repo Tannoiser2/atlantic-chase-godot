@@ -25,6 +25,7 @@ func run() -> void:
 	test_crippled()
 	test_split_fire()
 	test_stopped_speed()
+	test_advanced_toggle()
 
 
 func _ship(n: String, zone: int, att: int, torp: bool = true) -> Ship:
@@ -375,3 +376,52 @@ func test_stopped_speed() -> void:
 	eq(AdvancedGunnery.target_speed_modifier(s), 3, "ferma: +3")
 	true_(s.is_slow_or_slower(),
 		"e una nave ferma conta come lenta o peggio, senza toccare il confronto")
+
+
+## Le regole avanzate si accendono, e da spente non cambiano niente.
+func test_advanced_toggle() -> void:
+	_begin("interruttore delle Regole Avanzate")
+	var st := BattleState.new(BattleState.Kind.BATTLE, TimeLapse.Weather.GOOD)
+	false_(st.advanced, "di default si gioca con le regole base")
+
+	var firer := _ship("Bismarck", BattleState.Zone.NEAR, Attitude.Kind.ACQUIRING)
+	var target := _ship("Hood", BattleState.Zone.NEAR, Attitude.Kind.CLOSING)
+
+	# stesso tiro, due mondi diversi. 4+4 = 8, piu' il valore dei cannoni 3
+	# (raggio Corto) = 11.
+	var base := Gunnery.attack(firer, target, _forced([4, 4]), false, false, false)
+	true_(base["ok"], "l'attacco base si risolve")
+	false_(base.has("result"), "e non conosce i risultati speciali")
+
+	var adv := Gunnery.attack(firer, target, _forced([4, 4]), false, false, true)
+	true_(adv["ok"], "quello avanzato pure")
+	eq(int(adv["sum"]), int(base["sum"]), "con la stessa somma")
+	true_(adv.has("result"), "ma legge la tabella avanzata")
+	eq(int(adv["result"]), AdvancedGunnery.Result.SEVERE,
+		"11 in Acquisizione: Risultato Grave")
+	true_(adv["special"], "che e' un risultato speciale")
+	eq(int(adv["hits"]), 0,
+		"e NON e' un Colpo: Grave vuol dire un altro tiro su un'altra tabella")
+
+	# la stessa nave in Avvicinamento, stesso tiro, un risultato diverso
+	firer.attitude = Attitude.Kind.CLOSING
+	var adv2 := Gunnery.attack(firer, target, _forced([4, 4]), false, false, true)
+	eq(int(adv2["result"]), AdvancedGunnery.Result.SEVERE,
+		"11 vale Grave anche nell'altra colonna")
+	firer.attitude = Attitude.Kind.ACQUIRING
+	# ma con 9 la differenza si vede
+	var a9 := Gunnery.attack(firer, target, _forced([3, 3]), false, false, true)
+	eq(int(a9["sum"]), 9, "3+3+3 = 9")
+	eq(int(a9["result"]), AdvancedGunnery.Result.SEVERE,
+		"9 in Acquisizione: gia' Grave")
+	firer.attitude = Attitude.Kind.CLOSING
+	var c9 := Gunnery.attack(firer, target, _forced([3, 3]), false, false, true)
+	eq(int(c9["result"]), AdvancedGunnery.Result.HIT,
+		"9 in Avvicinamento: solo un Colpo")
+	eq(int(c9["hits"]), 1, "e quello e' un Colpo vero")
+
+
+func _forced(values: Array) -> DiceRNG:
+	var r := DiceRNG.new(1)
+	r.push_forced(values)
+	return r

@@ -113,8 +113,16 @@ static func result_label(hits: int) -> String:
 ## Risolve un attacco. NON applica i Colpi: la regola vuole che gli effetti si
 ## applichino dopo che tutte le navi hanno sparato (RB p.57), quindi il
 ## chiamante raccoglie i risultati e li applica in blocco.
+## `advanced` accende la Tabella del Fuoco delle Regole Avanzate: due colonne
+## invece di una, e due risultati in piu' (Grave e Catastrofico). Spento, tutto
+## si comporta esattamente come prima - le regole base restano corrette e non
+## dipendono da niente delle avanzate.
+##
+## `targets` serve solo in avanzato: chi divide il fuoco su due bersagli
+## rinuncia alla colonna Acquisizione.
 static func attack(firer: Ship, target: Ship, rng: DiceRNG,
-		smoke_target: bool = false, smoke_firer: bool = false) -> Dictionary:
+		smoke_target: bool = false, smoke_firer: bool = false,
+		advanced: bool = false, targets: int = 1) -> Dictionary:
 	var r := range_between(firer.battle_zone, target.battle_zone)
 	var band := band_for(r)
 	if not firer.can_fire(band):
@@ -126,13 +134,24 @@ static func attack(firer: Ship, target: Ship, rng: DiceRNG,
 	var mods := modifiers(target, gv, smoke_target, smoke_firer)
 	var total: int = int(roll["sum"]) + int(mods["total"])
 	var hits := hits_for(total)
-	return {
+	var out := {
 		"ok": true, "firer": firer, "target": target,
 		"range": r, "range_label": RANGE_LABELS[r], "band": band,
 		"rolled": roll["rolled"], "kept": roll["kept"], "raw": roll["sum"],
 		"modifiers": mods["list"], "modifier_total": mods["total"],
 		"sum": total, "hits": hits, "label": result_label(hits),
+		"advanced": advanced,
 	}
+	if advanced:
+		# In avanzato il risultato non e' piu' "quanti Colpi" ma una casella
+		# della tabella, e le due cose non coincidono: Grave e Catastrofico
+		# non sono "tre Colpi", sono un tiro in piu' su un'altra tabella.
+		var res := AdvancedGunnery.resolve(firer, total, targets)
+		out["result"] = res
+		out["label"] = AdvancedGunnery.label(res)
+		out["hits"] = 1 if res == AdvancedGunnery.Result.HIT else 0
+		out["special"] = res >= AdvancedGunnery.Result.SEVERE
+	return out
 
 
 static func describe(a: Dictionary) -> String:

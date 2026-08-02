@@ -87,7 +87,7 @@ func _resolve_wave(firers: Array[Ship], targeting: Dictionary) -> Array[Dictiona
 			continue
 		var st := Maneuver.is_obscured(state, target)
 		var sf := Maneuver.is_obscured(state, firer)
-		var a := Gunnery.attack(firer, target, rng, st, sf)
+		var a := Gunnery.attack(firer, target, rng, st, sf, state.advanced)
 		state.note(Gunnery.describe(a))
 		out.append(a)
 	return out

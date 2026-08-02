@@ -20,6 +20,13 @@ const ZONE_LABELS := ["Lontana", "Vicina", "Ravvicinata"]
 const KIND_LABELS := ["Battaglia", "Sorpresa", "Battaglia Limitata"]
 const PHASE_LABELS := ["Fuoco di Cannoni", "Siluri", "Manovra", "Fuga", "conclusa"]
 
+## Si gioca con le Regole Avanzate di Battaglia?
+##
+## Spento (predefinito) tutto funziona come nel regolamento base: attitudini
+## ignorate, tabella del Fuoco di sempre, nessun effetto speciale. Le avanzate
+## sono un fascicolo a parte e si accendono di comune accordo fra i giocatori.
+var advanced: bool = false
+
 var kind: int = Kind.BATTLE
 var weather: int = TimeLapse.Weather.GOOD
 
