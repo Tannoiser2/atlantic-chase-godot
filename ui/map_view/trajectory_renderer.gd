@@ -255,11 +255,12 @@ func _draw_rendezvous_markers() -> void:
 		if not graph.is_playable(h):
 			continue
 		var c := graph.center_of(h)
-		var s := graph.inradius * 0.30
+		var s := graph.inradius * 0.44
 		var rect := Rect2(c - Vector2(s, s), Vector2(s * 2, s * 2))
-		draw_rect(rect, Color(0.04, 0.12, 0.14, 0.82), true)
-		draw_rect(rect, Color(0.55, 0.96, 1.0, 0.96), false, 3.0)
-		_draw_label(c, "RV", Color(0.74, 1.0, 1.0), 0.24)
+		draw_rect(rect, Color(0.80, 0.98, 1.0, 0.92), true)
+		draw_rect(rect, Color(0.02, 0.15, 0.20, 0.92), false, 4.0)
+		draw_rect(rect.grow(graph.inradius * 0.06), Color(1, 1, 1, 0.76), false, 2.0)
+		_draw_label(c, "RV", Color(0.02, 0.15, 0.20), 0.32)
 
 
 func _draw_end_cap(tip: Vector2, prev: Vector2, col: Color, w: float) -> void:

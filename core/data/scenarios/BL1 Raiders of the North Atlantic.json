@@ -10,7 +10,7 @@
    "side": 0,
    "color": "GE",
    "slot": 0,
-   "name": "KM GE-0",
+   "name": "Lutzow",
    "ships": [
     "Lutzow"
    ],
@@ -18,10 +18,10 @@
    "speed": 2,
    "trajectory": {
     "segments": [],
-    "station_q": 17,
-    "station_r": -5,
+    "station_q": 10,
+    "station_r": 3,
     "station_contact": false,
-    "station_port": "Wilhelmshaven"
+    "station_port": ""
    }
   },
   {
@@ -223,6 +223,26 @@
    "Graf Spee"
   ]
  },
+ "rendezvous_markers": [
+  {
+   "id": "BL1-RV-N",
+   "q": 12,
+   "r": -2,
+   "active": true
+  },
+  {
+   "id": "BL1-RV-C",
+   "q": 10,
+   "r": -1,
+   "active": true
+  },
+  {
+   "id": "BL1-RV-S",
+   "q": 9,
+   "r": 3,
+   "active": true
+  }
+ ],
  "info_triggers": [],
  "briefing": {
   "title": "BL1 Raiders of the North Atlantic",
@@ -232,7 +252,8 @@
  },
  "setup_notes": [
   "Meteo Buono; iniziativa tedesca. Mappa operazionale. Schieramento dal fascicolo: corsari tedeschi e convogli britannici con rotte stampate.",
-  "Graf Spee e' nel Gruppo Rinforzi A a Kiel. I marker RV hanno stato e disegno, ma le coordinate stampate non sono ancora calibrate sul grafo principale.",
+  "Lutzow parte come Stazione adiacente al marker BL1-RV-S: scelta digitale provvisoria fra i marker RV ammessi dal fascicolo.",
+  "Graf Spee e' nel Gruppo Rinforzi A a Kiel.",
   "La rotta Africa-Portsmouth usa la striscia porto Africa sull'esagono 12,4 e termina a Portsmouth in 8 segmenti, come da fascicolo."
  ],
  "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. BL1 ha le rotte stampate convertite sul grafo principale dove la mappa calibrata le consente."

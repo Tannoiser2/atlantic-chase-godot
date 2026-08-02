@@ -2466,6 +2466,7 @@ func _refresh_roster() -> void:
 	if state == null or state.task_forces.is_empty():
 		out.append("[color=#c8b8a0]Nessuna TF sulla mappa.[/color]")
 	else:
+		_append_rendezvous_markers(out)
 		_append_roster_side(out, TaskForce.Side.KRIEGSMARINE, "Kriegsmarine")
 		_append_roster_side(out, TaskForce.Side.ROYAL_NAVY, "Royal Navy")
 	_append_reinforcements(out)
@@ -2532,12 +2533,33 @@ func _append_reinforcements(out: Array[String]) -> void:
 			continue
 		var port_txt := ""
 		if ports.has(group):
-			var p: Dictionary = ports[group]
-			port_txt = " -> %s" % String(p.get("port", "porto"))
+			var p_v: Variant = ports[group]
+			if typeof(p_v) == TYPE_DICTIONARY:
+				port_txt = " -> %s" % String((p_v as Dictionary).get("port", "porto"))
+			else:
+				port_txt = " -> %s" % String(p_v)
 		else:
 			port_txt = " -> porto non trascritto"
 		out.append("[b]%s[/b]%s" % [group, port_txt])
 		out.append("  %s" % ", ".join(ships))
+
+
+func _append_rendezvous_markers(out: Array[String]) -> void:
+	if state == null or state.rendezvous_markers.is_empty():
+		return
+	var active: Array[String] = []
+	for rv_v: Variant in state.rendezvous_markers:
+		var rv: Dictionary = rv_v
+		if not bool(rv.get("active", true)):
+			continue
+		var h := Vector2i(int(rv.get("q", 0)), int(rv.get("r", 0)))
+		active.append("%s %s" % [String(rv.get("id", "RV")), _hex_text(h)])
+	out.append("")
+	out.append("[b]Marker RV[/b]")
+	if active.is_empty():
+		out.append("[color=#c8b8a0]Nessun marker RV attivo.[/color]")
+	else:
+		out.append("  %s" % ", ".join(active))
 
 
 func _hex_text(h: Vector2i) -> String:

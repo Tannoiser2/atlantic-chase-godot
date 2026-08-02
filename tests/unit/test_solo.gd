@@ -134,10 +134,23 @@ func test_bl1_setup_has_printed_routes_and_stations() -> void:
 	true_(_forces_include_ship(brest, "Widder"), "Brest contiene la Stazione tedesca")
 	true_(_forces_include_ship(brest, "Dunkerque"), "Brest contiene la Forza francese")
 
-	var wilhelmshaven := _forces_at(st, Vector2i(17, -5))
-	eq(wilhelmshaven.size(), 1, "Wilhelmshaven contiene una Stazione")
-	true_(_forces_include_ship(wilhelmshaven, "Lutzow"),
-		"Wilhelmshaven contiene la Stazione tedesca")
+	eq(st.rendezvous_markers.size(), 3, "tre marker RV piazzati")
+	true_(not st.rendezvous_at(Vector2i(12, -2)).is_empty(), "RV nord piazzato")
+	true_(not st.rendezvous_at(Vector2i(10, -1)).is_empty(), "RV centrale piazzato")
+	true_(not st.rendezvous_at(Vector2i(9, 3)).is_empty(), "RV sud piazzato")
+
+	var lutzow := _tf_with_ship(st, "Lutzow")
+	ne(lutzow, null, "Lutzow e' in una TF iniziale")
+	eq(lutzow.leader, "Raeder", "Lutzow parte con Raeder")
+	true_(lutzow.trajectory.is_station(), "Lutzow parte come Stazione")
+	true_(_station_adjacent_to_any_rv(st, lutzow), "Lutzow parte adiacente a un RV")
+	true_(st.rendezvous_at(lutzow.trajectory.station_hex).is_empty(),
+		"Lutzow non parte sopra l'RV, ma accanto")
+
+	var group_a: Array = sc.reinforcements.get("KM Reinforcement A", [])
+	true_(group_a.has("Graf Spee"), "Graf Spee e' nel Gruppo Rinforzi A")
+	eq(String(sc.reinforcement_ports().get("KM Reinforcement A", "")), "Kiel",
+		"il Gruppo Rinforzi A e' a Kiel")
 
 
 func test_all_solo_action_tables_are_reachable() -> void:
@@ -590,6 +603,14 @@ func _tf_named(st: GameState, tf_name: String) -> TaskForce:
 	return null
 
 
+func _tf_with_ship(st: GameState, ship_name: String) -> TaskForce:
+	for tf in st.task_forces:
+		for ship in tf.ships:
+			if ship.name == ship_name:
+				return tf
+	return null
+
+
 func _trajectory_is_contiguous(tf: TaskForce) -> bool:
 	var hexes := tf.trajectory.hexes()
 	for i in range(1, hexes.size()):
@@ -604,6 +625,17 @@ func _forces_at(st: GameState, h: Vector2i) -> Array[TaskForce]:
 		if tf.trajectory.is_station() and tf.trajectory.station_hex == h:
 			out.append(tf)
 	return out
+
+
+func _station_adjacent_to_any_rv(st: GameState, tf: TaskForce) -> bool:
+	if tf == null or not tf.trajectory.is_station():
+		return false
+	var h := tf.trajectory.station_hex
+	for rv in st.rendezvous_markers:
+		var rv_h := Vector2i(int(rv.get("q", 0)), int(rv.get("r", 0)))
+		if graph.is_adjacent(h, rv_h):
+			return true
+	return false
 
 
 func _forces_include_ship(tfs: Array[TaskForce], ship_name: String) -> bool:
