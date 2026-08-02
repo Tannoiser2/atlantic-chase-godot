@@ -53,6 +53,7 @@ func run() -> void:
 	test_solo_ai_a1_c_routes_to_named_port()
 	test_fueling()
 	test_solo_battle_behavior()
+	test_solo_battle_view_preassigns_both_sides()
 
 
 func _rng(forced: Array) -> DiceRNG:
@@ -547,3 +548,29 @@ func test_solo_battle_behavior() -> void:
 
 	true_(SoloBattle.wants_break_away(st, TaskForce.Side.KRIEGSMARINE),
 		"i tedeschi tentano la Fuga davanti a una BB/BC britannica integra")
+
+
+func test_solo_battle_view_preassigns_both_sides() -> void:
+	_begin("Battaglia solitaria: bersagli proposti per entrambi i lati")
+	var st := BattleState.new()
+	var km := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
+	var rn := TaskForce.new(2, TaskForce.Side.ROYAL_NAVY)
+	var hipper := ShipRoster.shared().make("Hipper")
+	var hood := ShipRoster.shared().make("Hood")
+	hipper.battle_zone = BattleState.Zone.NEAR
+	hood.battle_zone = BattleState.Zone.NEAR
+	km.ships = [hipper]
+	rn.ships = [hood]
+	st.active_tf = km
+	st.target_tf = rn
+	st.phase = BattleState.Phase.GUNNERY
+
+	var battle := Battle.new(st, DiceRNG.new(0))
+	var view := BattleView.new()
+	view.battle = battle
+	view.state = st
+	view.solo_player_side = TaskForce.Side.ROYAL_NAVY
+	var auto: Dictionary = view._auto_targeting_for_phase()
+	eq(auto[hipper], hood, "l'avversario immaginario ha un bersaglio")
+	eq(auto[hood], hipper, "anche il giocatore riceve un bersaglio proposto")
+	view.free()

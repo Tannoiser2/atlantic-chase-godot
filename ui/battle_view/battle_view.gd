@@ -314,9 +314,13 @@ func _preassign() -> void:
 
 func _auto_targeting_for_phase() -> Dictionary:
 	var torpedoes := state.phase == BattleState.Phase.TORPEDO
-	if _solo_imaginary_side() >= 0:
-		return SoloBattle.targeting(state, _solo_imaginary_side(), torpedoes)
-	return battle.auto_torpedoes() if torpedoes else battle.auto_targeting()
+	var auto: Dictionary = battle.auto_torpedoes() if torpedoes else battle.auto_targeting()
+	var imaginary := _solo_imaginary_side()
+	if imaginary >= 0:
+		var solo: Dictionary = SoloBattle.targeting(state, imaginary, torpedoes)
+		for f_v: Variant in solo.keys():
+			auto[f_v] = solo[f_v]
+	return auto
 
 
 func _clear_targets() -> void:
