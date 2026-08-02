@@ -82,24 +82,34 @@ static func apply(ship: Ship, effect: String) -> Dictionary:
 			% [ship.name, effect, ship.apply_hits(1)]
 		return out
 
-	# l'effetto GRAVE sostituisce il suo corrispondente lieve
+	# Due effetti dello STESSO TIPO: la nave tiene il PEGGIORE dei due e in piu'
+	# subisce un Colpo. La carta di aiuto lo scrive esplicitamente ("it keeps
+	# the worse of the two and suffers one Hit"), e le due cose vanno insieme:
+	# non e' un aggravamento gratis.
 	if ESCALATION.has(effect):
 		var lighter := String(ESCALATION[effect])
 		if has(ship, lighter):
 			ship.special_effects.erase(lighter)
 			out["removed"] = lighter
+			ship.special_effects.append(effect)
+			out["applied"] = true
+			out["hit"] = true
+			out["log"] = ("%s: %s sostituisce %s (si tiene il peggiore), e la "
+				% [ship.name, effect, lighter] + "nave subisce anche un Colpo. "
+				+ ship.apply_hits(1))
+			return out
 		ship.special_effects.append(effect)
 		out["applied"] = true
-		out["log"] = "%s: %s%s" % [ship.name, effect,
-			"  (sostituisce %s)" % lighter if out["removed"] != "" else ""]
+		out["log"] = "%s: %s" % [ship.name, effect]
 		return out
 
-	# l'effetto LIEVE non si applica se c'e' gia' il suo grave
+	# l'effetto LIEVE su chi ha gia' il GRAVE: si tiene il peggiore, che c'e'
+	# gia', e resta il Colpo
 	var heavier := heavier_of(effect)
 	if heavier != "" and has(ship, heavier):
 		out["hit"] = true
-		out["log"] = ("%s ha gia' %s, che e' peggio: vale un Colpo. "
-			% [ship.name, heavier] + ship.apply_hits(1))
+		out["log"] = ("%s ha gia' %s, che e' peggio: si tiene quello e prende "
+			% [ship.name, heavier] + "un Colpo. " + ship.apply_hits(1))
 		return out
 
 	ship.special_effects.append(effect)

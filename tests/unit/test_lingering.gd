@@ -17,6 +17,8 @@ func run() -> void:
 	test_disengagement()
 	test_german_vulnerability()
 	test_no_radar()
+	test_grids()
+	test_same_type_costs_a_hit()
 
 
 func _ship() -> Ship:
@@ -150,7 +152,7 @@ func test_no_radar() -> void:
 	eq(Lingering.no_radar_modifier(s, Gunnery.FireRange.EXTREME), 0,
 		"senza il marcatore nessuna penalita'")
 
-	s.special_effects.append(Lingering.NO_RADAR)
+	s.special_effects.append(Lingering.NO_RADAR_KEY)
 	eq(Lingering.no_radar_modifier(s, Gunnery.FireRange.EXTREME), -2,
 		"-2 a raggio Estremo")
 	eq(Lingering.no_radar_modifier(s, Gunnery.FireRange.LONG), -1,
@@ -162,8 +164,66 @@ func test_no_radar() -> void:
 	var stay := Lingering.no_radar_check(s, _rng([4, 5]))
 	eq(int(stay["sum"]), 9, "somma 9")
 	false_(stay["removed"], "con 9 resta")
-	true_(s.special_effects.has(Lingering.NO_RADAR), "il marcatore c'e' ancora")
+	true_(s.special_effects.has(Lingering.NO_RADAR_KEY), "il marcatore c'e' ancora")
 
 	var gone := Lingering.no_radar_check(s, _rng([5, 5]))
 	true_(gone["removed"], "con 10 se ne va")
-	false_(s.special_effects.has(Lingering.NO_RADAR), "e il marcatore sparisce")
+	false_(s.special_effects.has(Lingering.NO_RADAR_KEY), "e il marcatore sparisce")
+
+
+## Le due griglie, trascritte dalla carta di aiuto.
+func test_grids() -> void:
+	_begin("le griglie del player aid")
+	eq(Lingering.column_for(2), 0, "2-5: prima colonna")
+	eq(Lingering.column_for(5), 0, "5 ancora prima")
+	eq(Lingering.column_for(6), 1, "6-7: seconda")
+	eq(Lingering.column_for(9), 2, "8-9: terza")
+	eq(Lingering.column_for(12), 3, "10-12: quarta")
+
+	# Effetti Duraturi: la riga degli incendi racconta tutto
+	eq(Lingering.lingering_result(SpecialEffects.FIRE_STOPPED, 3),
+		Lingering.SUNK, "incendio grave con 2-5: affonda")
+	eq(Lingering.lingering_result(SpecialEffects.FIRE_STOPPED, 6),
+		Lingering.HIT_NO_CHANGE, "con 6-7: un Colpo e resta")
+	eq(Lingering.lingering_result(SpecialEffects.FIRE_STOPPED, 11),
+		Lingering.FIRE_SLOW, "con 10-12: torna lieve")
+	# l'acqua perdona meno del fuoco
+	eq(Lingering.lingering_result(SpecialEffects.FLOOD_STOPPED, 6),
+		Lingering.SUNK, "l'allagamento grave affonda anche con 6-7")
+	eq(Lingering.lingering_result(SpecialEffects.FLOOD_STOPPED, 11),
+		Lingering.FLOOD_SLOW, "e al massimo torna lieve, mai riparato")
+	eq(Lingering.lingering_result(SpecialEffects.BATTERIES, 9),
+		Lingering.REPAIRED, "le Batterie si riparano da 8 in su")
+	eq(Lingering.lingering_result(SpecialEffects.RUDDER, 9),
+		Lingering.NO_CHANGE, "il timone solo da 10")
+
+	# Disingaggio: un incendio che ferma la nave non la porta a casa, mai
+	for total in [3, 6, 9, 12]:
+		eq(Lingering.disengagement_result(SpecialEffects.FIRE_STOPPED, total),
+			Lingering.DIS_SCUTTLE,
+			"Incendio (ferma) all'uscita, somma %d: autoaffondamento" % total)
+		eq(Lingering.disengagement_result(SpecialEffects.FLOOD_STOPPED, total),
+			Lingering.DIS_SCUTTLE, "e lo stesso l'allagamento che ferma")
+	eq(Lingering.disengagement_result(SpecialEffects.TURRETS, 12),
+		Lingering.DIS_REPAIR,
+		"le Torrette si riparano solo qui, e solo con 10-12")
+	eq(Lingering.disengagement_result(Lingering.NO_RADAR_KEY, 12),
+		Lingering.DIS_REPAIR, "e Niente Radar allo stesso modo")
+	eq(Lingering.disengagement_result(SpecialEffects.BRIDGE, 3),
+		Lingering.DIS_SCUTTLE, "la Plancia con 2-5 costa la nave")
+
+
+## Due effetti dello stesso tipo: si tiene il peggiore E si prende un Colpo.
+func test_same_type_costs_a_hit() -> void:
+	_begin("due effetti dello stesso tipo")
+	var s := _ship()
+	SpecialEffects.apply(s, SpecialEffects.FIRE_SLOW)
+	var before := s.hits
+
+	var r := SpecialEffects.apply(s, SpecialEffects.FIRE_STOPPED)
+	true_(r["applied"], "il peggiore si applica")
+	true_(r["hit"], "ma non e' gratis: c'e' anche un Colpo")
+	true_(s.hits > before or s.damaged, "e il Colpo arriva davvero")
+	eq(s.special_effects.size(), 1, "e resta un effetto solo")
+	true_(SpecialEffects.has(s, SpecialEffects.FIRE_STOPPED),
+		"il peggiore dei due")

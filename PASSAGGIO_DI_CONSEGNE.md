@@ -12,10 +12,10 @@ Questo file dice **da dove ripartire e cosa non rifare**.
 
 Versione digitale di *Atlantic Chase* (GMT Games, 2020) in **Godot 4.7**,
 GDScript. Motore di regole puro e testabile headless, interfaccia sopra.
-**1672 verifiche su 15 suite, tutte verdi.** Repository `Tannoiser2/atlantic-chase-godot`, branch `master`.
+**1700 verifiche su 15 suite, tutte verdi.** Repository `Tannoiser2/atlantic-chase-godot`, branch `master`.
 
 ```bash
-godot --headless --path . --script res://tests/run_tests.gd   # 1672 verifiche
+godot --headless --path . --script res://tests/run_tests.gd   # 1700 verifiche
 godot --path . --script res://tools/smoke_ui.gd               # prova di fumo GUI
 sh tools/build_macos.sh                                       # app per macOS
 ```
@@ -172,15 +172,12 @@ modello già esistente. Sarebbe stata una regola inventata ogni volta.
   BL2 e BL3 trascritte
 
 **Non finito, e perché:**
-- le **griglie** degli Effetti Duraturi, del Disingaggio e della Verifica
-  Snafu. **Verificato pagina per pagina**: `AC_Adv_Battle_Rules_May_4_2021.pdf`
-  contiene *una sola* faccia del player aid — p.16, *"Advanced Battle Tables"*,
-  con Fuoco, Risultati Speciali, Cintura, Sovrastruttura, Linea di
-  Galleggiamento, Siluri e modificatori. **L'altra faccia della carta, con
-  Snafu / Effetti Duraturi / Disingaggio, non è nel PDF.** I *testi* di quelle
-  regole ci sono (pp. 3, 11, 14) e sono trascritti; mancano solo le griglie
-  "quale somma dà quale risultato". Se la seconda faccia salta fuori, sono tre
-  tabelle da riempire in `core/battle/lingering.gd` e nient'altro da cambiare.
+- la griglia della **Verifica Snafu**: sta sulla faccia A della carta di aiuto
+  (`AC_Adv_PlayerAid_A.pdf`), che non ho letto. Le altre due — Effetti Duraturi
+  e Disingaggio — sono trascritte.
+- il **collegamento al ciclo del Round**: `Lingering.lingering_checks()` e
+  `disengagement_checks()` esistono e sono testati, ma nessuno li chiama da
+  `Battle`. Manca la fase degli Effetti Duraturi nella sequenza.
 - la **fase dell'Attitudine** esiste nel motore ma non nell'interfaccia: oggi
   le attitudini si impostano solo dallo schieramento dello scenario, e non si
   possono cambiare a ogni Round come vuole la regola.
@@ -244,7 +241,14 @@ modello già esistente. Sarebbe stata una regola inventata ogni volta.
   non è dentro il PDF. `roll()` prepara il tiro, il giocatore legge la tabella,
   `apply()` esegue il risultato — divisione onesta, non un'invenzione.
 
-**1672 verifiche su 15 suite.**
+- **Le due griglie mancanti sono arrivate.** L'utente ha fornito le due facce
+  della carta di aiuto, ora in `docs/regolamento/AC_Adv_PlayerAid_A.pdf` e
+  `_B.pdf`. Tabella degli Effetti Duraturi e del Disingaggio **trascritte**.
+  E la carta ha corretto una regola che avevo scritto male: due effetti dello
+  stesso tipo fanno tenere il **peggiore** *e* prendere **un Colpo** — non è un
+  aggravamento gratis.
+
+**1700 verifiche su 15 suite.**
 
 #### Nota importante sui risultati avanzati
 In avanzato il risultato **non è più "quanti Colpi"** ma una casella di

@@ -6,14 +6,11 @@ extends RefCounted
 ## Sono le due fasi in cui gli effetti speciali possono migliorare o peggiorare:
 ## una a ogni Round di Battaglia, l'altra all'uscita.
 ##
-## ATTENZIONE, LIMITE NOTO. Le due TABELLE - quale somma dia quale risultato,
-## effetto per effetto - stanno su una carta player aid che NON e' dentro
-## `AC_Adv_Battle_Rules_May_4_2021.pdf`. Qui ci sono le procedure e il
-## significato di ogni risultato, che il fascicolo scrive per esteso, ma la
-## griglia va tirata a mano. `roll()` prepara il tiro giusto e dice cosa
-## cercare; `apply()` esegue il risultato una volta che il giocatore lo ha
-## letto. E' la divisione onesta: il motore fa tutto quello che sa fare, e
-## chiede solo il pezzo che non ha.
+## Le due griglie sono trascritte dalla carta di aiuto,
+## `docs/regolamento/AC_Adv_PlayerAid_B.pdf` - la seconda faccia, che nel PDF
+## del fascicolo non c'era.
+##
+## Colonne di entrambe: 2-5, 6-7, 8-9, 10-12. Nessun modificatore.
 
 ## I risultati della Tabella degli Effetti Duraturi, con il loro significato.
 const FIRE_STOPPED := "Incendio (ferma)"
@@ -35,6 +32,77 @@ const DIS_SCUTTLE := "Autoaffondamento"
 ## Torrette si verificano solo al Disingaggio, e la Santabarbara non lascia
 ## un marcatore da riparare.
 const EXEMPT_FROM_LINGERING := [SpecialEffects.TURRETS]
+
+
+## Le quattro colonne, come soglie: [somma minima, indice].
+const COLUMNS := [[10, 3], [8, 2], [6, 1], [2, 0]]
+
+
+static func column_for(total: int) -> int:
+	for c_v: Variant in COLUMNS:
+		var c: Array = c_v
+		if total >= int(c[0]):
+			return int(c[1])
+	return 0
+
+
+## Tabella degli Effetti Duraturi. Righe per effetto, quattro colonne.
+##
+## Le due righe degli incendi e degli allagamenti raccontano tutto: l'incendio
+## GRAVE con 2-5 affonda la nave, ma con 10-12 torna a essere lieve. Un
+## allagamento grave invece affonda su DUE colonne su quattro e non guarisce
+## mai del tutto: al massimo torna lieve. L'acqua perdona meno del fuoco.
+const LINGERING_TABLE := {
+	SpecialEffects.BATTERIES: [NO_CHANGE, NO_CHANGE, REPAIRED, REPAIRED],
+	SpecialEffects.BRIDGE: [NO_CHANGE, NO_CHANGE, REPAIRED, REPAIRED],
+	SpecialEffects.COMMUNICATIONS: [NO_CHANGE, NO_CHANGE, REPAIRED, REPAIRED],
+	SpecialEffects.FIRE_SLOW: [FIRE_STOPPED, FIRE_STOPPED, NO_CHANGE, REPAIRED],
+	SpecialEffects.FIRE_STOPPED: [SUNK, HIT_NO_CHANGE, NO_CHANGE, FIRE_SLOW],
+	SpecialEffects.FLOOD_SLOW: [FLOOD_STOPPED, FLOOD_STOPPED, NO_CHANGE,
+		NO_CHANGE],
+	SpecialEffects.FLOOD_STOPPED: [SUNK, SUNK, NO_CHANGE, FLOOD_SLOW],
+	SpecialEffects.RUDDER: [NO_CHANGE, NO_CHANGE, NO_CHANGE, REPAIRED],
+}
+
+
+## Tabella del Disingaggio. Stessa struttura, esiti diversi.
+##
+## Qui il fuoco e' spietato: un Incendio (ferma) da' AUTOAFFONDAMENTO su tutte
+## e quattro le colonne - una nave ferma e in fiamme non torna a casa, mai.
+const DISENGAGEMENT_TABLE := {
+	SpecialEffects.BATTERIES: [DIS_NO_CHANGE, DIS_NO_CHANGE, DIS_REPAIR,
+		DIS_REPAIR],
+	SpecialEffects.BRIDGE: [DIS_SCUTTLE, DIS_REPAIR, DIS_REPAIR, DIS_REPAIR],
+	SpecialEffects.COMMUNICATIONS: [DIS_OIL, DIS_REPAIR, DIS_REPAIR, DIS_REPAIR],
+	SpecialEffects.FIRE_SLOW: [DIS_SCUTTLE, DIS_OIL, DIS_OIL, DIS_REPAIR],
+	SpecialEffects.FIRE_STOPPED: [DIS_SCUTTLE, DIS_SCUTTLE, DIS_SCUTTLE,
+		DIS_SCUTTLE],
+	SpecialEffects.FLOOD_SLOW: [DIS_OIL, DIS_OIL, DIS_OIL, DIS_REPAIR],
+	SpecialEffects.FLOOD_STOPPED: [DIS_SCUTTLE, DIS_SCUTTLE, DIS_SCUTTLE,
+		DIS_SCUTTLE],
+	SpecialEffects.RUDDER: [DIS_SCUTTLE, DIS_SCUTTLE, DIS_OIL, DIS_REPAIR],
+	SpecialEffects.TURRETS: [DIS_NO_CHANGE, DIS_NO_CHANGE, DIS_NO_CHANGE,
+		DIS_REPAIR],
+	NO_RADAR_KEY: [DIS_NO_CHANGE, DIS_NO_CHANGE, DIS_NO_CHANGE, DIS_REPAIR],
+}
+
+const NO_RADAR_KEY := "Niente Radar"
+
+
+## Il risultato degli Effetti Duraturi per questo effetto e questa somma.
+static func lingering_result(effect: String, total: int) -> String:
+	var row: Array = LINGERING_TABLE.get(effect, [])
+	if row.is_empty():
+		return NO_CHANGE
+	return String(row[column_for(total)])
+
+
+## Il risultato del Disingaggio.
+static func disengagement_result(effect: String, total: int) -> String:
+	var row: Array = DISENGAGEMENT_TABLE.get(effect, [])
+	if row.is_empty():
+		return DIS_NO_CHANGE
+	return String(row[column_for(total)])
 
 
 ## Gli effetti di questa nave che vanno verificati negli Effetti Duraturi.
@@ -151,11 +219,8 @@ static func apply_disengagement(ship: Ship, effect: String,
 ## Lungo. E' l'unica delle penalita' avanzate di cui il fascicolo da' la
 ## tabella per esteso, quindi qui e' automatica: 10-12 la toglie, 9 o meno la
 ## lascia fino al prossimo Disingaggio.
-const NO_RADAR := "Niente Radar"
-
-
 static func no_radar_modifier(ship: Ship, range_index: int) -> int:
-	if not ship.special_effects.has(NO_RADAR):
+	if not ship.special_effects.has(NO_RADAR_KEY):
 		return 0
 	match range_index:
 		Gunnery.FireRange.EXTREME:
@@ -166,10 +231,10 @@ static func no_radar_modifier(ship: Ship, range_index: int) -> int:
 
 
 static func no_radar_check(ship: Ship, rng: DiceRNG) -> Dictionary:
-	if not ship.special_effects.has(NO_RADAR):
+	if not ship.special_effects.has(NO_RADAR_KEY):
 		return {"applies": false, "removed": false, "sum": 0}
 	var s := rng.d6x2("Niente Radar di %s" % ship.name)
 	var removed := s >= 10
 	if removed:
-		ship.special_effects.erase(NO_RADAR)
+		ship.special_effects.erase(NO_RADAR_KEY)
 	return {"applies": true, "removed": removed, "sum": s}
