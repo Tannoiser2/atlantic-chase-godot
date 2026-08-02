@@ -201,7 +201,13 @@ modello già esistente. Sarebbe stata una regola inventata ogni volta.
   `Gunnery.attack()` somma le penalità e rifiuta di sparare con Incendio o
   Allagamento gravi, `torpedo_phase()` usa la tavola avanzata quando serve.
 
-**1603 verifiche su 13 suite.**
+- **Tabelle dei Risultati Speciali** (`core/battle/result_tables.gd`): Cintura,
+  Sovrastruttura, Linea di Galleggiamento, colonne Grave e Catastrofica. Erano
+  sul *player aid*, che è **l'ultima pagina di
+  `AC_Adv_Battle_Rules_May_4_2021.pdf`** — non un foglio separato. La catena del
+  Fuoco avanzato è ora completa.
+
+**1637 verifiche su 14 suite.**
 
 #### Nota importante sui risultati avanzati
 In avanzato il risultato **non è più "quanti Colpi"** ma una casella di
@@ -212,13 +218,10 @@ separato. Chi collega gli effetti speciali deve partire da lì.
 
 **Restano delle Avanzate**, in ordine di utilità:
 
-1. ~~**Gli Effetti Speciali**~~ — **FATTO e collegato.** Resta un solo buco:
-   i Risultati Gravi del **Fuoco** (non dei siluri) rimandano alle tabelle
-   **Belt / Superstructure / Waterline**, che stanno sul *player aid* avanzato
-   e non sono state lette. Il codice lo **dichiara nel registro** invece di
-   inventare un effetto (`Battle._apply_special()`), quindi giocando si vede
-   subito dov'è il pezzo mancante. È la prima cosa da fare: sono tre tabelle
-   corte e sbloccano metà delle regole avanzate.
+1. ~~**Gli Effetti Speciali**~~ e ~~**le Tabelle dei Risultati**~~ — **FATTI
+   e collegati.** La catena del combattimento avanzato è completa: tiro →
+   colonna per attitudine → Risultato Speciale → dove ha colpito (colonna per
+   raggio) → effetto → la nave cambia davvero.
 2. **La fase dell'Attitudine** nella vista di Battaglia — è la nuova *prima*
    fase del Round e nell'interfaccia non esiste. Il motore è pronto:
    `Attitude.setup_options()` dà le scelte legali,
@@ -226,9 +229,9 @@ separato. Chi collega gli effetti speciali deve partire da lì.
 3. **Fase degli Effetti Duraturi** (Controllo Danni) e **Battaglia Estesa**
 4. **Verifica Snafu** al piazzamento e **Verifica di Disingaggio** all'uscita
 5. **Inseguimento** (`Attitude.can_pursue` c'è già) e **Confusione**
-6. Le **colonne Catastrofiche** delle tabelle Belt / Superstructure /
-   Waterline, che stanno sul *player aid* avanzato (`AC_Adv_Battle_Rules...pdf`
-   p.10 e seguenti) e non sono state lette.
+6. L'**Attacco Furtivo opzionale** delle avanzate (un Colpo diventa S.R., una
+   Battaglia diventa C.R.) e le **Manovre Evasive** in Battaglia, entrambe
+   sull'ultima pagina del player aid.
 
 ### 5.1 ~~la Battaglia decide da sola~~ — FATTO
 

@@ -139,14 +139,32 @@ func _apply_special(a: Dictionary) -> void:
 	var target: Ship = a["target"]
 	var effect := String(a.get("effect", ""))
 	if effect == "":
-		# I risultati Gravi del FUOCO rimandano alle tabelle Cintura /
-		# Sovrastruttura / Linea di Galleggiamento, che stanno sul player aid
-		# avanzato e non sono state trascritte. Meglio dirlo che inventare un
-		# effetto: qui si decide se una nave resta in combattimento o no.
-		state.note("    %s su %s: la tabella dell'effetto non e' ancora "
-			% [String(a.get("label", "risultato speciale")), target.name]
-			+ "trascritta, va tirata a mano sul player aid avanzato.")
-		return
+		# I risultati del FUOCO non dicono ancora l'effetto: rimandano alle
+		# tabelle dei Risultati Speciali, dove due tiri in piu' dicono DOVE e'
+		# entrato il colpo e poi che cosa ha rotto. La colonna dipende dal
+		# raggio, ed e' li' che sta il senso: da lontano un Catastrofico e'
+		# spesso solo un avvistamento sbagliato, da vicino entra sotto la
+		# linea di galleggiamento.
+		var gv := 0
+		var firer: Ship = a.get("firer", null)
+		if firer != null:
+			var v: Variant = firer.gun_value(String(a.get("band", "far")))
+			gv = int(round(float(v))) if v != null else 0
+		var res := ResultTables.resolve(
+			int(a.get("result", 0)) == AdvancedGunnery.Result.CATASTROPHIC,
+			int(a.get("range", 0)), gv, rng)
+		state.note("    %s -> %s (dadi %s)" % [String(a.get("label", "")),
+			String(res["note"]), str(res["rolls"])])
+		if bool(res["hit"]):
+			state.note("    " + target.apply_hits(1))
+		effect = String(res["effect"])
+		if effect == "":
+			return
+		if effect == "Affondata":
+			target.sunk = true
+			state.note("    %s: colpita nella sovrastruttura. AFFONDATA."
+				% target.name)
+			return
 	var r := SpecialEffects.apply(target, effect)
 	state.note("    " + String(r["log"]))
 

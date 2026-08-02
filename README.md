@@ -135,7 +135,7 @@ gli header di cross-origin isolation e basta un server statico banale.
 godot --headless --path . --script res://tests/run_tests.gd
 ```
 
-1603 verifiche su 13 suite. Esce con codice 1 al primo fallimento, quindi è
+1637 verifiche su 14 suite. Esce con codice 1 al primo fallimento, quindi è
 usabile direttamente in CI.
 
 I test coprono il **motore**, che non sa che Godot esiste. La strada che i
