@@ -51,6 +51,12 @@ func _process(_delta: float) -> bool:
 		var btns: Variant = bv.get("_buttons")
 		if btns == null or btns.get_child_count() == 0:
 			_failures.append("la Battaglia non mostra nessun pulsante")
+		# e i bersagli devono essere pre-assegnati: senza, premere SPAZIO
+		# darebbe una fase in cui non spara nessuno, che sembra rotta
+		var tg: Dictionary = bv.get("targeting")
+		if tg.is_empty():
+			_failures.append("nessun bersaglio pre-assegnato: "
+				+ "la fase di fuoco partirebbe muta")
 
 	var before := st.phase
 	var before_round := st.round_number
@@ -65,6 +71,15 @@ func _process(_delta: float) -> bool:
 		return _done()
 
 	if st.ended:
+		# la Battaglia deve aver sparato davvero: se il registro non contiene
+		# nessun attacco, le fasi sono avanzate a vuoto
+		var fired := false
+		for line in st.log:
+			if String(line).contains("raggio"):
+				fired = true
+		if not fired:
+			_failures.append("nessun attacco nel registro: "
+				+ "le fasi avanzano ma non spara nessuno")
 		if _phases_seen.size() < 4:
 			_failures.append("la Battaglia e' finita senza passare da tutte "
 				+ "le fasi: viste solo %s" % ", ".join(_phases_seen))
