@@ -91,9 +91,25 @@ o `cd` esplicito in ogni invocazione.
 Va dimensionato a mano (`size = get_viewport_rect().size`). E **non** mettere
 anche un preset di ancoraggio: i due meccanismi litigano e Godot avvisa.
 
-### `draw_texture_rect()` in `_draw()` disegna rettangoli bianchi
-Su questo renderer (`gl_compatibility`). Le pedine sono nodi `TextureRect`, non
-disegni. Verificato che i dati della texture erano corretti campionando i pixel.
+### ~~`draw_texture_rect()` in `_draw()` disegna rettangoli bianchi~~ — FALSO
+Era scritto qui, ed era sbagliato. La causa vera: **le texture salgono in VRAM
+al primo disegno**, e chi guardava era uno screenshot scattato troppo presto.
+Con una cache al posto di un `load()` per fotogramma, dal secondo fotogramma si
+vedono benissimo. Le pedine della Battaglia ora si disegnano in `_draw()`.
+
+### I figli di un `Control` disegnano SOPRA il suo `_draw()`
+E' la regola che rendeva invisibili il badge dei Colpi, la velatura FUMO e il
+bordo di selezione, quando le pedine erano nodi `TextureRect`: le sovrapposizioni
+venivano disegnate *prima* e finivano sotto. Nessuno se n'era accorto perche'
+per vederlo serve una nave danneggiata sullo schermo.
+
+La stessa regola, usata al contrario, e' quella che mette `BattleFX` sopra
+tutto: si aggiunge come figlio DOPO `_build_ui()`.
+
+### I `.wav` si importano compressi in QOA
+Quindi impostare `loop_end` a runtime contando i byte di `AudioStreamWAV.data`
+da' un punto di ripetizione sbagliato. Il ciclo va messo nel file `.import`
+(`edit/loop_mode=1`), come per `assets/audio/fire.wav`.
 
 ### L'export macOS richiede ETC2 ASTC
 `rendering/textures/vram_compression/import_etc2_astc=true` in `project.godot`,
@@ -340,59 +356,35 @@ RB p.57: gli effetti si applicano dopo che TUTTE le navi hanno attaccato
 (eccezione: Round Uno dopo una SORPRESA con TF Attiva più veloce — già
 implementata come `surprise_first_strike`).
 
-### 5.2 PRIORITÀ ALTA — le Regole Avanzate di Battaglia (in corso)
+### 5.2 ~~le Regole Avanzate di Battaglia~~ — FATTO
 
-`docs/regolamento/(2) Atlantic Chase ADV RB ITA.pdf`. **Niente di quel
-fascicolo è nel codice.** Verificato: nessuna traccia di attitudini, Snafu,
-Verifiche di Disimpegno, effetti speciali, Confusione.
+Motore completo e collegato: attitudini, Tabella dei Cannoni a due colonne,
+Effetti Speciali, Tabelle dei Risultati, Effetti Duraturi, Disingaggio, Snafu,
+Confusione, Battaglia Estesa, Inseguimento.
 
-Non è opzionale come sembra: gli schieramenti dei mini-scenari e degli scenari
-solitari che ho già importato **contengono i marcatori di attitudine**
-(`CLOSING`, `RUNNING`, `ACQUIRING`) e li sto ignorando. Vedi le immagini nel
-fascicolo scenari alle pagine dei MS.
+**Si accendono con la casella nella schermata iniziale.** Erano gia' complete e
+verdi nei test mentre `BattleState.advanced` restava a `false` e nessuno lo
+metteva mai a `true`: circa 240 verifiche coprivano codice che in partita non
+girava. Se tocchi questa zona, ricordati che `tools/smoke_ui.gd -- adv` esiste
+apposta per impedire che ricapiti.
 
-Da implementare, nell'ordine in cui il fascicolo li introduce:
-- ~~**Attitudini** (Closing / Running / Acquiring)~~ — **FATTO**, vedi
-  `core/battle/attitude.gd` e `tests/unit/test_attitude.gd`. Restano da
-  collegare alla *vista* di Battaglia: la fase dell'Attitudine (nuova prima
-  fase del Round) non esiste ancora nell'interfaccia, e `Gunnery` non usa
-  ancora la colonna Acquisizione né la divisione del fuoco.
-- **Tabella del Fuoco di Cannoni avanzata**: ha due colonne
-  (Acquisizione / Avvicinamento-Corsa-Dividere) al posto di una. Sta nelle
-  *Tabelle di Aiuto al Gioco Avanzato*, da leggere dal PDF inglese.
-- **Fermo**, nuovo tipo di velocità
-- **Inseguimento** durante la Manovra (`Attitude.can_pursue` già c'è)
-- **Battaglia Estesa** (Round extra)
-- **Snafu Check** a inizio Battaglia (molti MS hanno istruzioni speciali che lo
-  modificano — sono già trascritte in `core/data/victory/MS*.json`, nelle note)
-- **Verifica di Disimpegno** a fine Battaglia, con i risultati `port` / `scuttle` / `oil`
-- **Effetti speciali** (una nave "azzoppata" con le regole avanzate è anche una
-  che ha subito un effetto speciale — lo dicono le note dei MS)
-- **Marcatore Confusione**, **Inseguire** per gli Squadroni DD
+Le griglie mancanti sono state prese dalle due facce del player aid avanzato
+(`docs/regolamento/AC_Adv_PlayerAid_A.pdf` e `_B.pdf`).
 
-### 5.3 PRIORITÀ MEDIA — effetti visivi e sonori in Battaglia
+### 5.3 ~~effetti visivi e sonori in Battaglia~~ — FATTO
 
-Oggi la Battaglia è corretta ma muta: si preme un tasto e appare una riga di
-testo nel registro. Da aggiungere (richiesta esplicita dell'utente):
-- **salve di cannoni**: una traccia dalla nave che spara a quella colpita,
-  colorata secondo il raggio (le sei zone hanno già i loro `Rect2` in
-  `battle_view._bands`, quindi le posizioni ci sono già)
-- **colonne d'acqua** per i mancati / *splash*, **fuoco e fumo** sulle navi
-  danneggiate, **affondamento** (la pedina che scende e sparisce)
-- **scie di siluri** dalla zona Ravvicinata
-- **suoni**: cannonata, esplosione, siluro, allarme
-- pausa fra l'attacco e l'applicazione dei Colpi, così si vede cosa succede
-  invece di trovarsi il risultato già fatto
+`ui/battle_view/battle_fx.gd` e `ui/battle_view/sfx.gd`. Vampe, traccianti,
+schizzi, esplosioni con schegge e fumo, scie di siluri, affondamenti, incendi
+che ondeggiano; suoni **sintetizzati** da `tools/make_sounds.py` con numpy
+(nessun campione di terzi, seme fisso, si rigenerano).
 
-Nota di metodo: gli effetti vanno in `ui/battle_view/`, **non** nel motore. Il
-motore restituisce già tutto quello che serve — `Gunnery.attack()` ritorna
-`{ok, hits, target, firer, ...}` e `Battle.gunnery_phase()` l'elenco completo
-dei risultati. Basta animarli.
+Due scelte da rispettare se ci metti mano:
+- gli effetti stanno nella *vista*, mai nel motore;
+- **non fermano il gioco e non mangiano i tasti.** SPAZIO durante una bordata
+  la salta *e* avanza. Un tasto che non risponde perche' c'e' un'animazione e'
+  il modo piu' rapido di far odiare gli effetti.
 
-Per generare eventuali immagini serve ComfyUI (vedi `tools/make_art.py`); per i
-suoni non c'è ancora niente in progetto.
-
-### 5.4 PRIORITÀ MEDIA — finire il modo solitario
+### 5.4 ← SEI QUI. E' L'UNICA COSA RIMASTA. Finire il modo solitario
 
 Fatto: motore delle tabelle (`SoloTable`, `SoloOpponent`), Task Force **non
 identificate**, e le tabelle di **BL1, BL2, BL3** trascritte per intero.
