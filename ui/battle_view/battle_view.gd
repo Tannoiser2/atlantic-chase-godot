@@ -60,6 +60,10 @@ var _ship_rects: Array = []          ## [{rect, ship}]
 ## troppo presto. Ricaricare la texture a ogni _draw() con load() peggiorava le
 ## cose; questa cache la tiene, e dal secondo fotogramma in poi si vede.
 var _tex_cache: Dictionary = {}
+
+## Effetti visivi e sonori. Vivono sopra la vista e non fermano il gioco.
+var _fx: BattleFX = null
+var _sfx: Sfx = null
 ## Chi spara a chi, deciso dal GIOCATORE. Nave che spara -> bersaglio.
 ##
 ## Prima questa vista chiamava sempre Battle.auto_targeting(), che il motore
@@ -97,6 +101,15 @@ func setup(p_battle: Battle) -> void:
 	size = get_viewport_rect().size
 	get_viewport().size_changed.connect(_on_viewport_resized)
 	_build_ui()
+	# Il livello degli effetti va aggiunto DOPO _build_ui(), se no i pannelli
+	# della barra dei comandi gli finiscono sopra e le esplosioni spariscono
+	# dietro i pulsanti.
+	_sfx = Sfx.new()
+	add_child(_sfx)
+	_fx = BattleFX.new()
+	_fx.sfx = _sfx
+	add_child(_fx)
+	_fx.klaxon()
 	_preassign()
 	refresh()
 
@@ -457,6 +470,9 @@ func _draw() -> void:
 			Vector2(area.position.x + area.size.x, mid),
 			Color(1, 0.9, 0.4, 0.85), 3.0)
 	_draw_targeting()
+	# gli incendi si ridisegnano da soli fotogramma per fotogramma, ma devono
+	# sapere DOVE stanno le pedine, e i rettangoli esistono solo dopo questo giro
+	_update_fires()
 
 
 ## Le linee di fuoco: chi spara a chi, disegnato mentre si decide.
@@ -465,6 +481,7 @@ func _draw() -> void:
 ## del giocatore. Con le linee si vede a colpo d'occhio chi ha gia' un
 ## bersaglio, chi ne e' rimasto senza, e se si sta concentrando o dividendo il
 ## fuoco - che e' esattamente la decisione da prendere.
+
 func _draw_targeting() -> void:
 	if not _is_targeting_phase():
 		return
@@ -650,6 +667,82 @@ func _draw_effect_chips(r: Rect2, s: Ship, font: Font) -> void:
 		x += chip.size.x + 4.0
 
 
+# --------------------------------------------------------- effetti --
+
+## Chi era a galla, e dove, prima che la fase risolvesse.
+##
+## I rettangoli di _rect_of() sono quelli dell'ultimo _draw(): per una nave che
+## sta per affondare vanno presi PRIMA di risolvere la fase, se no il motore
+## l'ha gia' tolta dalla sua zona e non c'e' piu' nessun rettangolo da cui
+## farla affondare.
+func _afloat_snapshot() -> Dictionary:
+	var out := {}
+	for s in state.all_ships():
+		if not s.sunk:
+			out[s] = _rect_of(s)
+	return out
+
+
+## Traduce i risultati di una fase in vampe, traccianti e schizzi.
+##
+## Il motore non sa nulla di tutto questo e non deve saperlo: restituisce
+## Dictionary con chi ha sparato, a chi, e com'e' andata. Qui si guarda solo
+## quello.
+func _play_attacks(results: Array, before: Dictionary, torpedo: bool) -> void:
+	if _fx == null or results.is_empty():
+		return
+	var shots: Array = []
+	for a_v: Variant in results:
+		var a: Dictionary = a_v
+		if not bool(a.get("ok", false)):
+			continue
+		var firer: Ship = a["firer"]
+		var target: Ship = a["target"]
+		var fr: Rect2 = before.get(firer, _rect_of(firer))
+		var tr: Rect2 = before.get(target, _rect_of(target))
+		if fr.size == Vector2.ZERO or tr.size == Vector2.ZERO:
+			continue
+		shots.append({
+			"from": fr.get_center(), "to": tr.get_center(),
+			"hit": int(a.get("hits", 0)) > 0,
+			"special": bool(a.get("special", false)),
+			"label": String(a.get("label", "")),
+		})
+	if shots.is_empty():
+		return
+	if torpedo:
+		_fx.torpedoes(shots)
+	else:
+		_fx.salvo(shots)
+
+	# le navi che sono affondate in questa fase: l'affondamento parte quando la
+	# bordata e' finita, se no si vedrebbe una nave colare a picco mentre le
+	# stanno ancora sparando
+	var when := float(shots.size()) * BattleFX.SHOT_STAGGER + 0.4
+	for s_v: Variant in before.keys():
+		var s: Ship = s_v
+		if s.sunk:
+			_fx.sinking(before[s] as Rect2, when)
+
+
+## Le navi che bruciano, con la fiamma sopra la pedina. Si aggiorna a ogni
+## ridisegno perche' un incendio puo' nascere e spegnersi in qualunque fase.
+func _update_fires() -> void:
+	if _fx == null:
+		return
+	var pts: Array[Vector2] = []
+	for r_v: Variant in _ship_rects:
+		var d: Dictionary = r_v
+		var s: Ship = d["ship"]
+		for e_v: Variant in s.special_effects:
+			if String(e_v).contains("Incendio"):
+				var r: Rect2 = d["rect"]
+				pts.append(Vector2(r.position.x + r.size.x * 0.5,
+					r.position.y + 6.0))
+				break
+	_fx.set_fires(pts)
+
+
 ## Le pedine si ricaricano a ogni ridisegno: load() rilegge dal disco ogni
 ## volta, e con una ventina di navi su schermo si sente.
 func _counter_texture(s: Ship) -> Texture2D:
@@ -800,6 +893,12 @@ func _advance_phase() -> void:
 	if state.ended:
 		closed.emit()
 		return
+	# Se c'e' ancora una bordata in volo la si butta via e si tira dritto: il
+	# tasto NON viene mangiato. Un'animazione che si prende una pressione di
+	# SPAZIO sembra un gioco che non risponde, ed e' il modo piu' veloce di far
+	# odiare gli effetti che si sono appena aggiunti.
+	if _fx != null and _fx.busy():
+		_fx.skip()
 	match state.phase:
 		BattleState.Phase.ATTITUDE:
 			# le attitudini le ha gia' scritte il giocatore cliccando le navi;
@@ -823,7 +922,9 @@ func _advance_phase() -> void:
 				state.note("Nessuna nave ha un bersaglio assegnato: "
 					+ "nessuno apre il fuoco.")
 			else:
-				battle.gunnery_phase(g)
+				var afloat := _afloat_snapshot()
+				var res := battle.gunnery_phase(g)
+				_play_attacks(res, afloat, false)
 			targeting.clear()
 			_assigning = null
 			if not state.ended:
@@ -834,7 +935,9 @@ func _advance_phase() -> void:
 			if t.is_empty():
 				state.note("Nessun lancio di siluri.")
 			else:
-				battle.torpedo_phase(t)
+				var afloat := _afloat_snapshot()
+				var res := battle.torpedo_phase(t)
+				_play_attacks(res, afloat, true)
 			targeting.clear()
 			_assigning = null
 			if not state.ended:

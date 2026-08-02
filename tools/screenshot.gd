@@ -33,6 +33,15 @@ func _initialize() -> void:
 	_args = args
 
 
+## A che fotogramma arriva l'ULTIMA pressione di SPAZIO. Lo scatto e' al 34:
+## piu' e' vicino, piu' presto si coglie la bordata. "at:N" lo sposta.
+func _late_frame() -> int:
+	for a in _args:
+		if a.begins_with("at:"):
+			return int(a.substr(3))
+	return 32
+
+
 func _process(_delta: float) -> bool:
 	_frames += 1
 	# la configurazione va fatta dopo _ready() della scena, non in _initialize()
@@ -68,19 +77,30 @@ func _process(_delta: float) -> bool:
 		_root_node._do_time_lapse()
 	if _frames == 6 and _args.size() >= 6 and _args[5] == "help":
 		_root_node._toggle_help()
-	# "rounds:N": preme SPAZIO N volte prima dello scatto, per fotografare una
-	# Battaglia a meta' invece che allo schieramento
-	if _frames == 8:
+	# "rounds:N": preme SPAZIO N volte per portare la Battaglia avanti invece di
+	# fotografarla allo schieramento. Le prime N-1 pressioni sono subito, l'ULTIMA
+	# arriva due fotogrammi prima dello scatto: e' l'unico modo di cogliere una
+	# bordata in volo, visto che _advance_phase salta gli effetti ancora in corso.
+	if _frames == 8 or _frames == _late_frame():
 		for a in _args:
-			if a.begins_with("rounds:"):
-				for n in int(a.substr(7)):
-					var k := InputEventKey.new()
-					k.keycode = KEY_SPACE
-					k.pressed = true
-					_root_node._unhandled_input(k)
+			if not a.begins_with("rounds:"):
+				continue
+			var n := int(a.substr(7))
+			var times := (n - 1) if _frames == 8 else 1
+			for i2 in times:
+				var k := InputEventKey.new()
+				k.keycode = KEY_SPACE
+				k.pressed = true
+				_root_node._unhandled_input(k)
 	if _frames == 26 and _root_node != null and _root_node.get("_battle_view") != null:
 		_root_node._battle_view.queue_redraw()
-	if _frames < 34:
+	# "wait:N" ritarda lo scatto: serve a cogliere uno schizzo o un'esplosione,
+	# che arrivano qualche decimo dopo la bordata
+	var shot_at := 34
+	for a in _args:
+		if a.begins_with("wait:"):
+			shot_at = int(a.substr(5))
+	if _frames < shot_at:
 		return false
 	var img := root.get_texture().get_image()
 	var err := img.save_png(_out)
