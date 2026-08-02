@@ -14,6 +14,8 @@ enum Mode { PLAY, EDITOR }
 
 const SCENARIO_DIR := "res://core/data/scenarios/"
 
+signal _hex_choice_made(h: Vector2i)
+
 var graph: MapGraph
 var state: GameState
 var log: CommandLog
@@ -59,6 +61,8 @@ var solo: SoloOpponent = null
 
 var _messages: Array[String] = []
 var _battle_post_time_lapse: Array[TaskForce] = []
+var _hex_choice_active: bool = false
+var _hex_choice_options: Dictionary = {}
 
 
 func _ready() -> void:
@@ -230,6 +234,14 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _on_key(k: InputEventKey) -> void:
+	if _hex_choice_active and k.keycode == KEY_ESCAPE:
+		_hex_choice_active = false
+		_hex_choice_options.clear()
+		board.set_highlight({})
+		_msg("Scelta esagono annullata.")
+		_hex_choice_made.emit(Vector2i.MAX)
+		_refresh()
+		return
 	match k.keycode:
 		KEY_Z:
 			if k.ctrl_pressed or k.meta_pressed:
@@ -730,6 +742,15 @@ func _nearest_enemy(tf: TaskForce) -> TaskForce:
 
 
 func _on_left_click(h: Vector2i, shift: bool) -> void:
+	if _hex_choice_active:
+		if _hex_choice_options.has(h):
+			_hex_choice_active = false
+			_hex_choice_options.clear()
+			board.set_highlight({})
+			_hex_choice_made.emit(h)
+		else:
+			_msg("Scegli uno degli esagoni evidenziati; ESC annulla.")
+		return
 	if mode == Mode.EDITOR:
 		_editor_click(h, shift)
 		return
@@ -1147,8 +1168,13 @@ func _solo_roll_action(auto: bool = false) -> void:
 		return
 	if auto:
 		_msg("Solitario: tiro automatico della Tabella delle Azioni. "
-			+ "Applica la procedura; le scelte discorsive restano al giocatore.")
-	var mods := await _solo_modifiers(t)
+			+ "L'AI applica la procedura senza aprire scelte manuali.")
+	var mods: Array = []
+	if auto:
+		if not t.modifiers.is_empty():
+			_msg("Solitario: modificatori automatici non inferiti; tiro senza modificatori.")
+	else:
+		mods = await _solo_modifiers(t)
 	var result := solo.act(state.rng, _solo_selector_for(tid), mods)
 	_msg("Solitario - %s (%s)" % [t.title, _solo_selector_label(tid)])
 	for line in SoloTable.describe(result).split("\n"):
@@ -1204,6 +1230,7 @@ func _resolve_solo_ai_action(decision: Dictionary) -> void:
 		_msg("Solitario AI: azione annullata da Interruzione.")
 		log.record("Solitario AI: %s annullata" % label)
 		state.changed.emit()
+		_return_to_solo_player()
 		return
 	var pending_battle := Results.Battle.NONE
 	for code_v: Variant in res["results"] as Array:
@@ -1216,6 +1243,14 @@ func _resolve_solo_ai_action(decision: Dictionary) -> void:
 	state.changed.emit()
 	if pending_battle != Results.Battle.NONE:
 		_open_battle(pending_battle, active, target, dec.target_hex)
+	else:
+		_return_to_solo_player()
+
+
+func _return_to_solo_player() -> void:
+	var player := _solo_player_side()
+	if player >= 0 and state.initiative != player:
+		_change_initiative_to(player)
 
 
 func _solo_roll_any_table() -> void:
@@ -1706,14 +1741,12 @@ func _do_time_lapse() -> void:
 		# RB p.14: la Stazione va in UNO QUALSIASI degli esagoni appena liberati
 		var hex_choice := freed[0]
 		if freed.size() > 1:
-			var opts2: Array = []
-			for h in freed:
-				opts2.append({"label": "Esagono %s" % str(h), "detail": ""})
-			var j: int = await Choice.ask(self, "Dove poni la Stazione?",
-				"La Traiettoria ha esaurito i segmenti. La Stazione puo' andare "
-				+ "in uno qualsiasi degli esagoni appena liberati.", opts2, false)
-			if j >= 0:
-				hex_choice = freed[j]
+			var picked := await _pick_hex_on_map(freed,
+				"Dove poni la Stazione? Clicca uno degli esagoni evidenziati.")
+			if picked == Vector2i.MAX:
+				_msg("Scelta annullata: Stazione nel primo esagono liberato.")
+			else:
+				hex_choice = picked
 		traj.become_station(hex_choice)
 		note = " -> diventa Stazione in %s" % str(hex_choice)
 	_msg("Scorrere del Tempo (%s, meteo %s): richiesti %d, %s%s"
@@ -1723,6 +1756,23 @@ func _do_time_lapse() -> void:
 	log.record("Scorrere del Tempo (%s)" % selected_tf.display_name())
 	state.changed.emit()
 	_refresh()
+
+
+func _pick_hex_on_map(hexes: Array, prompt: String) -> Vector2i:
+	var highlights := {}
+	for h_v: Variant in hexes:
+		var h: Vector2i = h_v
+		highlights[h] = Color(0.2, 0.95, 0.45, 0.36)
+	_hex_choice_options = highlights.duplicate()
+	_hex_choice_active = true
+	board.set_highlight(highlights)
+	_msg(prompt)
+	_refresh()
+	var picked: Vector2i = await _hex_choice_made
+	_hex_choice_active = false
+	_hex_choice_options.clear()
+	board.set_highlight({})
+	return picked
 
 
 ## Scelta della nave bersaglio quando una regola la lascia al giocatore.

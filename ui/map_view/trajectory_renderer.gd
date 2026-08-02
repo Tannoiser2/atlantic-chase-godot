@@ -194,6 +194,8 @@ func _draw_task_force(tf: TaskForce) -> void:
 		# capi: un trattino perpendicolare rende evidente dove si puo' estendere
 		_draw_end_cap(line[0], line[1], col, w)
 		_draw_end_cap(line[line.size() - 1], line[line.size() - 2], col, w)
+		_draw_end_badge(line[0], "T", col, is_sel)
+		_draw_end_badge(line[line.size() - 1], "C", col, is_sel)
 	elif line.size() == 1:
 		draw_circle(line[0], w * 1.2, col)
 
@@ -226,6 +228,15 @@ func _draw_end_cap(tip: Vector2, prev: Vector2, col: Color, w: float) -> void:
 	# lungo un terzo di esagono sembrerebbe un martello
 	var perp := dir.orthogonal() * graph.inradius * 0.20
 	draw_line(tip - perp, tip + perp, col, w * 1.1, true)
+
+
+func _draw_end_badge(pos: Vector2, text: String, col: Color, selected: bool) -> void:
+	var r := graph.inradius * (0.18 if selected else 0.14)
+	draw_circle(pos, r * 1.45, Color(1, 1, 1, 0.88 if selected else 0.68))
+	draw_circle(pos, r, col)
+	_draw_label(pos - Vector2(0, r * 0.18), text,
+		Color.BLACK if col.get_luminance() > 0.5 else Color.WHITE,
+		0.20 if selected else 0.16)
 
 
 func _draw_station(c: Vector2, col: Color, selected: bool, tf: TaskForce) -> void:
