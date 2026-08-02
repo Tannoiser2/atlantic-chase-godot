@@ -172,11 +172,15 @@ modello già esistente. Sarebbe stata una regola inventata ogni volta.
   BL2 e BL3 trascritte
 
 **Non finito, e perché:**
-- le **griglie** degli Effetti Duraturi e del Disingaggio stanno su una carta
-  *player aid* che non è dentro `AC_Adv_Battle_Rules_May_4_2021.pdf`. Ci sono
-  le procedure e il significato di ogni risultato; manca solo "quale somma dà
-  quale risultato". Se la carta salta fuori, sono due tabelle da riempire in
-  `core/battle/lingering.gd` e niente altro da cambiare.
+- le **griglie** degli Effetti Duraturi, del Disingaggio e della Verifica
+  Snafu. **Verificato pagina per pagina**: `AC_Adv_Battle_Rules_May_4_2021.pdf`
+  contiene *una sola* faccia del player aid — p.16, *"Advanced Battle Tables"*,
+  con Fuoco, Risultati Speciali, Cintura, Sovrastruttura, Linea di
+  Galleggiamento, Siluri e modificatori. **L'altra faccia della carta, con
+  Snafu / Effetti Duraturi / Disingaggio, non è nel PDF.** I *testi* di quelle
+  regole ci sono (pp. 3, 11, 14) e sono trascritti; mancano solo le griglie
+  "quale somma dà quale risultato". Se la seconda faccia salta fuori, sono tre
+  tabelle da riempire in `core/battle/lingering.gd` e nient'altro da cambiare.
 - la **fase dell'Attitudine** esiste nel motore ma non nell'interfaccia: oggi
   le attitudini si impostano solo dallo schieramento dello scenario, e non si
   possono cambiare a ogni Round come vuole la regola.
@@ -262,7 +266,12 @@ separato. Chi collega gli effetti speciali deve partire da lì.
 3. ~~**Effetti Duraturi**~~ e ~~**Disingaggio**~~ — procedure **FATTE**,
    mancano solo le due griglie (vedi sopra). Da collegare al ciclo del Round in
    `Battle`: oggi nessuno chiama `Lingering.lingering_checks()`.
-4. **Verifica Snafu** al piazzamento e **Battaglia Estesa** (Round extra)
+4. **Battaglia Estesa** — regola **completa e già letta**, va solo scritta:
+   la Battaglia dura un Round in più se il Snafu dà "Buona Visibilità" con
+   meteo Buono, **e** un altro Round in più se alla fine dell'Ultimo Round
+   nessuna nave è in Corsa (le due condizioni si sommano). Il fascicolo dà
+   anche la tabella riassuntiva delle durate, da 1 a 5 Round (p.13).
+   La **Verifica Snafu** invece aspetta la griglia mancante.
 5. **Inseguimento** (`Attitude.can_pursue` c'è già) e **Confusione**
 6. L'**Attacco Furtivo opzionale** delle avanzate (un Colpo diventa S.R., una
    Battaglia diventa C.R.) e le **Manovre Evasive** in Battaglia, entrambe
