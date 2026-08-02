@@ -12,10 +12,10 @@ Questo file dice **da dove ripartire e cosa non rifare**.
 
 Versione digitale di *Atlantic Chase* (GMT Games, 2020) in **Godot 4.7**,
 GDScript. Motore di regole puro e testabile headless, interfaccia sopra.
-**1637 verifiche su 14 suite, tutte verdi.** Repository `Tannoiser2/atlantic-chase-godot`, branch `master`.
+**1672 verifiche su 15 suite, tutte verdi.** Repository `Tannoiser2/atlantic-chase-godot`, branch `master`.
 
 ```bash
-godot --headless --path . --script res://tests/run_tests.gd   # 1637 verifiche
+godot --headless --path . --script res://tests/run_tests.gd   # 1672 verifiche
 godot --path . --script res://tools/smoke_ui.gd               # prova di fumo GUI
 sh tools/build_macos.sh                                       # app per macOS
 ```
@@ -172,9 +172,11 @@ modello già esistente. Sarebbe stata una regola inventata ogni volta.
   BL2 e BL3 trascritte
 
 **Non finito, e perché:**
-- il **Controllo Danni / Effetti Duraturi** ha una tabella che non ho letto per
-  intero (fascicolo avanzato p.12). Non l'ho scritta a memoria: è meglio un
-  buco dichiarato di una regola inventata.
+- le **griglie** degli Effetti Duraturi e del Disingaggio stanno su una carta
+  *player aid* che non è dentro `AC_Adv_Battle_Rules_May_4_2021.pdf`. Ci sono
+  le procedure e il significato di ogni risultato; manca solo "quale somma dà
+  quale risultato". Se la carta salta fuori, sono due tabelle da riempire in
+  `core/battle/lingering.gd` e niente altro da cambiare.
 - la **fase dell'Attitudine** esiste nel motore ma non nell'interfaccia: oggi
   le attitudini si impostano solo dallo schieramento dello scenario, e non si
   possono cambiare a ogni Round come vuole la regola.
@@ -231,7 +233,14 @@ modello già esistente. Sarebbe stata una regola inventata ogni volta.
   `AC_Adv_Battle_Rules_May_4_2021.pdf`** — non un foglio separato. La catena del
   Fuoco avanzato è ora completa.
 
-**1637 verifiche su 14 suite.**
+- **Effetti Duraturi e Disingaggio** (`core/battle/lingering.gd`): procedure,
+  Controllo Danni (3 dadi, i due più alti, ma la nave non spara il Round dopo),
+  vulnerabilità tedesca opzionale (3 dadi, i due più **bassi**), Niente Radar
+  completo. **Le due griglie non ci sono**: stanno su una carta player aid che
+  non è dentro il PDF. `roll()` prepara il tiro, il giocatore legge la tabella,
+  `apply()` esegue il risultato — divisione onesta, non un'invenzione.
+
+**1672 verifiche su 15 suite.**
 
 #### Nota importante sui risultati avanzati
 In avanzato il risultato **non è più "quanti Colpi"** ma una casella di
@@ -250,8 +259,10 @@ separato. Chi collega gli effetti speciali deve partire da lì.
    fase del Round e nell'interfaccia non esiste. Il motore è pronto:
    `Attitude.setup_options()` dà le scelte legali,
    `Attitude.active_chooses_for_target()` dice chi sceglie dopo una Sorpresa.
-3. **Fase degli Effetti Duraturi** (Controllo Danni) e **Battaglia Estesa**
-4. **Verifica Snafu** al piazzamento e **Verifica di Disingaggio** all'uscita
+3. ~~**Effetti Duraturi**~~ e ~~**Disingaggio**~~ — procedure **FATTE**,
+   mancano solo le due griglie (vedi sopra). Da collegare al ciclo del Round in
+   `Battle`: oggi nessuno chiama `Lingering.lingering_checks()`.
+4. **Verifica Snafu** al piazzamento e **Battaglia Estesa** (Round extra)
 5. **Inseguimento** (`Attitude.can_pursue` c'è già) e **Confusione**
 6. L'**Attacco Furtivo opzionale** delle avanzate (un Colpo diventa S.R., una
    Battaglia diventa C.R.) e le **Manovre Evasive** in Battaglia, entrambe
