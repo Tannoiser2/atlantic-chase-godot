@@ -42,6 +42,9 @@ func run() -> void:
 	test_solo_ai_routes_around_information()
 	test_solo_ai_executes_trajectory_code()
 	test_solo_ai_declares_legal_attack()
+	test_solo_ai_bl2_t_creates_unknown()
+	test_solo_ai_bl3_completion_port_by_phase()
+	test_solo_ai_bl1_x_creates_unknown_hunter()
 	test_fueling()
 	test_solo_battle_behavior()
 
@@ -303,6 +306,68 @@ func test_solo_ai_declares_legal_attack() -> void:
 		"sceglie un'azione offensiva legale")
 	eq(r["active"], km, "la TF tedesca e' Attiva")
 	eq(r["target"], rn, "il Convoglio e' il bersaglio")
+
+
+func test_solo_ai_bl2_t_creates_unknown() -> void:
+	_begin("AI solitaria BL2: T crea una TF ignota")
+	var st := GameState.new(graph, 1)
+	st.scenario_name = "BL2 Contain and Destroy"
+	st.rng.push_forced([4])
+	var rn := TaskForce.new(1, TaskForce.Side.ROYAL_NAVY)
+	rn.ships.append(ShipRoster.shared().make("Convoy x3"))
+	rn.trajectory.become_station(Vector2i(15, -4))
+	st.add_task_force(rn)
+
+	var r := SoloAI.execute_code("T", st, graph, ActionEngine.load_default(),
+		{}, TaskForce.Side.KRIEGSMARINE)
+	true_(bool(r["ok"]), "la procedura produce una mossa")
+	eq(st.forces_of(TaskForce.Side.KRIEGSMARINE).size(), 1, "crea una TF tedesca")
+	true_(st.forces_of(TaskForce.Side.KRIEGSMARINE)[0].unidentified, "la TF e' ignota")
+	true_(st.forces_of(TaskForce.Side.KRIEGSMARINE)[0].length() > 0, "e traccia una rotta")
+
+
+func test_solo_ai_bl3_completion_port_by_phase() -> void:
+	_begin("AI solitaria BL3: C sceglie il porto della fase")
+	var st := GameState.new(graph, 1)
+	st.scenario_name = "BL3 Raiders of the North Sea"
+	var rn := TaskForce.new(1, TaskForce.Side.ROYAL_NAVY)
+	rn.ships.append(ShipRoster.shared().make("Convoy x3"))
+	rn.trajectory.become_station(Vector2i(15, -5))
+	st.add_task_force(rn)
+
+	var early := SoloAI.execute_code("C", st, graph, ActionEngine.load_default(),
+		{}, TaskForce.Side.ROYAL_NAVY)
+	true_(bool(early["completion"]), "in Presto completa subito")
+	eq(String((early["completion_port"] as Dictionary)["name"]), "Methil",
+		"la tabella Presto usa Methil")
+
+	var st2 := GameState.new(graph, 1)
+	st2.scenario_name = "BL3 Raiders of the North Sea"
+	st2.solo_phase = SoloOpponent.Phase.LATE
+	var rn2 := TaskForce.new(1, TaskForce.Side.ROYAL_NAVY)
+	rn2.ships.append(ShipRoster.shared().make("Convoy x3"))
+	rn2.trajectory.become_station(Vector2i(15, -5))
+	st2.add_task_force(rn2)
+	var late := SoloAI.execute_code("C", st2, graph, ActionEngine.load_default(),
+		{}, TaskForce.Side.ROYAL_NAVY)
+	eq(String((late["completion_port"] as Dictionary)["name"]), "Scapa Flow",
+		"la tabella Tardi usa Scapa Flow")
+
+
+func test_solo_ai_bl1_x_creates_unknown_hunter() -> void:
+	_begin("AI solitaria BL1: X crea un cacciatore ignoto")
+	var st := GameState.new(graph, 1)
+	st.scenario_name = "BL1 Raiders of the North Atlantic"
+	var km := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
+	km.ships.append(ShipRoster.shared().make("Lutzow"))
+	km.trajectory.become_station(Vector2i(17, -5))
+	st.add_task_force(km)
+
+	var r := SoloAI.execute_code("X", st, graph, ActionEngine.load_default(),
+		{}, TaskForce.Side.ROYAL_NAVY)
+	true_(bool(r["ok"]), "la policy crea e muove una TF")
+	eq(st.forces_of(TaskForce.Side.ROYAL_NAVY).size(), 1, "crea una TF britannica")
+	true_(st.forces_of(TaskForce.Side.ROYAL_NAVY)[0].unidentified, "la TF creata e' ignota")
 
 
 ## In BL1 il giocatore e' il tedesco, e la tabella che conta e' quella del
