@@ -77,6 +77,9 @@ func _process(_delta: float) -> bool:
 		_root_node._do_time_lapse()
 	if _frames == 6 and _args.size() >= 6 and _args[5] == "help":
 		_root_node._toggle_help()
+	if _frames == 6 and _args.has("solo") and _root_node.solo != null:
+		_root_node._change_initiative_to(_root_node._solo_imaginary_side())
+		_root_node._kick_solo_opponent_turn("prova visiva")
 	# "rounds:N": preme SPAZIO N volte per portare la Battaglia avanti invece di
 	# fotografarla allo schieramento. Le prime N-1 pressioni sono subito, l'ULTIMA
 	# arriva due fotogrammi prima dello scatto: e' l'unico modo di cogliere una

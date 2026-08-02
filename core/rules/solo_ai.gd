@@ -77,6 +77,53 @@ static func apply_table_result(table_id: String, result: Dictionary,
 	return out
 
 
+## Condizioni che lo stato digitale puo' provare senza chiedere al giocatore.
+## Ritorna anche le condizioni non modellate: il registro deve distinguere
+## chiaramente "non applicabile" da "l'app non possiede ancora quel dato".
+static func automatic_modifiers(table: SoloTable, state: GameState,
+		imaginary_side: int) -> Dictionary:
+	var active: Array[String] = []
+	var explanations: Array[String] = []
+	var unresolved: Array[String] = []
+	for modifier in table.modifiers:
+		var label := String(modifier["label"])
+		var lower := label.to_lower()
+		var side := TaskForce.Side.ROYAL_NAVY if lower.contains("britann") \
+			else TaskForce.Side.KRIEGSMARINE
+		var count := 0
+		if lower.contains("danneggiat"):
+			for tf in state.forces_of(side):
+				for ship in tf.afloat_ships():
+					if ship.damaged and (not lower.contains("non convoglio o dd") \
+						or (ship.kind != Ship.Kind.CONVOY and ship.type_code != "DD")):
+						count += 1
+		if lower.contains("affondat") or lower.contains("distrutt"):
+			var sunk := state.sunk_count(side, lower.contains("convogli distrutti") \
+				or lower.contains("convoglio distrutto"))
+			count = maxi(count, sunk)
+		if lower.contains("nessun convoglio ha completato"):
+			count = 1 if state.convoys_completed == 0 else 0
+		if lower.contains("convoglio in gioco") and lower.contains("disperso"):
+			for tf in state.task_forces:
+				for ship in tf.afloat_ships():
+					if ship.kind == Ship.Kind.CONVOY and ship.dispersed:
+						count += 1
+		if lower.contains("due o piu' convogli distrutti"):
+			count = 1 if state.sunk_count(1 - imaginary_side, true) >= 2 else 0
+		if lower.contains("base aerea") or lower.contains("mine") \
+				or lower.contains("reazione aggressiva") \
+				or lower.contains("puo' essere intercettata"):
+			unresolved.append(label)
+			continue
+		for i in count:
+			active.append(label)
+		if count > 0:
+			explanations.append("%s x%d (%+d)" % [label, count,
+				int(modifier["value"]) * count])
+	return {"active": active, "explanations": explanations,
+		"unresolved": unresolved}
+
+
 static func _bl1_table_result(table_id: String, result: Dictionary,
 		state: GameState, graph: MapGraph, engine: ActionEngine,
 		port_control: Dictionary, side: int, subject: TaskForce) -> Dictionary:
@@ -571,6 +618,42 @@ static func _bl1(code: String, state: GameState, graph: MapGraph,
 				["Clyde", "Liverpool", "Portsmouth"])
 			return _complete_or_route_to_port(state, graph, port_control, convoy, port,
 				"Solitario AI BL1: Convoglio verso il porto britannico piu' vicino")
+		"B":
+			# AC Solo scenarios 2022 p.7: il cilindro rosso e' nel primo
+			# esagono a NE di Scapa Flow. La griglia calibrata lo identifica
+			# come (16,-6); non e' una posizione dedotta dalla geografia.
+			var blockade_hex := Vector2i(16, -6)
+			for tf in state.forces_of(side):
+				if tf.trajectory.is_station() \
+						and tf.trajectory.station_hex == blockade_hex:
+					return _bl1("X", state, graph, engine, port_control, side)
+			var ships: Array[String] = []
+			var used := _ship_names_in_play(state)
+			for i in 3:
+				var ca := _make_available_ship("CA", used)
+				if ca != null:
+					ships.append(ca.name)
+					used[ca.name] = true
+			var block := _create_force_in_hex(state, side, blockade_hex, ships,
+				"Blocco britannico")
+			var out := _empty("Solitario AI BL1 - B: creata %s con tre CA in %s; "
+				% [block.display_name(), str(blockade_hex)]
+				+ "la procedura ordina un altro tiro immediato sulla Tabella Azioni.")
+			out["ok"] = true
+			out["active"] = block
+			out["target_hex"] = blockade_hex
+			out["turn_kind"] = "setup"
+			out["roll_again"] = true
+			return out
+		"F":
+			var french := _force_with_ship_name(state, side, "Dunkerque")
+			if french == null:
+				return _bl1("C", state, graph, engine, port_control, side)
+			var german := _best_enemy_target(state, side, french)
+			if german == null:
+				return _bl1("C", state, graph, engine, port_control, side)
+			return _attack_or_route_selected(state, graph, engine, french, german,
+				"Solitario AI BL1: Azione francese verso la TF tedesca piu' vicina a un Convoglio")
 		"X":
 			var bc := _shortest_force_with_type(state, side, "BC", true)
 			if bc == null:
@@ -689,6 +772,7 @@ static func _empty(note: String = "") -> Dictionary:
 		"target_hex": Vector2i.MAX,
 		"completion": false,
 		"completion_port": {},
+		"turn_kind": "",
 		"pass_initiative": false,
 		"log": [] as Array[String],
 	}
@@ -884,9 +968,9 @@ static func _completion_or_route(state: GameState, graph: MapGraph,
 			var done := _empty("")
 			done["ok"] = true
 			done["completion"] = true
+			done["turn_kind"] = "completion"
 			done["active"] = tf
 			done["completion_port"] = opts[0]
-			done["pass_initiative"] = true
 			done["log"].append("Solitario AI: %s completa a %s."
 				% [tf.display_name(), String(opts[0]["name"])])
 			return done
@@ -917,9 +1001,9 @@ static func _complete_or_route_to_port(state: GameState, graph: MapGraph,
 			var done := _empty("")
 			done["ok"] = true
 			done["completion"] = true
+			done["turn_kind"] = "completion"
 			done["active"] = tf
 			done["completion_port"] = p
-			done["pass_initiative"] = true
 			done["log"].append("%s: %s completa a %s."
 				% [note, tf.display_name(), String(p["name"])])
 			return done
@@ -1023,7 +1107,7 @@ static func _route_toward_hex(state: GameState, graph: MapGraph,
 		else:
 			break
 	out["ok"] = added > 0
-	out["pass_initiative"] = true
+	out["turn_kind"] = "trajectory"
 	out["log"].append("%s %s aggiunge %d segmenti verso %s%s."
 		% [note, active.display_name(), added, str(goal),
 			" evitando Informazioni quando possibile" if bool(plan["avoids_info"]) else ""])
@@ -1288,6 +1372,22 @@ static func _create_force_at(state: GameState, graph: MapGraph, side: int,
 		var p: Dictionary = graph.ports[port_name]
 		tf.trajectory.become_station(p["hex"] as Vector2i)
 		tf.trajectory.station_port = port_name
+	state.add_task_force(tf)
+	return tf
+
+
+static func _create_force_in_hex(state: GameState, side: int, h: Vector2i,
+		ships: Array[String], force_name: String) -> TaskForce:
+	var tf := TaskForce.new(0, side)
+	tf.color = _color_for(side)
+	tf.slot = _next_slot(state, tf.color)
+	tf.name = force_name
+	for ship_name in ships:
+		var ship := ShipRoster.shared().make(ship_name)
+		if ship != null:
+			tf.ships.append(ship)
+	tf.recompute_speed()
+	tf.trajectory.become_station(h)
 	state.add_task_force(tf)
 	return tf
 

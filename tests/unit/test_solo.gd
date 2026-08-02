@@ -36,16 +36,21 @@ func run() -> void:
 	test_action_table_rows()
 	test_phase_switch()
 	test_phase_sync()
+	test_automatic_late_phase_triggers()
 	test_modifiers()
 	test_identify()
 	test_a1_identify_from_second_edition()
 	test_unidentified_speed()
 	test_solo_ai_routes_around_information()
 	test_solo_ai_executes_trajectory_code()
+	test_solo_trajectory_does_not_pass_initiative()
+	test_eliminated_force_leaves_map_and_is_remembered()
+	test_automatic_modifiers_count_each_ship()
 	test_solo_ai_declares_legal_attack()
 	test_solo_ai_bl2_t_creates_unknown()
 	test_solo_ai_bl3_completion_port_by_phase()
 	test_solo_ai_bl1_x_creates_unknown_hunter()
+	test_solo_ai_bl1_blockade_and_french_action()
 	test_solo_ai_b1_convoy_creates_and_routes()
 	test_solo_ai_b1_x_creates_unknown_interceptor()
 	test_solo_ai_x_suffix_prefers_ship_type()
@@ -233,6 +238,28 @@ func test_phase_sync() -> void:
 	eq(o.phase_reason, "", "la ragione Presto resta vuota")
 
 
+func test_automatic_late_phase_triggers() -> void:
+	_begin("inneschi automatici delle tabelle Tardi")
+	var bl2 := SoloOpponent.load_for("BL2 Contain and Destroy")
+	true_(bl2.goes_late_after("battle"), "BL2: Battaglia")
+	true_(bl2.goes_late_after("convoy_destroyed"), "BL2: Convoglio distrutto")
+	true_(bl2.goes_late_after("air_strike"), "BL2: Attacco Aereo")
+	false_(bl2.goes_late_after("stealth_attack"), "BL2: non Attacco Furtivo")
+	var bl3 := SoloOpponent.load_for("BL3 Raiders of the North Sea")
+	true_(bl3.goes_late_after("battle"), "BL3: Battaglia")
+	true_(bl3.goes_late_after("air_strike"), "BL3: Attacco Aereo")
+	false_(bl3.goes_late_after("convoy_destroyed"), "BL3: non Convoglio distrutto")
+	var n1 := SoloOpponent.load_for("N1 Operazione Wilfred")
+	true_(n1.goes_late_after("battle"), "N1: Battaglia")
+	true_(n1.goes_late_after("result_i"), "N1: risultato I")
+	false_(n1.goes_late_after("air_strike"), "N1: non Attacco Aereo")
+	var n2 := SoloOpponent.load_for("N2 Operazione Weser (nord)")
+	true_(n2.goes_late_after("battle"), "N2: Battaglia")
+	true_(n2.goes_late_after("stealth_attack"), "N2: Attacco Furtivo")
+	true_(n2.goes_late_after("aggressive_reaction"), "N2: Reazione Aggressiva")
+	false_(n2.goes_late_after("air_strike"), "N2: non Attacco Aereo")
+
+
 ## Il modificatore c'e' ma non si applica da solo: il motore non sa se una nave
 ## tedesca e' danneggiata finche' non glielo si dice.
 func test_modifiers() -> void:
@@ -347,7 +374,59 @@ func test_solo_ai_executes_trajectory_code() -> void:
 	var r := SoloAI.execute_code("T", st, graph, ActionEngine.load_default(), {}, km.side)
 	true_(bool(r["ok"]), "la policy esegue una mossa")
 	true_(km.length() > 0, "la TF del bot non resta ferma")
-	true_(bool(r["pass_initiative"]), "dopo la mossa restituisce il turno")
+	false_(bool(r["pass_initiative"]), "Traiettoria non viene trasformata in Passare")
+
+
+func test_solo_trajectory_does_not_pass_initiative() -> void:
+	_begin("AI solitaria: Traiettoria conserva le normali regole d'Iniziativa")
+	var st := GameState.new(graph, 1)
+	var bot := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
+	bot.unidentified = true
+	bot.trajectory.become_station(Vector2i(6, 0))
+	var enemy := TaskForce.new(2, TaskForce.Side.ROYAL_NAVY)
+	enemy.ships.append(ShipRoster.shared().make("Convoy x3"))
+	enemy.trajectory.become_station(Vector2i(9, 0))
+	st.add_task_force(bot)
+	st.add_task_force(enemy)
+	var decision := SoloAI.execute_code("T", st, graph,
+		ActionEngine.load_default(), {}, bot.side)
+	eq(String(decision["turn_kind"]), "trajectory", "la UI sa quale flusso applicare")
+	false_(bool(decision["pass_initiative"]), "il bot non cede automaticamente il turno")
+
+
+func test_eliminated_force_leaves_map_and_is_remembered() -> void:
+	_begin("TF eliminata: sparisce dalla mappa, perdita salvata")
+	var st := GameState.new(graph, 1)
+	var tf := TaskForce.new(7, TaskForce.Side.KRIEGSMARINE)
+	var ship := ShipRoster.shared().make("Lutzow")
+	ship.sunk = true
+	tf.ships.append(ship)
+	tf.trajectory.become_station(Vector2i(8, 0))
+	st.add_task_force(tf)
+	var removed := st.remove_eliminated_forces("prova")
+	eq(removed.size(), 1, "una TF rimossa")
+	eq(st.task_force(7), null, "non e' piu' selezionabile")
+	eq(st.forces_in(Vector2i(8, 0)).size(), 0, "non occupa piu' l'esagono")
+	eq(st.sunk_count(TaskForce.Side.KRIEGSMARINE), 1, "la perdita resta contata")
+	var restored := GameState.new(graph, 2)
+	restored.apply_dict(st.to_dict())
+	eq(restored.sunk_count(TaskForce.Side.KRIEGSMARINE), 1,
+		"la perdita sopravvive al salvataggio")
+
+
+func test_automatic_modifiers_count_each_ship() -> void:
+	_begin("tabelle solo: modificatore applicato per ogni nave")
+	var st := GameState.new(graph, 1)
+	var tf := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
+	for name in ["Lutzow", "Hipper"]:
+		var ship := ShipRoster.shared().make(name)
+		ship.damaged = true
+		tf.ships.append(ship)
+	st.add_task_force(tf)
+	var table := SoloOpponent.load_for("N6 Il Dilemma delle Operazioni").table("actions")
+	var inferred := SoloAI.automatic_modifiers(table, st, TaskForce.Side.KRIEGSMARINE)
+	eq((inferred["active"] as Array).size(), 2, "due condizioni attive, una per nave")
+	eq(table.modifier_total(inferred["active"]), 2, "+1 applicato due volte")
 
 
 func test_solo_ai_declares_legal_attack() -> void:
@@ -431,6 +510,24 @@ func test_solo_ai_bl1_x_creates_unknown_hunter() -> void:
 	true_(bool(r["ok"]), "la policy crea e muove una TF")
 	eq(st.forces_of(TaskForce.Side.ROYAL_NAVY).size(), 1, "crea una TF britannica")
 	true_(st.forces_of(TaskForce.Side.ROYAL_NAVY)[0].unidentified, "la TF creata e' ignota")
+
+
+func test_solo_ai_bl1_blockade_and_french_action() -> void:
+	_begin("AI solitaria BL1: Blocco e Azione francese")
+	var scenario := Scenario.load_by_id("BL1 Raiders of the North Atlantic")
+	var st := GameState.new(graph, 1)
+	st.apply_dict(scenario.to_state_dict())
+	var block := SoloAI.execute_code("B", st, graph, ActionEngine.load_default(),
+		scenario.port_control(), TaskForce.Side.ROYAL_NAVY)
+	true_(bool(block["ok"]), "B crea la TF di Blocco")
+	eq(block["target_hex"], Vector2i(16, -6), "la Stazione usa l'esagono stampato")
+	eq((block["active"] as TaskForce).afloat_ships().size(), 3, "il Blocco contiene tre CA")
+	true_(bool(block["roll_again"]), "B ordina un altro tiro immediato")
+	var french := SoloAI.execute_code("F", st, graph, ActionEngine.load_default(),
+		scenario.port_control(), TaskForce.Side.ROYAL_NAVY)
+	true_((french.get("active", null) as TaskForce).ships.any(
+		func(ship: Ship) -> bool: return ship.name == "Dunkerque"),
+		"F seleziona davvero la Forza francese")
 
 
 func test_solo_ai_b1_convoy_creates_and_routes() -> void:

@@ -75,6 +75,12 @@ var solo_phase_reason: String = ""
 ## vivere nello stato perche' il Rifornimento li rimuove o li sposta.
 var rendezvous_markers: Array[Dictionary] = []
 
+## Perdite gia' rimosse dalla mappa. Servono alle tabelle solitarie che
+## distinguono "Danneggiata in gioco" da "affondata in precedenza": lasciare
+## una TF eliminata sulla mappa conservava l'informazione, ma mentiva al
+## giocatore. La storia delle perdite e' il posto corretto dove conservarla.
+var casualties: Array[Dictionary] = []
+
 
 func add_vp(side: int, amount: float, reason: String = "") -> void:
 	vp[side] = float(vp.get(side, 0.0)) + amount
@@ -143,10 +149,58 @@ func remove_task_force(tf: TaskForce) -> bool:
 	return true
 
 
+## Toglie dalla mappa le TF senza piu' navi a galla e conserva una fotografia
+## delle perdite. Una TF non identificata e una TF senza ruolino non sono
+## eliminate: in entrambi i casi l'assenza di navi e' un dato ancora ignoto.
+func remove_eliminated_forces(reason: String = "") -> Array[Dictionary]:
+	var removed: Array[Dictionary] = []
+	for tf in task_forces.duplicate():
+		if not tf.is_eliminated():
+			continue
+		var names: Array[String] = []
+		var convoys := 0
+		for ship in tf.ships:
+			names.append(ship.name)
+			if ship.kind == Ship.Kind.CONVOY:
+				convoys += 1
+		var loss := {
+			"tf_id": tf.id,
+			"tf_name": tf.display_name(),
+			"side": tf.side,
+			"ships": names,
+			"convoys": convoys,
+			"reason": reason,
+		}
+		casualties.append(loss)
+		removed.append(loss)
+		remove_task_force(tf)
+	return removed
+
+
+func sunk_count(side: int, convoys_only: bool = false) -> int:
+	var total := 0
+	# Navi affondate dentro una TF che ha ancora superstiti restano nel suo
+	# ruolino; le TF interamente eliminate sono invece nella cronologia sotto.
+	for tf in task_forces:
+		if tf.side != side:
+			continue
+		for ship in tf.ships:
+			if ship.sunk and (not convoys_only or ship.kind == Ship.Kind.CONVOY):
+				total += 1
+	for loss in casualties:
+		if int(loss.get("side", -1)) != side:
+			continue
+		if convoys_only:
+			total += int(loss.get("convoys", 0))
+		else:
+			total += (loss.get("ships", []) as Array).size()
+	return total
+
+
 func forces_of(side: int) -> Array[TaskForce]:
 	var out: Array[TaskForce] = []
 	for tf in task_forces:
-		if tf.side == side:
+		if tf.side == side and not tf.completed:
 			out.append(tf)
 	return out
 
@@ -155,7 +209,7 @@ func forces_of(side: int) -> Array[TaskForce]:
 func forces_in(h: Vector2i) -> Array[TaskForce]:
 	var out: Array[TaskForce] = []
 	for tf in task_forces:
-		if tf.trajectory.occupies(h):
+		if not tf.completed and tf.trajectory.occupies(h):
 			out.append(tf)
 	return out
 
@@ -266,6 +320,7 @@ func to_dict() -> Dictionary:
 		"solo_phase": solo_phase,
 		"solo_phase_reason": solo_phase_reason,
 		"rendezvous_markers": rendezvous_markers.duplicate(true),
+		"casualties": casualties.duplicate(true),
 		"rng": rng.to_dict(),
 	}
 
@@ -288,6 +343,10 @@ func apply_dict(d: Dictionary) -> void:
 	for rv_v: Variant in d.get("rendezvous_markers", []):
 		var rv: Dictionary = rv_v
 		rendezvous_markers.append(rv.duplicate(true))
+	casualties.clear()
+	for loss_v: Variant in d.get("casualties", []):
+		var loss: Dictionary = loss_v
+		casualties.append(loss.duplicate(true))
 	vp_once.clear()
 	for k_v: Variant in d.get("vp_once", []):
 		vp_once.append(String(k_v))

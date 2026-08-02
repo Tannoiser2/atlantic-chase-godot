@@ -100,8 +100,10 @@ func read(selector: int, roll: int) -> Dictionary:
 func modifier_total(active: Array) -> int:
 	var total := 0
 	for m in modifiers:
-		if active.has(String(m["label"])):
-			total += int(m["value"])
+		# Alcune tabelle dicono "+2 per OGNI nave Danneggiata". L'Array puo'
+		# quindi contenere piu' volte la stessa etichetta; il vecchio `has()`
+		# applicava il modificatore una volta sola anche con tre navi.
+		total += int(m["value"]) * active.count(String(m["label"]))
 	return total
 
 

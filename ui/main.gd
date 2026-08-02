@@ -425,19 +425,25 @@ func _declare_action(key: String) -> void:
 			initiative_changed = true
 		if applied["battle"] != Results.Battle.NONE:
 			pending_battle = applied["battle"]
-	log.record("%s (%s)" % [label, selected_tf.display_name()])
+	_report_eliminated_forces(label)
+	log.record("%s (%s)" % [label, dec.active.display_name()])
 	state.changed.emit()
+	if key == "AIR_STRIKE":
+		_solo_maybe_go_late("air_strike", "e' stato eseguito un Attacco Aereo")
+	elif key == "STEALTH_ATTACK":
+		_solo_maybe_go_late("stealth_attack", "e' stato eseguito un Attacco Furtivo")
 	if pending_battle != Results.Battle.NONE:
+		_solo_maybe_go_late("battle", "un risultato ha aperto una Battaglia")
 		_battle_post_time_lapse.clear()
 		for tf in [dec.active_coordinating, dec.active_air_support]:
 			if tf != null and tf != dec.active and tf != dec.target \
 					and not _battle_post_time_lapse.has(tf):
 				_battle_post_time_lapse.append(tf)
-		_open_battle(pending_battle, selected_tf, target, dec.target_hex)
+		_open_battle(pending_battle, dec.active, target, dec.target_hex)
 	elif initiative_changed:
 		if bool(engine.action(key).get("causes_time_lapse", false)):
 			await _time_lapse_designated_active(dec)
-		if _change_initiative_to(1 - selected_tf.side):
+		if _change_initiative_to(1 - dec.active.side):
 			await _maybe_run_solo_opponent_turn("risultato dell'azione")
 	else:
 		await _post_table_action_flow(key, dec)
@@ -726,6 +732,7 @@ func _close_battle(b: Battle) -> void:
 	var out := b.finish()
 	for t_v: Variant in (out["sunk"] as Array):
 		_msg("  affondata: %s" % String(t_v))
+	_report_eliminated_forces("Battaglia")
 	_msg("Battaglia conclusa: %s" % b.state.end_reason)
 	for tf in _battle_post_time_lapse:
 		if tf != null and state.task_force(tf.id) != null:
@@ -740,6 +747,17 @@ func _close_battle(b: Battle) -> void:
 	log.record("Battaglia in %s" % str(b.state.hex))
 	state.changed.emit()
 	_refresh()
+
+
+func _report_eliminated_forces(reason: String) -> void:
+	var removed := state.remove_eliminated_forces(reason)
+	for loss in removed:
+		_msg("TF rimossa dalla mappa: %s (nessuna nave a galla)."
+			% String(loss.get("tf_name", "Task Force")))
+		if int(loss.get("convoys", 0)) > 0:
+			_solo_maybe_go_late("convoy_destroyed", "un Convoglio e' stato distrutto")
+	if not removed.is_empty():
+		_resync_selection()
 
 
 func _nearest_enemy(tf: TaskForce) -> TaskForce:
@@ -1233,8 +1251,12 @@ func _solo_roll_action(auto: bool = false) -> void:
 			+ "L'AI applica la procedura senza aprire scelte manuali.")
 	var mods: Array = []
 	if auto:
-		if not t.modifiers.is_empty():
-			_msg("Solitario: modificatori automatici non inferiti; tiro senza modificatori.")
+		var inferred := SoloAI.automatic_modifiers(t, state, _solo_imaginary_side())
+		mods = inferred["active"]
+		for line_v: Variant in inferred["explanations"]:
+			_msg("  Modificatore automatico: %s" % String(line_v))
+		for line_v: Variant in inferred["unresolved"]:
+			_msg("  Dato non modellato, modificatore non applicato: %s" % String(line_v))
 	else:
 		mods = await _solo_modifiers(t)
 	var result := solo.act(state.rng, _solo_selector_for(tid), mods)
@@ -1250,25 +1272,79 @@ func _apply_solo_ai_result(result: Dictionary) -> void:
 	var imaginary := _solo_imaginary_side()
 	if imaginary < 0:
 		return
+	if String(result.get("code", "")).to_upper() == "I":
+		_solo_maybe_go_late("result_i", "la Tabella Azioni ha dato I")
 	var decision := SoloAI.execute_code(String(result.get("code", "")),
 		state, graph, engine, _port_control(), imaginary)
 	for line_v: Variant in decision.get("log", []):
 		_msg(String(line_v))
+	_show_solo_event(result, decision)
 	if bool(decision.get("completion", false)):
+		if await _offer_steal_initiative("Completamento del bot"):
+			_msg("Solitario AI: Completamento impedito dal cambio d'Iniziativa.")
+			await _solo_time_lapse(decision.get("active", null),
+				decision.get("target_hex", Vector2i.MAX))
+			return
 		var comp := Completion.resolve(decision["active"], decision["completion_port"], vp_tracker)
 		for line_v2: Variant in comp.get("log", []):
 			_msg(String(line_v2))
 		log.record("Solitario AI: Completamento")
 		state.changed.emit()
+		_queue_next_solo_action("dopo il Completamento")
 	elif String(decision.get("action_key", "")) != "":
 		await _resolve_solo_ai_action(decision)
 	elif bool(decision.get("ok", false)):
-		log.record("Solitario AI: Traiettoria")
+		log.record("Solitario AI: %s" % String(decision.get("turn_kind", "effetto")))
 		state.changed.emit()
-	if bool(decision.get("pass_initiative", false)):
+		if bool(decision.get("roll_again", false)):
+			_queue_next_solo_action("la tabella ordina un altro tiro")
+		elif String(decision.get("turn_kind", "")) == "trajectory":
+			await _solo_time_lapse(decision.get("active", null),
+				decision.get("target_hex", Vector2i.MAX))
+			if not await _offer_steal_initiative("Traiettoria del bot"):
+				_queue_next_solo_action("il bot mantiene l'Iniziativa")
+	if bool(decision.get("pass_initiative", false)) and _solo_is_imaginary_turn():
 		var player := _solo_player_side()
 		if player >= 0:
 			_change_initiative_to(player)
+
+
+func _show_solo_event(result: Dictionary, decision: Dictionary) -> void:
+	if _solo_event_panel == null:
+		return
+	_solo_event_serial += 1
+	var serial := _solo_event_serial
+	var title := String(result.get("code", "?"))
+	var table_name := String(result.get("table", "Tabella Solitario"))
+	var lines: Array[String] = ["[b]BOT - %s: risultato %s[/b]" % [table_name, title]]
+	var row := String(result.get("row_label", ""))
+	if row != "":
+		lines.append("Riga: %s; dado %d -> colonna %d." % [row,
+			int(result.get("roll", 0)), int(result.get("column", 0))])
+	var active: TaskForce = decision.get("active", null)
+	var target: TaskForce = decision.get("target", null)
+	if active != null:
+		lines.append("Scelta: %s%s." % [active.display_name(),
+			" contro " + target.display_name() if target != null else ""])
+	var decision_log: Array = decision.get("log", [])
+	if not decision_log.is_empty():
+		lines.append(String(decision_log[-1]))
+	_lbl_solo_event.text = "\n".join(lines)
+	_solo_event_panel.visible = true
+	var focus: Vector2i = decision.get("target_hex", Vector2i.MAX)
+	if focus == Vector2i.MAX and active != null:
+		focus = active.trajectory.station_hex if active.trajectory.is_station() \
+			else active.trajectory.end_hex(0)
+	if focus != Vector2i.MAX and graph.is_playable(focus):
+		cam.focus_on(graph.center_of(focus))
+		if not _hex_choice_active:
+			board.set_highlight({focus: Color(1.0, 0.55, 0.12, 0.42)})
+	await get_tree().create_timer(7.0).timeout
+	if serial != _solo_event_serial:
+		return
+	_solo_event_panel.visible = false
+	if not _hex_choice_active:
+		board.set_highlight({})
 
 
 func _resolve_solo_ai_action(decision: Dictionary) -> void:
@@ -1292,7 +1368,9 @@ func _resolve_solo_ai_action(decision: Dictionary) -> void:
 		_msg("Solitario AI: azione annullata da Interruzione.")
 		log.record("Solitario AI: %s annullata" % label)
 		state.changed.emit()
-		_return_to_solo_player()
+		await _handle_interruption_cancel(res, dec)
+		if _solo_is_imaginary_turn():
+			_queue_next_solo_action("dopo l'Interruzione")
 		return
 	var pending_battle := Results.Battle.NONE
 	for code_v: Variant in res["results"] as Array:
@@ -1301,18 +1379,70 @@ func _resolve_solo_ai_action(decision: Dictionary) -> void:
 		_msg("    %s" % applied["text"])
 		if applied["battle"] != Results.Battle.NONE:
 			pending_battle = applied["battle"]
+	_report_eliminated_forces("Solitario AI - %s" % label)
 	log.record("Solitario AI: %s" % label)
 	state.changed.emit()
+	if key == "AIR_STRIKE":
+		_solo_maybe_go_late("air_strike", "il bot ha eseguito un Attacco Aereo")
+	elif key == "STEALTH_ATTACK":
+		_solo_maybe_go_late("stealth_attack", "il bot ha eseguito un Attacco Furtivo")
 	if pending_battle != Results.Battle.NONE:
+		_solo_maybe_go_late("battle", "un risultato del bot ha aperto una Battaglia")
 		_open_battle(pending_battle, active, target, dec.target_hex)
 	else:
-		_return_to_solo_player()
+		if bool(engine.action(key).get("causes_time_lapse", false)):
+			await _solo_time_lapse(active, dec.target_hex)
+		if key == "NAVAL_SEARCH":
+			if not await _offer_steal_initiative("Ricerca Navale del bot"):
+				_queue_next_solo_action("il bot mantiene l'Iniziativa")
+		else:
+			var changed := _seek_initiative()
+			if not changed and _solo_is_imaginary_turn():
+				_queue_next_solo_action("il bot vince la ricerca dell'Iniziativa")
 
 
-func _return_to_solo_player() -> void:
-	var player := _solo_player_side()
-	if player >= 0 and state.initiative != player:
-		_change_initiative_to(player)
+func _queue_next_solo_action(reason: String) -> void:
+	if _solo_is_imaginary_turn():
+		call_deferred("_kick_solo_opponent_turn", reason)
+
+
+## Lo Scorrere del Tempo del bot usa una scelta deterministica: rimuove dal
+## capo piu' lontano dall'obiettivo dichiarato dalla procedura. Se la TF
+## diventa Stazione, sceglie fra gli esagoni liberati quello piu' vicino alla
+## destinazione. Sono decisioni del bot, quindi non aprono dialoghi umani.
+func _solo_time_lapse(tf: TaskForce, goal: Vector2i = Vector2i.MAX) -> void:
+	if tf == null or tf.trajectory.is_station():
+		return
+	var amount := TimeLapse.required_removal(tf.speed, state.weather, state.rng)
+	var opts := TimeLapse.removal_options(tf.trajectory, tf.speed, amount)
+	if opts.is_empty():
+		_msg("Solitario AI - Scorrere del Tempo: nessuna rimozione legale.")
+		return
+	var chosen: Dictionary = opts[0]
+	var best_score := -INF
+	for option in opts:
+		var ends: Array = option["ends"]
+		var d0 := Hex.distance(tf.trajectory.end_hex(0), goal) \
+			if goal != Vector2i.MAX else 0
+		var d1 := Hex.distance(tf.trajectory.end_hex(1), goal) \
+			if goal != Vector2i.MAX else 0
+		var score := float(int(ends[0]) * d0 + int(ends[1]) * d1)
+		if score > best_score:
+			best_score = score
+			chosen = option
+	var freed := TimeLapse.apply(tf.trajectory, chosen)
+	var station_note := ""
+	if tf.trajectory.length() == 0 and not freed.is_empty():
+		var station := freed[0]
+		if goal != Vector2i.MAX:
+			for h in freed:
+				if Hex.distance(h, goal) < Hex.distance(station, goal):
+					station = h
+		tf.trajectory.become_station(station)
+		station_note = "; Stazione in %s" % str(station)
+	_msg("Solitario AI - Scorrere del Tempo: %s rimuove %s%s."
+		% [tf.display_name(), String(chosen["label"]), station_note])
+	state.changed.emit()
 
 
 func _solo_roll_any_table() -> void:
@@ -1686,6 +1816,21 @@ func _report(r: Dictionary) -> void:
 	_refresh()
 
 
+## Le quattro coppie Presto/Tardi non hanno lo stesso innesco. Questi sono gli
+## eventi stampati in AC Solo scenarios 2022 pp.10, 13, 18 e 22.
+func _solo_maybe_go_late(event: String, reason: String) -> bool:
+	if solo == null or state.solo_phase == SoloOpponent.Phase.LATE:
+		return false
+	if not solo.goes_late_after(event):
+		return false
+	state.solo_phase = SoloOpponent.Phase.LATE
+	state.solo_phase_reason = reason
+	solo.set_phase(state.solo_phase, state.solo_phase_reason)
+	_msg("Solitario: passa automaticamente alla tabella Tardi: %s." % reason)
+	state.changed.emit()
+	return true
+
+
 ## Segnalazione (RB p.39): una Traiettoria nemica con un segnalino Informazioni
 ## collassa in una Stazione.
 func _do_signal() -> void:
@@ -1959,6 +2104,9 @@ var _lbl_roster: RichTextLabel
 ## Pannello "ora tocca a": chi sta agendo, cosa aspetta il gioco, e cosa NON si
 ## puo' fare con il motivo accanto.
 var _lbl_now: RichTextLabel
+var _solo_event_panel: PanelContainer
+var _lbl_solo_event: RichTextLabel
+var _solo_event_serial: int = 0
 var _help: PanelContainer
 var _briefing_panel: PanelContainer
 var _lbl_briefing: RichTextLabel
@@ -2062,9 +2210,37 @@ func _build_hud() -> void:
 	_lbl_now.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	nowpanel.add_child(_lbl_now)
 
+	# Avviso non modale: porta l'occhio sull'esagono interessato e spiega la
+	# catena tabella -> scelta -> effetto senza fermare il turno del bot.
+	_solo_event_panel = PanelContainer.new()
+	_solo_event_panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_solo_event_panel.offset_left = 410
+	_solo_event_panel.offset_right = -540
+	_solo_event_panel.offset_top = 62
+	_solo_event_panel.offset_bottom = 190
+	_solo_event_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_solo_event_panel.add_theme_stylebox_override("panel", _solo_event_style())
+	_solo_event_panel.visible = false
+	hud.add_child(_solo_event_panel)
+	_lbl_solo_event = RichTextLabel.new()
+	_lbl_solo_event.bbcode_enabled = true
+	_lbl_solo_event.fit_content = false
+	_lbl_solo_event.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_lbl_solo_event.add_theme_font_size_override("normal_font_size", 15)
+	_lbl_solo_event.add_theme_font_size_override("bold_font_size", 16)
+	_solo_event_panel.add_child(_lbl_solo_event)
+
 	_build_action_bar(hud)
 	_build_briefing(hud)
 	_build_help(hud)
+
+
+func _solo_event_style() -> StyleBoxFlat:
+	var sb := _panel_style()
+	sb.bg_color = Color(0.08, 0.12, 0.15, 0.96)
+	sb.border_color = Color(0.95, 0.68, 0.25, 0.95)
+	sb.set_border_width_all(2)
+	return sb
 
 
 ## Sfondo scuro semitrasparente: senza, il testo bianco sull'azzurro della
@@ -2079,17 +2255,17 @@ func _action_unavailable_reason(key: String) -> String:
 		return "nessuna Task Force selezionata"
 	if not _can_control_tf(selected_tf):
 		return "questa Task Force appartiene all'avversario immaginario"
-		if selected_tf.side != state.initiative:
-			if solo != null and state.forces_of(state.initiative).is_empty():
-				return ("l'Iniziativa e' dell'avversario immaginario: la Tabella "
-					+ "Solitario viene tirata automaticamente; O la riapre")
-			return "l'Iniziativa e' di %s" % Initiative.side_name(state.initiative)
-		var forced_actions: Array = selected_tf.solo_flags.get("bl1_actions_only", [])
-		if not forced_actions.is_empty() and not forced_actions.has(key):
-			return "BL1: i guasti meccanici consentono solo Traiettoria, Completamento e Passare"
-		if key == "REORGANIZE" and bool(selected_tf.solo_flags.get("bl1_no_reorganize", false)):
-			return "BL1: il Rifornimento vieta Riorganizzazione a questa TF"
-		# Passare, Completamento e Traiettoria si dichiarano anche senza nemici in
+	if selected_tf.side != state.initiative:
+		if solo != null and state.forces_of(state.initiative).is_empty():
+			return ("l'Iniziativa e' dell'avversario immaginario: la Tabella "
+				+ "Solitario viene tirata automaticamente; O la riapre")
+		return "l'Iniziativa e' di %s" % Initiative.side_name(state.initiative)
+	var forced_actions: Array = selected_tf.solo_flags.get("bl1_actions_only", [])
+	if not forced_actions.is_empty() and not forced_actions.has(key):
+		return "BL1: i guasti meccanici consentono solo Traiettoria, Completamento e Passare"
+	if key == "REORGANIZE" and bool(selected_tf.solo_flags.get("bl1_no_reorganize", false)):
+		return "BL1: il Rifornimento vieta Riorganizzazione a questa TF"
+	# Passare, Completamento e Traiettoria si dichiarano anche senza nemici in
 	# vista: pretendere un bersaglio le renderebbe indichiarabili
 	if not engine.is_verified(key):
 		return String(engine.action(key).get("verified_note",

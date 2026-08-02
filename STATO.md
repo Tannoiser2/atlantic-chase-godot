@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **1775 verifiche, 16 suite, headless.**
+Tutti i test passano: **2269 verifiche, 17 suite, headless.**
 
 ---
 
@@ -21,7 +21,19 @@ Tutti i test passano: **1775 verifiche, 16 suite, headless.**
 | **M7** Regole complete | ✅ **completo** | Tutte e 9 le azioni, Convogli, finale di partita, salvataggio; tutti e 22 gli scenari hanno le condizioni di vittoria |
 | **M9** Battaglia decisa dal giocatore | ✅ **completo** | Bersagli scelti a mano, linee di fuoco con raggio e valore dei cannoni |
 | **M10** Regole Avanzate | ✅ **completo** | Attitudini, Fuoco a due colonne, Effetti Speciali, Tabelle dei Risultati, Effetti Duraturi, Disingaggio, Snafu, Confusione, Battaglia Estesa. Si accendono dalla schermata iniziale |
-| **M8** Solitario | 🟡 **iniziato** | Motore delle tabelle + TF non identificate; BL1, BL2 e (in parte) BL3 trascritte. Mancano gli schieramenti e gli altri 12 scenari. **E' il pezzo lasciato a Codex** |
+| **M8** Solitario | 🟡 **in corso** | 15 setup e tabelle presenti; bot attivo con Iniziativa, popup e audit. Restano 82 testi procedura segnaposto e Mine/Base Aerea di N2/N4 non modellate. |
+
+### Ultima revisione del solitario
+
+- le TF senza navi a galla spariscono dalla mappa; la cronologia perdite resta
+  nel salvataggio per modificatori e Debriefing;
+- il bot non trasforma piu' ogni Traiettoria in un Passare: Scorrere del Tempo,
+  Sottrarre/Cercare l'Iniziativa e successiva azione seguono il flusso normale;
+- i passaggi Presto/Tardi di BL2, BL3, N1 e N2 sono automatici;
+- popup non modale, esagono evidenziato e log mostrano tabella, tiro, TF scelta,
+  bersaglio e ragione della policy;
+- `tools/audit_solo.gd`: 93 caselle azione, 0 blocchi, 82 testi segnaposto e 2
+  buchi dichiarati (Mine N2, Mine/Base Aerea N4).
 | **M11** Effetti di Battaglia | ✅ **completo** | Suoni sintetizzati, vampe, traccianti, schizzi, esplosioni, incendi, siluri, affondamenti |
 
 ### Cosa e' cambiato nell'ultima sessione

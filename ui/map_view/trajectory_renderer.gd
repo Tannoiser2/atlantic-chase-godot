@@ -70,7 +70,8 @@ func _draw() -> void:
 
 	_compute_lanes()
 	for tf in state.task_forces:
-		_draw_task_force(tf)
+		if not tf.completed:
+			_draw_task_force(tf)
 	_draw_rendezvous_markers()
 
 	if not preview_hexes.is_empty():
@@ -98,6 +99,8 @@ func _compute_lanes() -> void:
 	# le Stazioni si prendono la corsia zero del loro esagono: sono cerchi
 	# piantati sul centro, e le linee di passaggio devono scansarle
 	for tf in state.task_forces:
+		if tf.completed:
+			continue
 		if tf.trajectory.is_station():
 			var h := tf.trajectory.station_hex
 			if not stations_by_hex.has(h):
@@ -116,6 +119,8 @@ func _compute_lanes() -> void:
 			_station_lanes[(tfs[i] as TaskForce).id] = lane
 
 	for tf in state.task_forces:
+		if tf.completed:
+			continue
 		if tf.trajectory.is_station():
 			continue
 		var hexes := tf.trajectory.hexes()

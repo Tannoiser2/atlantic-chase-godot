@@ -94,6 +94,19 @@ func go_late(reason: String) -> bool:
 	return true
 
 
+## Inneschi stampati delle quattro tabelle Presto/Tardi (AC Solo scenarios
+## 2022 pp.10, 13, 18, 22). Tenerli nel core evita che la UI decida una regola.
+func goes_late_after(event: String) -> bool:
+	var prefix := scenario_id.get_slice(" ", 0)
+	var triggers := {
+		"BL2": ["battle", "convoy_destroyed", "air_strike"],
+		"BL3": ["battle", "air_strike"],
+		"N1": ["battle", "result_i"],
+		"N2": ["battle", "stealth_attack", "aggressive_reaction"],
+	}
+	return triggers.has(prefix) and (triggers[prefix] as Array).has(event)
+
+
 ## L'azione dell'avversario immaginario, letta sulla tabella giusta.
 ##
 ## `selector` e' quello che sceglie la riga: nella tabella Presto e' il numero

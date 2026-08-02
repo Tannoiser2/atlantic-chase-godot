@@ -12,10 +12,10 @@ Questo file dice **da dove ripartire e cosa non rifare**.
 
 Versione digitale di *Atlantic Chase* (GMT Games, 2020) in **Godot 4.7**,
 GDScript. Motore di regole puro e testabile headless, interfaccia sopra.
-**1775 verifiche su 16 suite, tutte verdi.** Repository `Tannoiser2/atlantic-chase-godot`, branch `master`.
+**2269 verifiche su 17 suite, tutte verdi.** Repository `Tannoiser2/atlantic-chase-godot`, branch `master`.
 
 ```bash
-godot --headless --path . --script res://tests/run_tests.gd   # 1775 verifiche
+godot --headless --path . --script res://tests/run_tests.gd   # 2269 verifiche
 godot --path . --script res://tools/smoke_ui.gd               # prova di fumo GUI
 sh tools/build_macos.sh                                       # app per macOS
 ```
@@ -385,6 +385,19 @@ Due scelte da rispettare se ci metti mano:
   il modo piu' rapido di far odiare gli effetti.
 
 ### 5.4 ← SEI QUI. E' L'UNICA COSA RIMASTA. Finire il modo solitario
+
+**Audit 2 agosto 2026:** `godot --headless --path . --script
+res://tools/audit_solo.gd` percorre tutte le 93 caselle uniche delle Tabelle
+Azioni. Non ci sono blocchi silenziosi; restano 82 descrizioni testuali
+segnaposto nei JSON post-BL e due effetti dichiaratamente non modellati
+(Mine N2, Mine/Base Aerea N4). Non chiamare "trascrizione completa" questi
+file finche' quei testi non sono sostituiti e gli effetti non sono modellati.
+
+Il ciclo digitale ora usa gli inneschi automatici Presto/Tardi, applica i
+modificatori inferibili, segue le normali regole dell'Iniziativa dopo le mosse
+del bot e rimuove dalla mappa le TF interamente affondate conservando le
+perdite nello stato salvato. BL1 ha anche le procedure B (Blocco) e F (Forza
+francese) automatizzate.
 
 Fatto: motore delle tabelle (`SoloTable`, `SoloOpponent`), Task Force **non
 identificate**, e le tabelle di **BL1, BL2, BL3** trascritte per intero.
