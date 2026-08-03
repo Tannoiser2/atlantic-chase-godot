@@ -269,14 +269,15 @@ func triggers_info(h: Vector2i, mover_side: int) -> bool:
 		for reason_v: Variant in info_triggers[h]:
 			var reason := String(reason_v)
 			if reason.begins_with("side:"):
-				if int(reason.substr(5)) != mover_side:
+				if _info_trigger_side(reason) != mover_side:
 					return true
 			else:
 				return true
 	for tf in task_forces:
-		if tf.side == mover_side:
+		if tf.side == mover_side or tf.completed:
 			continue
-		if tf.trajectory.is_station() and tf.trajectory.station_hex == h:
+		if tf.trajectory.is_station() and tf.trajectory.station_port == "" \
+				and tf.trajectory.station_hex == h:
 			return true
 	return false
 
@@ -285,9 +286,16 @@ func info_reasons(h: Vector2i, mover_side: int) -> Array[String]:
 	var out: Array[String] = []
 	if info_triggers.has(h):
 		for reason_v: Variant in info_triggers[h]:
-			out.append(String(reason_v))
+			var reason := String(reason_v)
+			if reason.begins_with("side:"):
+				if _info_trigger_side(reason) != mover_side:
+					out.append(reason.get_slice("|", 1) if reason.contains("|") \
+						else "causa nemica")
+			else:
+				out.append(reason)
 	for tf in task_forces:
-		if tf.side != mover_side and tf.trajectory.is_station() \
+		if tf.side != mover_side and not tf.completed \
+				and tf.trajectory.is_station() and tf.trajectory.station_port == "" \
 				and tf.trajectory.station_hex == h:
 			out.append("Stazione TF nemica (%s)" % tf.display_name())
 	return out
@@ -296,7 +304,33 @@ func info_reasons(h: Vector2i, mover_side: int) -> Array[String]:
 func add_info_trigger(h: Vector2i, reason: String) -> void:
 	if not info_triggers.has(h):
 		info_triggers[h] = []
-	(info_triggers[h] as Array).append(reason)
+	if not (info_triggers[h] as Array).has(reason):
+		(info_triggers[h] as Array).append(reason)
+
+
+## Registra i porti che causano Informazioni senza duplicare nei file scenario
+## la geometria gia' calibrata in MapGraph. `port_control` contiene soltanto
+## le eccezioni dello scenario; Completion.control_of applica poi i controlli
+## nazionali predefiniti (RB p.8 e p.21).
+func configure_port_info_triggers(port_control: Dictionary = {}) -> void:
+	for pname_v: Variant in graph.ports.keys():
+		var pname := String(pname_v)
+		var port: Dictionary = graph.ports[pname]
+		var control := Completion.control_of(port, port_control)
+		var owner := -1
+		if control == "KRIEGSMARINE":
+			owner = TaskForce.Side.KRIEGSMARINE
+		elif control == "ROYAL_NAVY":
+			owner = TaskForce.Side.ROYAL_NAVY
+		if owner < 0:
+			continue
+		for h_v: Variant in port.get("hexes", []):
+			var h: Vector2i = h_v
+			add_info_trigger(h, "side:%d|porto nemico: %s" % [owner, pname])
+
+
+static func _info_trigger_side(reason: String) -> int:
+	return int(reason.get_slice("|", 0).trim_prefix("side:"))
 
 
 # ------------------------------------------------------------------ porti --

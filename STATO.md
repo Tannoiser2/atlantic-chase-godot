@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **2334 verifiche, 17 suite, headless.**
+Tutti i test passano: **2342 verifiche, 17 suite, headless.**
 
 ---
 
@@ -25,6 +25,15 @@ Tutti i test passano: **2334 verifiche, 17 suite, headless.**
 
 ### Ultima revisione del solitario
 
+- il Completamento del giocatore emette immediatamente il cambio di stato al
+  renderer: Stazione e Traiettoria della TF uscita spariscono dalla mappa nello
+  stesso momento in cui le navi entrano in porto;
+- i porti nemici ora generano davvero segnalini Informazioni (RB p.8 e p.21):
+  gli esagoni vengono ricavati dal grafo calibrato e il controllo usa le
+  eccezioni di ciascuno scenario. Porti neutrali e amici non li generano;
+- Stazioni nemiche gia' Completate o in Casella Porto non causano Informazioni.
+  Basi aeree e forze Furtive restano dichiaratamente non modellate: mancano
+  ancora pedine e dati calibrati, quindi non vengono inventati inneschi;
 - il Registro conserva l'intera sessione, numera gli eventi, e' selezionabile
   e ha `Copia tutto`; anche il testo del pannello di stato e' selezionabile.
   Le procedure del bot sono raccolte per tiro e chiuse per impostazione

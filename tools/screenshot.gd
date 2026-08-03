@@ -112,6 +112,24 @@ func _process(_delta: float) -> bool:
 			+ "contro Lutzow. Esito: Perdere il Contatto.")
 		_root_node._msg("BOT - %s" % _root_node._last_bot_summary)
 		_root_node._refresh()
+	if _frames == 6 and _args.has("intel-demo"):
+		var tf: TaskForce = null
+		for candidate in _root_node.state.task_forces:
+			if candidate.side == TaskForce.Side.KRIEGSMARINE and not candidate.completed:
+				tf = candidate
+				break
+		if tf != null:
+			var port: Vector2i = _root_node.graph.port_hex("Portsmouth")
+			var near: Vector2i = _root_node.graph.adjacent_hexes(port)[0]
+			tf.trajectory = Trajectory.new()
+			tf.trajectory.segments.append({"hex": near, "info": false, "contact": false})
+			tf.trajectory.segments.append({"hex": port,
+				"info": _root_node.state.triggers_info(port, tf.side), "contact": false})
+			_root_node.selected_tf = tf
+			_root_node.traj_layer.selected_tf_id = tf.id
+			_root_node.cam.focus_on(_root_node.graph.center_of(port))
+			_root_node.state.changed.emit()
+			_root_node._refresh()
 	if _frames == 6 and _args.has("fueling") and _root_node.solo != null:
 		for tf in _root_node.state.task_forces:
 			if tf.ships.any(func(ship: Ship) -> bool: return ship.name == "Lutzow"):

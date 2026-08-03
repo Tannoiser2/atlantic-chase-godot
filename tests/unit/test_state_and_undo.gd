@@ -18,6 +18,7 @@ func run() -> void:
 			break
 	test_add_and_find()
 	test_info_trigger_enemy_station()
+	test_info_trigger_enemy_ports()
 	test_info_trigger_not_by_enemy_segment()
 	test_serialization_roundtrip()
 	test_undo_redo()
@@ -48,17 +49,48 @@ func test_add_and_find() -> void:
 func test_info_trigger_enemy_station() -> void:
 	_begin("Informazioni: Stazione TF nemica (RB p.21)")
 	var st := GameState.new(graph, 7)
-	st.add_task_force(_tf(TaskForce.Side.ROYAL_NAVY, origin))
+	var enemy := st.add_task_force(_tf(TaskForce.Side.ROYAL_NAVY, origin))
 	true_(st.triggers_info(origin, TaskForce.Side.KRIEGSMARINE),
 		"un tedesco che entra nell'esagono di una Stazione britannica prende Informazioni")
 	false_(st.triggers_info(origin, TaskForce.Side.ROYAL_NAVY),
 		"la propria Stazione non innesca Informazioni")
+	enemy.completed = true
+	false_(st.triggers_info(origin, TaskForce.Side.KRIEGSMARINE),
+		"una TF che ha Completato non resta una causa sulla mappa")
+	enemy.completed = false
 
 	# un porto nemico registrato esplicitamente
 	var h := graph.adjacent_hexes(origin)[0]
 	st.add_info_trigger(h, "porto nemico (Brest)")
 	true_(st.triggers_info(h, TaskForce.Side.KRIEGSMARINE), "porto nemico innesca")
 	true_(st.info_reasons(h, TaskForce.Side.KRIEGSMARINE).size() > 0, "il motivo e' riportato")
+
+
+func test_info_trigger_enemy_ports() -> void:
+	_begin("Informazioni: porti nemici dalla mappa (RB p.8 e p.21)")
+	var st := GameState.new(graph, 7)
+	st.configure_port_info_triggers()
+	var portsmouth := graph.port_hex("Portsmouth")
+	var kiel := graph.port_hex("Kiel")
+	true_(st.triggers_info(portsmouth, TaskForce.Side.KRIEGSMARINE),
+		"un segmento tedesco a Portsmouth riceve Informazioni")
+	false_(st.triggers_info(portsmouth, TaskForce.Side.ROYAL_NAVY),
+		"Portsmouth non e' causa per una TF britannica")
+	true_("porto nemico: Portsmouth" in st.info_reasons(
+		portsmouth, TaskForce.Side.KRIEGSMARINE), "il registro nomina Portsmouth")
+	true_(st.triggers_info(kiel, TaskForce.Side.ROYAL_NAVY),
+		"un segmento britannico a Kiel riceve Informazioni")
+	false_(st.triggers_info(kiel, TaskForce.Side.KRIEGSMARINE),
+		"Kiel non e' causa per una TF tedesca")
+	var count_before := (st.info_triggers[portsmouth] as Array).size()
+	st.configure_port_info_triggers()
+	eq((st.info_triggers[portsmouth] as Array).size(), count_before,
+		"ricaricare un salvataggio non duplica le cause")
+
+	var neutral := GameState.new(graph, 7)
+	neutral.configure_port_info_triggers({"Portsmouth": "NONE"})
+	false_(neutral.triggers_info(portsmouth, TaskForce.Side.KRIEGSMARINE),
+		"un porto neutrale non causa Informazioni")
 
 
 func test_info_trigger_not_by_enemy_segment() -> void:

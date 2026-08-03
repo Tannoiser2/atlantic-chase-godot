@@ -12,10 +12,10 @@ Questo file dice **da dove ripartire e cosa non rifare**.
 
 Versione digitale di *Atlantic Chase* (GMT Games, 2020) in **Godot 4.7**,
 GDScript. Motore di regole puro e testabile headless, interfaccia sopra.
-**2334 verifiche su 17 suite, tutte verdi.** Repository `Tannoiser2/atlantic-chase-godot`, branch `master`.
+**2342 verifiche su 17 suite, tutte verdi.** Repository `Tannoiser2/atlantic-chase-godot`, branch `master`.
 
 ```bash
-godot --headless --path . --script res://tests/run_tests.gd   # 2334 verifiche
+godot --headless --path . --script res://tests/run_tests.gd   # 2342 verifiche
 godot --path . --script res://tools/smoke_ui.gd               # prova di fumo GUI
 sh tools/build_macos.sh                                       # app per macOS
 ```
@@ -457,6 +457,11 @@ Restano:
   `_pick_time_lapse_option()` fa cliccare solo i segmenti terminali compatibili
   con le opzioni prodotte da `TimeLapse.removal_options()`. Non duplicare nella
   UI le regole su quantita' e Limite di Informazioni: il core resta l'autorita'.
+- **I file scenario hanno `info_triggers` vuoto.** Non significa che nessun
+  porto causi Informazioni: `GameState.configure_port_info_triggers()` ricava
+  porti, esagoni e controllo dalla mappa e dalle eccezioni dello scenario. Le
+  basi aeree e le forze Furtive sono ancora un buco dichiarato, non vanno
+  collocate a intuito. Una TF Completata non e' piu' una Stazione sulla mappa.
 
 ---
 

@@ -132,6 +132,7 @@ func _load_scenario_at(idx: int) -> void:
 		_msg(scenario.load_error)
 		return
 	state.apply_dict(scenario.to_state_dict())
+	state.configure_port_info_triggers(scenario.port_control())
 	# apply_dict riparte dal dizionario dello scenario, che non sa nulla delle
 	# Regole Avanzate: la scelta va rimessa dopo, se no cambiare scenario la
 	# perde in silenzio.
@@ -1211,6 +1212,9 @@ func _do_load() -> void:
 		return
 	_load_scenario_at(idx)
 	state.apply_dict(doc["state"])
+	# Aggiorna anche i vecchi salvataggi creati quando i porti nemici non
+	# venivano ancora registrati come cause di Informazioni.
+	state.configure_port_info_triggers(scenario.port_control())
 	if solo != null:
 		solo.set_phase(state.solo_phase, state.solo_phase_reason)
 	log = CommandLog.new(state)
@@ -2113,6 +2117,10 @@ func _do_completion() -> void:
 		_msg(String(line_v))
 	_msg("%d navi in porto a %s." % [ships, String(chosen["name"])])
 	_show_completed_notice(selected_tf, res)
+	# Completion cambia la TF in un record storico fuori mappa. Senza questo
+	# segnale il renderer conservava la linea gia' disegnata fino alla mossa
+	# successiva, anche se il core l'aveva correttamente marcata completed.
+	state.changed.emit()
 	_select_first_initiative_force()
 	_refresh()
 
