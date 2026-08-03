@@ -204,8 +204,10 @@ Uno scenario puo' essere marcato completo solo quando:
   replay lo tira. Implementata anche la fine stampata nella 'X' (una BB tedesca
   affondata o Completata). **Restano**: la forza U-Boat iniziale (manca una
   pedina nave operazionale verificata), le basi aeree, i limiti di classe, i
-  -3 VP del Gruppo B e **Bletchley Park** - il gemello britannico del B-Dienst,
-  gia' implementato per BL1 e da generalizzare.
+  -3 VP del Gruppo B e la clausola che sottrae 1 VP quando la 'X' non trova
+  Convogli bersagliabili. **Bletchley Park e' fatto**: era il B-Dienst con le
+  parti scambiate, e ora i due condividono lo stesso meccanismo
+  (`intel_marker_once` nel dato di scenario).
 - [ ] **A2 L'Ultima Battaglia**: 20 procedure testuali.
 
 I numeri sopra contano tutte le stringhe `senza automatismi del motore` nei
