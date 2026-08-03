@@ -458,12 +458,15 @@ func test_battle_end() -> void:
 	var st3 := _battle()
 	var b3 := Battle.new(st3, DiceRNG.new(0))
 	b3.start()
+	st3.active_tf.evasive = true
+	st3.target_tf.evasive = true
 	var out := b3.finish()
 	eq((out["survivors"] as Array).size(), 2, "due superstiti")
 	for tf in [st3.active_tf, st3.target_tf]:
 		true_(tf.trajectory.is_station(), "%s e' una Stazione" % tf.display_name())
 		eq(tf.trajectory.station_hex, st3.hex, "nell'esagono di Battaglia")
 		true_(tf.trajectory.station_contact, "con segnalino Contatto")
+		false_(tf.evasive, "la Battaglia rimuove le Manovre Evasive")
 
 
 ## Battaglia completa con le navi vere di Rheinubung: e' il test che dimostra

@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **2480 verifiche, 17 suite, headless.**
+Tutti i test passano: **2486 verifiche, 17 suite, headless.**
 
 ---
 
@@ -90,6 +90,12 @@ Tutti i test passano: **2480 verifiche, 17 suite, headless.**
   bersaglio e non crea un marcatore "Signal" separato (RB p.39). I segmenti
   con Informazioni mostrano ora le pedine GMT `Intel_GE`/`Intel_UK`, invece del
   vecchio quadratino procedurale quasi invisibile a mappa intera;
+- Contatto usa le pedine GMT della parte che lo ha stabilito, e Manovre Evasive
+  usa la propria pedina GMT in formato leggibile accanto alla TF. Gli Attacchi
+  Aerei mostrano Launch e Strike nei due esagoni designati fino alla fine dello
+  Scorrere del Tempo; il segmento Launch viene rimosso per ultimo e, se la TF
+  diventa Stazione, questa resta nel Punto di Lancio (RB p.27). La fine di una
+  Battaglia rimuove le Manovre Evasive da entrambe le TF (RB p.62);
 - Attacco Aereo fa scegliere la TF con CV integra, il Punto di Lancio sulla
   mappa e l'esagono Bersaglio entro raggio 2 (RB p.27). Le basi aeree restano
   esplicitamente non modellate: posizione, parte e periodo di attivita' devono

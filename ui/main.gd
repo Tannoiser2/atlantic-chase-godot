@@ -605,6 +605,8 @@ func _declare_action(key: String) -> void:
 			_msg("%s annullata: nessun esagono Bersaglio scelto." % String(
 				engine.action(key).get("label", key)))
 			return
+	if key == "AIR_STRIKE":
+		traj_layer.set_air_action_markers(active.side, launch_hex, dec.target_hex)
 
 	# RB p.47: la Coordinatrice deve occupare l'esagono Bersaglio.
 	var own: Array[TaskForce] = []
@@ -635,6 +637,8 @@ func _declare_action(key: String) -> void:
 	var label := String(engine.action(key).get("label", key))
 	if not res["ok"]:
 		_msg("%s: %s" % [label, res["error"]])
+		if key == "AIR_STRIKE":
+			traj_layer.clear_air_action_markers()
 		return
 	_msg("%s -> %s" % [label, engine.describe(res)])
 	if _action_canceled_by_interruption(res):
@@ -642,6 +646,8 @@ func _declare_action(key: String) -> void:
 		log.record("%s annullata da Interruzione (%s)"
 			% [label, active.display_name()])
 		state.changed.emit()
+		if key == "AIR_STRIKE":
+			traj_layer.clear_air_action_markers()
 		_refresh()
 		return
 
@@ -675,16 +681,22 @@ func _declare_action(key: String) -> void:
 			if tf != null and tf != dec.active and tf != dec.target \
 					and not _battle_post_time_lapse.has(tf):
 				_battle_post_time_lapse.append(tf)
+		if key == "AIR_STRIKE":
+			traj_layer.clear_air_action_markers()
 		_open_battle(pending_battle, dec.active, target, dec.target_hex)
 	elif initiative_changed:
 		await _maybe_bl2_neutral_incident(key, dec.active, dec.target_hex)
 		if bool(engine.action(key).get("causes_time_lapse", false)):
 			await _time_lapse_designated_active(dec)
+		if key == "AIR_STRIKE":
+			traj_layer.clear_air_action_markers()
 		if _change_initiative_to(1 - dec.active.side):
 			await _maybe_run_solo_opponent_turn("risultato dell'azione")
 	else:
 		await _maybe_bl2_neutral_incident(key, dec.active, dec.target_hex)
 		await _post_table_action_flow(key, dec)
+		if key == "AIR_STRIKE":
+			traj_layer.clear_air_action_markers()
 	_refresh()
 
 
@@ -880,14 +892,17 @@ func _post_table_action_flow(key: String, dec: ActionEngine.Declaration) -> void
 func _time_lapse_designated_active(dec: ActionEngine.Declaration) -> void:
 	for tf in dec.designated_active():
 		if tf != null and tf != dec.target:
-			await _do_time_lapse_for(tf)
+			var protected_hex := dec.launch_hex if dec.action_key == "AIR_STRIKE" \
+				and tf == dec.active else Vector2i.MAX
+			await _do_time_lapse_for(tf, true, protected_hex)
 
 
-func _do_time_lapse_for(tf: TaskForce, allow_bl1_fueling: bool = true) -> void:
+func _do_time_lapse_for(tf: TaskForce, allow_bl1_fueling: bool = true,
+		protected_hex: Vector2i = Vector2i.MAX) -> void:
 	var old := selected_tf
 	selected_tf = tf
 	traj_layer.selected_tf_id = tf.id
-	await _do_time_lapse(allow_bl1_fueling)
+	await _do_time_lapse(allow_bl1_fueling, protected_hex)
 	selected_tf = old if old != null and state.task_force(old.id) != null else selected_tf
 	traj_layer.selected_tf_id = selected_tf.id if selected_tf != null else -1
 
@@ -1754,10 +1769,15 @@ func _resolve_solo_ai_action(decision: Dictionary) -> String:
 	dec.target = target
 	dec.launch_hex = decision.get("launch_hex", Vector2i.MAX)
 	dec.target_hex = decision.get("target_hex", Vector2i.MAX)
+	if key == "AIR_STRIKE":
+		traj_layer.set_air_action_markers(active.side, dec.launch_hex, dec.target_hex)
+		await get_tree().create_timer(0.55).timeout
 	var res := engine.resolve(dec, state)
 	var label := String(engine.action(key).get("label", key))
 	if not res["ok"]:
 		_msg("Solitario AI - %s: %s" % [label, String(res["error"])])
+		if key == "AIR_STRIKE":
+			traj_layer.clear_air_action_markers()
 		return "%s non eseguito: %s" % [label, String(res["error"])]
 	_msg("Solitario AI - %s -> %s" % [label, engine.describe(res)])
 	if _action_canceled_by_interruption(res):
@@ -1765,6 +1785,8 @@ func _resolve_solo_ai_action(decision: Dictionary) -> String:
 		log.record("Solitario AI: %s annullata" % label)
 		state.changed.emit()
 		await _handle_interruption_cancel(res, dec)
+		if key == "AIR_STRIKE":
+			traj_layer.clear_air_action_markers()
 		if _solo_is_imaginary_turn():
 			_queue_next_solo_action("dopo l'Interruzione")
 		return "%s di %s contro %s annullato da Interruzione." % [label,
@@ -1790,10 +1812,15 @@ func _resolve_solo_ai_action(decision: Dictionary) -> String:
 		pending_battle = Results.Battle.NONE
 	if pending_battle != Results.Battle.NONE:
 		_solo_maybe_go_late("battle", "un risultato del bot ha aperto una Battaglia")
+		if key == "AIR_STRIKE":
+			traj_layer.clear_air_action_markers()
 		_open_battle(pending_battle, active, target, dec.target_hex)
 	else:
 		if bool(engine.action(key).get("causes_time_lapse", false)):
-			await _solo_time_lapse(active, dec.target_hex)
+			await _solo_time_lapse(active, dec.target_hex,
+				dec.launch_hex if key == "AIR_STRIKE" else Vector2i.MAX)
+		if key == "AIR_STRIKE":
+			traj_layer.clear_air_action_markers()
 		if key == "NAVAL_SEARCH":
 			if not await _offer_steal_initiative("Ricerca Navale del bot"):
 				_queue_next_solo_action("il bot mantiene l'Iniziativa")
@@ -1819,11 +1846,13 @@ func _queue_next_solo_action(reason: String) -> void:
 ## capo piu' lontano dall'obiettivo dichiarato dalla procedura. Se la TF
 ## diventa Stazione, sceglie fra gli esagoni liberati quello piu' vicino alla
 ## destinazione. Sono decisioni del bot, quindi non aprono dialoghi umani.
-func _solo_time_lapse(tf: TaskForce, goal: Vector2i = Vector2i.MAX) -> void:
+func _solo_time_lapse(tf: TaskForce, goal: Vector2i = Vector2i.MAX,
+		protected_hex: Vector2i = Vector2i.MAX) -> void:
 	if tf == null or tf.trajectory.is_station():
 		return
 	var amount := TimeLapse.required_removal(tf.speed, state.weather, state.rng)
-	var opts := TimeLapse.removal_options(tf.trajectory, tf.speed, amount)
+	var opts := TimeLapse.removal_options(tf.trajectory, tf.speed, amount,
+		protected_hex)
 	if opts.is_empty():
 		_msg("Solitario AI - Scorrere del Tempo: nessuna rimozione legale.")
 		return
@@ -1843,7 +1872,9 @@ func _solo_time_lapse(tf: TaskForce, goal: Vector2i = Vector2i.MAX) -> void:
 	var station_note := ""
 	if tf.trajectory.length() == 0 and not freed.is_empty():
 		var station := freed[0]
-		if goal != Vector2i.MAX:
+		if protected_hex != Vector2i.MAX and freed.has(protected_hex):
+			station = protected_hex
+		elif goal != Vector2i.MAX:
 			for h in freed:
 				if Hex.distance(h, goal) < Hex.distance(station, goal):
 					station = h
@@ -2449,7 +2480,8 @@ func _do_pass() -> void:
 	_refresh()
 
 
-func _do_time_lapse(allow_bl1_fueling: bool = true) -> void:
+func _do_time_lapse(allow_bl1_fueling: bool = true,
+		protected_hex: Vector2i = Vector2i.MAX) -> void:
 	if selected_tf == null:
 		return
 	if not _can_control_tf(selected_tf):
@@ -2460,7 +2492,8 @@ func _do_time_lapse(allow_bl1_fueling: bool = true) -> void:
 		_msg("%s e' gia' una Stazione" % selected_tf.display_name())
 		return
 	var amount := TimeLapse.required_removal(selected_tf.speed, state.weather, state.rng)
-	var opts := TimeLapse.removal_options(traj, selected_tf.speed, amount)
+	var opts := TimeLapse.removal_options(traj, selected_tf.speed, amount,
+		protected_hex)
 	if opts.is_empty():
 		_msg("nessuna rimozione legale")
 		return
@@ -2478,7 +2511,11 @@ func _do_time_lapse(allow_bl1_fueling: bool = true) -> void:
 	if traj.length() == 0 and not freed.is_empty():
 		# RB p.14: la Stazione va in UNO QUALSIASI degli esagoni appena liberati
 		var hex_choice := freed[0]
-		if freed.size() > 1:
+		if protected_hex != Vector2i.MAX and freed.has(protected_hex):
+			hex_choice = protected_hex
+			_msg("Attacco Aereo: la Stazione resta nel Punto di Lancio %s."
+				% str(protected_hex))
+		elif freed.size() > 1:
 			var picked := await _pick_hex_on_map(freed,
 				"Dove poni la Stazione? Clicca uno degli esagoni evidenziati.")
 			if picked == Vector2i.MAX:

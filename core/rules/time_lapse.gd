@@ -65,7 +65,8 @@ static func intel_limit(speed: int) -> int:
 ##
 ## La UI presenta queste opzioni al giocatore; i test verificano che i conteggi
 ## corrispondano agli esempi del regolamento.
-static func removal_options(traj: Trajectory, speed: int, amount: int) -> Array[Dictionary]:
+static func removal_options(traj: Trajectory, speed: int, amount: int,
+		protected_hex: Vector2i = Vector2i.MAX) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	var n := traj.length()
 	if n == 0:
@@ -81,6 +82,8 @@ static func removal_options(traj: Trajectory, speed: int, amount: int) -> Array[
 		if front + back > n:
 			continue
 		if _touches_info(traj, front, back):
+			continue
+		if _removes_protected_before_last(traj, front, back, protected_hex):
 			continue
 		out.append({
 			"ends": [front, back],
@@ -100,6 +103,8 @@ static func removal_options(traj: Trajectory, speed: int, amount: int) -> Array[
 		var removed_info := _count_info(traj, front, back)
 		if removed_info != 1:
 			continue  # esattamente UN segnalino Informazioni (RB p.20)
+		if _removes_protected_before_last(traj, front, back, protected_hex):
+			continue
 		out.append({
 			"ends": [front, back],
 			"total": front + back,
@@ -135,6 +140,23 @@ static func _count_info(traj: Trajectory, front: int, back: int) -> int:
 		if traj.segments[n - 1 - i]["info"]:
 			c += 1
 	return c
+
+
+## RB p.27: nello Scorrere del Tempo di un Attacco Aereo, il segmento Lancio
+## deve essere l'ultimo rimosso. Puo' quindi comparire nell'opzione soltanto se
+## quell'opzione elimina l'intera Traiettoria.
+static func _removes_protected_before_last(traj: Trajectory, front: int,
+		back: int, protected_hex: Vector2i) -> bool:
+	if protected_hex == Vector2i.MAX or front + back >= traj.length():
+		return false
+	var n := traj.length()
+	for i in range(front):
+		if (traj.segments[i]["hex"] as Vector2i) == protected_hex:
+			return true
+	for i in range(back):
+		if (traj.segments[n - 1 - i]["hex"] as Vector2i) == protected_hex:
+			return true
+	return false
 
 
 static func _label(front: int, back: int, intel: bool) -> String:

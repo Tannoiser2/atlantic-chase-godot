@@ -371,6 +371,8 @@ func finish() -> Dictionary:
 				(out["survivors"] as Array[String]).append(s.display())
 			s.smoke = false
 		tf.recompute_speed()
+		# RB p.62: la Battaglia rimuove le Manovre Evasive da entrambe le TF.
+		tf.evasive = false
 		if not tf.is_eliminated():
 			tf.trajectory.become_station(state.hex, true)
 			tf.trajectory.station_contact = true

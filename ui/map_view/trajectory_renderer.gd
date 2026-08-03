@@ -43,6 +43,26 @@ const INTEL_MARKERS := {
 	TaskForce.Side.KRIEGSMARINE: preload("res://assets/counters/intel_ge.png"),
 	TaskForce.Side.ROYAL_NAVY: preload("res://assets/counters/intel_uk.png"),
 }
+const CONTACT_MARKERS := {
+	TaskForce.Side.KRIEGSMARINE: preload("res://assets/counters/markers_ge_contact.png"),
+	TaskForce.Side.ROYAL_NAVY: preload("res://assets/counters/markers_uk_contact.png"),
+}
+const AIR_ACTION_MARKERS := {
+	TaskForce.Side.KRIEGSMARINE: {
+		"launch": preload("res://assets/counters/markers_ge_action_launch.png"),
+		"strike": preload("res://assets/counters/markers_ge_actionstrike.png"),
+	},
+	TaskForce.Side.ROYAL_NAVY: {
+		"launch": preload("res://assets/counters/markers_uk_launch.png"),
+		"strike": preload("res://assets/counters/markers_uk_strike.png"),
+	},
+}
+
+## Designazioni temporanee di un Attacco Aereo. Non sono stato di partita:
+## esistono dalla dichiarazione fino alla fine dello Scorrere del Tempo.
+var air_action_side: int = -1
+var air_launch_hex: Vector2i = Vector2i.MAX
+var air_strike_hex: Vector2i = Vector2i.MAX
 
 ## Centri delle caselle 0 e 9, letti sulla mappa a risoluzione nativa. Il
 ## tracciato e' inclinato, quindi ogni colonna ha i propri estremi.
@@ -97,6 +117,7 @@ func _draw() -> void:
 	for tf in state.task_forces:
 		if not tf.completed:
 			_draw_task_force(tf)
+	_draw_air_action_markers()
 	_draw_rendezvous_markers()
 	_draw_map_tracks()
 
@@ -229,7 +250,7 @@ func _draw_task_force(tf: TaskForce) -> void:
 				-graph.inradius * 0.24) * float(station_lane)
 		_draw_station(station_pos, col, is_sel, tf)
 		if tf.evasive:
-			_draw_evasive_marker(station_pos + Vector2(graph.inradius * 0.62, 0))
+			_draw_evasive_marker(station_pos + Vector2(graph.inradius * 0.72, 0))
 		return
 
 	# linea attraverso i centri degli esagoni dei segmenti, scostata sulla
@@ -265,7 +286,7 @@ func _draw_task_force(tf: TaskForce) -> void:
 		if seg["info"]:
 			_draw_info_marker(c, tf.side)
 		if seg["contact"]:
-			_draw_contact_marker(c)
+			_draw_contact_marker(c, tf.side)
 
 	# badge col nome: in coda alla Traiettoria, un po' oltre il capo, cosi' non
 	# copre ne' la linea ne' i segnalini
@@ -278,7 +299,7 @@ func _draw_task_force(tf: TaskForce) -> void:
 			_draw_label(pts[pts.size() - 1] + Vector2(0, -graph.inradius * 0.75),
 				"%d seg" % traj.length(), col)
 	if tf.evasive and not pts.is_empty():
-		_draw_evasive_marker(pts[0] + Vector2(0, graph.inradius * 0.58))
+		_draw_evasive_marker(pts[0] + Vector2(0, graph.inradius * 0.70))
 
 
 func _draw_rendezvous_markers() -> void:
@@ -394,7 +415,7 @@ func _draw_station(c: Vector2, col: Color, selected: bool, tf: TaskForce) -> voi
 	draw_circle(c, r * 0.78, col)
 	# una Stazione con Contatto si riconosce a colpo d'occhio
 	if tf.trajectory.station_contact:
-		_draw_contact_marker(c)
+		_draw_contact_marker(c, tf.side)
 	_draw_badge(c + Vector2(0, -r * 1.9), tf.short_name(), col, selected)
 
 
@@ -433,15 +454,59 @@ func _draw_info_marker(c: Vector2, side: int) -> void:
 	draw_texture_rect(texture, rect, false)
 
 
-func _draw_contact_marker(c: Vector2) -> void:
-	var r := graph.inradius * 0.20
-	draw_arc(c, r * 1.9, 0, TAU, 24, Color(1.0, 0.45, 0.0, 0.95), 4.0, true)
+func _draw_contact_marker(c: Vector2, target_side: int) -> void:
+	# Il segnalino appartiene alla parte che ha stabilito il Contatto, cioe'
+	# all'avversario della TF sulla quale e' posato.
+	var owner := 1 - target_side
+	var texture: Texture2D = CONTACT_MARKERS.get(owner, CONTACT_MARKERS[
+		TaskForce.Side.ROYAL_NAVY])
+	_draw_counter(texture, c, 0.62)
 
 
 func _draw_evasive_marker(c: Vector2) -> void:
-	var side := graph.inradius * 0.50
-	draw_texture_rect(EVASIVE_MARKER,
-		Rect2(c - Vector2(side, side) * 0.5, Vector2(side, side)), false)
+	_draw_counter(EVASIVE_MARKER, c, 0.68)
+
+
+func _draw_air_action_markers() -> void:
+	if air_action_side < 0:
+		return
+	var textures: Dictionary = AIR_ACTION_MARKERS.get(air_action_side, {})
+	if textures.is_empty():
+		return
+	var same_hex := air_launch_hex != Vector2i.MAX \
+		and air_launch_hex == air_strike_hex
+	if air_launch_hex != Vector2i.MAX:
+		var launch_pos := graph.center_of(air_launch_hex)
+		if same_hex:
+			launch_pos += Vector2(-graph.inradius * 0.30, 0)
+		_draw_counter(textures["launch"], launch_pos, 0.66)
+	if air_strike_hex != Vector2i.MAX:
+		var strike_pos := graph.center_of(air_strike_hex)
+		if same_hex:
+			strike_pos += Vector2(graph.inradius * 0.30, 0)
+		_draw_counter(textures["strike"], strike_pos, 0.66)
+
+
+func _draw_counter(texture: Texture2D, c: Vector2, scale_f: float) -> void:
+	var side := graph.inradius * scale_f
+	var rect := Rect2(c - Vector2.ONE * side * 0.5, Vector2.ONE * side)
+	draw_rect(rect.grow(graph.inradius * 0.025), Color(1, 1, 1, 0.72), true)
+	draw_texture_rect(texture, rect, false)
+
+
+func set_air_action_markers(side: int, launch: Vector2i,
+		strike: Vector2i) -> void:
+	air_action_side = side
+	air_launch_hex = launch
+	air_strike_hex = strike
+	queue_redraw()
+
+
+func clear_air_action_markers() -> void:
+	air_action_side = -1
+	air_launch_hex = Vector2i.MAX
+	air_strike_hex = Vector2i.MAX
+	queue_redraw()
 
 
 func _draw_label(pos: Vector2, text: String, col: Color, scale_f: float = 0.30) -> void:

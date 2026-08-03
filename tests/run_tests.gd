@@ -20,11 +20,11 @@ extends SceneTree
 const EXPECTED := {
 	"res://tests/unit/test_hex_and_graph.gd": 311,
 	"res://tests/unit/test_trajectory.gd": 51,
-	"res://tests/unit/test_rules.gd": 125,
+	"res://tests/unit/test_rules.gd": 129,
 	"res://tests/unit/test_initiative.gd": 16,
 	"res://tests/unit/test_state_and_undo.gd": 61,
 	"res://tests/unit/test_actions.gd": 146,
-	"res://tests/unit/test_battle.gd": 145,
+	"res://tests/unit/test_battle.gd": 147,
 	"res://tests/unit/test_ships.gd": 71,
 	"res://tests/unit/test_scenarios.gd": 199,
 	"res://tests/unit/test_victory.gd": 184,

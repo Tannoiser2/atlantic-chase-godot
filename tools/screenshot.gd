@@ -96,6 +96,18 @@ func _process(_delta: float) -> bool:
 	if _frames == 12 and _args.has("evasive") and _root_node.selected_tf != null:
 		_root_node.selected_tf.evasive = true
 		_root_node.state.changed.emit()
+	if _frames == 12 and _args.has("marker-demo"):
+		var active: TaskForce = _root_node.selected_tf
+		var target: TaskForce = _root_node._nearest_enemy(active) if active != null else null
+		if active != null and target != null:
+			active.evasive = true
+			var launch := active.trajectory.station_hex if active.trajectory.is_station() \
+				else active.trajectory.end_hex(0)
+			var strike := target.trajectory.station_hex if target.trajectory.is_station() \
+				else target.trajectory.end_hex(0)
+			target.trajectory.set_contact_at(strike, true)
+			_root_node.traj_layer.set_air_action_markers(active.side, launch, strike)
+			_root_node.state.changed.emit()
 	if _frames == 6 and _args.has("solo") and _root_node.solo != null:
 		_root_node._change_initiative_to(_root_node._solo_imaginary_side())
 		_root_node._solo_roll_action(true)

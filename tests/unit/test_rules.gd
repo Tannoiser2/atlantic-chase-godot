@@ -23,6 +23,7 @@ func run() -> void:
 	test_time_lapse_table()
 	test_time_lapse_options()
 	test_intel_limit_example_rb20()
+	test_air_launch_removed_last()
 	test_trajectory_total_simple()
 	test_trajectory_total_example_rb18()
 	test_interruption_table()
@@ -126,6 +127,28 @@ func test_intel_limit_example_rb20() -> void:
 			slow_limited.append(o)
 	for o in slow_limited:
 		eq(o["total"], 1, "con TF lenta il Limite consente un solo segmento")
+
+
+func test_air_launch_removed_last() -> void:
+	_begin("Scorrere del Tempo: Punto di Lancio rimosso per ultimo (RB p.27)")
+	var t := _chain(5)
+	var launch: Vector2i = t.segments[0]["hex"]
+	var protected := TimeLapse.removal_options(t, TimeLapse.Speed.MEDIUM, 3,
+		launch)
+	true_(not protected.is_empty(), "resta almeno una rimozione legale")
+	for option in protected:
+		eq(int(option["ends"][0]), 0,
+			"il capo Launch non si rimuove lasciando altri segmenti")
+
+	var remove_all := TimeLapse.removal_options(t, TimeLapse.Speed.MEDIUM,
+		t.length(), launch)
+	true_(not remove_all.is_empty(), "si puo' eliminare l'intera Traiettoria")
+	var launch_can_be_last := false
+	for option in remove_all:
+		if int(option["ends"][0]) > 0:
+			launch_can_be_last = true
+	true_(launch_can_be_last,
+		"il Punto di Lancio puo' essere rimosso quando non resta alcun segmento")
 
 
 func test_trajectory_total_simple() -> void:
