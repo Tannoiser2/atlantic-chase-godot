@@ -353,9 +353,26 @@ Tutti i test passano: **2957 verifiche, 18 suite, headless.**
   solo reticolo, e quel reticolo e' quello della Mappa Operazionale**: passo
   213.9 px contro 213.5, circumraggio 123.50 contro 123.26, direzione di base
   44.25 gradi contro 44.28. **Non basta a sbloccare i cinque scenari**: il
-  reticolo e' la geometria, non la mappa. Mancano nomenclatura degli esagoni,
-  porti costieri, lati "not adjacent" e caselle fuori mappa, e finche' mancano
-  i cinque scenari restano dichiarati non giocabili - come devono.
+  reticolo e' la geometria, non la mappa.
+- **Gli esagoni degli inserti hanno un nome, un terreno e le adiacenze.**
+  `tools/build_inset_graph.py` scrive `core/data/inset_graphs.json`: coordinate
+  assiali `(q, r)` come la mappa grande, con l'origine ancorata all'angolo
+  della cornice stampata, che e' misurata e non scelta. 29 esagoni sul Mare del
+  Nord, 27 sul Mare di Norvegia. Sono trovati anche i **16 porti stampati**, con
+  i nomi letti sulla mappa e accoppiati ai pallini uno a uno: un pallino senza
+  nome o un nome senza pallino fermano il programma. I cerchi vuoti dei porti si
+  distinguono dalle lettere 'o' ed 'e' delle etichette perche' il loro cuore e'
+  bianco pieno.
+  Una cosa l'ha insegnata la verifica, non il progetto: la classificazione per
+  colore da sola **buttava via otto esagoni che contengono un porto** - Methil,
+  Wilhelmshaven, Kiel, Kristiansand, Trondheim, Namsos, Andalsnes e Tromso,
+  meta' terraferma tutti. La mappa grande aveva gia' la regola giusta
+  (`force_playable`) e serviva anche qui. Otto esagoni restano marcati
+  `needs_check` perche' terra e mare sono quasi pari, e quelli scartati per un
+  soffio restano scritti col motivo.
+  **I cinque scenari inserto restano dichiarati non giocabili**: mancano i lati
+  "not adjacent", le caselle fuori mappa, le basi aeree, un secondo `MapGraph`
+  nel motore e il disegno nella GUI.
 - **I Comandanti dicono la loro condizione stampata.** Gli undici testi sono
   trascritti da RB p.10 letta a 300 dpi: la scheda TF mostra la regola vera e
   non un riassunto, ed e' quella che decide se il beneficio si puo' usare

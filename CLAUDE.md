@@ -68,9 +68,18 @@ tools/.venv/bin/python tools/fit_inset_lattice.py --check
 ```
 
 Rifa' la misura del reticolo dei due inserti e la confronta con
-`core/data/map_insets.json`. Il reticolo e' misurato, ma i cinque scenari
-inserto restano dichiarati non giocabili: mancano nomenclatura degli esagoni,
-porti costieri, lati "not adjacent" e caselle fuori mappa.
+`core/data/map_insets.json`. Per rigenerare esagoni e porti:
+
+```bash
+tools/.venv/bin/python tools/build_inset_graph.py --overlay-dir reports
+```
+
+Scrive `core/data/inset_graphs.json` e un overlay per mappa da guardare: il
+verde e' giocabile, il rosso no, il magenta sono i porti col nome accanto.
+Il reticolo e' misurato e gli esagoni hanno un nome, ma i cinque scenari
+inserto restano dichiarati non giocabili: mancano i lati "not adjacent", le
+caselle fuori mappa, le basi aeree, un secondo `MapGraph` e il disegno nella
+GUI.
 
 ## Metodo di revisione
 

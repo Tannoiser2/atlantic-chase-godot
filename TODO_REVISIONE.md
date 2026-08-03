@@ -123,14 +123,35 @@ Uno scenario puo' essere marcato completo solo quando:
   circumraggio 123.50 contro 123.26, direzione di base 44.25 gradi contro
   44.28. GMT stampa gli inserti alla stessa scala esagonale della mappa grande,
   e non c'era modo di saperlo senza misurarlo.
-  **Restano, e sono la parte che ancora blocca i cinque scenari**: la
-  nomenclatura degli esagoni, i porti costieri (Vestfjorden, Bud, Andalsnes,
-  Bergen, Methil, Utsira, Stavanger, Egersund, Kristiansand, Bodo, Namsos,
-  Harstad, Tromso), i lati **"not adjacent"** stampati lungo la costa, e le
-  caselle fuori mappa con le loro connessioni (Murmansk, Kiel, Scapa Flow,
-  Portsmouth, Denmark Strait, piu' le frecce verso Bear Island, Jan Mayen,
-  le Shetlands e il Mare di Norvegia). Serve poi un secondo `MapGraph` e il
-  disegno dell'inserto come superficie di gioco nella GUI.
+  **La nomenclatura degli esagoni e' fatta** (`tools/build_inset_graph.py`,
+  `core/data/inset_graphs.json`): coordinate assiali `(q, r)` con le stesse sei
+  direzioni della mappa grande, origine in `(0,0)` sulla cella piu' vicina
+  all'angolo in alto a sinistra della cornice stampata - misurata
+  sull'immagine, non decisa. Terreno classificato per colore in mare, terra,
+  casella fuori mappa e fuori cornice, poi le due pulizie topologiche che
+  `build_map_graph.py` gia' fa sulla mappa grande. **29 esagoni** sul Mare del
+  Nord, **27** sul Mare di Norvegia, con adiacenze.
+  **Anche i 16 porti stampati sono trovati e collocati**: il rilevatore cerca
+  i pallini pieni rossi, ciano e neri e i cerchi vuoti, e distingue i cerchi
+  dalle lettere 'o' ed 'e' delle etichette col cuore bianco (oltre 245 di
+  luminosita' contro meno di 170). I nomi sono letti sulla mappa e accoppiati
+  ai pallini uno a uno: se un pallino resta senza nome o un nome senza
+  pallino, il programma si ferma.
+  Un esagono che contiene un porto e' giocabile per forza, come la mappa
+  grande fa con `force_playable`: senza quella regola il colore buttava via
+  Methil, Wilhelmshaven, Kiel, Kristiansand, Trondheim, Namsos, Andalsnes e
+  Tromso, che sono meta' terraferma.
+  **Restano, e sono la parte che ancora blocca i cinque scenari**: i lati
+  **"not adjacent"** stampati lungo la costa, le caselle fuori mappa con le
+  loro connessioni (Murmansk, Kiel, Scapa Flow, Portsmouth, Denmark Strait,
+  piu' le frecce verso Bear Island, Jan Mayen, le Shetlands e il Mare di
+  Norvegia), le basi aeree (i sette segnalini B e G, gia' visibili al
+  rilevatore), un secondo `MapGraph` nel motore e il disegno dell'inserto come
+  superficie di gioco nella GUI.
+  **Otto esagoni sono marcati `needs_check`**: hanno terra e mare quasi in
+  parti uguali, e il colore non basta a decidere. Gli esagoni scartati per un
+  soffio restano scritti in `excluded_near_miss`, col motivo: nessuno sparisce
+  in silenzio.
   **La verita' indipendente esiste**: le illustrazioni di schieramento del
   fascicolo (BL3 a p.12, e le pagine corrispondenti di N1, N2, N3, N5) mostrano
   i segmenti di Traiettoria iniziali disegnati SULL'INSERTO. Sono per l'inserto
