@@ -28,6 +28,8 @@ const COLORS := {
 }
 
 const TRACK_MARKERS := {
+	"weather_good": preload("res://assets/counters/markers_track_weather.png"),
+	"weather_bad": preload("res://assets/counters/markers_track_weatherb.png"),
 	"modifier_km": preload("res://assets/counters/markers_track_modifier.png"),
 	"modifier_rn": preload("res://assets/counters/markers_track_modifierb.png"),
 	"tally_km": preload("res://assets/counters/markers_track_tally_km.png"),
@@ -37,6 +39,10 @@ const TRACK_MARKERS := {
 	"vp_rn": preload("res://assets/counters/markers_track_vprn.png"),
 	"vp_rn_10": preload("res://assets/counters/markers_track_vprn_10.png"),
 }
+
+## Posizione del segnalino Meteo nel modulo VASSAL originale. Il segnalino si
+## gira fra Buono e Cattivo, ma resta nella stessa casella della tabella.
+const WEATHER_MARKER_POSITION := Vector2(3195, 1161)
 
 const EVASIVE_MARKER := preload("res://assets/counters/markers_evasive.png")
 const INTEL_MARKERS := {
@@ -341,53 +347,64 @@ func _draw_track_counter(texture: Texture2D, column: String, value: int,
 			Color(0.08, 0.09, 0.11), true)
 
 
-## I tre tracciati sono parte della plancia, non del HUD. Mostriamo entrambe le
-## parti anche a zero; un piccolo scostamento evita che due pedine si coprano.
+## Stato delle quattro pedine di plancia. Modificatore, VP e Tally sono pedine
+## bifacciali nel gioco fisico: il colore indica la parte e non esistono due
+## pedine affiancate. Il VP registra il saldo fra i due punteggi.
+static func map_track_marker_state(p_state: GameState) -> Dictionary:
+	var modifier_side := p_state.modifier_track_side
+	var modifier_value := p_state.modifier_track_value
+	if modifier_value < 0:
+		modifier_side = 1 - modifier_side
+		modifier_value = -modifier_value
+
+	var vp_delta := p_state.vp_of(TaskForce.Side.KRIEGSMARINE) \
+		- p_state.vp_of(TaskForce.Side.ROYAL_NAVY)
+	var vp_side := TaskForce.Side.KRIEGSMARINE \
+		if vp_delta >= 0.0 else TaskForce.Side.ROYAL_NAVY
+
+	return {
+		"weather": p_state.weather,
+		"modifier_side": modifier_side,
+		"modifier_value": modifier_value,
+		"vp_side": vp_side,
+		"vp_value": absf(vp_delta),
+		"tally_side": 1 - p_state.initiative,
+		"tally_value": p_state.initiative_count,
+	}
+
+
 func _draw_map_tracks() -> void:
-	var km_mod := 0
-	var rn_mod := 0
-	if state.modifier_track_value >= 0:
-		if state.modifier_track_side == TaskForce.Side.KRIEGSMARINE:
-			km_mod = state.modifier_track_value
-		else:
-			rn_mod = state.modifier_track_value
-	else:
-		if state.modifier_track_side == TaskForce.Side.KRIEGSMARINE:
-			rn_mod = -state.modifier_track_value
-		else:
-			km_mod = -state.modifier_track_value
-	_draw_track_counter(TRACK_MARKERS["modifier_km"], "modifier", km_mod,
-		Vector2(-7, -5))
-	_draw_track_counter(TRACK_MARKERS["modifier_rn"], "modifier", rn_mod,
-		Vector2(7, 5))
+	var markers := map_track_marker_state(state)
+	var weather_texture: Texture2D = TRACK_MARKERS["weather_bad"] \
+		if int(markers["weather"]) == TimeLapse.Weather.BAD \
+		else TRACK_MARKERS["weather_good"]
+	var weather_size := Vector2(weather_texture.get_width(), weather_texture.get_height())
+	draw_texture_rect(weather_texture,
+		Rect2(WEATHER_MARKER_POSITION - weather_size * 0.5, weather_size), false)
 
-	var km_score := state.vp_of(TaskForce.Side.KRIEGSMARINE)
-	var rn_score := state.vp_of(TaskForce.Side.ROYAL_NAVY)
-	# I Debriefing solitari possono scendere sotto zero. La traccia stampata
-	# non ha caselle negative: si usa la distanza dallo zero e il badge conserva
-	# il segno, invece di lasciare la pedina ferma sullo zero con un -8 minuscolo.
-	var km_vp := int(floor(absf(km_score)))
-	var rn_vp := int(floor(absf(rn_score)))
-	var km_vp_texture: Texture2D = TRACK_MARKERS["vp_km_10"] \
-		if km_vp >= 10 else TRACK_MARKERS["vp_km"]
-	var rn_vp_texture: Texture2D = TRACK_MARKERS["vp_rn_10"] \
-		if rn_vp >= 10 else TRACK_MARKERS["vp_rn"]
-	var km_exact := state.vp_text(TaskForce.Side.KRIEGSMARINE) \
-		if km_score < 0.0 or not is_equal_approx(absf(km_score), floor(absf(km_score))) \
-		or km_vp >= 20 else ""
-	var rn_exact := state.vp_text(TaskForce.Side.ROYAL_NAVY) \
-		if rn_score < 0.0 or not is_equal_approx(absf(rn_score), floor(absf(rn_score))) \
-		or rn_vp >= 20 else ""
-	_draw_track_counter(km_vp_texture, "vp", km_vp % 10, Vector2(-7, -5), km_exact)
-	_draw_track_counter(rn_vp_texture, "vp", rn_vp % 10, Vector2(7, 5), rn_exact)
+	var modifier_side := int(markers["modifier_side"])
+	var modifier_texture: Texture2D = TRACK_MARKERS["modifier_km"] \
+		if modifier_side == TaskForce.Side.KRIEGSMARINE \
+		else TRACK_MARKERS["modifier_rn"]
+	_draw_track_counter(modifier_texture, "modifier",
+		int(markers["modifier_value"]))
 
-	var inactive := 1 - state.initiative
-	var km_tally := state.initiative_count if inactive == TaskForce.Side.KRIEGSMARINE else 0
-	var rn_tally := state.initiative_count if inactive == TaskForce.Side.ROYAL_NAVY else 0
-	_draw_track_counter(TRACK_MARKERS["tally_km"], "tally", km_tally,
-		Vector2(-7, -5))
-	_draw_track_counter(TRACK_MARKERS["tally_rn"], "tally", rn_tally,
-		Vector2(7, 5))
+	var vp_side := int(markers["vp_side"])
+	var vp_score := float(markers["vp_value"])
+	var vp_whole := int(floor(vp_score))
+	var vp_key := "vp_km" if vp_side == TaskForce.Side.KRIEGSMARINE else "vp_rn"
+	if vp_whole >= 10:
+		vp_key += "_10"
+	var vp_exact := GameState.vp_str(vp_score) \
+		if not is_equal_approx(vp_score, floor(vp_score)) or vp_whole >= 20 else ""
+	_draw_track_counter(TRACK_MARKERS[vp_key], "vp", vp_whole % 10,
+		Vector2.ZERO, vp_exact)
+
+	var tally_side := int(markers["tally_side"])
+	var tally_texture: Texture2D = TRACK_MARKERS["tally_km"] \
+		if tally_side == TaskForce.Side.KRIEGSMARINE \
+		else TRACK_MARKERS["tally_rn"]
+	_draw_track_counter(tally_texture, "tally", int(markers["tally_value"]))
 
 
 func _draw_end_cap(tip: Vector2, prev: Vector2, col: Color, w: float) -> void:

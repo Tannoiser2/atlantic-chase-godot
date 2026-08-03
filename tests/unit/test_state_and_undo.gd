@@ -22,6 +22,7 @@ func run() -> void:
 	test_extension_places_info_marker()
 	test_info_trigger_not_by_enemy_segment()
 	test_serialization_roundtrip()
+	test_map_track_marker_states()
 	test_undo_redo()
 
 
@@ -176,6 +177,38 @@ func test_serialization_roundtrip() -> void:
 	eq(st2.commanders, ["Raeder"], "comandanti non assegnati conservati")
 	true_(st2.remove_rendezvous_at(rv_hex), "marker RV rimuovibile")
 	false_(bool(st2.rendezvous_at(rv_hex).get("active", false)), "marker RV non piu' attivo")
+
+
+func test_map_track_marker_states() -> void:
+	_begin("segnalini delle tracce sulla mappa")
+	var st := GameState.new(graph, 1)
+	var markers := TrajectoryRenderer.map_track_marker_state(st)
+	eq(int(markers["weather"]), TimeLapse.Weather.GOOD, "unico segnalino Meteo su Buono")
+	eq(int(markers["modifier_side"]), TaskForce.Side.KRIEGSMARINE,
+		"lato iniziale del Modificatore")
+	eq(int(markers["modifier_value"]), 0, "Modificatore sullo zero")
+	eq(int(markers["vp_side"]), TaskForce.Side.KRIEGSMARINE, "VP pari sul lato iniziale")
+	eq(float(markers["vp_value"]), 0.0, "VP sullo zero")
+	eq(int(markers["tally_side"]), TaskForce.Side.ROYAL_NAVY,
+		"Tally del giocatore inattivo")
+	eq(int(markers["tally_value"]), 0, "Tally sullo zero")
+
+	st.weather = TimeLapse.Weather.BAD
+	st.set_modifier_track(TaskForce.Side.ROYAL_NAVY, -3)
+	st.vp[TaskForce.Side.KRIEGSMARINE] = 3.5
+	st.vp[TaskForce.Side.ROYAL_NAVY] = 5.0
+	st.initiative = TaskForce.Side.ROYAL_NAVY
+	st.initiative_count = 4
+	markers = TrajectoryRenderer.map_track_marker_state(st)
+	eq(int(markers["weather"]), TimeLapse.Weather.BAD, "Meteo girato su Cattivo")
+	eq(int(markers["modifier_side"]), TaskForce.Side.KRIEGSMARINE,
+		"Modificatore negativo gira la pedina")
+	eq(int(markers["modifier_value"]), 3, "valore assoluto del Modificatore")
+	eq(int(markers["vp_side"]), TaskForce.Side.ROYAL_NAVY, "VP sul lato in vantaggio")
+	eq(float(markers["vp_value"]), 1.5, "VP registra il saldo")
+	eq(int(markers["tally_side"]), TaskForce.Side.KRIEGSMARINE,
+		"Tally cambia lato con l'Iniziativa")
+	eq(int(markers["tally_value"]), 4, "Tally registra il Conto")
 
 
 func test_undo_redo() -> void:
