@@ -14,10 +14,10 @@ di lacune gia' chiuse. Questo file dice **da dove ripartire e cosa non rifare**.
 
 Versione digitale di *Atlantic Chase* (GMT Games, 2020) in **Godot 4.7**,
 GDScript. Motore di regole puro e testabile headless, interfaccia sopra.
-**2702 verifiche su 18 suite, tutte verdi.** Repository `Tannoiser2/atlantic-chase-godot`, branch `master`.
+**2722 verifiche su 18 suite, tutte verdi.** Repository `Tannoiser2/atlantic-chase-godot`, branch `master`.
 
 ```bash
-godot --headless --path . --script res://tests/run_tests.gd   # 2702 verifiche
+godot --headless --path . --script res://tests/run_tests.gd   # 2722 verifiche
 godot --path . --script res://tools/smoke_ui.gd               # prova di fumo GUI
 sh tools/build_macos.sh                                       # app per macOS
 ```
@@ -435,12 +435,24 @@ Debriefing. `tools/replay_solo.gd` lo esegue con semi fissi e distingue **OK**
 terminazione, Completamenti in porti leciti, nessuna azione dopo `solo_ended`
 e salvataggio/ricarica identici.
 
-**Attenzione alla duplicazione.** `ui/main.gd` implementa la stessa sequenza
-con le sue attese asincrone e i suoi dialoghi. Finche' non sara' riscritta
-sopra `SoloRunner` (voce aperta in `TODO_REVISIONE.md`), ogni modifica alla
-sequenza va fatta in tutti e due i posti. E' un debito conosciuto, non una
-svista: fondere le due strade richiede di trasformare il ciclo in coroutine,
-e non e' un lavoro da fare di straforo dentro un'altra milestone.
+**Il ciclo resta in due esemplari, le REGOLE no.** `ui/main.gd` implementa la
+stessa sequenza con le sue attese asincrone e i suoi dialoghi; fondere le due
+strade richiede di trasformare il ciclo in coroutine e non e' un lavoro da fare
+di straforo. Ma tutto cio' che e' regola e non effetto sta ora in
+`core/rules/solo_sequence.gd`, e lo chiamano tutti e due: ramo del risultato,
+costruzione della dichiarazione con la regola della Coordinatrice, esito
+sull'Iniziativa dopo l'azione, innesco della tabella Tardi, e il vincolo "una
+decisione senza effetto cede l'Iniziativa".
+
+Regola pratica se ci metti mano: **se una riga risponde a "che cosa dice il
+regolamento", va in `SoloSequence`. Se risponde a "come lo mostro", resta nel
+chiamante.** Le due copie erano gia' divergute due volte prima che esistesse -
+sul cambio d'Iniziativa e sulla Coordinatrice - e nessuna delle due divergenze
+produceva un messaggio d'errore.
+
+Quello che resta duplicato e' soltanto l'ORDINE dei passi, una dozzina di righe
+di rami speculari per parte. Prima di toccarlo, gira
+`tools/smoke_solo_flow.gd`: e' la rete, ed e' verificata rompendola.
 
 La policy del **giocatore simulato** non e' una regola GMT: il fascicolo non
 dice come deve giocare l'essere umano. Ogni riga che ne deriva e' marcata

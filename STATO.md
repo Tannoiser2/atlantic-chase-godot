@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **2702 verifiche, 18 suite, headless.**
+Tutti i test passano: **2722 verifiche, 18 suite, headless.**
 
 ---
 
@@ -211,6 +211,23 @@ Tutti i test passano: **2702 verifiche, 18 suite, headless.**
   Internazionale. Ora c'e' tutta, e con lei la rimozione delle navi britanniche
   Danneggiate che i risultati C e Convoglio prescrivono - navi che le tabelle
   degli Esiti contano fra le Danneggiate, non fra le affondate.
+- **Il ciclo solitario ha una prova di fumo che lo percorre davvero**
+  (`tools/smoke_solo_flow.gd`): apre il gioco, passa l'Iniziativa al bot,
+  risponde alle scelte come farebbe una persona e pretende tiro della Tabella,
+  mossa annunciata, Registro cresciuto e tasti ancora vivi. Il criterio di
+  blocco non e' un tempo massimo ma l'assenza di **progresso**, cosi' una
+  macchina lenta non fa fallire la prova e un ciclo fermo non la fa passare.
+  Verificata rompendo di proposito `_apply_solo_ai_result`: esce con codice 1.
+- **Le regole di sequenza del solitario stanno in un posto solo**
+  (`core/rules/solo_sequence.gd`). Il ciclo resta in due esemplari - il core
+  sincrono e la vista asincrona - ma le REGOLE no: ramo del risultato,
+  costruzione della dichiarazione con la Coordinatrice, esito sull'Iniziativa
+  dopo l'azione, innesco della tabella Tardi. Le due copie erano gia'
+  divergute, e l'estrazione ha scoperto **due difetti veri nella vista**: il
+  percorso del bot non applicava il cambio d'Iniziativa (RB p.53) e trattava
+  come una ricerca quello che e' un passaggio; e una decisione senza effetto
+  lasciava l'Iniziativa al bot senza accodare niente, cioe' fermava la partita
+  in attesa di un giocatore che non doveva muovere.
 - **Il B-Dienst esiste.** Il servizio di decrittazione tedesco (p.5) attacca un
   segnalino Informazioni a un segmento di Traiettoria britannica, con
   l'Iniziativa tedesca e una volta sola per scenario. Sta nel menu Solitario:

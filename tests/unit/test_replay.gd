@@ -49,6 +49,8 @@ func run() -> void:
 	test_bl1_bad_weather_air_result_needs_a_cruiser()
 	test_bl1_fuel_limits_thresholds()
 	test_south_america_is_closed_without_a_fueling_grant()
+	test_sequence_rules_are_shared_by_both_cycles()
+	test_declaration_drops_a_coordinating_tf_out_of_position()
 
 
 ## Il conto delle verifiche di ogni suite e' fisso (`EXPECTED` in
@@ -418,3 +420,94 @@ func test_south_america_is_closed_without_a_fueling_grant() -> void:
 	kiel.ships.append(ShipRoster.shared().make("Lutzow"))
 	eq(Completion.port_options(kiel, graph, control).size(), 1,
 		"Kiel resta un porto di Completamento tedesco")
+
+
+## Le regole di sequenza vivono in `SoloSequence` proprio perche' il ciclo
+## esiste in due esemplari - il core sincrono e la vista asincrona - e le due
+## copie erano gia' divergute: `initiative_changes` era applicato solo in una,
+## e la regola della TF Coordinatrice era scritta due volte.
+func test_sequence_rules_are_shared_by_both_cycles() -> void:
+	_begin("le regole di sequenza stanno in un posto solo")
+	eq(SoloSequence.branch_of({"completion": true}), SoloSequence.Branch.COMPLETION,
+		"un Completamento e' il ramo Completamento")
+	eq(SoloSequence.branch_of({"action_key": "ENGAGE"}), SoloSequence.Branch.ACTION,
+		"una chiave d'azione e' il ramo Azione")
+	eq(SoloSequence.branch_of({"ok": true, "turn_kind": "trajectory"}),
+		SoloSequence.Branch.EFFECT, "un effetto applicato e' il ramo Effetto")
+	eq(SoloSequence.branch_of({}), SoloSequence.Branch.NOTHING,
+		"una decisione vuota non e' nessuno dei tre")
+	# Il ramo Completamento ha la precedenza su tutti: una decisione che ha sia
+	# `completion` sia `action_key` tenta il Completamento.
+	eq(SoloSequence.branch_of({"completion": true, "action_key": "ENGAGE"}),
+		SoloSequence.Branch.COMPLETION,
+		"il Completamento ha la precedenza sull'azione")
+
+	# La regola che impedisce al ciclo di fermarsi.
+	true_(SoloSequence.must_yield_initiative({}),
+		"una decisione senza effetto deve cedere l'Iniziativa")
+	false_(SoloSequence.must_yield_initiative({"pass_initiative": true}),
+		"se la cede gia' da sola, non serve forzarla")
+	false_(SoloSequence.must_yield_initiative({"ok": true}),
+		"una decisione che applica un effetto tiene l'Iniziativa")
+
+	# RB p.53: cambiare l'Iniziativa e Cercarla sono due cose diverse.
+	eq(SoloSequence.after_action("ENGAGE", true), SoloSequence.AfterAction.CHANGE,
+		"un risultato che fa cambiare l'Iniziativa la fa passare")
+	eq(SoloSequence.after_action("NAVAL_SEARCH", false),
+		SoloSequence.AfterAction.OFFER_STEAL,
+		"dopo una Ricerca Navale l'Inattivo puo' Sottrarre")
+	eq(SoloSequence.after_action("ENGAGE", false), SoloSequence.AfterAction.SEEK,
+		"in tutti gli altri casi si Cerca l'Iniziativa")
+	eq(SoloSequence.after_action("NAVAL_SEARCH", true),
+		SoloSequence.AfterAction.CHANGE,
+		"il cambio d'Iniziativa vince anche sulla Ricerca Navale")
+
+	eq(SoloSequence.late_event_for_action("AIR_STRIKE"), "air_strike",
+		"l'Attacco Aereo puo' far passare alla tabella Tardi")
+	eq(SoloSequence.late_event_for_action("STEALTH_ATTACK"), "stealth_attack",
+		"e anche l'Attacco Furtivo")
+	eq(SoloSequence.late_event_for_action("ENGAGE"), "",
+		"Ingaggiare da solo no")
+
+
+## RB p.47: la Coordinatrice deve occupare l'esagono Bersaglio. Una fuori
+## posto va lasciata cadere, non passata comunque: renderebbe illegale tutta
+## l'azione, e il giocatore vedrebbe solo "azione rifiutata".
+func test_declaration_drops_a_coordinating_tf_out_of_position() -> void:
+	_begin("la Coordinatrice fuori posto viene lasciata cadere")
+	var graph := MapGraph.load_default()
+	var here := Vector2i(15, -2)
+	var elsewhere := Vector2i(12, 0)
+	var active := TaskForce.new(1, TaskForce.Side.ROYAL_NAVY)
+	active.trajectory.become_station(here)
+	var target := TaskForce.new(2, TaskForce.Side.KRIEGSMARINE)
+	target.trajectory.become_station(here)
+	var near := TaskForce.new(3, TaskForce.Side.ROYAL_NAVY)
+	near.trajectory.become_station(here)
+	var far := TaskForce.new(4, TaskForce.Side.ROYAL_NAVY)
+	far.trajectory.become_station(elsewhere)
+
+	eq(SoloSequence.declaration_for({"action_key": "ENGAGE"}), null,
+		"senza TF Attiva e Bersaglio non c'e' dichiarazione")
+	var without := SoloSequence.declaration_for({"action_key": "ENGAGE",
+		"active": active, "target": target, "target_hex": here})
+	eq(without.active_coordinating, null,
+		"senza Coordinatrice indicata non se ne inventa una")
+	var good := SoloSequence.declaration_for({"action_key": "ENGAGE",
+		"active": active, "target": target, "target_hex": here,
+		"coordinating": near})
+	eq(good.active_coordinating, near,
+		"una Coordinatrice sull'esagono Bersaglio viene designata")
+	var bad := SoloSequence.declaration_for({"action_key": "ENGAGE",
+		"active": active, "target": target, "target_hex": here,
+		"coordinating": far})
+	eq(bad.active_coordinating, null,
+		"una Coordinatrice lontana dall'esagono Bersaglio viene lasciata cadere")
+	# E la dichiarazione resta legale: e' il punto di tutta la regola.
+	var engine := ActionEngine.load_default()
+	var st := GameState.new(graph, 1)
+	st.add_task_force(active)
+	st.add_task_force(target)
+	st.add_task_force(far)
+	eq(engine.legality_error(bad, st), "",
+		"lasciando cadere la Coordinatrice l'azione resta dichiarabile")

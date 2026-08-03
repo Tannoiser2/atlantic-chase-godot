@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Aggiornato dopo la chiusura di **R0** (3 agosto 2026). Baseline: **2702
+Aggiornato dopo la chiusura di **R0** (3 agosto 2026). Baseline: **2722
 verifiche su 18 suite**.
 
 Questo e' il backlog autorevole per continuare la revisione. `STATO.md`
@@ -26,7 +26,7 @@ vecchie sezioni "Cosa manca" non devono riaprire lavori gia' completati.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 2702 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 2722 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
@@ -34,10 +34,17 @@ vecchie sezioni "Cosa manca" non devono riaprire lavori gia' completati.
 - [x] Verificare che nessuna callback differita continui dopo `solo_ended`:
   `test_nothing_acts_after_scenario_end` legge la trascrizione e pretende zero
   turni, tiri della Tabella e azioni dopo la riga `FINE SCENARIO`.
-- [ ] **Riscrivere il ciclo solitario di `ui/main.gd` sopra `SoloRunner`.**
-  Oggi la sequenza esiste in due posti: nel core (sincrona, testata) e nella
-  vista (asincrona, con i dialoghi). Finche' restano separate, una correzione
-  va applicata due volte, ed e' la prima cosa che divergera'.
+- [x] **Le REGOLE di sequenza sono in un posto solo**: `core/rules/solo_sequence.gd`
+  tiene ramo del risultato, costruzione della dichiarazione (con la regola
+  della Coordinatrice), esito sull'Iniziativa dopo l'azione, innesco della
+  tabella Tardi e il vincolo "una decisione senza effetto cede l'Iniziativa".
+  Sia `SoloRunner` sia `ui/main.gd` le chiamano. Ha gia' ripagato: le due copie
+  erano divergute su `initiative_changes` e sulla Coordinatrice.
+- [ ] **Resta duplicato l'ORDINE dei passi** (~12 righe di rami speculari in
+  ciascun ciclo). Unificarlo richiede un iteratore di passi nel core e
+  trasformare il ciclo della vista in coroutine, perche' i suoi passi
+  attendono dialoghi, animazioni e la Mappa di Battaglia. Da fare quando serve
+  toccare l'ordine, non prima: oggi le due copie non contengono piu' regole.
 - [x] Smoke test GUI del ciclo solitario: `tools/smoke_solo_flow.gd` apre il
   gioco vero, passa l'Iniziativa all'avversario immaginario, risponde alle
   scelte del pannello e della mappa e pretende tiro della Tabella, mossa

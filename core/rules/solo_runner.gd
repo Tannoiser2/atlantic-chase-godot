@@ -276,45 +276,43 @@ func _apply_bot_decision(result: Dictionary, decision: Dictionary,
 	for line_v: Variant in decision.get("log", []):
 		_line("BOT   " + String(line_v))
 	var code := String(result.get("code", "?"))
-	if bool(decision.get("completion", false)):
-		if _inactive_steals("Completamento del bot"):
-			_line("BOT   Completamento impedito dal cambio d'Iniziativa.")
-			_bot_time_lapse(decision.get("active", null),
-				decision.get("target_hex", Vector2i.MAX))
+	match SoloSequence.branch_of(decision):
+		SoloSequence.Branch.COMPLETION:
+			if _inactive_steals("Completamento del bot"):
+				_line("BOT   Completamento impedito dal cambio d'Iniziativa.")
+				_bot_time_lapse(decision.get("active", null),
+					decision.get("target_hex", Vector2i.MAX))
+				return
+			var active: TaskForce = decision["active"]
+			var comp := Completion.resolve(active, decision["completion_port"],
+				vp_tracker)
+			for line_v2: Variant in comp.get("log", []):
+				_line("BOT   " + String(line_v2))
+			if bool(comp.get("ok", false)):
+				completions += 1
 			return
-		var active: TaskForce = decision["active"]
-		var comp := Completion.resolve(active, decision["completion_port"],
-			vp_tracker)
-		for line_v2: Variant in comp.get("log", []):
-			_line("BOT   " + String(line_v2))
-		if bool(comp.get("ok", false)):
-			completions += 1
-		return
-	if String(decision.get("action_key", "")) != "":
-		_resolve_bot_action(decision)
-		return
-	if not bool(decision.get("ok", false)):
-		# Nessun effetto applicabile: il bot non puo' restare fermo con
-		# l'Iniziativa in mano, se no il ciclo si blocca.
-		if not bool(decision.get("pass_initiative", false)):
-			_line("BOT   risultato %s senza effetto applicabile: cede l'Iniziativa." % code)
-			_give_initiative_to(player_side)
+		SoloSequence.Branch.ACTION:
+			_resolve_bot_action(decision)
 			return
-	if bool(decision.get("time_lapse_before_pass", false)):
+		SoloSequence.Branch.NOTHING:
+			if SoloSequence.must_yield_initiative(decision):
+				_line("BOT   risultato %s senza effetto applicabile: cede l'Iniziativa." % code)
+				_give_initiative_to(player_side)
+				return
+	if SoloSequence.effect_needs_time_lapse_before_pass(decision):
 		_line("BOT   Completamento impossibile: esegue Passare e Scorrere del Tempo.")
 		_bot_time_lapse(decision.get("active", null))
-	if bool(decision.get("roll_again", false)):
+	if SoloSequence.effect_rolls_again(decision):
 		_line("BOT   la tabella ordina un altro tiro immediato.")
 		if not state.solo_ended:
 			_bot_turn()
 		return
-	if String(decision.get("turn_kind", "")) == "trajectory":
+	if SoloSequence.effect_is_trajectory(decision):
 		_bot_time_lapse(decision.get("active", null),
 			decision.get("target_hex", Vector2i.MAX))
 		if _inactive_steals("Traiettoria del bot"):
 			return
-		var follow: Dictionary = decision.get("follow_up", {})
-		if not follow.is_empty() and depth < MAX_FOLLOW_UPS:
+		if SoloSequence.has_follow_up(decision) and depth < MAX_FOLLOW_UPS:
 			_line("BOT   continua la procedura prescritta senza ritirare la Tabella.")
 			var next := SoloAI.continue_follow_up(decision, state, graph, engine,
 				port_control, imaginary_side)
@@ -327,25 +325,15 @@ func _apply_bot_decision(result: Dictionary, decision: Dictionary,
 ## Mirror headless di `ui/main.gd::_resolve_solo_ai_action`.
 func _resolve_bot_action(decision: Dictionary) -> void:
 	var key := String(decision.get("action_key", ""))
-	var active: TaskForce = decision.get("active", null)
-	var target: TaskForce = decision.get("target", null)
-	if active == null or target == null:
+	var dec := SoloSequence.declaration_for(decision)
+	if dec == null:
 		_line("BOT   azione incompleta: manca la TF attiva o il bersaglio.")
 		_give_initiative_to(player_side)
 		return
-	var dec := ActionEngine.Declaration.new()
-	dec.action_key = key
-	dec.active = active
-	dec.target = target
-	dec.launch_hex = decision.get("launch_hex", Vector2i.MAX)
-	dec.target_hex = decision.get("target_hex", Vector2i.MAX)
-	# RB p.47: una Coordinatrice vale solo se occupa l'esagono Bersaglio.
-	# Designarla comunque renderebbe l'azione illegale invece di aiutarla.
-	var coordinating: TaskForce = decision.get("coordinating", null)
-	if coordinating != null and dec.target_hex != Vector2i.MAX \
-			and coordinating.trajectory.occupies(dec.target_hex):
-		dec.active_coordinating = coordinating
-		_line("BOT   %s coordina l'azione." % coordinating.display_name())
+	var active := dec.active
+	var target := dec.target
+	if dec.active_coordinating != null:
+		_line("BOT   %s coordina l'azione." % dec.active_coordinating.display_name())
 	var res := engine.resolve(dec, state)
 	var label := String(engine.action(key).get("label", key))
 	if not bool(res["ok"]):
@@ -368,10 +356,9 @@ func _resolve_bot_action(decision: Dictionary) -> void:
 		if applied["battle"] != Results.Battle.NONE:
 			pending = applied["battle"]
 	_report_eliminated("BOT - %s" % label)
-	if key == "AIR_STRIKE":
-		_maybe_go_late("air_strike", "il bot ha eseguito un Attacco Aereo")
-	elif key == "STEALTH_ATTACK":
-		_maybe_go_late("stealth_attack", "il bot ha eseguito un Attacco Furtivo")
+	var late_event := SoloSequence.late_event_for_action(key)
+	if late_event != "":
+		_maybe_go_late(late_event, "il bot ha eseguito %s" % label)
 	if pending != Results.Battle.NONE and not _prepare_battle(active, target):
 		pending = Results.Battle.NONE
 	if pending != Results.Battle.NONE:
@@ -381,16 +368,13 @@ func _resolve_bot_action(decision: Dictionary) -> void:
 	if bool(engine.action(key).get("causes_time_lapse", false)):
 		_bot_time_lapse(active, dec.target_hex,
 			dec.launch_hex if key == "AIR_STRIKE" else Vector2i.MAX)
-	# RB p.53: certi risultati fanno CAMBIARE l'Iniziativa; non si Cerca, passa
-	# e basta. Confonderli con una ricerca dell'Iniziativa e' un errore
-	# silenzioso: il conteggio si comporta in modo diverso.
-	if initiative_changes:
-		_give_initiative_to(1 - active.side)
-		return
-	if key == "NAVAL_SEARCH":
-		_inactive_steals("Ricerca Navale del bot")
-	else:
-		_seek_initiative("BOT")
+	match SoloSequence.after_action(key, initiative_changes):
+		SoloSequence.AfterAction.CHANGE:
+			_give_initiative_to(1 - active.side)
+		SoloSequence.AfterAction.OFFER_STEAL:
+			_inactive_steals("Ricerca Navale del bot")
+		_:
+			_seek_initiative("BOT")
 
 
 # --------------------------------------------------- turno del giocatore --

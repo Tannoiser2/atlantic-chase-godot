@@ -1736,7 +1736,19 @@ func _apply_solo_ai_decision(result: Dictionary, decision: Dictionary) -> String
 		_msg(String(line_v))
 	var code := String(result.get("code", "?"))
 	var summary := "risultato %s; nessun effetto applicato." % code
-	if bool(decision.get("completion", false)):
+	# Una decisione che non applica niente non puo' lasciare l'Iniziativa al
+	# bot: resterebbe Attivo senza nessuna procedura accodata, e la partita
+	# aspetterebbe un giocatore che non deve muovere. Nel motore headless si
+	# vedeva come un turno senza tiri; qui non si vedrebbe affatto, perche' non
+	# c'e' niente da mostrare.
+	if SoloSequence.must_yield_initiative(decision):
+		_msg("Solitario AI: risultato %s senza effetto applicabile; cede l'Iniziativa."
+			% code)
+		var idle_player := _solo_player_side()
+		if idle_player >= 0:
+			_change_initiative_to(idle_player)
+		return "risultato %s: nessun effetto applicabile; l'Iniziativa passa al giocatore." % code
+	if SoloSequence.branch_of(decision) == SoloSequence.Branch.COMPLETION:
 		if await _offer_steal_initiative("Completamento del bot"):
 			_msg("Solitario AI: Completamento impedito dal cambio d'Iniziativa.")
 			await _solo_time_lapse(decision.get("active", null),
@@ -1752,22 +1764,21 @@ func _apply_solo_ai_decision(result: Dictionary, decision: Dictionary) -> String
 			String((comp.get("port", {}) as Dictionary).get("name", "un porto"))]
 		state.changed.emit()
 		_queue_next_solo_action("dopo il Completamento")
-	elif String(decision.get("action_key", "")) != "":
+	elif SoloSequence.branch_of(decision) == SoloSequence.Branch.ACTION:
 		summary = "risultato %s: %s" % [code, await _resolve_solo_ai_action(decision)]
-	elif bool(decision.get("ok", false)):
+	elif SoloSequence.branch_of(decision) == SoloSequence.Branch.EFFECT:
 		log.record("Solitario AI: %s" % String(decision.get("turn_kind", "effetto")))
 		state.changed.emit()
-		if bool(decision.get("time_lapse_before_pass", false)):
+		if SoloSequence.effect_needs_time_lapse_before_pass(decision):
 			_msg("Solitario AI: il Completamento e' impossibile; esegue Passare e Scorrere del Tempo.")
 			await _solo_time_lapse(decision.get("active", null))
-		if bool(decision.get("roll_again", false)):
+		if SoloSequence.effect_rolls_again(decision):
 			_queue_next_solo_action("la tabella ordina un altro tiro")
-		elif String(decision.get("turn_kind", "")) == "trajectory":
+		elif SoloSequence.effect_is_trajectory(decision):
 			await _solo_time_lapse(decision.get("active", null),
 				decision.get("target_hex", Vector2i.MAX))
 			if not await _offer_steal_initiative("Traiettoria del bot"):
-				var follow: Dictionary = decision.get("follow_up", {})
-				if not follow.is_empty():
+				if SoloSequence.has_follow_up(decision):
 					_msg("Solitario AI: continua la procedura prescritta senza ritirare la Tabella.")
 					var next := SoloAI.continue_follow_up(decision, state, graph,
 						engine, _port_control(), imaginary)
@@ -1836,24 +1847,14 @@ func _show_completed_notice(tf: TaskForce, result: Dictionary,
 
 func _resolve_solo_ai_action(decision: Dictionary) -> String:
 	var key := String(decision.get("action_key", ""))
-	var active: TaskForce = decision.get("active", null)
-	var target: TaskForce = decision.get("target", null)
-	if key == "" or active == null or target == null:
+	var dec := SoloSequence.declaration_for(decision)
+	if dec == null:
 		return "azione incompleta: manca la TF attiva o il bersaglio."
-	var dec := ActionEngine.Declaration.new()
-	dec.action_key = key
-	dec.active = active
-	dec.target = target
-	dec.launch_hex = decision.get("launch_hex", Vector2i.MAX)
-	dec.target_hex = decision.get("target_hex", Vector2i.MAX)
-	# RB p.47: la Coordinatrice deve occupare l'esagono Bersaglio. Se la
-	# procedura ne indica una che non ci sta, si rinuncia invece di rendere
-	# illegale tutta l'azione.
-	var coordinating: TaskForce = decision.get("coordinating", null)
-	if coordinating != null and dec.target_hex != Vector2i.MAX \
-			and coordinating.trajectory.occupies(dec.target_hex):
-		dec.active_coordinating = coordinating
-		_msg("Solitario AI: %s coordina l'azione." % coordinating.display_name())
+	var active := dec.active
+	var target := dec.target
+	if dec.active_coordinating != null:
+		_msg("Solitario AI: %s coordina l'azione."
+			% dec.active_coordinating.display_name())
 	if key == "AIR_STRIKE":
 		traj_layer.set_air_action_markers(active.side, dec.launch_hex, dec.target_hex)
 		await get_tree().create_timer(0.55).timeout
@@ -1877,21 +1878,23 @@ func _resolve_solo_ai_action(decision: Dictionary) -> String:
 		return "%s di %s contro %s annullato da Interruzione." % [label,
 			active.display_name(), target.display_name()]
 	var pending_battle := Results.Battle.NONE
+	var initiative_changes := false
 	var applied_texts: Array[String] = []
 	for code_v: Variant in res["results"] as Array:
 		var code := String(code_v)
 		var applied := Results.apply(code, active, target, dec.target_hex, state)
 		_msg("    %s" % applied["text"])
 		applied_texts.append(String(applied["text"]))
+		if bool(applied.get("initiative_changes", false)):
+			initiative_changes = true
 		if applied["battle"] != Results.Battle.NONE:
 			pending_battle = applied["battle"]
 	_report_eliminated_forces("Solitario AI - %s" % label)
 	log.record("Solitario AI: %s" % label)
 	state.changed.emit()
-	if key == "AIR_STRIKE":
-		_solo_maybe_go_late("air_strike", "il bot ha eseguito un Attacco Aereo")
-	elif key == "STEALTH_ATTACK":
-		_solo_maybe_go_late("stealth_attack", "il bot ha eseguito un Attacco Furtivo")
+	var late_event := SoloSequence.late_event_for_action(key)
+	if late_event != "":
+		_solo_maybe_go_late(late_event, "il bot ha eseguito %s" % label)
 	if pending_battle != Results.Battle.NONE \
 			and not await _prepare_solo_battle(active, target):
 		pending_battle = Results.Battle.NONE
@@ -1906,13 +1909,23 @@ func _resolve_solo_ai_action(decision: Dictionary) -> String:
 				dec.launch_hex if key == "AIR_STRIKE" else Vector2i.MAX)
 		if key == "AIR_STRIKE":
 			traj_layer.clear_air_action_markers()
-		if key == "NAVAL_SEARCH":
-			if not await _offer_steal_initiative("Ricerca Navale del bot"):
-				_queue_next_solo_action("il bot mantiene l'Iniziativa")
-		else:
-			var changed := _seek_initiative()
-			if not changed and _solo_is_imaginary_turn():
-				_queue_next_solo_action("il bot vince la ricerca dell'Iniziativa")
+		match SoloSequence.after_action(key, initiative_changes):
+			SoloSequence.AfterAction.CHANGE:
+				# RB p.53: qui l'Iniziativa CAMBIA, non si Cerca. Questo ramo
+				# mancava del tutto nel percorso del bot: il risultato Mancato
+				# con Informazioni faceva tirare per Cercarla, e il Conto
+				# dell'Iniziativa si comportava in modo diverso da quello del
+				# percorso del giocatore, che la regola la applicava.
+				if _change_initiative_to(1 - active.side) \
+						and _solo_is_imaginary_turn():
+					_queue_next_solo_action("l'Iniziativa e' cambiata")
+			SoloSequence.AfterAction.OFFER_STEAL:
+				if not await _offer_steal_initiative("Ricerca Navale del bot"):
+					_queue_next_solo_action("il bot mantiene l'Iniziativa")
+			_:
+				var changed := _seek_initiative()
+				if not changed and _solo_is_imaginary_turn():
+					_queue_next_solo_action("il bot vince la ricerca dell'Iniziativa")
 	var outcome := "; ".join(applied_texts)
 	if pending_battle != Results.Battle.NONE:
 		outcome = "apre una Battaglia" if outcome == "" else outcome + "; apre una Battaglia"
