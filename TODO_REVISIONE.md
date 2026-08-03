@@ -177,10 +177,22 @@ Uno scenario puo' essere marcato completo solo quando:
   quelle frecce erano un indizio buono. I tre che restano toccano esagoni
   davvero di terra o coperti dal riquadro di Portsmouth: lo decideranno le
   illustrazioni del fascicolo.
-  **Restano, e sono la parte che ancora blocca i cinque scenari**: le basi
-  aeree (i sette segnalini B e G, gia' visibili al rilevatore), un secondo
+  **Le basi aeree sono trovate e collocate**: sette sul Mare del Nord, cinque
+  britanniche lungo la costa inglese e scozzese (2,0) (2,2) (2,3) (2,4) (3,4) e
+  due tedesche a (6,0) Skagerrak e (5,2) Horns Reef; **zero sul Mare di
+  Norvegia**, e l'elenco vuoto e' un dato, non una dimenticanza. Il rilevatore
+  le isola col bianco puro del disco - sulla mappa non c'e' quasi nient'altro
+  sopra 248 su tutti e tre i canali - e la parte viene dal colore della lettera
+  e dell'aereo, rossi britannici e viola tedeschi. Posizione e parte sono anche
+  trascritte a mano: se il rilevato e il trascritto non combaciano, il
+  programma si ferma.
+  La regola sta in RB p.27: una base aerea e' la **fonte** di un Attacco Aereo,
+  che parte dal suo esagono, si fa **solo col Meteo Buono** e non puo' colpire
+  oltre **due esagoni** dal Punto di Lancio; una base aerea **non puo' essere
+  il bersaglio**.
+  **Resta, ed e' l'ultima cosa che blocca i cinque scenari**: un secondo
   `MapGraph` nel motore e il disegno dell'inserto come superficie di gioco
-  nella GUI.
+  nella GUI. Tutto il dato di mappa c'e'.
   **Otto esagoni sono marcati `needs_check`**: hanno terra e mare quasi in
   parti uguali, e il colore non basta a decidere. Gli esagoni scartati per un
   soffio restano scritti in `excluded_near_miss`, col motivo: nessuno sparisce

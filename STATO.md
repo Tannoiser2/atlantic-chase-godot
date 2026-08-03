@@ -402,8 +402,22 @@ Tutti i test passano: **2957 verifiche, 18 suite, headless.**
   britannici di N1 e ci fa partire i Gruppi Rinforzo. Quali esagoni una banda
   designi non e' scritto: si prendono quelli che tocca, e la percentuale di
   contatto resta nel dato.
-  **I cinque scenari inserto restano dichiarati non giocabili**: mancano le
-  basi aeree, un secondo `MapGraph` nel motore e il disegno nella GUI.
+- **Le basi aeree degli inserti sono trovate e collocate.** Sette sul Mare del
+  Nord: cinque britanniche lungo la costa inglese e scozzese, due tedesche allo
+  Skagerrak e a Horns Reef. **Zero sul Mare di Norvegia**, e l'elenco vuoto e'
+  un dato: non e' una dimenticanza. Il rilevatore le isola col bianco puro del
+  disco, che sulla mappa stampata non ha quasi concorrenza, e legge la parte dal
+  colore della lettera e dell'aereo - B rossa britannica, G viola tedesca.
+  Posizione e parte sono anche trascritte a mano, e se le due letture non
+  combaciano il programma si ferma.
+  La regola e' RB p.27: la base aerea e' la fonte dell'Attacco Aereo, che parte
+  dal suo esagono, si fa solo col Meteo Buono e non arriva oltre due esagoni dal
+  Punto di Lancio; la base aerea non puo' essere il bersaglio.
+  **Con questo il dato di mappa degli inserti e' completo**: reticolo, esagoni,
+  terreno, adiacenze, porti, punti di interesse, caselle fuori mappa, frecce
+  "non adiacente" e basi aeree. I cinque scenari restano dichiarati non
+  giocabili per un motivo solo, ed e' codice, non piu' dato: manca un secondo
+  `MapGraph` nel motore e il disegno dell'inserto nella GUI.
 - **I Comandanti dicono la loro condizione stampata.** Gli undici testi sono
   trascritti da RB p.10 letta a 300 dpi: la scheda TF mostra la regola vera e
   non un riassunto, ed e' quella che decide se il beneficio si puo' usare

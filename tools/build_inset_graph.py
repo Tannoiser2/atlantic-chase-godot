@@ -86,9 +86,9 @@ cartografico. Non si decide qui.
 
 ## Che cosa questo NON fa
 
-Non mette le basi aeree, i sette segnalini B e G. Finche' mancano quelle, piu'
-un secondo MapGraph nel motore e il disegno dell'inserto nella GUI, i cinque
-scenari inserto restano dichiarati non giocabili. La verita'
+Non costruisce il secondo MapGraph nel motore e non disegna l'inserto nella
+GUI. Finche' mancano quelli, i cinque scenari inserto restano dichiarati non
+giocabili. La verita'
 indipendente per validarli sono le illustrazioni di schieramento del fascicolo,
 che disegnano i segmenti di Traiettoria iniziali sull'inserto.
 """
@@ -227,6 +227,31 @@ OFF_MAP_BOXES = {
 # in su. Sotto, e' lo sfioramento di un angolo.
 BOX_CONTACT_MIN = 0.10
 
+# Le basi aeree stampate: il tondo con l'aereo e la lettera, B rossa britannica
+# o G viola tedesca. Regolamento p.27, ATTACCO AEREO: una base aerea puo' essere
+# designata TF Attiva ed e' la "fonte" dell'attacco; l'attacco parte dal suo
+# esagono, il bersaglio non puo' stare a piu' di DUE esagoni dal Punto di
+# Lancio, si fa solo col Meteo Buono, e una base aerea NON puo' essere il
+# bersaglio. Un Attacco Aereo non puo' attraversare un esagono di Linea Artica
+# (sugli inserti la Linea Artica non c'e').
+#
+# Le posizioni sono quelle trovate dal rilevatore e verificate su ritaglio
+# ingrandito, una per una. Il Mare di Norvegia non ne ha NESSUNA, e l'elenco
+# vuoto e' un dato: non e' una dimenticanza.
+AIR_BASES = {
+    "map_north_sea": [
+        ((311, 294), "UK"),
+        ((205, 713), "UK"),
+        ((878, 734), "GE"),
+        ((158, 927), "UK"),
+        ((626, 1006), "GE"),
+        ((147, 1048), "UK"),
+        ((254, 1255), "UK"),
+    ],
+    "map_norwegian_sea": [],
+}
+AIR_BASE_TOLERANCE_PX = 12
+
 NAME_TOLERANCE_PX = 12
 
 # Le frecce "non adiacente", lette sulle immagini ingrandite col reticolo
@@ -254,6 +279,64 @@ NOT_ADJACENT = {
         ((790, 1120), "Norvegia, a sud di Andalsnes"),
     ],
 }
+
+
+def find_air_bases(a):
+    """I tondi delle basi aeree: aereo rosso o viola su disco bianco, in un
+    anello nero. Il segnale che li isola e' il BIANCO PURO del disco - sulla
+    mappa stampata non c'e' quasi nient'altro sopra 248 su tutti e tre i
+    canali - piu' la taglia, che e' sempre la stessa: circa 34x32 px."""
+    x0, y0, x1, y1 = FRAME
+    frame = np.zeros(a.shape[:2], bool)
+    frame[y0:y1, x0:x1] = True
+    white = (a[:, :, 0] >= 248) & (a[:, :, 1] >= 248) & (a[:, :, 2] >= 248) & frame
+    grown = ndimage.binary_dilation(white, np.ones((13, 13), bool))
+    lab, n = ndimage.label(grown)
+    out = []
+    for sl, idx in zip(ndimage.find_objects(lab), range(1, n + 1)):
+        h = sl[0].stop - sl[0].start
+        w = sl[1].stop - sl[1].start
+        area = int((white[sl] & (lab[sl] == idx)).sum())
+        if not (28 <= w <= 38 and 28 <= h <= 38 and 60 <= area <= 140):
+            continue
+        cy, cx = ndimage.center_of_mass(white & (lab == idx))
+        # La lettera e l'aereo danno la parte: rossi britannici, viola tedeschi.
+        patch = a[max(0, int(cy) - 20):int(cy) + 21,
+                  max(0, int(cx) - 20):int(cx) + 21].reshape(-1, 3)
+        strong = patch[(patch.max(1) - patch.min(1)) > 60]
+        if not len(strong):
+            continue
+        mean = strong.mean(0)
+        if abs(mean[0] - mean[2]) < 15:
+            raise SystemExit("base aerea a (%.0f, %.0f): rosso e blu troppo "
+                             "vicini per dire di che parte e'" % (cx, cy))
+        out.append((float(cx), float(cy), "UK" if mean[0] > mean[2] else "GE"))
+    return out
+
+
+def name_air_bases(key, found):
+    """Confronta il rilevato con il trascritto, e si ferma se non combaciano."""
+    wanted = list(AIR_BASES[key])
+    named = []
+    for cx, cy, side in found:
+        hit = None
+        for i, ((nx, ny), _sd) in enumerate(wanted):
+            if math.hypot(cx - nx, cy - ny) <= AIR_BASE_TOLERANCE_PX:
+                hit = i
+                break
+        if hit is None:
+            raise SystemExit("%s: base aerea a (%.0f, %.0f) non trascritta; "
+                             "guardala sull'immagine e aggiungila ad AIR_BASES"
+                             % (key, cx, cy))
+        _pos, want_side = wanted.pop(hit)
+        if want_side != side:
+            raise SystemExit("%s: la base aerea a (%.0f, %.0f) e' trascritta %s "
+                             "ma il segnalino e' %s" % (key, cx, cy, want_side, side))
+        named.append({"side": side, "marker_px": [round(cx, 1), round(cy, 1)]})
+    if wanted:
+        raise SystemExit("%s: basi aeree trascritte ma non trovate: %s"
+                         % (key, ", ".join(str(p) for p, _s in wanted)))
+    return named
 
 
 def find_port_dots(a):
@@ -528,6 +611,33 @@ def build(key, meta, rgb, overlay_dir=None):
         h["needs_check"] = h["land_frac"] >= 0.20 \
             and abs(h["sea_frac"] - SEA_MIN) < 0.25
 
+    # ---- basi aeree ----
+    # L'esagono di una base aerea deve esistere: e' il Punto di Lancio da cui
+    # parte l'Attacco Aereo (RB p.27).
+    air = name_air_bases(key, find_air_bases(rgb))
+    for base in air:
+        px, py = base["marker_px"]
+        approx = inv.dot(np.array([px, py]) - origin)
+        best = None
+        for di in (-1, 0, 1):
+            for dj in (-1, 0, 1):
+                i = int(round(approx[0])) + di
+                j = int(round(approx[1])) + dj
+                c = origin + i * e1 + j * e2
+                d = math.hypot(px - c[0], py - c[1])
+                if best is None or d < best[0]:
+                    best = (d, i - i0, j - j0)
+        _d, q, r = best
+        base["q"], base["r"] = q, r
+        base["range_hexes"] = 2
+        base["good_weather_only"] = True
+        base["can_be_targeted"] = False
+        if (q, r) not in cells:
+            raise SystemExit("%s: la base aerea a (%.0f,%.0f) cade in (%d,%d), "
+                             "fuori dal reticolo enumerato" % (key, px, py, q, r))
+        cells[(q, r)]["playable"] = True
+        cells[(q, r)]["reason"] = "contiene una base aerea %s" % base["side"]
+
     # ---- caselle fuori mappa ----
     boxes = []
     for name, rect, kind, note in OFF_MAP_BOXES[key]:
@@ -621,6 +731,12 @@ def build(key, meta, rgb, overlay_dir=None):
             if live:
                 draw.text((c[0] - 22, c[1] - 6), "%d,%d" % (h["q"], h["r"]),
                           fill=(0, 90, 0))
+        for base in air:
+            px, py = base["marker_px"]
+            col = (200, 0, 0) if base["side"] == "UK" else (110, 0, 200)
+            draw.ellipse([px - 22, py - 22, px + 22, py + 22], outline=col, width=4)
+            draw.text((px + 25, py - 6), "base %s (%d,%d)"
+                      % (base["side"], base["q"], base["r"]), fill=col)
         for b in boxes:
             draw.rectangle(b["rect_px"], outline=(255, 140, 0), width=5)
             bx0, by0, bx1, by1 = b["rect_px"]
@@ -668,10 +784,16 @@ def build(key, meta, rgb, overlay_dir=None):
         "ports": [p for p in ports if p["role"] == "porto"],
         "points_of_interest": [p for p in ports if p["role"] != "porto"],
         "off_map_boxes": boxes,
+        "air_bases": air,
+        "air_strike_rule": ("RB p.27: una base aerea e' la 'fonte' di un Attacco "
+                            "Aereo, che parte dal suo esagono, si fa solo col "
+                            "Meteo Buono e non puo' colpire oltre DUE esagoni "
+                            "dal Punto di Lancio. Una base aerea non puo' essere "
+                            "il bersaglio."),
         "not_adjacent_edges": edges,
         "excluded_near_miss": dropped,
-        "still_missing": ("basi aeree, un secondo MapGraph nel motore e il "
-                          "disegno dell'inserto nella GUI"),
+        "still_missing": ("un secondo MapGraph nel motore e il disegno "
+                          "dell'inserto nella GUI"),
     }
 
 
@@ -689,15 +811,20 @@ def main():
         out[key] = g
         coastal = sum(1 for h in g["hexes"] if h["coastal"])
         print("%-38s %3d esagoni, %d costieri, %d porti, "
-              "%d punti, %d caselle, %d frecce, %d da verificare, %d scartati"
+              "%d punti, %d caselle, %d basi, %d frecce, %d da verificare, %d scartati"
               % (g["name"], g["hex_count"], coastal, len(g["ports"]),
                  len(g["points_of_interest"]), len(g["off_map_boxes"]),
-                 len(g["not_adjacent_edges"]), g["needs_check_count"],
-                 len(g["excluded_near_miss"])))
+                 len(g["air_bases"]), len(g["not_adjacent_edges"]),
+                 g["needs_check_count"], len(g["excluded_near_miss"])))
         for p_ in g["ports"]:
             print("      porto %-14s (%2d,%2d)  %s" % (p_["name"], p_["q"], p_["r"], p_["nation"]))
         for p_ in g["points_of_interest"]:
             print("      punto %-14s (%2d,%2d)" % (p_["name"], p_["q"], p_["r"]))
+        for a_ in g["air_bases"]:
+            print("      base aerea %s (%2d,%2d)  raggio %d"
+                  % (a_["side"], a_["q"], a_["r"], a_["range_hexes"]))
+        if not g["air_bases"]:
+            print("      nessuna base aerea stampata su questo inserto")
         for b_ in g["off_map_boxes"]:
             print("      casella %-16s %-28s -> %s"
                   % (b_["name"], b_["kind"],

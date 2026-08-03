@@ -77,10 +77,11 @@ tools/.venv/bin/python tools/build_inset_graph.py --overlay-dir reports
 Scrive `core/data/inset_graphs.json` e un overlay per mappa da guardare: il
 verde e' giocabile, il rosso no, il magenta sono i porti e il verde acqua i
 Punti di Interesse, l'arancione le caselle fuori mappa con la riga verso i loro
-esagoni, il blu le frecce "non adiacente" con la coppia scritta sopra.
-Reticolo, nomi degli esagoni, porti, punti, caselle e frecce ci sono, ma i
-cinque scenari inserto restano dichiarati non giocabili: mancano le basi aeree,
-un secondo `MapGraph` e il disegno nella GUI.
+esagoni, il blu le frecce "non adiacente" con la coppia scritta sopra, il
+cerchio rosso o viola le basi aeree.
+**Il dato di mappa degli inserti e' completo.** I cinque scenari inserto
+restano dichiarati non giocabili per un motivo solo, ed e' codice: manca un
+secondo `MapGraph` nel motore e il disegno dell'inserto nella GUI.
 
 ## Metodo di revisione
 

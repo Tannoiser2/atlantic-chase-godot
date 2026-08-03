@@ -159,7 +159,7 @@
      "land_frac": 0.009,
      "box_frac": 0.018,
      "outside_frac": 0.0,
-     "reason": "mare",
+     "reason": "contiene una base aerea UK",
      "neighbors": [
       {
        "dir": 0,
@@ -249,7 +249,7 @@
      "land_frac": 0.009,
      "box_frac": 0.0,
      "outside_frac": 0.0,
-     "reason": "mare",
+     "reason": "contiene una base aerea UK",
      "neighbors": [
       {
        "dir": 0,
@@ -289,7 +289,7 @@
      "land_frac": 0.196,
      "box_frac": 0.032,
      "outside_frac": 0.022,
-     "reason": "mare",
+     "reason": "contiene una base aerea UK",
      "neighbors": [
       {
        "dir": 0,
@@ -324,7 +324,7 @@
      "land_frac": 0.48,
      "box_frac": 0.029,
      "outside_frac": 0.228,
-     "reason": "mare",
+     "reason": "contiene una base aerea UK",
      "neighbors": [
       {
        "dir": 0,
@@ -574,7 +574,7 @@
      "land_frac": 0.048,
      "box_frac": 0.062,
      "outside_frac": 0.071,
-     "reason": "mare",
+     "reason": "contiene una base aerea UK",
      "neighbors": [
       {
        "dir": 0,
@@ -1089,7 +1089,7 @@
      "land_frac": 0.004,
      "box_frac": 0.009,
      "outside_frac": 0.0,
-     "reason": "mare",
+     "reason": "contiene una base aerea GE",
      "neighbors": [
       {
        "dir": 0,
@@ -1199,7 +1199,7 @@
      "land_frac": 0.248,
      "box_frac": 0.056,
      "outside_frac": 0.045,
-     "reason": "mare",
+     "reason": "contiene una base aerea GE",
      "neighbors": [
       {
        "dir": 2,
@@ -1487,6 +1487,93 @@
      ]
     }
    ],
+   "air_bases": [
+    {
+     "side": "UK",
+     "marker_px": [
+      311.0,
+      294.3
+     ],
+     "q": 2,
+     "r": 0,
+     "range_hexes": 2,
+     "good_weather_only": true,
+     "can_be_targeted": false
+    },
+    {
+     "side": "UK",
+     "marker_px": [
+      204.7,
+      712.9
+     ],
+     "q": 2,
+     "r": 2,
+     "range_hexes": 2,
+     "good_weather_only": true,
+     "can_be_targeted": false
+    },
+    {
+     "side": "GE",
+     "marker_px": [
+      877.8,
+      734.4
+     ],
+     "q": 6,
+     "r": 0,
+     "range_hexes": 2,
+     "good_weather_only": true,
+     "can_be_targeted": false
+    },
+    {
+     "side": "UK",
+     "marker_px": [
+      157.9,
+      926.5
+     ],
+     "q": 2,
+     "r": 3,
+     "range_hexes": 2,
+     "good_weather_only": true,
+     "can_be_targeted": false
+    },
+    {
+     "side": "GE",
+     "marker_px": [
+      626.2,
+      1006.2
+     ],
+     "q": 5,
+     "r": 2,
+     "range_hexes": 2,
+     "good_weather_only": true,
+     "can_be_targeted": false
+    },
+    {
+     "side": "UK",
+     "marker_px": [
+      147.0,
+      1048.1
+     ],
+     "q": 2,
+     "r": 4,
+     "range_hexes": 2,
+     "good_weather_only": true,
+     "can_be_targeted": false
+    },
+    {
+     "side": "UK",
+     "marker_px": [
+      254.2,
+      1255.5
+     ],
+     "q": 3,
+     "r": 4,
+     "range_hexes": 2,
+     "good_weather_only": true,
+     "can_be_targeted": false
+    }
+   ],
+   "air_strike_rule": "RB p.27: una base aerea e' la 'fonte' di un Attacco Aereo, che parte dal suo esagono, si fa solo col Meteo Buono e non puo' colpire oltre DUE esagoni dal Punto di Lancio. Una base aerea non puo' essere il bersaglio.",
    "not_adjacent_edges": [
     {
      "aq": 1,
@@ -1584,7 +1671,7 @@
      "needs_check": true
     }
    ],
-   "still_missing": "basi aeree, un secondo MapGraph nel motore e il disegno dell'inserto nella GUI"
+   "still_missing": "un secondo MapGraph nel motore e il disegno dell'inserto nella GUI"
   },
   "map_norwegian_sea": {
    "name": "Mappa Inserto del Mare di Norvegia",
@@ -3044,6 +3131,8 @@
      ]
     }
    ],
+   "air_bases": [],
+   "air_strike_rule": "RB p.27: una base aerea e' la 'fonte' di un Attacco Aereo, che parte dal suo esagono, si fa solo col Meteo Buono e non puo' colpire oltre DUE esagoni dal Punto di Lancio. Una base aerea non puo' essere il bersaglio.",
    "not_adjacent_edges": [
     {
      "aq": 6,
@@ -3117,7 +3206,7 @@
      "needs_check": true
     }
    ],
-   "still_missing": "basi aeree, un secondo MapGraph nel motore e il disegno dell'inserto nella GUI"
+   "still_missing": "un secondo MapGraph nel motore e il disegno dell'inserto nella GUI"
   }
  }
 }
