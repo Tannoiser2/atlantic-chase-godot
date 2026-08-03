@@ -1363,14 +1363,9 @@ func _do_load() -> void:
 func _show_outcome() -> void:
 	if victory == null:
 		return
-	_msg("--- ESITO ---")
 	var description := victory.describe(state)
-	for line in description.split("\n"):
-		_msg(line)
 	var late := Endgame.notice(state, scenario.rules() if scenario != null
 		else {}, graph, _port_control())
-	if late != "":
-		_msg(late)
 	var text := "[b]VALORI SULLA MAPPA[/b]\n"
 	text += "Modificatori: [b]%+d[/b] (%s)    Conto Iniziativa: [b]%d[/b]\n" % [
 		state.modifier_track_value,
@@ -1578,6 +1573,9 @@ func _apply_solo_ai_decision(result: Dictionary, decision: Dictionary) -> String
 	elif bool(decision.get("ok", false)):
 		log.record("Solitario AI: %s" % String(decision.get("turn_kind", "effetto")))
 		state.changed.emit()
+		if bool(decision.get("time_lapse_before_pass", false)):
+			_msg("Solitario AI: il Completamento e' impossibile; esegue Passare e Scorrere del Tempo.")
+			await _solo_time_lapse(decision.get("active", null))
 		if bool(decision.get("roll_again", false)):
 			_queue_next_solo_action("la tabella ordina un altro tiro")
 		elif String(decision.get("turn_kind", "")) == "trajectory":
@@ -1646,8 +1644,10 @@ func _show_completed_notice(tf: TaskForce, result: Dictionary,
 		actor: String = "Giocatore") -> void:
 	var port := String((result.get("port", {}) as Dictionary).get("name", "porto"))
 	var ships: Array = result.get("ships", [])
+	var manifest := ", ".join(ships) if not ships.is_empty() \
+		else "composizione non identificata"
 	_msg(("%s - %s ha Completato a %s: %s lascia la mappa e resta nel registro "
-		+ "delle TF uscite.") % [actor, tf.display_name(), port, ", ".join(ships)])
+		+ "delle TF uscite.") % [actor, tf.display_name(), port, manifest])
 
 
 func _resolve_solo_ai_action(decision: Dictionary) -> String:

@@ -110,7 +110,7 @@ static func continue_follow_up(previous: Dictionary, state: GameState,
 			return _attack_or_route_selected(state, graph, engine, active, target,
 				String(follow.get("note", "Solitario AI: continua la caccia")))
 		"completion":
-			return _complete_or_route_to_port(state, graph, port_control, active,
+			return _attempt_completion_at_port(graph, port_control, active,
 				String(follow.get("port_name", "")),
 				String(follow.get("note", "Solitario AI: continua verso il porto")))
 		_:
@@ -1296,18 +1296,9 @@ static func _complete_or_route_to_port(state: GameState, graph: MapGraph,
 		var no_tf := _empty("%s: nessuna TF selezionabile; passa." % note)
 		no_tf["pass_initiative"] = true
 		return no_tf
-	var opts := Completion.port_options(tf, graph, port_control)
-	for p in opts:
-		if String(p["name"]) == port_name or (port_name == "Clyde" and String(p["name"]) == "Liverpool"):
-			var done := _empty("")
-			done["ok"] = true
-			done["completion"] = true
-			done["turn_kind"] = "completion"
-			done["active"] = tf
-			done["completion_port"] = p
-			done["log"].append("%s: %s completa a %s."
-				% [note, tf.display_name(), String(p["name"])])
-			return done
+	var option := _completion_port_option(tf, graph, port_control, port_name)
+	if not option.is_empty():
+		return _attempt_completion_at_port(graph, port_control, tf, port_name, note)
 	if not graph.ports.has(port_name):
 		var unknown := _empty("%s: porto '%s' non calibrato; passa." % [note, port_name])
 		unknown["pass_initiative"] = true
@@ -1319,6 +1310,56 @@ static func _complete_or_route_to_port(state: GameState, graph: MapGraph,
 		route["follow_up"] = {"kind": "completion",
 			"port_name": port_name, "note": note}
 	return route
+
+
+## Seconda meta' di una procedura Traiettoria -> Completamento. A questo punto
+## non e' piu' permesso pianificare un'altra Traiettoria: la tabella ordina di
+## tentare il Completamento sulla rotta appena costruita oppure Passare.
+static func _attempt_completion_at_port(graph: MapGraph, port_control: Dictionary,
+		tf: TaskForce, port_name: String, note: String) -> Dictionary:
+	if tf == null:
+		var missing := _empty("%s: manca la TF; Passare." % note)
+		missing["pass_initiative"] = true
+		return missing
+	var reason := ""
+	var option := _completion_port_option(tf, graph, port_control, port_name)
+	if option.is_empty():
+		reason = "la Traiettoria non raggiunge %s" % port_name
+	elif not tf.can_complete():
+		reason = "la TF ha un segnalino Informazioni"
+	elif not tf.trajectory.is_station() \
+			and tf.trajectory.length() > Completion.MAX_SEGMENTS:
+		reason = "la Traiettoria ha %d segmenti, oltre il massimo di %d" \
+			% [tf.trajectory.length(), Completion.MAX_SEGMENTS]
+	elif tf.ships.is_empty() and not tf.unidentified:
+		reason = "la TF non ha navi"
+	if reason != "":
+		var passed := _empty("%s: Completamento impossibile (%s); %s Passa."
+			% [note, reason, tf.display_name()])
+		passed["ok"] = true
+		passed["active"] = tf
+		passed["turn_kind"] = "pass"
+		passed["pass_initiative"] = true
+		passed["time_lapse_before_pass"] = true
+		return passed
+	var done := _empty("")
+	done["ok"] = true
+	done["completion"] = true
+	done["turn_kind"] = "completion"
+	done["active"] = tf
+	done["completion_port"] = option
+	done["log"].append("%s: %s puo' tentare il Completamento a %s."
+		% [note, tf.display_name(), String(option["name"])])
+	return done
+
+
+static func _completion_port_option(tf: TaskForce, graph: MapGraph,
+		port_control: Dictionary, port_name: String) -> Dictionary:
+	for p in Completion.port_options(tf, graph, port_control):
+		var found := String(p["name"])
+		if found == port_name or (port_name == "Clyde" and found == "Liverpool"):
+			return p
+	return {}
 
 
 static func _attack_or_route_selected(state: GameState, graph: MapGraph,

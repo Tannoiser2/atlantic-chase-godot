@@ -578,6 +578,43 @@ func test_bl2_trajectory_and_convoy_procedures() -> void:
 		"la rotta parte da Murmansk")
 	eq(String((t_result["follow_up"] as Dictionary).get("kind", "")), "completion",
 		"dopo la rotta conserva il Completamento")
+	var kiel := (graph.ports["Kiel"] as Dictionary)["hex"] as Vector2i
+	true_(unknown.trajectory.occupies(kiel), "la prima Traiettoria raggiunge Kiel")
+	true_(unknown.length() > Completion.MAX_SEGMENTS,
+		"prima dello Scorrere del Tempo la rotta e' troppo lunga per Completare")
+	var before_follow := unknown.length()
+	var refused := SoloAI.continue_follow_up(t_result, st, graph,
+		ActionEngine.load_default(), {}, unknown.side)
+	eq(String(refused["turn_kind"]), "pass",
+		"la continuazione troppo lunga diventa Passare")
+	false_(bool(refused["completion"]), "non dichiara un Completamento illegale")
+	eq(unknown.length(), before_follow, "non costruisce una seconda Traiettoria")
+	true_(bool(refused["time_lapse_before_pass"]),
+		"il Passare sostitutivo conserva il proprio Scorrere del Tempo")
+	while unknown.length() > Completion.MAX_SEGMENTS:
+		unknown.trajectory.remove_end(0)
+	var completion := SoloAI.continue_follow_up(t_result, st, graph,
+		ActionEngine.load_default(), {}, unknown.side)
+	true_(bool(completion["completion"]),
+		"dopo lo Scorrere del Tempo la TF ignota puo' tentare il Completamento")
+	true_(String((completion["log"] as Array)[0]).contains("puo' tentare"),
+		"il log non annuncia il successo prima del tiro d'Iniziativa")
+	var south_state := GameState.new(graph, 12)
+	south_state.scenario_name = "BL2 Contain and Destroy"
+	south_state.rng.push_forced([1])
+	var south_route := SoloAI.execute_code("T", south_state, graph,
+		ActionEngine.load_default(), {}, TaskForce.Side.KRIEGSMARINE)
+	var south_tf := south_route["active"] as TaskForce
+	var south_america := (graph.ports["South America"] as Dictionary)["hex"] as Vector2i
+	false_(south_tf.trajectory.occupies(south_america),
+		"la rotta massima da Murmansk non finge di aver raggiunto South America")
+	var south_length := south_tf.length()
+	var south_follow := SoloAI.continue_follow_up(south_route, south_state, graph,
+		ActionEngine.load_default(), {}, south_tf.side)
+	eq(String(south_follow["turn_kind"]), "pass",
+		"se il porto non e' raggiunto la continuazione Passa")
+	eq(south_tf.length(), south_length,
+		"anche in questo caso non apre una seconda Traiettoria")
 
 	var st2 := GameState.new(graph, 2)
 	st2.scenario_name = "BL2 Contain and Destroy"

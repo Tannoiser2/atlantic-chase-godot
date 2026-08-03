@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **2415 verifiche, 17 suite, headless.**
+Tutti i test passano: **2426 verifiche, 17 suite, headless.**
 
 ---
 
@@ -117,6 +117,11 @@ Tutti i test passano: **2415 verifiche, 17 suite, headless.**
   hanno policy dedicate. Identificazione e Incidente Internazionale applicano
   i propri risultati; le condizioni di fine a 2 Convogli o 4 navi sono
   automatiche e persistono nel salvataggio;
+- nelle procedure composte BL2, la seconda azione non puo' piu' generare una
+  seconda Traiettoria: dopo la rotta prescritta tenta il Completamento sulla
+  posizione corrente oppure Passa se non raggiunge il porto, supera 6 segmenti
+  o ha Informazioni. Il log dice `puo' tentare` finche' il normale tentativo
+  sull'Iniziativa non ha stabilito che il Completamento riesce davvero;
 - BL2 fa scegliere sulla mappa la Stazione iniziale della Home Fleet, adiacente
   a un porto controllato britannico eccetto Scapa Flow e Methil. Restano
   dichiarati, senza coordinate inventate, la rotta Azzorre-Faroe, il confine

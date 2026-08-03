@@ -12,10 +12,10 @@ Questo file dice **da dove ripartire e cosa non rifare**.
 
 Versione digitale di *Atlantic Chase* (GMT Games, 2020) in **Godot 4.7**,
 GDScript. Motore di regole puro e testabile headless, interfaccia sopra.
-**2415 verifiche su 17 suite, tutte verdi.** Repository `Tannoiser2/atlantic-chase-godot`, branch `master`.
+**2426 verifiche su 17 suite, tutte verdi.** Repository `Tannoiser2/atlantic-chase-godot`, branch `master`.
 
 ```bash
-godot --headless --path . --script res://tests/run_tests.gd   # 2415 verifiche
+godot --headless --path . --script res://tests/run_tests.gd   # 2426 verifiche
 godot --path . --script res://tools/smoke_ui.gd               # prova di fumo GUI
 sh tools/build_macos.sh                                       # app per macOS
 ```
@@ -89,6 +89,14 @@ non la seconda parte della stessa procedura stampata.
 Una caccia generica prova soltanto `ENGAGE` e `NAVAL_SEARCH`. Un
 `STEALTH_ATTACK` deve arrivare da una regola esplicita dello scenario, mai
 essere usato come ripiego solo perche' risulta legalmente dichiarabile.
+
+La continuazione `completion` e' diversa dalla prima meta' della procedura:
+non puo' chiamare di nuovo il pianificatore di rotta. Deve controllare la
+Traiettoria appena costruita e tentare il Completamento, oppure trasformarsi
+in Passare se il porto non e' raggiunto, la rotta supera 6 segmenti o porta
+Informazioni. Il registro BL2 del 3 agosto ha trovato questo difetto: la stessa
+TF poteva tracciare due rotte consecutive e veniva annunciata come pronta a
+completare anche con 8 segmenti.
 
 ### JSON non ha interi
 Lo stato del RNG è un `uint64`; salvato come numero diventa un float e perde i
