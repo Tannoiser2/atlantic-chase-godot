@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **2663 verifiche, 18 suite, headless.**
+Tutti i test passano: **2692 verifiche, 18 suite, headless.**
 
 ---
 
@@ -211,6 +211,13 @@ Tutti i test passano: **2663 verifiche, 18 suite, headless.**
   Internazionale. Ora c'e' tutta, e con lei la rimozione delle navi britanniche
   Danneggiate che i risultati C e Convoglio prescrivono - navi che le tabelle
   degli Esiti contano fra le Danneggiate, non fra le affondate.
+- **La Tabella Murmansk era trascritta scalata di una colonna.** Il fascicolo
+  (p.8) dice `0 o meno` = confisca, `1-2` = incidente, `3-6` = salvi; la
+  trascrizione faceva confiscare le navi con un **1**, cioe' nel caso comune
+  invece che in quello estremo raggiungibile solo col modificatore -1. Ora la
+  riga parte da `roll_min: 0`, e il controllo si tira da solo prima del
+  Debriefing - nel replay e nel pannello Punteggio - invece di restare una
+  tabella da leggere a mano.
 - **La clausola "4 o piu' CA" della 'A'** (p.7): con quattro CA britannici in
   gioco e nessun bersaglio aereo il risultato vale come 'A' *e* 'F' insieme,
   con la TF francese Attiva e quella britannica Coordinatrice. La Coordinatrice

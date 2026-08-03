@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Aggiornato dopo la chiusura di **R0** (3 agosto 2026). Baseline: **2663
+Aggiornato dopo la chiusura di **R0** (3 agosto 2026). Baseline: **2692
 verifiche su 18 suite**.
 
 Questo e' il backlog autorevole per continuare la revisione. `STATO.md`
@@ -16,7 +16,7 @@ vecchie sezioni "Cosa manca" non devono riaprire lavori gia' completati.
 | Battaglia base | completa | regressioni GUI e bot solo |
 | Battaglia avanzata | quasi completa | quattro scelte interattive e MS12 |
 | Salvataggio/undo | completo | includere ogni nuovo stato solo |
-| Solitario BL1 | giocabile, replay end-to-end verde | chiudere B-Dienst e Murmansk |
+| Solitario BL1 | giocabile, replay end-to-end verde | resta solo il B-Dienst |
 | Solitario BL2 | giocabile, replay end-to-end verde | automatizzare Forbes e Gensoul |
 | Solitario BL3 | tabelle trascritte, non giocabile | calibrare Mappa Inserto Mare del Nord |
 | Altri 12 solitari | setup e testo presenti, automazione parziale | sostituire i segnaposto scenario per scenario |
@@ -26,7 +26,7 @@ vecchie sezioni "Cosa manca" non devono riaprire lavori gia' completati.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i quattro comandi in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 2663 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 2692 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
@@ -74,9 +74,11 @@ Uno scenario puo' essere marcato completo solo quando:
   cadeva nel ripiego generico: niente dado di rimando, niente nuova TF con
   Convoglio e CL) e la clausola "4 o piu' CA" della 'A', che vale come 'A' *e*
   'F' insieme con la francese Attiva e la britannica Coordinatrice.
-  **Restano**: il B-Dienst (un segnalino Informazioni una volta per scenario,
-  a scelta del giocatore) e la Tabella Murmansk da tirare automaticamente
-  prima del Debriefing quando una TF tedesca vi ha Completato.
+  La Tabella Murmansk era trascritta scalata di una colonna (con un 1 le navi
+  venivano confiscate invece di causare un incidente) e non la tirava nessuno:
+  ora si legge come a p.8 e scatta da sola prima del Debriefing, sia nel replay
+  sia nel pannello Punteggio. **Resta** il B-Dienst: un segnalino Informazioni
+  su una Traiettoria britannica, una volta per scenario, a scelta del giocatore.
 - [ ] **BL1: la fine stampata non copre la posizione "nessuna TF tedesca con
   piu' di due marker RV".** Un RV si rimuove solo con un Controllo
   Rifornimento, che richiede una Stazione tedesca: perse tutte le navi e i

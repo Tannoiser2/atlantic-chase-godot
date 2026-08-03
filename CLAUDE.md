@@ -38,7 +38,7 @@ godot --path . --script res://tools/smoke_ui.gd
 godot --path . --script res://tools/smoke_ui.gd -- adv
 ```
 
-Baseline corrente: **2663 verifiche, 18 suite** (era 2570 su 17 prima della
+Baseline corrente: **2692 verifiche, 18 suite** (era 2570 su 17 prima della
 suite `test_replay.gd`). Il totale non puo' scendere senza una rimozione
 intenzionale di test spiegata nel commit.
 

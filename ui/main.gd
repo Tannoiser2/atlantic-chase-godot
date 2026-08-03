@@ -1470,6 +1470,7 @@ func _do_load() -> void:
 func _show_outcome() -> void:
 	if victory == null:
 		return
+	_bl1_murmansk_before_debriefing()
 	var description := victory.describe(state)
 	var late := Endgame.notice(state, scenario.rules() if scenario != null
 		else {}, graph, _port_control())
@@ -1484,6 +1485,25 @@ func _show_outcome() -> void:
 	if late != "":
 		text += "\n\n[color=#ff9a3c][b]FINE PARTITA[/b]\n%s[/color]" % late
 	_show_info_panel("Punteggio ed Esito", text)
+
+
+## BL1 p.8: la tabella Murmansk si tira PRIMA del Debriefing, una volta sola,
+## se una TF tedesca vi ha Completato. Il pannello del Punteggio e' il momento
+## in cui il giocatore lo guarda, quindi e' li' che va fatto.
+func _bl1_murmansk_before_debriefing() -> void:
+	if solo == null or not SoloAI.bl1_murmansk_pending(state):
+		return
+	var applied := SoloAI.bl1_murmansk_check(state, solo.table("murmansk"))
+	_msg("BL1 - Murmansk? Una TF tedesca ha Completato a Murmansk: "
+		+ "si tira prima del Debriefing.")
+	var roll: Dictionary = applied.get("roll", {})
+	if not roll.is_empty():
+		for line in SoloTable.describe(roll).split("\n"):
+			_msg("  " + line)
+	for line_v: Variant in applied.get("log", []):
+		_msg("  " + String(line_v))
+	log.record("BL1: Murmansk?")
+	state.changed.emit()
 
 
 # --------------------------------------------------------------- solitario --

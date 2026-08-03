@@ -168,6 +168,7 @@ func run(max_turns: int = MAX_TURNS) -> Dictionary:
 
 	_line("")
 	_line("=== Esito ===")
+	_bl1_murmansk_before_debriefing()
 	_line("Turni: %d (bot %d, giocatore %d); Battaglie: %d; Completamenti: %d."
 		% [turns, bot_turns, player_turns, battles, completions])
 	_line("VP: Kriegsmarine %s, Royal Navy %s." % [
@@ -436,6 +437,21 @@ func _player_turn() -> void:
 	_line("GIOCATORE (policy harness): Passare.")
 	_player_time_lapse(_player_main_force())
 	_seek_initiative("GIOCATORE")
+
+
+## BL1 p.8: la tabella Murmansk si tira PRIMA del Debriefing, e sposta i VP.
+## Va quindi qui, fra la fine dello scenario e il punteggio, non nel ciclo.
+func _bl1_murmansk_before_debriefing() -> void:
+	if not SoloAI.bl1_murmansk_pending(state):
+		return
+	var applied := SoloAI.bl1_murmansk_check(state, solo.table("murmansk"))
+	_line("Murmansk? Una TF tedesca ha Completato a Murmansk: si tira prima del Debriefing.")
+	var roll: Dictionary = applied.get("roll", {})
+	if not roll.is_empty():
+		for line in SoloTable.describe(roll).split("\n"):
+			_line("   " + line)
+	for line_v: Variant in applied.get("log", []):
+		_line("   " + String(line_v))
 
 
 ## BL1 p.6: "you must roll a die and apply the result on the Fueling Table".

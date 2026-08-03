@@ -133,8 +133,10 @@
       "incidente",
       "salvi",
       "salvi",
+      "salvi",
       "salvi"
-     ]
+     ],
+     "roll_min": 0
     }
    ],
    "legend": {
@@ -142,7 +144,7 @@
     "incidente": "Scoppia un incidente internazionale. Perdi 1 VP.",
     "salvi": "Le navi fanno rifornimento in silenzio e rientrano sane e salve a Kiel."
    },
-   "note": "Si tira PRIMA del Debriefing, se una TF tedesca ha Completato a Murmansk.",
+   "note": "Si tira PRIMA del Debriefing, se una TF tedesca ha Completato a Murmansk. AC Solo scenarios 2022 p.8: 0 o meno = confisca, 1-2 = incidente, 3-6 = salvi. La colonna 0 si raggiunge solo col modificatore -1, quindi la riga parte da roll_min 0.",
    "modifiers": [
     {
      "label": "due o piu' Convogli distrutti",

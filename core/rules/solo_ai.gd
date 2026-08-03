@@ -153,6 +153,43 @@ static func apply_table_result(table_id: String, result: Dictionary,
 	return out
 
 
+## BL1 p.8: "Before Debriefing, if a German TF Completed in Murmansk, roll a
+## die and apply the result". Il tiro va fatto una volta sola, alla fine, e
+## finora non lo faceva nessuno: la tabella c'era ma restava da leggere a mano.
+static func bl1_murmansk_pending(state: GameState) -> bool:
+	if not state.scenario_name.begins_with("BL1"):
+		return false
+	if bool(state.solo_counters.get("bl1_murmansk_rolled", false)):
+		return false
+	for tf in state.task_forces:
+		if tf.side == TaskForce.Side.KRIEGSMARINE and tf.completed \
+				and tf.completed_port == "Murmansk":
+			return true
+	return false
+
+
+## Esegue il tiro e ne applica l'effetto. Ritorna { ok, roll, log }; `roll` e'
+## il risultato di `SoloTable.roll_and_read`, cosi' il registro puo' mostrare
+## dado, modificatore e casella come per ogni altra tabella.
+static func bl1_murmansk_check(state: GameState, table: SoloTable) -> Dictionary:
+	if table == null:
+		return _empty("BL1: manca la tabella Murmansk; il controllo resta da fare a mano.")
+	# "Modifier: -1 if 2 or more Convoys are destroyed". Il fascicolo non
+	# distingue la parte: si contano i Convogli distrutti sul tabellone.
+	var destroyed := state.sunk_count(TaskForce.Side.ROYAL_NAVY, true) \
+		+ state.sunk_count(TaskForce.Side.KRIEGSMARINE, true)
+	var mods: Array = []
+	if destroyed >= 2:
+		mods.append("due o piu' Convogli distrutti")
+	var roll := table.roll_and_read(state.rng, 0, mods)
+	state.solo_counters["bl1_murmansk_rolled"] = true
+	var out := _bl1_murmansk(String(roll.get("code", "")), state)
+	out["roll"] = roll
+	if destroyed >= 2:
+		out["log"].append("Modificatore -1: %d Convogli distrutti." % destroyed)
+	return out
+
+
 ## BL1 p.6: il Controllo Rifornimento e' obbligatorio quando il tedesco ha
 ## l'Iniziativa e una sua Stazione occupa un esagono con un RV attivo.
 static func bl1_fueling_candidates(state: GameState) -> Array[TaskForce]:

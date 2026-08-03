@@ -63,6 +63,7 @@ func run() -> void:
 	test_bl3_declares_inset_setup_gaps()
 	test_solo_ai_bl1_x_creates_unknown_hunter()
 	test_solo_ai_bl1_blockade_and_french_action()
+	test_solo_ai_bl1_murmansk_before_debriefing()
 	test_solo_ai_bl1_convoy_procedure()
 	test_solo_ai_bl1_four_cruisers_add_the_french_action()
 	test_solo_ai_b1_convoy_creates_and_routes()
@@ -958,6 +959,52 @@ func test_solo_ai_bl1_blockade_and_french_action() -> void:
 ## AC Solo scenarios 2022 p.7, risultato CONVOGLIO. Prima di questa revisione
 ## il codice cadeva nel ripiego generico: non tirava il dado di rimando e non
 ## creava mai la nuova TF con Convoglio e CL.
+## p.8: "Before Debriefing, if a German TF Completed in Murmansk, roll a die
+## and apply the result." Il tiro non lo faceva nessuno: la tabella c'era ma
+## restava da leggere a mano, e i VP del Debriefing uscivano incompleti.
+func test_solo_ai_bl1_murmansk_before_debriefing() -> void:
+	_begin("AI solitaria BL1: Murmansk prima del Debriefing")
+	var opponent := SoloOpponent.load_for("BL1 Raiders of the North Atlantic")
+	var st := GameState.new(graph, 5)
+	st.scenario_name = "BL1 Raiders of the North Atlantic"
+	false_(SoloAI.bl1_murmansk_pending(st),
+		"senza Completamenti a Murmansk non si tira niente")
+	var tf := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
+	tf.ships.append(ShipRoster.shared().make("Lutzow"))
+	tf.trajectory.become_station(graph.port_hex("Kiel"))
+	st.add_task_force(tf)
+	tf.completed = true
+	tf.completed_port = "Murmansk"
+	true_(SoloAI.bl1_murmansk_pending(st),
+		"una TF tedesca Completata a Murmansk fa scattare il controllo")
+	st.rng.push_forced([1])
+	var applied := SoloAI.bl1_murmansk_check(st, opponent.table("murmansk"))
+	true_(bool(applied.get("ok", false)), "il controllo viene applicato")
+	eq(String((applied.get("roll", {}) as Dictionary).get("code", "")),
+		"incidente", "con 1 e nessun modificatore e' un incidente, non la confisca")
+	almost(st.vp_of(TaskForce.Side.KRIEGSMARINE), -1.0, 0.001,
+		"l'incidente costa 1 VP")
+	false_(SoloAI.bl1_murmansk_pending(st), "e si tira una volta sola")
+
+	# Con due Convogli distrutti il modificatore -1 porta l'1 sulla colonna 0.
+	var st2 := GameState.new(graph, 5)
+	st2.scenario_name = "BL1 Raiders of the North Atlantic"
+	var tf2 := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
+	tf2.ships.append(ShipRoster.shared().make("Lutzow"))
+	tf2.trajectory.become_station(graph.port_hex("Kiel"))
+	st2.add_task_force(tf2)
+	tf2.completed = true
+	tf2.completed_port = "Murmansk"
+	st2.casualties.append({"side": TaskForce.Side.ROYAL_NAVY, "convoys": 2,
+		"ships": ["Convoy x3", "Convoy x3"]})
+	st2.rng.push_forced([1])
+	var confiscated := SoloAI.bl1_murmansk_check(st2, opponent.table("murmansk"))
+	eq(String((confiscated.get("roll", {}) as Dictionary).get("code", "")),
+		"confisca", "con due Convogli distrutti l'1 diventa 0: confisca")
+	almost(st2.vp_of(TaskForce.Side.KRIEGSMARINE), -3.0, 0.001,
+		"la confisca costa 3 VP")
+
+
 func test_solo_ai_bl1_convoy_procedure() -> void:
 	_begin("AI solitaria BL1: procedura Convoglio")
 	var scenario := Scenario.load_by_id("BL1 Raiders of the North Atlantic")
@@ -1272,7 +1319,14 @@ func test_fueling() -> void:
 		ne(m, null, "e c'e' anche la tabella Murmansk")
 		eq(m.modifier_total(["due o piu' Convogli distrutti"]), -1,
 			"che peggiora se hai distrutto molti Convogli")
-		eq(String(m.read(0, 1)["code"]), "confisca", "con 1 le navi sono confiscate")
+		# p.8: 0 o meno = confisca, 1-2 = incidente, 3-6 = salvi. La
+		# trascrizione era scalata di una colonna e faceva confiscare le navi
+		# con un 1, cioe' nel caso piu' comune invece che in quello estremo.
+		eq(String(m.read(0, 0)["code"]), "confisca",
+			"con 0 o meno le navi sono confiscate")
+		eq(String(m.read(0, 1)["code"]), "incidente", "con 1 scoppia un incidente")
+		eq(String(m.read(0, 2)["code"]), "incidente", "e anche con 2")
+		eq(String(m.read(0, 3)["code"]), "salvi", "da 3 in su rientrano a Kiel")
 		eq(String(m.read(0, 6)["code"]), "salvi", "con 6 rientrano a Kiel")
 		var sc := Scenario.load_by_id("BL1 Raiders of the North Atlantic")
 		eq(String(sc.port_control().get("Murmansk", "")), "KRIEGSMARINE",
