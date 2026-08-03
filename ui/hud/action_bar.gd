@@ -27,6 +27,7 @@ signal menu_requested()
 var _act_buttons: Dictionary = {}     ## chiave azione -> Button
 var _undo_btn: Button
 var _redo_btn: Button
+var _editor_btn: Button
 
 ## Tutte e nove le azioni del gioco, comprese quelle che non si possono ancora
 ## dichiarare. Restano visibili e disabilitate, con il motivo nel tooltip:
@@ -68,6 +69,7 @@ func _ready() -> void:
 	add_child(col)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 6)
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	col.add_child(row)
 	var row2 := HBoxContainer.new()
 	row2.add_theme_constant_override("separation", 6)
@@ -75,6 +77,8 @@ func _ready() -> void:
 
 	for a in ACTIONS:
 		var b := _mk(row, "%s (%s)" % [a[1], a[2]])
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.custom_minimum_size.y = 42
 		_set_icon(b, String(a[0]))
 		b.pressed.connect(func() -> void: action_requested.emit(String(a[0])))
 		_act_buttons[a[0]] = b
@@ -106,7 +110,8 @@ func _ready() -> void:
 	nxt.tooltip_text = "Scenario successivo"
 	nxt.pressed.connect(func() -> void: scenario_step.emit(1))
 	_mk(row2, "Reticolo (G)").pressed.connect(func() -> void: grid_cycled.emit())
-	_mk(row2, "Editor (E)").pressed.connect(func() -> void: editor_toggled.emit())
+	_editor_btn = _mk(row2, "Editor (E)")
+	_editor_btn.pressed.connect(func() -> void: editor_toggled.emit())
 	var h := _mk(row2, "?")
 	h.tooltip_text = "Elenco dei comandi (F1)"
 	h.pressed.connect(func() -> void: help_toggled.emit())
@@ -138,6 +143,24 @@ func _mk(parent: Control, text: String) -> Button:
 	return b
 
 
+static func _action_style(available: bool, hover: bool = false) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	if available:
+		sb.bg_color = Color(0.08, 0.22, 0.20, 0.98) if not hover \
+			else Color(0.10, 0.34, 0.29, 1.0)
+		sb.border_color = Color(0.35, 0.92, 0.68, 0.95)
+	else:
+		sb.bg_color = Color(0.055, 0.065, 0.075, 0.90)
+		sb.border_color = Color(0.25, 0.29, 0.32, 0.75)
+	sb.set_border_width_all(2 if available else 1)
+	sb.set_corner_radius_all(4)
+	sb.content_margin_left = 8
+	sb.content_margin_right = 8
+	sb.content_margin_top = 5
+	sb.content_margin_bottom = 5
+	return sb
+
+
 func _sep(parent: Control) -> void:
 	var s := VSeparator.new()
 	parent.add_child(s)
@@ -158,13 +181,24 @@ static func _panel_style() -> StyleBoxFlat:
 
 ## Aggiorna abilitazione e tooltip. `reasons` associa la chiave azione al
 ## motivo per cui non e' disponibile (stringa vuota = disponibile).
-func update_state(reasons: Dictionary, can_undo: bool, can_redo: bool) -> void:
+func update_state(reasons: Dictionary, can_undo: bool, can_redo: bool,
+		editor_active: bool = false) -> void:
 	for key_v: Variant in _act_buttons.keys():
 		var b: Button = _act_buttons[key_v]
 		var why := String(reasons.get(key_v, ""))
 		b.disabled = why != ""
 		b.tooltip_text = why if why != "" else "Dichiara l'azione con la TF selezionata"
+		b.add_theme_stylebox_override("normal", _action_style(why == ""))
+		b.add_theme_stylebox_override("hover", _action_style(why == "", true))
+		b.add_theme_stylebox_override("pressed", _action_style(why == "", true))
+		b.add_theme_stylebox_override("disabled", _action_style(false))
+		b.add_theme_color_override("font_color", Color(0.90, 1.0, 0.94))
+		b.add_theme_color_override("font_disabled_color", Color(0.43, 0.46, 0.48))
 	if _undo_btn:
 		_undo_btn.disabled = not can_undo
 	if _redo_btn:
 		_redo_btn.disabled = not can_redo
+	if _editor_btn:
+		_editor_btn.button_pressed = editor_active
+		_editor_btn.add_theme_color_override("font_color",
+			Color(1.0, 0.78, 0.35) if editor_active else Color.WHITE)

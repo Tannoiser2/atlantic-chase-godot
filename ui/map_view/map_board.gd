@@ -88,6 +88,23 @@ func _draw() -> void:
 			pts.append(pts[0])
 			draw_polyline(pts, line_col, width, true)
 
+	if grid_mode == GridMode.EDITOR:
+		var font := ThemeDB.fallback_font
+		var font_size := int(maxf(graph.inradius * 0.23, 18.0))
+		for h_v: Variant in graph.all_hexes():
+			var h: Vector2i = h_v
+			var text := "%d,%d" % [h.x, h.y]
+			var center := graph.center_of(h)
+			var text_size := font.get_string_size(text,
+				HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
+			var bg := Rect2(center - Vector2(text_size.x * 0.5 + 7,
+				text_size.y * 0.5 + 4), text_size + Vector2(14, 8))
+			draw_rect(bg, Color(0.03, 0.05, 0.07, 0.78), true)
+			draw_rect(bg, Color(1.0, 0.58, 0.25, 0.82), false, 2.0)
+			draw_string(font, center + Vector2(-text_size.x * 0.5,
+				font_size * 0.34), text, HORIZONTAL_ALIGNMENT_LEFT, -1,
+				font_size, Color(1.0, 0.92, 0.78))
+
 	# lati negati dalle frecce "not adjacent": vanno visti, sono invisibili
 	# sulla mappa stampata se non si legge il testo
 	if grid_mode == GridMode.EDITOR or grid_mode == GridMode.FULL:

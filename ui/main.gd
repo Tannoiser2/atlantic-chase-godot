@@ -152,6 +152,7 @@ func _load_scenario_at(idx: int) -> void:
 
 
 func _process(delta: float) -> void:
+	_position_tf_panel()
 	# tocco prolungato = clic destro
 	if _press_time > 0.0 and not _long_press_done:
 		_press_time += delta
@@ -793,7 +794,6 @@ func _on_left_click(h: Vector2i, shift: bool) -> void:
 
 	# 1) se c'e' una TF nell'esagono e non stiamo estendendo, selezionala
 	var here := state.forces_in(h)
-	here = _controllable_forces(here)
 	if not here.is_empty() and (selected_tf == null or not _can_extend_to(h)):
 		var idx := here.find(selected_tf)
 		selected_tf = here[(idx + 1) % here.size()] if idx >= 0 else here[0]
@@ -803,12 +803,15 @@ func _on_left_click(h: Vector2i, shift: bool) -> void:
 			% [selected_tf.display_name(), selected_tf.length()])
 		return
 
-	# 2) altrimenti prova a estendere la Traiettoria selezionata
+	# 2) un clic sul mare deseleziona. Se l'azione Traiettoria e' armata, invece,
+	# quel clic resta il punto da aggiungere alla rotta.
 	if selected_tf == null:
-		_msg("nessuna Task Force selezionata")
 		return
 	if not _trajectory_action_armed:
-		_msg("Per tracciare una rotta dichiara prima l'azione Traiettoria (5).")
+		selected_tf = null
+		traj_layer.selected_tf_id = -1
+		_tf_card_signature = ""
+		_msg("Task Force deselezionata")
 		return
 	await _try_extend(h)
 
@@ -817,6 +820,8 @@ func _on_right_click(h: Vector2i) -> void:
 	if mode == Mode.EDITOR:
 		if graph.has_hex(h):
 			edit_anchor = h
+			board.selected_hex = h
+			board.queue_redraw()
 			_msg("ancora impostata su %s (clic sinistro su un vicino per bloccare il lato)"
 				% str(h))
 		return
@@ -2062,6 +2067,8 @@ func _editor_click(h: Vector2i, shift: bool) -> void:
 		board.queue_redraw()
 		return
 	edit_anchor = h
+	board.selected_hex = h if graph.has_hex(h) else Vector2i.MAX
+	board.queue_redraw()
 	if graph.has_hex(h):
 		_msg("ancora su %s. Shift+clic su un vicino per negare/ripristinare il lato."
 			% str(h))
@@ -2121,6 +2128,14 @@ var _lbl_title: Label
 var _lbl_info: RichTextLabel
 var _lbl_log: RichTextLabel
 var _lbl_roster: RichTextLabel
+var _tf_panel: PanelContainer
+var _tf_info: RichTextLabel
+var _tf_ships: HBoxContainer
+var _log_panel: PanelContainer
+var _log_toggle: Button
+var _log_scroll: ScrollContainer
+var _log_expanded: bool = true
+var _tf_card_signature: String = ""
 
 ## Pannello "ora tocca a": chi sta agendo, cosa aspetta il gioco, e cosa NON si
 ## puo' fare con il motivo accanto.
@@ -2146,65 +2161,64 @@ func _build_hud() -> void:
 	hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(hud)
 
-	var panel := PanelContainer.new()
-	panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	panel.position = Vector2(12, 62)     # sotto la barra dei comandi
-	panel.custom_minimum_size = Vector2(380, 0)
-	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.add_theme_stylebox_override("panel", _panel_style())
-	hud.add_child(panel)
+	# Scheda della sola TF selezionata. Segue la pedina sullo schermo e sparisce
+	# quando si clicca sul mare: la mappa non e' piu' incorniciata da due roster.
+	_tf_panel = PanelContainer.new()
+	_tf_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_tf_panel.custom_minimum_size = Vector2(430, 0)
+	_tf_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_tf_panel.add_theme_stylebox_override("panel", _panel_style())
+	_tf_panel.visible = false
+	hud.add_child(_tf_panel)
+	var tf_col := VBoxContainer.new()
+	tf_col.add_theme_constant_override("separation", 7)
+	_tf_panel.add_child(tf_col)
+	_tf_info = RichTextLabel.new()
+	_tf_info.bbcode_enabled = true
+	_tf_info.fit_content = true
+	_tf_info.custom_minimum_size = Vector2(406, 0)
+	_tf_info.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tf_col.add_child(_tf_info)
+	var ship_scroll := ScrollContainer.new()
+	ship_scroll.custom_minimum_size = Vector2(406, 72)
+	ship_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	ship_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	ship_scroll.mouse_filter = Control.MOUSE_FILTER_STOP
+	tf_col.add_child(ship_scroll)
+	_tf_ships = HBoxContainer.new()
+	_tf_ships.add_theme_constant_override("separation", 7)
+	ship_scroll.add_child(_tf_ships)
 
-	var vb := VBoxContainer.new()
-	vb.add_theme_constant_override("separation", 6)
-	panel.add_child(vb)
-
-	_lbl_title = Label.new()
-	_lbl_title.add_theme_font_size_override("font_size", 18)
-	vb.add_child(_lbl_title)
-
-	_lbl_info = RichTextLabel.new()
-	_lbl_info.bbcode_enabled = true
-	_lbl_info.fit_content = true
-	_lbl_info.custom_minimum_size = Vector2(340, 0)
-	_lbl_info.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	vb.add_child(_lbl_info)
-
-	var roster_panel := PanelContainer.new()
-	roster_panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	roster_panel.offset_left = -520
-	roster_panel.offset_right = -12
-	roster_panel.offset_top = 62
-	roster_panel.offset_bottom = 430
-	roster_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	roster_panel.add_theme_stylebox_override("panel", _panel_style())
-	hud.add_child(roster_panel)
-
-	_lbl_roster = RichTextLabel.new()
-	_lbl_roster.bbcode_enabled = true
-	_lbl_roster.fit_content = false
-	_lbl_roster.scroll_active = true
-	_lbl_roster.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_lbl_roster.add_theme_font_size_override("normal_font_size", 14)
-	_lbl_roster.add_theme_font_size_override("bold_font_size", 14)
-	_lbl_roster.add_theme_font_size_override("italics_font_size", 14)
-	roster_panel.add_child(_lbl_roster)
-
-	var logpanel := PanelContainer.new()
-	logpanel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	logpanel.offset_left = 12
-	logpanel.offset_right = -12
-	logpanel.offset_top = -168
-	logpanel.offset_bottom = -12
-	logpanel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	logpanel.add_theme_stylebox_override("panel", _panel_style())
-	hud.add_child(logpanel)
-
+	# Il registro occupa una colonna richiudibile a destra. Il pulsante resta
+	# sempre disponibile anche quando il testo e' nascosto.
+	_log_panel = PanelContainer.new()
+	_log_panel.set_anchors_preset(Control.PRESET_RIGHT_WIDE)
+	_log_panel.offset_left = -410
+	_log_panel.offset_right = -12
+	_log_panel.offset_top = 108
+	_log_panel.offset_bottom = -232
+	_log_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	_log_panel.add_theme_stylebox_override("panel", _panel_style())
+	hud.add_child(_log_panel)
+	var log_col := VBoxContainer.new()
+	_log_panel.add_child(log_col)
+	_log_toggle = Button.new()
+	_log_toggle.text = "Registro  >"
+	_log_toggle.tooltip_text = "Comprimi il registro degli eventi"
+	_log_toggle.focus_mode = Control.FOCUS_NONE
+	_log_toggle.pressed.connect(_toggle_log_panel)
+	log_col.add_child(_log_toggle)
+	_log_scroll = ScrollContainer.new()
+	_log_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	log_col.add_child(_log_scroll)
 	_lbl_log = RichTextLabel.new()
 	_lbl_log.bbcode_enabled = true
+	_lbl_log.fit_content = true
+	_lbl_log.custom_minimum_size.x = 370
 	_lbl_log.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	logpanel.add_child(_lbl_log)
+	_log_scroll.add_child(_lbl_log)
 
-	# Pannello "ora tocca a": sta in basso a destra, sopra il registro.
+	# Pannello "ora tocca a": prende il posto del vecchio registro in basso.
 	#
 	# Nasce da una critica precisa all'interfaccia: i motivi per cui un'azione
 	# non si puo' dichiarare c'erano gia', ma uno alla volta, nel tooltip di
@@ -2213,11 +2227,11 @@ func _build_hud() -> void:
 	# vedono insieme, RAGGRUPPATE PER MOTIVO: quasi sempre e' un motivo solo che
 	# ne blocca quattro, e detto cosi' si capisce cosa fare.
 	var nowpanel := PanelContainer.new()
-	nowpanel.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	nowpanel.offset_left = -600
+	nowpanel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	nowpanel.offset_left = 12
 	nowpanel.offset_right = -12
-	nowpanel.offset_top = -430
-	nowpanel.offset_bottom = -178
+	nowpanel.offset_top = -220
+	nowpanel.offset_bottom = -12
 	nowpanel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	nowpanel.add_theme_stylebox_override("panel", _panel_style())
 	hud.add_child(nowpanel)
@@ -2228,6 +2242,7 @@ func _build_hud() -> void:
 	_lbl_now.add_theme_font_size_override("normal_font_size", 14)
 	_lbl_now.add_theme_font_size_override("bold_font_size", 14)
 	_lbl_now.add_theme_font_size_override("italics_font_size", 14)
+	_lbl_now.scroll_active = true
 	_lbl_now.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	nowpanel.add_child(_lbl_now)
 
@@ -2235,10 +2250,10 @@ func _build_hud() -> void:
 	# catena tabella -> scelta -> effetto senza fermare il turno del bot.
 	_solo_event_panel = PanelContainer.new()
 	_solo_event_panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	_solo_event_panel.offset_left = 410
-	_solo_event_panel.offset_right = -540
-	_solo_event_panel.offset_top = 62
-	_solo_event_panel.offset_bottom = 190
+	_solo_event_panel.offset_left = 12
+	_solo_event_panel.offset_right = -430
+	_solo_event_panel.offset_top = 108
+	_solo_event_panel.offset_bottom = 236
 	_solo_event_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_solo_event_panel.add_theme_stylebox_override("panel", _solo_event_style())
 	_solo_event_panel.visible = false
@@ -2254,6 +2269,15 @@ func _build_hud() -> void:
 	_build_action_bar(hud)
 	_build_briefing(hud)
 	_build_help(hud)
+
+
+func _toggle_log_panel() -> void:
+	_log_expanded = not _log_expanded
+	_log_panel.offset_left = -410 if _log_expanded else -54
+	_log_scroll.visible = _log_expanded
+	_log_toggle.text = "Registro  >" if _log_expanded else "<"
+	_log_toggle.tooltip_text = "Comprimi il registro degli eventi" \
+		if _log_expanded else "Apri il registro degli eventi"
 
 
 func _solo_event_style() -> StyleBoxFlat:
@@ -2330,14 +2354,29 @@ func _refresh_now() -> void:
 
 	if mode == Mode.EDITOR:
 		_lbl_now.text = ("[b]EDITOR DEL GRAFO[/b]\nSi modifica la mappa, non si "
-			+ "gioca. E per tornare alla partita.")
+			+ "gioca. Le coordinate sono al centro di ogni esagono; clic per "
+			+ "selezionarlo, Shift+clic su un vicino per modificare il lato. "
+			+ "E torna alla partita.")
 		return
 
+	var scenario_name := scenario.title if scenario != null else "Scenario"
+	var status := "[b]%s[/b]    Meteo: [b]%s[/b]    Iniziativa: [b]%s[/b]" % [
+		scenario_name, "cattivo" if state.weather == 1 else "buono",
+		Initiative.side_name(state.initiative)]
+	if solo != null:
+		status += "    Solitario: [b]%s[/b]" % _solo_phase_label()
+	out.append(status)
+	var late := Endgame.notice(state, scenario.rules() if scenario != null
+		else {}, graph, _port_control())
+	if late != "":
+		out.append("[color=#ff9a3c]%s[/color]" % late)
+
 	if selected_tf == null:
-		_lbl_now.text = ("[b]Ora tocca a...[/b]  nessuno\n"
-			+ "[color=#ffd27f]Clicca una Task Force sulla mappa.[/color] "
+		out.append("[b]Ora tocca a...[/b]  [b]%s[/b]" % Initiative.side_name(state.initiative))
+		out.append("[color=#ffd27f]Clicca una Task Force sulla mappa.[/color] "
 			+ "Finche' non ne scegli una, nessuna azione e' dichiarabile: "
 			+ "in Atlantic Chase si dichiara sempre PER una forza.")
+		_lbl_now.text = "\n".join(out)
 		return
 
 	var side_name := "Kriegsmarine" if selected_tf.side \
@@ -2422,7 +2461,7 @@ func _refresh_action_bar() -> void:
 	for a in ActionBar.ACTIONS:
 		reasons[a[0]] = _action_unavailable_reason(String(a[0]))
 	_bar.update_state(reasons, log != null and log.can_undo(),
-		log != null and log.can_redo())
+		log != null and log.can_redo(), mode == Mode.EDITOR)
 
 
 func _panel_style() -> StyleBoxFlat:
@@ -2481,6 +2520,7 @@ func _toggle_editor() -> void:
 	board.set_grid_mode(MapBoard.GridMode.EDITOR if mode == Mode.EDITOR
 		else MapBoard.GridMode.SUBTLE)
 	edit_anchor = Vector2i.MAX
+	board.selected_hex = Vector2i.MAX
 	_msg("modalita': %s" % ("EDITOR del grafo" if mode == Mode.EDITOR else "gioco"))
 	_refresh()
 
@@ -2585,74 +2625,111 @@ func _msg(s: String) -> void:
 		_messages.pop_front()
 
 
+func _tf_card_text(tf: TaskForce) -> String:
+	var t := tf.trajectory
+	var kind := "Stazione" if t.is_station() else "Traiettoria"
+	var lines: Array[String] = [
+		"[font_size=18][b]%s[/b][/font_size]  [color=#9eb5c2]%s[/color]" % [
+			tf.display_name(), "Kriegsmarine" if tf.side == TaskForce.Side.KRIEGSMARINE
+			else "Royal Navy"],
+		"%s, [b]%d[/b] segmenti    velocita': [b]%s[/b]" % [kind, t.length(),
+			TimeLapse.speed_label(tf.speed)],
+	]
+	if t.is_station():
+		lines.append("Esagono: [b]%s[/b]%s" % [_hex_text(t.station_hex),
+			"    porto: [b]%s[/b]" % t.station_port if t.station_port != "" else ""])
+	else:
+		lines.append("Testa [b]%s[/b]    Coda [b]%s[/b]    capo attivo: [b]%s[/b]" % [
+			_hex_text(t.end_hex(0)), _hex_text(t.end_hex(1)),
+			"testa" if active_end == 0 else "coda"])
+	lines.append("Informazioni: [b]%d[/b]    Contatto: [b]%d[/b]" % [
+		t.info_count(), t.contact_count()])
+	if tf.leader != "" and not tf.unidentified:
+		lines.append("Comandante: [b]%s[/b]" % tf.leader)
+	if tf.unidentified:
+		lines.append("[color=#ffd27f]TF non identificata: composizione nascosta[/color]")
+	elif not _can_control_tf(tf) and solo != null:
+		lines.append("[color=#ffd27f]Avversario immaginario: ispezionabile, non comandabile[/color]")
+	if t.info_count() > 0:
+		lines.append("[color=#ff9a3c]Completamento impedito; vulnerabile a Interruzione[/color]")
+	return "\n".join(lines)
+
+
+func _refresh_tf_panel() -> void:
+	if _tf_panel == null:
+		return
+	if mode == Mode.EDITOR or selected_tf == null or selected_tf.completed:
+		_tf_panel.visible = false
+		_tf_card_signature = ""
+		return
+	_tf_panel.visible = true
+	var signature := JSON.stringify(selected_tf.to_dict()) + ":%d" % active_end
+	if signature == _tf_card_signature:
+		return
+	_tf_card_signature = signature
+	_tf_info.text = _tf_card_text(selected_tf)
+	for child in _tf_ships.get_children():
+		child.queue_free()
+	if selected_tf.unidentified:
+		var hidden := Label.new()
+		hidden.text = "Composizione non ancora identificata"
+		hidden.custom_minimum_size = Vector2(390, 56)
+		hidden.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		_tf_ships.add_child(hidden)
+		return
+	for ship in selected_tf.ships:
+		var path := ShipRoster.shared().counter_path(ship.name, ship.damaged)
+		if path == "" or not ResourceLoader.exists(path):
+			var missing := Label.new()
+			missing.text = ship.display()
+			missing.custom_minimum_size = Vector2(116, 56)
+			_tf_ships.add_child(missing)
+			continue
+		var counter := TextureRect.new()
+		counter.texture = load(path)
+		counter.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		counter.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		counter.custom_minimum_size = Vector2(116, 56)
+		counter.tooltip_text = ship.display()
+		counter.mouse_filter = Control.MOUSE_FILTER_PASS
+		_tf_ships.add_child(counter)
+
+
+func _position_tf_panel() -> void:
+	if _tf_panel == null or not _tf_panel.visible or selected_tf == null:
+		return
+	var t := selected_tf.trajectory
+	var h := t.station_hex if t.is_station() else t.end_hex(0)
+	var screen: Vector2 = cam.get_canvas_transform() * graph.center_of(h)
+	var vp := get_viewport_rect().size
+	var panel_size := Vector2(maxf(_tf_panel.size.x, 430.0),
+		maxf(_tf_panel.size.y, 170.0))
+	var right_limit := vp.x - (424.0 if _log_expanded else 68.0)
+	var x := screen.x + 30.0
+	if x + panel_size.x > right_limit:
+		x = screen.x - panel_size.x - 30.0
+	x = clampf(x, 12.0, maxf(12.0, right_limit - panel_size.x))
+	var y := screen.y + 24.0
+	var bottom_limit := vp.y - 232.0
+	if y + panel_size.y > bottom_limit:
+		y = screen.y - panel_size.y - 24.0
+	y = clampf(y, 108.0, maxf(108.0, bottom_limit - panel_size.y))
+	_tf_panel.position = Vector2(x, y)
+
+
 func _refresh() -> void:
-	if _lbl_title == null:
+	if state == null:
 		return
 	_refresh_action_bar()
-	var sc := scenario.title if scenario != null else "-"
-	_lbl_title.text = "%s   [%s]" % [sc, "EDITOR" if mode == Mode.EDITOR else "gioco"]
-
-	var lines: Array[String] = []
-	lines.append("Meteo: [b]%s[/b]    Iniziativa: [b]%s[/b]"
-		% ["cattivo" if state.weather == 1 else "buono",
-			"Kriegsmarine" if state.initiative == 0 else "Royal Navy"])
-	# %s e non %d: i VP possono valere mezzo punto (un incrociatore britannico
-	# affondato ne vale 0,5 in cinque scenari su nove)
-	lines.append("Punti Vittoria - KM [b]%s[/b]   RN [b]%s[/b]%s"
-		% [state.vp_text(TaskForce.Side.KRIEGSMARINE),
-			state.vp_text(TaskForce.Side.ROYAL_NAVY),
-			"    Convogli arrivati: [b]%d[/b]" % state.convoys_completed
-				if state.convoys_completed > 0 else ""])
-	# Il finale di partita cambia le regole, e va detto: da tre Convogli in
-	# avanti al tedesco restano quattro azioni e l'obbligo di rientrare.
-	var late := Endgame.notice(state, scenario.rules() if scenario != null
-		else {}, graph, _port_control())
-	if late != "":
-		lines.append("[color=#ff9a3c]%s[/color]" % late)
-	if solo != null:
-		lines.append("Solitario: [b]%s[/b]    O: avversario immaginario"
-			% _solo_phase_label())
-	if selected_tf != null:
-		var t := selected_tf.trajectory
-		var kind := "Stazione" if t.is_station() else "Traiettoria"
-		lines.append("")
-		lines.append("[b]%s[/b]  (%s)" % [selected_tf.display_name(), selected_tf.color])
-		lines.append("  %s, [b]%d[/b] segmenti su %d" % [kind, t.length(),
-			Trajectory.MAX_SEGMENTS])
-		lines.append("  velocita': %s    capo attivo: %s"
-			% [TimeLapse.speed_label(selected_tf.speed),
-				"testa" if active_end == 0 else "coda"])
-		lines.append("  Informazioni: [b]%d[/b]    Contatto: %d"
-			% [t.info_count(), t.contact_count()])
-		if not selected_tf.ships.is_empty():
-			var names: Array[String] = []
-			for sh in selected_tf.ships:
-				names.append(sh.display())
-			lines.append("  Navi: %s" % ", ".join(names))
-		if selected_tf.leader != "":
-			lines.append("  Comandante: [b]%s[/b]" % selected_tf.leader)
-		if t.info_count() > 0:
-			lines.append("  [color=#ff9a3c]Completamento impedito; vulnerabile a Interruzione[/color]")
-		# Totale Traiettoria contro la prima TF avversaria
-		var enemy: TaskForce = null
-		for tf in state.task_forces:
-			if tf.side != selected_tf.side:
-				enemy = tf
-				break
-		if enemy != null:
-			var d := TrajectoryTotal.Designations.new(t.length(), enemy.length())
-			lines.append("  Totale Traiettoria vs %s: [b]%d[/b]"
-				% [enemy.display_name(), TrajectoryTotal.compute(d)])
-	_lbl_info.text = "\n".join(lines)
-	_refresh_roster()
-
+	_refresh_tf_panel()
 	_refresh_now()
 
 	var lg: Array[String] = []
 	lg.append("[b]Mosse:[/b] %d    (F1 = comandi)" % log.applied_count() if log else "")
 	for m in _messages:
 		lg.append("  " + m)
-	_lbl_log.text = "\n".join(lg)
+	if _lbl_log != null:
+		_lbl_log.text = "\n".join(lg)
 
 
 func _refresh_roster() -> void:

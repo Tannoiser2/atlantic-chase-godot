@@ -25,6 +25,14 @@ Tutti i test passano: **2275 verifiche, 17 suite, headless.**
 
 ### Ultima revisione del solitario
 
+- HUD della mappa ricostruita: nove azioni illuminate in alto, servizi nella
+  seconda riga, guida operativa in basso, registro richiudibile a destra e
+  nessun roster fisso sopra la mappa;
+- selezionando una TF compare vicino alla pedina una scheda con stato e pedine
+  nave GMT reali; cliccando sul mare la scheda sparisce. Le TF del bot si
+  possono ispezionare ma restano non comandabili;
+- in modalita' Editor ogni esagono giocabile mostra al centro le coordinate e
+  quello scelto viene evidenziato;
 - i segnalini originali KM/RN sono ora visibili sulle colonne Modificatori,
   Punti Vittoria e Conto Iniziativa della plancia stampata; seguono lo stato e
   sopravvivono al salvataggio;
