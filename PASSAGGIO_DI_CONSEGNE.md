@@ -1,10 +1,12 @@
 # Passaggio di consegne
 
-Documento per chi riprende il lavoro su questo progetto (Codex o altri).
+Documento per chi riprende il lavoro su questo progetto (Claude, Codex o altri).
 Scritto il 2 agosto 2026. **Aggiornato all'ultimo commit della sessione.**
 
-Leggi anche `README.md` (come è fatto) e `STATO.md` (stato per milestone).
-Questo file dice **da dove ripartire e cosa non rifare**.
+Per il nuovo passaggio a Claude, dopo questo file leggere nell'ordine
+`TODO_REVISIONE.md`, `STATO.md` e `README.md`. `TODO_REVISIONE.md` e' il
+backlog autorevole; le sezioni storiche in fondo a `STATO.md` possono parlare
+di lacune gia' chiuse. Questo file dice **da dove ripartire e cosa non rifare**.
 
 ---
 
@@ -405,7 +407,7 @@ Due scelte da rispettare se ci metti mano:
   la salta *e* avanza. Un tasto che non risponde perche' c'e' un'animazione e'
   il modo piu' rapido di far odiare gli effetti.
 
-### 5.4 ← SEI QUI. E' L'UNICA COSA RIMASTA. Finire il modo solitario
+### 5.4 PRIORITA' CORRENTE: finire il modo solitario
 
 **Audit 2 agosto 2026:** `godot --headless --path . --script
 res://tools/audit_solo.gd` percorre tutte le 93 caselle uniche delle Tabelle
@@ -442,6 +444,9 @@ Restano:
   `core/data/solo/BL3 ....json` lo dichiara nel campo `_map`. Calibrarla
   vorrebbe dire rifare per l'inserto quello che `tools/refine_lattice.py` ha
   fatto per la mappa grande.
+
+Il backlog operativo scenario per scenario, le lacune residue della Battaglia
+Avanzata e le milestone della revisione sono ora in `TODO_REVISIONE.md`.
 
 ### 5.5 PRIORITÀ BASSA
 

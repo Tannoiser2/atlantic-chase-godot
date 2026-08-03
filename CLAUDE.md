@@ -1,0 +1,88 @@
+# Atlantic Chase - istruzioni per Claude
+
+Questo repository implementa Atlantic Chase in Godot 4.7 / GDScript. La
+revisione deve continuare dal commit `bf65a2b` o successivo.
+
+## Ordine di lettura obbligatorio
+
+1. `PASSAGGIO_DI_CONSEGNE.md`, per intero: principi e trappole gia' pagate.
+2. `TODO_REVISIONE.md`: backlog e milestone autorevoli da questo passaggio.
+3. `STATO.md`: dettaglio storico e stato delle funzionalita'. Le sezioni in
+   fondo sono cronologia e possono descrivere lacune gia' chiuse; in caso di
+   conflitto prevalgono `TODO_REVISIONE.md` e la parte iniziale di `STATO.md`.
+4. Il regolamento pertinente prima di modificare una regola. Per il solitario
+   usare `docs/regolamento/AC_Solo_scenarios_2022.pdf`, seconda edizione.
+
+## Vincoli non negoziabili
+
+- Non indovinare una regola. Un dato assente resta un buco dichiarato nel dato,
+  nel log e nei test.
+- Tutto `core/` resta GDScript puro `RefCounted`, senza `Node` e senza
+  dipendenze dalla GUI.
+- Leggere le tabelle dalle pagine renderizzate a risoluzione nativa, non dal
+  testo estratto dal PDF.
+- Non modificare o rigenerare dati non collegati al compito corrente.
+- Non cancellare modifiche locali non proprie.
+- Quando si aggiunge una verifica, aggiornare `EXPECTED` in
+  `tests/run_tests.gd`. Un errore runtime GDScript puo' troncare un test senza
+  far fallire da solo la suite.
+
+## Baseline obbligatoria
+
+Prima di una modifica e prima di ogni commit eseguire:
+
+```bash
+godot --headless --path . --script res://tests/run_tests.gd
+godot --path . --script res://tools/smoke_map_workspace.gd
+godot --path . --script res://tools/smoke_ui.gd
+godot --path . --script res://tools/smoke_ui.gd -- adv
+```
+
+Baseline al passaggio: **2570 verifiche, 17 suite**. Il totale non puo'
+scendere senza una rimozione intenzionale di test spiegata nel commit.
+
+Per il solitario eseguire anche:
+
+```bash
+godot --headless --path . --script res://tools/audit_solo.gd
+godot --headless --path . --script res://tools/simulate_flow.gd
+```
+
+`audit_solo.gd` verde non significa completo: al passaggio stampa 93 caselle
+uniche, 82 procedure Azione segnaposto, 2 buchi dichiarati e 0 blocchi.
+
+## Metodo di revisione
+
+Per ogni regola o scenario:
+
+1. citare fascicolo e pagina nel dato, codice o test;
+2. trascrivere setup e tabelle senza deduzioni;
+3. separare la regola GMT dalla policy decisionale del bot;
+4. forzare nei test ogni tiro e ogni ramo della tabella;
+5. simulare almeno una sequenza completa, inclusi Iniziativa, Scorrere del
+   Tempo, Completamento, Battaglia e fine scenario quando pertinenti;
+6. verificare anche salvataggio/ricarica per ogni nuovo stato persistente;
+7. aggiornare `TODO_REVISIONE.md`, `STATO.md` e i conteggi dei test.
+
+Una procedura non e' completa se il JSON contiene il testo ma `SoloAI` applica
+solo una policy generica o un Passare. Il bot deve scegliere realmente TF,
+rotta, bersaglio, reazione e continuazioni prescritte.
+
+## Build macOS
+
+Dopo ogni commit che modifica il gioco:
+
+```bash
+sh tools/build_macos.sh
+```
+
+L'app installata non si aggiorna da sola. La build e' in
+`build/macos/Atlantic Chase.app`; per la copia di prova va sostituita
+manualmente in `/Applications/Atlantic Chase.app`.
+
+## Primo lavoro consigliato
+
+Partire da **R0 in `TODO_REVISIONE.md`**: consolidare BL1 e BL2 con replay
+deterministici end-to-end, poi affrontare uno scenario solitario alla volta.
+Non lavorare in parallelo su tutti i JSON: rende impossibile capire quale
+tabella abbia introdotto una regressione.

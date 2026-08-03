@@ -135,7 +135,7 @@ gli header di cross-origin isolation e basta un server statico banale.
 godot --headless --path . --script res://tests/run_tests.gd
 ```
 
-1775 verifiche su 16 suite. Esce con codice 1 al primo fallimento, quindi è
+2570 verifiche su 17 suite. Esce con codice 1 al primo fallimento, quindi è
 usabile direttamente in CI.
 
 I test coprono il **motore**, che non sa che Godot esiste. La strada che i
@@ -232,4 +232,6 @@ Vedi `STATO.md` per il dettaglio di cosa è completo, parziale o assente.
 [`PASSAGGIO_DI_CONSEGNE.md`](PASSAGGIO_DI_CONSEGNE.md): dice da dove ripartire,
 quali trappole sono già state pagate (GDScript che si blocca in silenzio, JSON
 che degrada gli interi a 64 bit, e altre) e cosa **non** è un problema anche se
-sembra.
+sembra. Per il backlog aggiornato e le milestone della revisione usa
+[`TODO_REVISIONE.md`](TODO_REVISIONE.md). Claude trova inoltre le istruzioni
+operative sintetiche in [`CLAUDE.md`](CLAUDE.md).
