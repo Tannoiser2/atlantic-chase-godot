@@ -63,6 +63,7 @@ var _messages: Array[String] = []
 var _battle_post_time_lapse: Array[TaskForce] = []
 var _hex_choice_active: bool = false
 var _hex_choice_options: Dictionary = {}
+var _bl1_fueling_running: bool = false
 
 
 func _ready() -> void:
@@ -149,6 +150,7 @@ func _load_scenario_at(idx: int) -> void:
 		_open_scenario_battle()
 	elif _solo_is_imaginary_turn():
 		call_deferred("_kick_solo_opponent_turn", "inizio scenario")
+	call_deferred("_kick_bl1_fueling_check")
 
 
 func _process(delta: float) -> void:
@@ -338,6 +340,8 @@ func _on_key(k: InputEventKey) -> void:
 func _declare_action(key: String) -> void:
 	if _solo_is_imaginary_turn():
 		await _maybe_run_solo_opponent_turn("turno dell'avversario immaginario")
+		return
+	if await _maybe_run_bl1_fueling():
 		return
 	var why := _action_unavailable_reason(key)
 	if why != "":
@@ -685,11 +689,11 @@ func _time_lapse_designated_active(dec: ActionEngine.Declaration) -> void:
 			await _do_time_lapse_for(tf)
 
 
-func _do_time_lapse_for(tf: TaskForce) -> void:
+func _do_time_lapse_for(tf: TaskForce, allow_bl1_fueling: bool = true) -> void:
 	var old := selected_tf
 	selected_tf = tf
 	traj_layer.selected_tf_id = tf.id
-	await _do_time_lapse()
+	await _do_time_lapse(allow_bl1_fueling)
 	selected_tf = old if old != null and state.task_force(old.id) != null else selected_tf
 	traj_layer.selected_tf_id = selected_tf.id if selected_tf != null else -1
 
@@ -1409,14 +1413,15 @@ func _apply_solo_ai_result(result: Dictionary) -> void:
 			_change_initiative_to(player)
 
 
-func _show_solo_event(result: Dictionary, decision: Dictionary) -> void:
+func _show_solo_event(result: Dictionary, decision: Dictionary,
+		actor: String = "BOT") -> void:
 	if _solo_event_panel == null:
 		return
 	_solo_event_serial += 1
 	var serial := _solo_event_serial
 	var title := String(result.get("code", "?"))
 	var table_name := String(result.get("table", "Tabella Solitario"))
-	var lines: Array[String] = ["[b]BOT - %s: risultato %s[/b]" % [table_name, title]]
+	var lines: Array[String] = ["[b]%s - %s: risultato %s[/b]" % [actor, table_name, title]]
 	var row := String(result.get("row_label", ""))
 	if row != "":
 		lines.append("Riga: %s; dado %d -> colonna %d." % [row,
@@ -1636,6 +1641,47 @@ func _apply_solo_table_result(table_id: String, result: Dictionary,
 		if _seek_initiative():
 			await _maybe_run_solo_opponent_turn("Tabella solitario")
 	return decision
+
+
+func _kick_bl1_fueling_check() -> void:
+	await _maybe_run_bl1_fueling()
+
+
+## BL1 p.6: il controllo non e' una scelta del giocatore. Appena le condizioni
+## esistono, l'app tira la riga del meteo, applica l'effetto e mostra il luogo.
+func _maybe_run_bl1_fueling() -> bool:
+	if _bl1_fueling_running or solo == null:
+		return false
+	var candidates := SoloAI.bl1_fueling_candidates(state)
+	if candidates.is_empty():
+		return false
+	var table := solo.table("fueling")
+	if table == null:
+		_msg("BL1: manca la Tabella del Rifornimento; controllo non risolto.")
+		return false
+	_bl1_fueling_running = true
+	var resolved := false
+	while not candidates.is_empty():
+		var tf: TaskForce = candidates[0]
+		var h := tf.trajectory.station_hex
+		var result := table.roll_and_read(state.rng, state.weather, [])
+		state.set_modifier_track(TaskForce.Side.KRIEGSMARINE,
+			int(result.get("modifier", 0)))
+		_msg("BL1 - Controllo Rifornimento obbligatorio: %s e' una Stazione sul marker RV in %s."
+			% [tf.display_name(), str(h)])
+		for line in SoloTable.describe(result).split("\n"):
+			_msg("  " + line)
+		var decision := await _apply_solo_table_result("fueling", result, tf)
+		decision["active"] = tf
+		decision["target_hex"] = h
+		_show_solo_event(result, decision, "RIFORNIMENTO")
+		resolved = bool(decision.get("ok", false)) or resolved
+		if not bool(decision.get("ok", false)):
+			break
+		candidates = SoloAI.bl1_fueling_candidates(state)
+	_bl1_fueling_running = false
+	state.changed.emit()
+	return resolved
 
 
 func _solo_go_late() -> void:
@@ -2033,7 +2079,7 @@ func _do_completion() -> void:
 ## torna a zero. E' l'unica azione che si dichiara per cedere il turno.
 func _do_pass() -> void:
 	if not selected_tf.trajectory.is_station():
-		await _do_time_lapse()
+		await _do_time_lapse(false)
 	else:
 		_msg("%s e' gia' una Stazione: nessuno Scorrere del Tempo."
 			% selected_tf.display_name())
@@ -2042,7 +2088,7 @@ func _do_pass() -> void:
 	_refresh()
 
 
-func _do_time_lapse() -> void:
+func _do_time_lapse(allow_bl1_fueling: bool = true) -> void:
 	if selected_tf == null:
 		return
 	if not _can_control_tf(selected_tf):
@@ -2102,6 +2148,8 @@ func _do_time_lapse() -> void:
 	log.record("Scorrere del Tempo (%s)" % selected_tf.display_name())
 	state.changed.emit()
 	_refresh()
+	if allow_bl1_fueling:
+		await _maybe_run_bl1_fueling()
 
 
 func _pick_hex_on_map(hexes: Array, prompt: String) -> Vector2i:

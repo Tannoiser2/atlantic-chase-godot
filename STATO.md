@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **2311 verifiche, 17 suite, headless.**
+Tutti i test passano: **2321 verifiche, 17 suite, headless.**
 
 ---
 
@@ -12,7 +12,7 @@ Tutti i test passano: **2311 verifiche, 17 suite, headless.**
 | **M0** Fondamenta | ✅ **completo** | Progetto Godot 4.7, mappa in 15 tile, camera, pipeline asset, runner di test |
 | **M1a** Calibrazione reticolo | ✅ **completo** | Validato al 100% contro le pedine ufficiali |
 | **M1b** Estrazione dati | ✅ **completo** | 22 `.vsav` decodificati, 70 zone, terreno classificato |
-| **M1c** Grafo + editor | ✅ **completo** | 130 esagoni, 9 lati "not adjacent", Canale di Kiel; editor operativo |
+| **M1c** Grafo + editor | ✅ **completo** | 131 esagoni, 9 lati "not adjacent", Canale di Kiel; editor operativo |
 | **M2** Core regole | ✅ **completo** | Traiettoria, Tempo, Totale, Interruzione, undo, RNG — tutto testato |
 | **M3** Mappa interattiva | ✅ **completo** | Selezione, costruzione traiettoria, anteprima, undo, HUD, log |
 | **M4** Motore azioni | ✅ **completo** | Tutte e 4 le tabelle trascritte e verificate; danno alle navi |
@@ -25,9 +25,13 @@ Tutti i test passano: **2311 verifiche, 17 suite, headless.**
 
 ### Ultima revisione del solitario
 
-- 25 esagoni esterni all'area di gioco sono stati esclusi dopo la verifica
-  visiva della mappa; l'annotazione manuale sopravvive alla rigenerazione del
-  grafo ed e' protetta da un test per ogni coordinata;
+- 24 dei 25 esagoni esterni indicati restano esclusi; `(11,-5)` e' stato
+  riammesso perche' lo schieramento BL1 vi colloca un marker RV. Le annotazioni
+  manuali sopravvivono alla rigenerazione del grafo e sono protette dai test;
+- BL1 piazza i tre marker RV in `(10,3)`, `(9,-2)` e `(11,-5)`. Quando il
+  tedesco ha l'Iniziativa e una sua Stazione occupa un RV, l'app tira
+  automaticamente la Tabella del Rifornimento, applica l'effetto `a-g`, mostra
+  un popup sull'esagono e impedisce Controlli fuori dalle condizioni stampate;
 - le pedine Modificatori, VP e Conto Iniziativa seguono l'inclinazione delle
   rispettive colonne; i punteggi negativi avanzano della loro grandezza sulla
   traccia e conservano il segno nel badge, invece di restare fermi sullo zero;
@@ -269,7 +273,7 @@ numero uno del piano. È risolto:
 | passo centro-centro | 213.50 px |
 | rotazione | 44.28° |
 | origine | (1745.00, 1692.00) |
-| esagoni giocabili | 130 |
+| esagoni giocabili | 131 |
 
 Il reticolo è **ruotato di ~44°**: GMT ha inclinato la griglia per adattarla
 alla geografia, quindi le formule standard non si applicano.

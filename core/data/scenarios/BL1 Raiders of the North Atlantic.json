@@ -18,8 +18,8 @@
    "speed": 2,
    "trajectory": {
     "segments": [],
-    "station_q": 10,
-    "station_r": 3,
+      "station_q": 9,
+      "station_r": 3,
     "station_contact": false,
     "station_port": ""
    }
@@ -226,20 +226,20 @@
  "rendezvous_markers": [
   {
    "id": "BL1-RV-N",
-   "q": 12,
-   "r": -2,
+      "q": 11,
+      "r": -5,
    "active": true
   },
   {
    "id": "BL1-RV-C",
-   "q": 10,
-   "r": -1,
+      "q": 9,
+      "r": -2,
    "active": true
   },
   {
    "id": "BL1-RV-S",
-   "q": 9,
-   "r": 3,
+      "q": 10,
+      "r": 3,
    "active": true
   }
  ],
@@ -253,7 +253,7 @@
  },
  "setup_notes": [
   "Meteo Buono; iniziativa tedesca. Mappa operazionale. Schieramento dal fascicolo: corsari tedeschi e convogli britannici con rotte stampate.",
-  "Lutzow parte come Stazione adiacente al marker BL1-RV-S: scelta digitale provvisoria fra i marker RV ammessi dal fascicolo.",
+    "Lutzow parte come Stazione in 9,3, adiacente al marker BL1-RV-S in 10,3.",
   "Graf Spee e' nel Gruppo Rinforzi A a Kiel.",
   "La rotta Africa-Portsmouth usa la striscia porto Africa sull'esagono 12,4 e termina a Portsmouth in 8 segmenti, come da fascicolo."
  ],

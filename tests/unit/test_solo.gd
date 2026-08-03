@@ -60,6 +60,7 @@ func run() -> void:
 	test_solo_ai_has_policy_for_action_codes()
 	test_solo_norwegian_completion_ports()
 	test_fueling()
+	test_bl1_fueling_trigger_conditions()
 	test_solo_ai_bl1_aux_tables_apply()
 	test_solo_battle_behavior()
 	test_solo_battle_view_preassigns_both_sides()
@@ -140,9 +141,9 @@ func test_bl1_setup_has_printed_routes_and_stations() -> void:
 	true_(_forces_include_ship(brest, "Dunkerque"), "Brest contiene la Forza francese")
 
 	eq(st.rendezvous_markers.size(), 3, "tre marker RV piazzati")
-	true_(not st.rendezvous_at(Vector2i(12, -2)).is_empty(), "RV nord piazzato")
-	true_(not st.rendezvous_at(Vector2i(10, -1)).is_empty(), "RV centrale piazzato")
-	true_(not st.rendezvous_at(Vector2i(9, 3)).is_empty(), "RV sud piazzato")
+	true_(not st.rendezvous_at(Vector2i(11, -5)).is_empty(), "RV nord piazzato")
+	true_(not st.rendezvous_at(Vector2i(9, -2)).is_empty(), "RV centrale piazzato")
+	true_(not st.rendezvous_at(Vector2i(10, 3)).is_empty(), "RV sud piazzato")
 
 	var lutzow := _tf_with_ship(st, "Lutzow")
 	ne(lutzow, null, "Lutzow e' in una TF iniziale")
@@ -778,6 +779,44 @@ func test_fueling() -> void:
 			"BL1 consente Murmansk ai tedeschi")
 		eq(String(sc.port_control().get("South America", "")), "KRIEGSMARINE",
 			"BL1 consente South America quando il Rifornimento lo ordina")
+
+
+func test_bl1_fueling_trigger_conditions() -> void:
+	_begin("BL1: innesco obbligatorio del Rifornimento")
+	var sc := Scenario.load_by_id("BL1 Raiders of the North Atlantic")
+	var st := GameState.new(graph, 1)
+	st.apply_dict(sc.to_state_dict())
+	var lutzow := _tf_with_ship(st, "Lutzow")
+	eq(SoloAI.bl1_fueling_candidates(st).size(), 0,
+		"adiacente all'RV non basta: la Stazione deve essere nello stesso esagono")
+	lutzow.trajectory.become_station(Vector2i(10, 3))
+	var candidates := SoloAI.bl1_fueling_candidates(st)
+	eq(candidates.size(), 1, "Stazione tedesca sul marker con Iniziativa: controllo dovuto")
+	eq(candidates[0], lutzow, "il controllo riguarda la TF che occupa il marker")
+	st.initiative = TaskForce.Side.ROYAL_NAVY
+	eq(SoloAI.bl1_fueling_candidates(st).size(), 0,
+		"senza Iniziativa tedesca il controllo non scatta")
+	st.initiative = TaskForce.Side.KRIEGSMARINE
+	var applied := SoloAI.apply_table_result("fueling", {"code": "f"}, st, graph,
+		ActionEngine.load_default(), sc.port_control(), TaskForce.Side.ROYAL_NAVY, lutzow)
+	true_(bool(applied["ok"]), "il risultato della tabella viene applicato")
+	true_(st.rendezvous_at(Vector2i(10, 3)).is_empty(), "il risultato f rimuove l'RV")
+	eq(SoloAI.bl1_fueling_candidates(st).size(), 0, "un RV rimosso non si innesca di nuovo")
+
+	var no_rv := GameState.new(graph, 2)
+	no_rv.scenario_name = "BL1 Raiders of the North Atlantic"
+	var tf := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
+	tf.trajectory.become_station(Vector2i(10, 3))
+	no_rv.add_task_force(tf)
+	var refused := SoloAI.apply_table_result("fueling", {"code": "f"}, no_rv, graph,
+		ActionEngine.load_default(), sc.port_control(), TaskForce.Side.ROYAL_NAVY, tf)
+	false_(bool(refused["ok"]), "senza marker il Rifornimento viene rifiutato")
+	true_(String((refused["log"] as Array)[0]).contains("nessun marker RV"),
+		"il rifiuto dichiara il dato mancante")
+	tf.solo_flags["bl1_no_more_fueling"] = true
+	no_rv.rendezvous_markers.append({"id": "rv", "q": 10, "r": 3})
+	eq(SoloAI.bl1_fueling_candidates(no_rv).size(), 0,
+		"l'esito a impedisce davvero ulteriori Controlli")
 
 
 func test_solo_ai_bl1_aux_tables_apply() -> void:

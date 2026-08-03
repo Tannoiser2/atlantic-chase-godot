@@ -102,6 +102,13 @@ func _process(_delta: float) -> bool:
 	if _frames == 6 and _args.has("solo") and _root_node.solo != null:
 		_root_node._change_initiative_to(_root_node._solo_imaginary_side())
 		_root_node._kick_solo_opponent_turn("prova visiva")
+	if _frames == 6 and _args.has("fueling") and _root_node.solo != null:
+		for tf in _root_node.state.task_forces:
+			if tf.ships.any(func(ship: Ship) -> bool: return ship.name == "Lutzow"):
+				tf.trajectory.become_station(Vector2i(10, 3))
+				_root_node.state.rng.push_forced([6])
+				_root_node._kick_bl1_fueling_check()
+				break
 	# "rounds:N": preme SPAZIO N volte per portare la Battaglia avanti invece di
 	# fotografarla allo schieramento. Le prime N-1 pressioni sono subito, l'ULTIMA
 	# arriva due fotogrammi prima dello scatto: e' l'unico modo di cogliere una

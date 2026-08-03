@@ -77,6 +77,21 @@ static func apply_table_result(table_id: String, result: Dictionary,
 	return out
 
 
+## BL1 p.6: il Controllo Rifornimento e' obbligatorio quando il tedesco ha
+## l'Iniziativa e una sua Stazione occupa un esagono con un RV attivo.
+static func bl1_fueling_candidates(state: GameState) -> Array[TaskForce]:
+	var out: Array[TaskForce] = []
+	if not state.scenario_name.begins_with("BL1") \
+			or state.initiative != TaskForce.Side.KRIEGSMARINE:
+		return out
+	for tf in state.forces_of(TaskForce.Side.KRIEGSMARINE):
+		if tf.trajectory.is_station() \
+				and not bool(tf.solo_flags.get("bl1_no_more_fueling", false)) \
+				and not state.rendezvous_at(tf.trajectory.station_hex).is_empty():
+			out.append(tf)
+	return out
+
+
 ## Condizioni che lo stato digitale puo' provare senza chiedere al giocatore.
 ## Ritorna anche le condizioni non modellate: il registro deve distinguere
 ## chiaramente "non applicabile" da "l'app non possiede ancora quel dato".
@@ -220,6 +235,10 @@ static func _bl1_fueling(code: String, state: GameState, graph: MapGraph,
 	if not tf.trajectory.is_station():
 		return _empty("Solitario AI BL1 Rifornimento: %s non e' una Stazione." % tf.display_name())
 	var h := tf.trajectory.station_hex
+	if bool(tf.solo_flags.get("bl1_no_more_fueling", false)):
+		return _empty("Solitario AI BL1 Rifornimento: %s non puo' effettuare altri Controlli." % tf.display_name())
+	if state.rendezvous_at(h).is_empty():
+		return _empty("Solitario AI BL1 Rifornimento: nessun marker RV attivo in %s." % str(h))
 	var out := _empty("Solitario AI BL1 Rifornimento %s su %s." % [code, tf.display_name()])
 	var rv_removed := false
 	match code:
