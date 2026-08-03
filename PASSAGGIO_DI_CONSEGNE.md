@@ -483,6 +483,10 @@ Restano:
   `_pick_time_lapse_option()` fa cliccare solo i segmenti terminali compatibili
   con le opzioni prodotte da `TimeLapse.removal_options()`. Non duplicare nella
   UI le regole su quantita' e Limite di Informazioni: il core resta l'autorita'.
+  Non esiste un comando autonomo: `_do_time_lapse_for()` viene chiamato solo
+  dal flusso dell'Azione o dell'evento che lo innesca. Il pulsante di servizio
+  e la scorciatoia `T` sono stati rimossi perche' permettevano una rimozione
+  illegale in qualsiasi momento.
 - **I file scenario hanno `info_triggers` vuoto.** Non significa che nessun
   porto causi Informazioni: `GameState.configure_port_info_triggers()` ricava
   porti, esagoni e controllo dalla mappa e dalle eccezioni dello scenario. Le

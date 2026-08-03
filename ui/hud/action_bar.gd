@@ -12,7 +12,6 @@ extends PanelContainer
 ## giocatore a chiedersi perche' non succede nulla.
 
 signal action_requested(key: String)
-signal time_lapse_requested()
 signal disperse_requested()
 signal outcome_requested()
 signal undo_requested()
@@ -90,8 +89,6 @@ func _ready() -> void:
 		b.pressed.connect(func() -> void: action_requested.emit(String(a[0])))
 		_act_buttons[a[0]] = b
 
-	_mk(row2, "Scorrere del Tempo (T)").pressed.connect(
-		func() -> void: time_lapse_requested.emit())
 	var dsp := _mk(row2, "Disperdi (D)")
 	dsp.tooltip_text = ("Disperdere un Convoglio: incassa un solo Colpo per "
 		+ "attacco, ma vale un punto in meno se arriva a destinazione. "

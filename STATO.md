@@ -59,7 +59,9 @@ Tutti i test passano: **2426 verifiche, 17 suite, headless.**
 - lo Scorrere del Tempo del giocatore non presenta piu' combinazioni testuali:
   evidenzia sulla mappa i capi legalmente rimovibili e li fa cliccare uno alla
   volta. Quantita', Informazioni e Limite di Informazioni restano governati dal
-  core; il bot continua a scegliere deterministicamente secondo la tabella;
+  core; il bot continua a scegliere deterministicamente secondo la tabella.
+  Non e' piu' un comando libero: pulsante e scorciatoia `T` sono stati rimossi,
+  e la scelta compare soltanto quando un'Azione o un evento la innesca;
 - le schede TF spiegano l'effetto stampato dei Comandanti. Raeder e Pound
   implementano Passare Tutti due volte per scenario, con utilizzi salvati;
 - `(11,-7)` e `(11,-6)` sono stati esclusi dal grafo giocabile;

@@ -415,8 +415,6 @@ func _on_key(k: InputEventKey) -> void:
 		KEY_F:
 			active_end = 1 - active_end
 			_msg("capo attivo: %s" % ("testa" if active_end == 0 else "coda"))
-		KEY_T:
-			_do_time_lapse()
 		KEY_S:
 			if k.ctrl_pressed or k.meta_pressed:
 				_save_graph()
@@ -1055,8 +1053,8 @@ func _on_right_click(h: Vector2i) -> void:
 		return
 	if selected_tf == null:
 		return
-	_msg("I segmenti si rimuovono con Scorrere del Tempo (T). "
-		+ "Per correggere l'ultima rotta usa Ctrl+Z.")
+	_msg("I segmenti si rimuovono soltanto quando un'Azione o un evento innesca "
+		+ "lo Scorrere del Tempo. Per correggere l'ultima rotta usa Ctrl+Z.")
 
 
 ## Inizia un trascinamento se il punto premuto e' una TF selezionabile o un
@@ -2981,9 +2979,9 @@ func _refresh_now() -> void:
 				+ "[b]Traiettoria (5)[/b]; altrimenti puoi solo selezionare e "
 				+ "dichiarare altre azioni.")
 	elif t.length() >= Trajectory.MAX_SEGMENTS:
-		out.append("Traiettoria al massimo (%d segmenti): per allungarla serve "
+		out.append("Traiettoria al massimo (%d segmenti): non puo' essere allungata "
 			% Trajectory.MAX_SEGMENTS
-			+ "prima uno [b]Scorrere del Tempo[/b] (T).")
+			+ "finche' un'Azione o un evento non innesca [b]Scorrere del Tempo[/b].")
 	else:
 		if _trajectory_action_armed:
 			out.append("[color=#8fd0ff][b]Azione Traiettoria attiva.[/b][/color] "
@@ -2993,8 +2991,8 @@ func _refresh_now() -> void:
 		else:
 			out.append("Traiettoria di [b]%d[/b] segmenti. Per modificarla dichiara "
 				% t.length()
-				+ "[b]Traiettoria (5)[/b]. T applica solo lo Scorrere del Tempo; "
-				+ "[b]7 Passare[/b] lo fa come azione e passa l'Iniziativa. "
+				+ "[b]Traiettoria (5)[/b]. [b]7 Passare[/b] innesca lo Scorrere "
+				+ "del Tempo e passa l'Iniziativa. "
 				+ "F cambia il capo preparato.")
 
 	# le azioni, divise in due e i motivi raggruppati
@@ -3065,7 +3063,6 @@ func _build_action_bar(root: Control) -> void:
 	_bar.offset_top = 8
 	root.add_child(_bar)
 	_bar.action_requested.connect(_declare_action)
-	_bar.time_lapse_requested.connect(_do_time_lapse)
 	_bar.disperse_requested.connect(_do_disperse)
 	_bar.outcome_requested.connect(_show_outcome)
 	_bar.undo_requested.connect(func() -> void:
@@ -3206,7 +3203,7 @@ func _build_help(root: Control) -> void:
   5 / Traiettoria                             arma il tracciamento della rotta
   [b]trascina dalla TF sugli esagoni[/b]             disegna la rotta armata in un gesto solo
   clic su un esagono adiacente                estende di un esagono, solo dopo 5
-  T / Scorrere del Tempo                      clicca sulla mappa i capi da rimuovere
+  Scorrere del Tempo                          si apre solo quando una regola lo innesca
   Tab / Shift+Tab                             TF successiva / precedente
   F                                           cambia capo attivo (testa/coda)
   ESC                                         annulla l'azione Traiettoria armata
@@ -3217,7 +3214,6 @@ func _build_help(root: Control) -> void:
   5  Traiettoria     6  Completamento
   7  Passare         8  Riorganizzare
   9  Segnalazione
-  T  Scorrere del Tempo sulla TF selezionata
   O   avversario immaginario (modo solitario; riapre le tabelle)
   Nel solitario, quando l'avversario immaginario riceve l'Iniziativa,
      la sua Tabella delle Azioni viene tirata automaticamente.
@@ -3228,7 +3224,7 @@ func _build_help(root: Control) -> void:
 [b]Guida in tempo reale[/b]
 	  Il pannello in basso dice chi ha l'Iniziativa, cosa puoi fare ora e
 	  perche' un'azione e' bloccata. Le scelte compaiono li' come pulsanti.
-	  Il risultato del bot resta evidenziato; Dettagli BOT apre i suoi calcoli.
+	  Il risultato del bot resta evidenziato; ogni procedura apre i propri calcoli.
 	  Registro e pannello di stato consentono di selezionare e copiare il testo.
 
 [b]Comandanti[/b]
@@ -3246,7 +3242,7 @@ func _build_help(root: Control) -> void:
 [b]Touch (iPad)[/b]
   due dita             sposta la mappa e zooma (pinch)
   un dito              seleziona; dopo 5 disegna la Traiettoria
-  T, poi tocco         sceglie i segmenti terminali dello Scorrere del Tempo
+  durante Scorrere     tocca i segmenti terminali evidenziati
 
 [b]Scenario e vista[/b]
   [ e ]        scenario precedente / successivo

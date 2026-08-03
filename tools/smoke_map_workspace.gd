@@ -8,6 +8,7 @@ var _frames := 0
 var _target: TaskForce = null
 var _zoom_before := 0.0
 var _width_before := 0.0
+var _length_before_t := 0
 var _failed := false
 
 
@@ -52,10 +53,19 @@ func _process(_delta: float) -> bool:
 		if _root.cam.zoom.x <= _zoom_before:
 			return _finish(false, "la rotella nel SubViewport non raggiunge la camera")
 		_width_before = _root._map_container.size.x
+		_length_before_t = _root.selected_tf.length()
+		var forbidden := InputEventKey.new()
+		forbidden.keycode = KEY_T
+		forbidden.pressed = true
+		_root._unhandled_input(forbidden)
 		_root._toggle_log_panel()
 	if _frames == 18:
 		if _root._map_container.size.x <= _width_before:
 			return _finish(false, "chiudere il Registro non restituisce spazio alla mappa")
+		if _root.selected_tf.length() != _length_before_t or _root._hex_choice_active:
+			return _finish(false, "T innesca ancora liberamente lo Scorrere del Tempo")
+		if _has_button_text(_root._bar, "Scorrere del Tempo"):
+			return _finish(false, "la barra espone ancora Scorrere del Tempo come comando")
 		_root._toggle_log_panel()
 		_root._active_bot_trace = 101
 		_root._msg("dettaglio procedura vecchia")
@@ -79,7 +89,16 @@ func _process(_delta: float) -> bool:
 			return _finish(false, "la singola procedura BOT non si espande")
 		if expanded_text.contains("dettaglio procedura nuova"):
 			return _finish(false, "espandere una procedura BOT apre anche le altre")
-		return _finish(true, "mappa separata e Registro inverso con procedure BOT indipendenti")
+		return _finish(true, "mappa separata, Scorrere non libero e Registro BOT indipendente")
+	return false
+
+
+func _has_button_text(node: Node, needle: String) -> bool:
+	if node is Button and String((node as Button).text).contains(needle):
+		return true
+	for child in node.get_children():
+		if _has_button_text(child, needle):
+			return true
 	return false
 
 
