@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **2342 verifiche, 17 suite, headless.**
+Tutti i test passano: **2353 verifiche, 17 suite, headless.**
 
 ---
 
@@ -25,6 +25,17 @@ Tutti i test passano: **2342 verifiche, 17 suite, headless.**
 
 ### Ultima revisione del solitario
 
+- le procedure composte delle Tabelle Azioni non perdono piu' la seconda
+  azione: Traiettoria poi Ingaggio/Ricerca/Completamento prosegue senza un
+  nuovo tiro, ma offre comunque ogni normale tentativo sull'Iniziativa;
+- il risultato BL1-A senza bersaglio aereo usa la TF con CA per Traiettoria e
+  poi Ricerca Navale, oppure Ingaggio contro una Stazione. Il bot non sceglie
+  piu' Attacco Furtivo come ripiego generico quando la tabella non lo ordina;
+- il pianificatore continua ora dal capo corretto quando una Stazione in mare
+  diventa Traiettoria: non si ferma piu' dopo il primo segmento;
+- durante una scelta nel pannello di stato la mappa non cambia selezione e non
+  avvia trascinamenti: la TF mostrata non puo' divergere da quella gia'
+  designata nell'azione;
 - il Completamento del giocatore emette immediatamente il cambio di stato al
   renderer: Stazione e Traiettoria della TF uscita spariscono dalla mappa nello
   stesso momento in cui le navi entrano in porto;

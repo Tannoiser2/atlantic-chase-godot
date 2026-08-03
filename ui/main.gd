@@ -952,6 +952,11 @@ func _nearest_enemy(tf: TaskForce) -> TaskForce:
 
 
 func _on_left_click(h: Vector2i, shift: bool) -> void:
+	# Le decisioni aperte nel pannello di stato sono modali rispetto alla
+	# mappa: un clic non deve cambiare la TF mentre l'azione conserva gia'
+	# la propria dichiarazione.
+	if _status_choice_active:
+		return
 	if _hex_choice_active:
 		if _hex_choice_options.has(h):
 			_hex_choice_active = false
@@ -991,6 +996,8 @@ func _on_left_click(h: Vector2i, shift: bool) -> void:
 
 
 func _on_right_click(h: Vector2i) -> void:
+	if _status_choice_active:
+		return
 	if mode == Mode.EDITOR:
 		if graph.has_hex(h):
 			edit_anchor = h
@@ -1008,6 +1015,8 @@ func _on_right_click(h: Vector2i) -> void:
 ## Inizia un trascinamento se il punto premuto e' una TF selezionabile o un
 ## capo della Traiettoria gia' selezionata.
 func _begin_drag(h: Vector2i) -> void:
+	if _status_choice_active:
+		return
 	if mode != Mode.PLAY or selected_tf == null:
 		return
 	if not _trajectory_action_armed:
@@ -1486,6 +1495,13 @@ func _apply_solo_ai_result(result: Dictionary) -> String:
 		_solo_maybe_go_late("result_i", "la Tabella Azioni ha dato I")
 	var decision := SoloAI.execute_code(String(result.get("code", "")),
 		state, graph, engine, _port_control(), imaginary)
+	return await _apply_solo_ai_decision(result, decision)
+
+
+func _apply_solo_ai_decision(result: Dictionary, decision: Dictionary) -> String:
+	var imaginary := _solo_imaginary_side()
+	if imaginary < 0:
+		return "nessuna parte avversaria configurata."
 	for line_v: Variant in decision.get("log", []):
 		_msg(String(line_v))
 	var code := String(result.get("code", "?"))
@@ -1517,9 +1533,16 @@ func _apply_solo_ai_result(result: Dictionary) -> String:
 			await _solo_time_lapse(decision.get("active", null),
 				decision.get("target_hex", Vector2i.MAX))
 			if not await _offer_steal_initiative("Traiettoria del bot"):
-				_queue_next_solo_action("il bot mantiene l'Iniziativa")
+				var follow: Dictionary = decision.get("follow_up", {})
+				if not follow.is_empty():
+					_msg("Solitario AI: continua la procedura prescritta senza ritirare la Tabella.")
+					var next := SoloAI.continue_follow_up(decision, state, graph,
+						engine, _port_control(), imaginary)
+					summary = await _apply_solo_ai_decision(result, next)
+				else:
+					_queue_next_solo_action("il bot mantiene l'Iniziativa")
 		var decision_log: Array = decision.get("log", [])
-		if not decision_log.is_empty():
+		if not decision_log.is_empty() and summary.begins_with("risultato %s;" % code):
 			summary = "risultato %s: %s" % [code, String(decision_log[-1])]
 	if bool(decision.get("pass_initiative", false)) and _solo_is_imaginary_turn():
 		var player := _solo_player_side()

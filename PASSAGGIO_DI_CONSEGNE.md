@@ -12,10 +12,10 @@ Questo file dice **da dove ripartire e cosa non rifare**.
 
 Versione digitale di *Atlantic Chase* (GMT Games, 2020) in **Godot 4.7**,
 GDScript. Motore di regole puro e testabile headless, interfaccia sopra.
-**2342 verifiche su 17 suite, tutte verdi.** Repository `Tannoiser2/atlantic-chase-godot`, branch `master`.
+**2353 verifiche su 17 suite, tutte verdi.** Repository `Tannoiser2/atlantic-chase-godot`, branch `master`.
 
 ```bash
-godot --headless --path . --script res://tests/run_tests.gd   # 2342 verifiche
+godot --headless --path . --script res://tests/run_tests.gd   # 2353 verifiche
 godot --path . --script res://tools/smoke_ui.gd               # prova di fumo GUI
 sh tools/build_macos.sh                                       # app per macOS
 ```
@@ -76,6 +76,19 @@ silenzioso. Per questo `Choice.ask()` sta in una classe separata.
 I nuovi `class_name` non sono nel registro globale finché non giri
 `godot --headless --path . --import`. Senza, ottieni "Could not find type X" su
 file che sono corretti.
+
+### Una riga della Tabella Solitario puo' prescrivere piu' azioni
+
+BL1-A e BL1-C hanno rivelato il difetto: dopo la Traiettoria il ciclo automatico
+ritirava la Tabella e dimenticava rispettivamente Ricerca/Ingaggio e
+Completamento. `SoloAI` conserva ora `follow_up`, e `ui/main.gd` lo esegue dopo
+Scorrere del Tempo e il normale tentativo di Sottrarre. Non sostituire questa
+continuazione con `_queue_next_solo_action()`: quello significa un nuovo tiro,
+non la seconda parte della stessa procedura stampata.
+
+Una caccia generica prova soltanto `ENGAGE` e `NAVAL_SEARCH`. Un
+`STEALTH_ATTACK` deve arrivare da una regola esplicita dello scenario, mai
+essere usato come ripiego solo perche' risulta legalmente dichiarabile.
 
 ### JSON non ha interi
 Lo stato del RNG è un `uint64`; salvato come numero diventa un float e perde i

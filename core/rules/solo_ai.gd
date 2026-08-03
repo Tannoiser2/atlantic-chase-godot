@@ -66,6 +66,29 @@ static func execute_code(code: String, state: GameState, graph: MapGraph,
 	return out
 
 
+## Continua una sequenza stampata che richiede piu' azioni senza tirare di
+## nuovo la Tabella. Ogni singola azione passa comunque dal normale flusso di
+## Iniziativa nella UI prima che questa funzione venga richiamata.
+static func continue_follow_up(previous: Dictionary, state: GameState,
+		graph: MapGraph, engine: ActionEngine, port_control: Dictionary,
+		side: int) -> Dictionary:
+	var follow: Dictionary = previous.get("follow_up", {})
+	var active: TaskForce = previous.get("active", null)
+	if follow.is_empty() or active == null or active.completed:
+		return _empty("Solitario AI: nessuna continuazione disponibile.")
+	match String(follow.get("kind", "")):
+		"attack":
+			var target: TaskForce = state.task_force(int(follow.get("target_id", -1)))
+			return _attack_or_route_selected(state, graph, engine, active, target,
+				String(follow.get("note", "Solitario AI: continua la caccia")))
+		"completion":
+			return _complete_or_route_to_port(state, graph, port_control, active,
+				String(follow.get("port_name", "")),
+				String(follow.get("note", "Solitario AI: continua verso il porto")))
+		_:
+			return _empty("Solitario AI: continuazione non riconosciuta.")
+
+
 static func apply_table_result(table_id: String, result: Dictionary,
 		state: GameState, graph: MapGraph, engine: ActionEngine,
 		port_control: Dictionary, side: int, subject: TaskForce = null) -> Dictionary:
@@ -794,6 +817,7 @@ static func _empty(note: String = "") -> Dictionary:
 		"completion_port": {},
 		"turn_kind": "",
 		"pass_initiative": false,
+		"follow_up": {},
 		"log": [] as Array[String],
 	}
 	if note != "":
@@ -940,7 +964,7 @@ static func _decisive_attack(state: GameState, graph: MapGraph,
 		return _attack_or_route_selected(state, graph, engine, preferred,
 			_best_enemy_target(state, side, preferred),
 			"Solitario AI: %s usa la TF indicata dal codice" % code_hint)
-	for key in ["ENGAGE", "NAVAL_SEARCH", "STEALTH_ATTACK"]:
+	for key in ["ENGAGE", "NAVAL_SEARCH"]:
 		var action := _best_legal_action(state, engine, side, key)
 		if bool(action["ok"]):
 			action["log"].append("Solitario AI: dichiara %s contro il bersaglio migliore."
@@ -1004,8 +1028,13 @@ static func _completion_or_route(state: GameState, graph: MapGraph,
 		var fallback := _decisive_attack(state, graph, engine, side)
 		fallback["log"].append("Solitario AI: nessun porto amico raggiungibile noto, passa alla caccia.")
 		return fallback
-	return _route_toward_hex(state, graph, active, port["hex"] as Vector2i,
-		"Solitario AI: rotta di rientro verso %s." % String(port["name"]))
+	var note := "Solitario AI: rotta di rientro verso %s." % String(port["name"])
+	var route := _route_toward_hex(state, graph, active,
+		port["hex"] as Vector2i, note)
+	if bool(route.get("ok", false)):
+		route["follow_up"] = {"kind": "completion",
+			"port_name": String(port["name"]), "note": note}
+	return route
 
 
 static func _complete_or_route_to_port(state: GameState, graph: MapGraph,
@@ -1032,7 +1061,12 @@ static func _complete_or_route_to_port(state: GameState, graph: MapGraph,
 		unknown["pass_initiative"] = true
 		return unknown
 	var p2: Dictionary = graph.ports[port_name]
-	return _route_toward_hex(state, graph, tf, p2["hex"] as Vector2i, note)
+	var route := _route_toward_hex(state, graph, tf,
+		p2["hex"] as Vector2i, note)
+	if bool(route.get("ok", false)):
+		route["follow_up"] = {"kind": "completion",
+			"port_name": port_name, "note": note}
+	return route
 
 
 static func _attack_or_route_selected(state: GameState, graph: MapGraph,
@@ -1042,12 +1076,16 @@ static func _attack_or_route_selected(state: GameState, graph: MapGraph,
 		var no := _empty("%s: manca una TF o un bersaglio; passa." % note)
 		no["pass_initiative"] = true
 		return no
-	for key in ["ENGAGE", "NAVAL_SEARCH", "STEALTH_ATTACK"]:
+	for key in ["ENGAGE", "NAVAL_SEARCH"]:
 		var d := _legal_action_for(state, engine, key, active, target)
 		if bool(d["ok"]):
 			d["log"].append("%s: azione legale immediata." % note)
 			return d
-	return _route_toward_tf(state, graph, active, target, note)
+	var route := _route_toward_tf(state, graph, active, target, note)
+	if bool(route.get("ok", false)):
+		route["follow_up"] = {"kind": "attack", "target_id": target.id,
+			"note": note}
+	return route
 
 
 static func _legal_action_for(state: GameState, engine: ActionEngine,
@@ -1128,6 +1166,7 @@ static func _route_toward_hex(state: GameState, graph: MapGraph,
 	var end := int(plan["end"])
 	var steps: Array = plan["steps"]
 	var added := 0
+	var was_station := active.trajectory.is_station()
 	for h_v: Variant in steps:
 		if active.length() >= Trajectory.MAX_SEGMENTS:
 			break
@@ -1135,6 +1174,11 @@ static func _route_toward_hex(state: GameState, graph: MapGraph,
 		var info := state.triggers_info(h, active.side)
 		if active.trajectory.extend(h, end, graph, state.port_hexes(), info, active.side):
 			added += 1
+			# La prima estensione di una Stazione accoda il nuovo segmento.
+			# Le tappe successive devono quindi proseguire da quel capo.
+			if was_station:
+				end = 1
+				was_station = false
 		else:
 			break
 	out["ok"] = added > 0

@@ -47,6 +47,8 @@ func run() -> void:
 	test_eliminated_force_leaves_map_and_is_remembered()
 	test_automatic_modifiers_count_each_ship()
 	test_solo_ai_declares_legal_attack()
+	test_bl1_air_fallback_routes_then_engages()
+	test_bl1_completion_route_keeps_completion()
 	test_solo_ai_bl2_t_creates_unknown()
 	test_solo_ai_bl3_completion_port_by_phase()
 	test_solo_ai_bl1_x_creates_unknown_hunter()
@@ -440,17 +442,63 @@ func test_solo_ai_declares_legal_attack() -> void:
 	km.trajectory.become_station(Vector2i(10, 0))
 	var rn := TaskForce.new(2, TaskForce.Side.ROYAL_NAVY)
 	rn.ships.append(ShipRoster.shared().make("Convoy x3"))
-	rn.trajectory.become_station(Vector2i(12, 0))
-	rn.trajectory.extend(Vector2i(11, 0), 0, graph, {}, false, rn.side)
-	rn.trajectory.extend(Vector2i(10, 0), 0, graph, {}, false, rn.side)
+	rn.trajectory.become_station(Vector2i(10, 0))
 	st.add_task_force(km)
 	st.add_task_force(rn)
 
 	var r := SoloAI.execute_code("X", st, graph, ActionEngine.load_default(), {}, km.side)
-	true_(["NAVAL_SEARCH", "STEALTH_ATTACK"].has(String(r["action_key"])),
-		"sceglie un'azione offensiva legale")
+	eq(String(r["action_key"]), "ENGAGE",
+		"Ingaggia la Stazione senza inventare un Attacco Furtivo")
 	eq(r["active"], km, "la TF tedesca e' Attiva")
 	eq(r["target"], rn, "il Convoglio e' il bersaglio")
+
+
+func test_bl1_air_fallback_routes_then_engages() -> void:
+	_begin("BL1 A: senza attacco aereo, Traiettoria poi Ingaggio")
+	var st := GameState.new(graph, 1)
+	st.scenario_name = "BL1 Raiders of the North Atlantic"
+	st.weather = TimeLapse.Weather.GOOD
+	var target := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
+	target.ships.append(ShipRoster.shared().make("Lutzow"))
+	target.trajectory.become_station(Vector2i(9, 3))
+	var hunter := TaskForce.new(2, TaskForce.Side.ROYAL_NAVY)
+	hunter.ships.append(ShipRoster.shared().make("Birmingham"))
+	hunter.trajectory.become_station(Vector2i(11, 3))
+	st.add_task_force(target)
+	st.add_task_force(hunter)
+	var engine := ActionEngine.load_default()
+
+	var route := SoloAI.execute_code("A", st, graph, engine, {}, hunter.side)
+	eq(String(route["turn_kind"]), "trajectory", "prima esegue la Traiettoria")
+	eq(String(route["action_key"]), "", "non dichiara un attacco durante la rotta")
+	eq(String((route["follow_up"] as Dictionary).get("kind", "")), "attack",
+		"conserva la seconda azione prescritta")
+	var attack := SoloAI.continue_follow_up(route, st, graph, engine, {}, hunter.side)
+	eq(String(attack["action_key"]), "ENGAGE", "poi Ingaggia la Stazione tedesca")
+	eq(attack["active"], hunter, "la TF con CA resta Attiva")
+	eq(attack["target"], target, "la Stazione tedesca resta il bersaglio")
+
+
+func test_bl1_completion_route_keeps_completion() -> void:
+	_begin("BL1 C: Traiettoria poi Completamento senza nuovo tiro")
+	var st := GameState.new(graph, 1)
+	st.scenario_name = "BL1 Raiders of the North Atlantic"
+	var convoy := TaskForce.new(1, TaskForce.Side.ROYAL_NAVY)
+	convoy.ships.append(ShipRoster.shared().make("Convoy x3"))
+	convoy.trajectory.become_station(Vector2i(15, -3))
+	st.add_task_force(convoy)
+	var engine := ActionEngine.load_default()
+
+	var route := SoloAI.execute_code("C", st, graph, engine, {}, convoy.side)
+	eq(String(route["turn_kind"]), "trajectory", "prima raggiunge il porto scelto")
+	eq(String((route["follow_up"] as Dictionary).get("kind", "")), "completion",
+		"conserva il Completamento come seconda azione")
+	var chosen_port := String((route["follow_up"] as Dictionary).get("port_name", ""))
+	var completion := SoloAI.continue_follow_up(route, st, graph, engine, {}, convoy.side)
+	true_(bool(completion["completion"]), "poi dichiara Completamento")
+	eq(String((completion["completion_port"] as Dictionary).get("name", "")),
+		chosen_port, "usa il porto scelto prima della Traiettoria")
+	eq(completion["active"], convoy, "il Convoglio resta la TF Attiva")
 
 
 func test_solo_ai_bl2_t_creates_unknown() -> void:
