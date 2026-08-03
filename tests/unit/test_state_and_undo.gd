@@ -136,6 +136,11 @@ func test_serialization_roundtrip() -> void:
 	tf.speed = TimeLapse.Speed.FAST
 	tf.solo_flags["bl1_completion_port"] = "South America"
 	tf.completed_ships = ["Prinz Eugen"]
+	var torpedo_ship := Ship.new("Silurante", TimeLapse.Speed.FAST)
+	torpedo_ship.has_torpedo = true
+	torpedo_ship.torpedo_attacks_used = 1
+	torpedo_ship.torpedo_attack_limit = 2
+	tf.ships.append(torpedo_ship)
 	var cur := origin
 	for i in 3:
 		for cand in graph.adjacent_hexes(cur):
@@ -170,6 +175,10 @@ func test_serialization_roundtrip() -> void:
 		"South America", "flag solitario conservato")
 	eq(st2.task_forces[0].completed_ships, ["Prinz Eugen"],
 		"registro delle navi uscite conservato")
+	eq(st2.task_forces[0].ships[0].torpedo_attacks_used, 1,
+		"lanci di siluri usati conservati")
+	eq(st2.task_forces[0].ships[0].torpedo_attack_limit, 2,
+		"limite speciale dei siluri conservato")
 	true_(st2.info_triggers.has(origin), "inneschi Informazioni conservati")
 	eq(st2.rendezvous_markers.size(), 1, "marker RV conservato")
 	eq(String(st2.rendezvous_at(rv_hex).get("id", "")), "rv-a", "marker RV indicizzato per esagono")

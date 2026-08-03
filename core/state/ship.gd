@@ -61,6 +61,12 @@ var speed_damaged: int = -1
 
 var has_torpedo: bool = false
 
+## RB p.59: ogni nave puo' effettuare un solo attacco con siluri in tutta la
+## partita; dopo il lancio riceve il segnalino No Siluri. Alcuni Squadroni DD
+## di scenario possono avere un limite maggiore, dichiarato nei dati.
+var torpedo_attacks_used: int = 0
+var torpedo_attack_limit: int = 1
+
 ## Limite di Colpi per Convogli e Squadroni DD (le istruzioni dello scenario
 ## possono cambiarlo; il fascicolo Scenari usa 4).
 var hit_limit: int = HITS_TO_DESTROY_UNARMORED
@@ -220,7 +226,10 @@ func to_dict() -> Dictionary:
 		"gun_close": gun_close, "gun_far": gun_far,
 		"gun_close_damaged": gun_close_damaged, "gun_far_damaged": gun_far_damaged,
 		"speed_damaged": speed_damaged,
-		"has_torpedo": has_torpedo, "hit_limit": hit_limit,
+		"has_torpedo": has_torpedo,
+		"torpedo_attacks_used": torpedo_attacks_used,
+		"torpedo_attack_limit": torpedo_attack_limit,
+		"hit_limit": hit_limit,
 		"attitude": attitude, "special_effects": special_effects.duplicate()}
 
 
@@ -242,6 +251,8 @@ static func from_dict(d: Dictionary) -> Ship:
 	s.gun_far_damaged = d.get("gun_far_damaged", null)
 	s.speed_damaged = int(d.get("speed_damaged", -1))
 	s.has_torpedo = bool(d.get("has_torpedo", false))
+	s.torpedo_attacks_used = int(d.get("torpedo_attacks_used", 0))
+	s.torpedo_attack_limit = int(d.get("torpedo_attack_limit", 1))
 	s.attitude = int(d.get("attitude", 1))
 	s.special_effects.clear()
 	for e_v: Variant in d.get("special_effects", []):

@@ -36,8 +36,10 @@ const WATERLINE_SEVERE := [
 ]
 
 
-static func can_attack(firer: Ship) -> bool:
-	return (firer.has_torpedo and not firer.sunk
+static func can_attack(firer: Ship, obscured: bool = false) -> bool:
+	return (firer.has_torpedo and not firer.damaged and not firer.sunk
+		and not obscured
+		and firer.torpedo_attacks_used < firer.torpedo_attack_limit
 		and Attitude.can_torpedo(firer)
 		and (firer.battle_zone == BattleState.Zone.NEAR
 			or firer.battle_zone == BattleState.Zone.CLOSE))
@@ -89,11 +91,21 @@ static func waterline_severe(total: int) -> String:
 	return "Timone Fuori Uso"
 
 
+## Tabella della Linea di Galleggiamento, colonna Catastrofica (player aid).
+static func waterline_catastrophic(total: int) -> String:
+	if total >= 8:
+		return "Allagamento (ferma)"
+	if total >= 6:
+		return "Allagamento (molto lenta)"
+	return "Incendio (molto lenta)"
+
+
 ## Risolve un attacco con siluri avanzato.
 ## Ritorna { ok, reason, firer, target, rolled, raw, modifiers, sum, result,
 ##           label, special, effect }.
-static func attack(firer: Ship, target: Ship, rng: DiceRNG) -> Dictionary:
-	if not can_attack(firer):
+static func attack(firer: Ship, target: Ship, rng: DiceRNG,
+		obscured: bool = false, visibility_modifier: int = 0) -> Dictionary:
+	if not can_attack(firer, obscured):
 		return {"ok": false, "reason":
 			("%s non puo' silurare: servono i siluri, l'attitudine "
 			+ "Avvicinamento e la zona Vicina o Ravvicinata") % firer.name}
@@ -101,9 +113,12 @@ static func attack(firer: Ship, target: Ship, rng: DiceRNG) -> Dictionary:
 		return {"ok": false, "reason":
 			"%s non e' un bersaglio valido per i siluri" % target.name}
 
+	firer.torpedo_attacks_used += 1
 	var raw := rng.d6x2("siluri %s -> %s" % [firer.name, target.name])
 	var mods := modifiers(firer, target)
-	var total := raw + modifier_total(firer, target)
+	if visibility_modifier != 0:
+		mods.append({"label": "Scarsa Visibilita'", "value": visibility_modifier})
+	var total := raw + modifier_total(firer, target) + visibility_modifier
 	var res := read(total)
 	var out := {"ok": true, "reason": "", "firer": firer, "target": target,
 		"raw": raw, "modifiers": mods, "sum": total, "result": res,
@@ -114,8 +129,9 @@ static func attack(firer: Ship, target: Ship, rng: DiceRNG) -> Dictionary:
 		out["waterline_roll"] = w
 		out["effect"] = waterline_severe(w)
 	elif res == AdvancedGunnery.Result.CATASTROPHIC:
-		out["effect"] = ("Linea di Galleggiamento, colonna Catastrofica: "
-			+ "non ancora trascritta (sta sul player aid avanzato)")
+		var w := rng.d6x2("Linea di Galleggiamento")
+		out["waterline_roll"] = w
+		out["effect"] = waterline_catastrophic(w)
 	return out
 
 

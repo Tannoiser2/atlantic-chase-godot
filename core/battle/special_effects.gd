@@ -67,6 +67,9 @@ static func heavier_of(effect: String) -> String:
 ## non si e' applicato e la nave prende invece un Colpo.
 static func apply(ship: Ship, effect: String) -> Dictionary:
 	var out := {"applied": false, "hit": false, "removed": "", "log": ""}
+	if bool(ship.get_meta("special_effects_immune", false)):
+		out["log"] = "%s e' immune agli Effetti Speciali." % ship.name
+		return out
 
 	# la Santabarbara non e' un marcatore: danneggia subito, e se la nave era
 	# gia' danneggiata la affonda

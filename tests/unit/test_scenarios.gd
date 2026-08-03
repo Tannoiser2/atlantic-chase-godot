@@ -20,6 +20,12 @@ func run() -> void:
 	test_enemy_presence_is_explained()
 	test_bl2_french_force_is_reinforcement_only()
 	test_battle_scenarios()
+	test_predeployed_battle_is_preserved()
+	test_battle_scenario_specials()
+
+
+func _tf_for_side(bs: BattleState, side: int) -> TaskForce:
+	return bs.active_tf if bs.active_tf.side == side else bs.target_tf
 
 
 func test_list() -> void:
@@ -267,54 +273,145 @@ func test_battle_scenarios() -> void:
 		var sc := Scenario.load_by_id(id)
 		var bs := sc.make_battle_state()
 		ne(bs, null, "%s: la Battaglia si costruisce" % id)
-		true_(bs.active_tf.ships.size() > 0, "%s: il tedesco ha navi" % id)
-		true_(bs.target_tf.ships.size() > 0, "%s: il britannico ha navi" % id)
+		true_(bs.active_tf.ships.size() > 0, "%s: il giocatore Attivo ha navi" % id)
+		true_(bs.target_tf.ships.size() > 0, "%s: il Bersaglio ha navi" % id)
 		false_(sc.is_battle_scenario() and not sc.task_forces.is_empty(),
 			"%s: o Battaglia o mappa operazionale, non tutt'e due" % id)
 
 	# le coppie storiche devono tornare
 	var ms9 := Scenario.load_by_id("MS9 Sink the Bismarck").make_battle_state()
 	var km9: Array[String] = []
-	for s in ms9.active_tf.ships:
+	for s in _tf_for_side(ms9, TaskForce.Side.KRIEGSMARINE).ships:
 		km9.append(s.name)
 	km9.sort()
 	eq(km9, ["Bismarck", "Preugen"] as Array[String],
 		"Stretto di Danimarca: Bismarck e Prinz Eugen")
 	var rn9: Array[String] = []
-	for s in ms9.target_tf.ships:
+	for s in _tf_for_side(ms9, TaskForce.Side.ROYAL_NAVY).ships:
 		rn9.append(s.name)
 	rn9.sort()
 	eq(rn9, ["Hood", "Pow"] as Array[String], "contro Hood e Prince of Wales")
 
 	# MS1 e' Rio de la Plata: il Graf Spee contro tre incrociatori
 	var ms1 := Scenario.load_by_id("MS1 Cornered").make_battle_state()
-	eq(ms1.active_tf.ships.size(), 1, "un solo corsaro tedesco")
-	eq(ms1.active_tf.ships[0].name, "Graf Spee", "ed e' il Graf Spee")
-	eq(ms1.target_tf.ships.size(), 3, "contro tre incrociatori britannici")
+	var km1 := _tf_for_side(ms1, TaskForce.Side.KRIEGSMARINE)
+	var rn1 := _tf_for_side(ms1, TaskForce.Side.ROYAL_NAVY)
+	eq(km1.ships.size(), 1, "un solo corsaro tedesco")
+	eq(km1.ships[0].name, "Graf Spee", "ed e' il Graf Spee")
+	eq(rn1.ships.size(), 3, "contro tre incrociatori britannici")
 
 	# MS5 e' Mers-el-Kebir: britannici contro FRANCESI, senza una sola nave
 	# tedesca. E' il caso che rompe l'euristica "cerca i tedeschi".
 	var ms5 := Scenario.load_by_id("MS5 With Friends Like These")
 	var b5 := ms5.make_battle_state()
 	var fr := 0
-	for s in b5.active_tf.ships:
+	for s in _tf_for_side(b5, TaskForce.Side.KRIEGSMARINE).ships:
 		if s.nation == "FR":
 			fr += 1
 	eq(fr, 4, "le quattro navi francesi stanno dalla parte avversaria")
-	for s in b5.target_tf.ships:
+	for s in _tf_for_side(b5, TaskForce.Side.ROYAL_NAVY).ships:
 		eq(s.nation, "UK", "e dall'altra ci sono solo britannici")
 	false_(ms5.has_import_warnings(), "senza avvisi di import")
 
 	# le bande di partenza non sono tutte Lontane: in MS3 i britannici
 	# partono gia' in zona Vicina
 	var ms3 := Scenario.load_by_id("MS3 Norwegian Patrol").make_battle_state()
-	for s in ms3.target_tf.ships:
+	for s in _tf_for_side(ms3, TaskForce.Side.ROYAL_NAVY).ships:
 		eq(s.battle_zone, BattleState.Zone.NEAR,
 			"%s parte in zona Vicina" % s.name)
-	for s in ms3.active_tf.ships:
+	for s in _tf_for_side(ms3, TaskForce.Side.KRIEGSMARINE).ships:
 		eq(s.battle_zone, BattleState.Zone.FAR,
 			"%s parte in zona Lontana" % s.name)
 
 	# uno scenario operazionale non e' una Battaglia
 	false_(Scenario.load_by_id("Op5 Rheinubung").is_battle_scenario(),
 		"la Rheinubung si gioca sulla mappa")
+
+func test_predeployed_battle_is_preserved() -> void:
+	_begin("schieramento dei mini-scenari mantenuto")
+	var bs := Scenario.load_by_id("MS1 Cornered").make_battle_state()
+	true_(bs.predeployed, "la Battaglia e' marcata come gia' schierata")
+	var before := {}
+	for s in bs.all_ships():
+		before[s.name] = s.battle_zone
+	Battle.new(bs, DiceRNG.new(3)).start()
+	for s in bs.all_ships():
+		eq(s.battle_zone, int(before[s.name]), "%s resta nella zona del fascicolo" % s.name)
+	var graf := _tf_for_side(bs, TaskForce.Side.KRIEGSMARINE).ships[0]
+	true_(bs.fixed_setup_attitudes.has(graf), "l'attitudine imposta e' bloccata")
+	eq(Battle.new(bs, DiceRNG.new(4)).setup_attitudes_for(graf),
+		[graf.attitude] as Array[int], "nel Round Uno non puo' essere cambiata")
+
+
+func test_battle_scenario_specials() -> void:
+	_begin("istruzioni speciali dei mini-scenari")
+	var ms2 := Scenario.load_by_id("MS2 Escape").make_battle_state()
+	eq(ms2.minimum_break_away_round, 3, "MS2 salta la Fuga sino al Round Tre")
+	var graf := _tf_for_side(ms2, TaskForce.Side.KRIEGSMARINE).ships[0]
+	eq(int(graf.get_meta("break_away_required_zone", -1)), BattleState.Zone.NEAR,
+		"MS2: il Graf Spee fugge solo dalla zona Vicina")
+
+	var ms3 := Scenario.load_by_id("MS3 Norwegian Patrol").make_battle_state()
+	eq(ms3.weather, TimeLapse.Weather.BAD, "MS3 usa il meteo Sfavorevole")
+	true_(ms3.skip_snafu, "MS3 salta la Verifica Snafu")
+	eq(ms3.starting_confusion_side, TaskForce.Side.ROYAL_NAVY,
+		"MS3 assegna Confusione al britannico")
+	var dd3: Ship = _tf_for_side(ms3, TaskForce.Side.ROYAL_NAVY).ships.filter(
+		func(s: Ship) -> bool: return s.name == "DD Squadron")[0]
+	eq([dd3.torpedo_attack_limit, dd3.hit_limit], [2, 8],
+		"MS3: lo Squadrone DD lancia due volte e regge otto Colpi")
+
+	var ms10 := Scenario.load_by_id("MS10 Three Days Later").make_battle_state()
+	eq(ms10.minimum_break_away_round, 2, "MS10 vieta la Fuga nel Round Uno")
+
+	var ms11 := Scenario.load_by_id(
+		"MS11 Skirmish on the Barents Sea").make_battle_state()
+	eq(ms11.weather, TimeLapse.Weather.BAD, "MS11 usa il meteo Sfavorevole")
+	var km11 := _tf_for_side(ms11, TaskForce.Side.KRIEGSMARINE)
+	for s in km11.ships:
+		eq(s.battle_zone, BattleState.Zone.NEAR,
+			"MS11: %s parte in zona Vicina" % s.name)
+	var rn11 := _tf_for_side(ms11, TaskForce.Side.ROYAL_NAVY)
+	var dd11: Ship = rn11.ships.filter(
+		func(s: Ship) -> bool: return s.name == "DD Squadron")[0]
+	eq([dd11.torpedo_attack_limit, dd11.hit_limit], [2, 6],
+		"MS11: doppio lancio e limite di sei Colpi sono dello Squadrone DD")
+	eq(ms11.delayed_entry.size(), 2,
+		"MS11 tiene fuori Fiji e Sheffield sino alla Fuga del Round Uno")
+
+	ms3.advanced = true
+	var b3 := Battle.new(ms3, DiceRNG.new(3))
+	b3.start()
+	eq(ms3.confusion_side, TaskForce.Side.ROYAL_NAVY,
+		"MS3 applica davvero il segnalino Confusione senza tirare")
+	true_(b3.snafu.is_empty(), "MS3 non applica di nascosto un altro Snafu")
+
+	ms11.advanced = true
+	var b11 := Battle.new(ms11, DiceRNG.new(11))
+	b11.start()
+	eq(ms11.target_ships().size(), 2,
+		"MS11 comincia soltanto con Convoglio e Squadrone DD britannici")
+	b11.break_away_phase(false, false)
+	eq(ms11.target_ships().size(), 4,
+		"Fiji e Sheffield entrano davvero all'inizio della fase di Fuga")
+
+	var ms4 := Scenario.load_by_id("MS4 Chance Encounter").make_battle_state()
+	var dd4: Ship = _tf_for_side(ms4, TaskForce.Side.ROYAL_NAVY).ships.filter(
+		func(s: Ship) -> bool: return s.name == "DD Squadron")[0]
+	eq(dd4.hit_limit, 2, "MS4: lo Squadrone DD e' distrutto al secondo Colpo")
+	eq(dd4.torpedo_attack_limit, 1, "MS4: puo' lanciare i siluri una volta")
+	true_(dd4.smoke, "MS4: lo Squadrone DD parte con il segnalino Fumo")
+
+	var ms5 := Scenario.load_by_id(
+		"MS5 With Friends Like These").make_battle_state()
+	var battery: Ship = _tf_for_side(ms5, TaskForce.Side.KRIEGSMARINE).ships.filter(
+		func(s: Ship) -> bool: return s.name == "Shore Battery")[0]
+	false_(bool(SpecialEffects.apply(battery, SpecialEffects.RUDDER)["applied"]),
+		"MS5: la Batteria Costiera e' immune agli Effetti Speciali")
+
+	var ms6 := Scenario.load_by_id("MS6 Hard Lesson").make_battle_state()
+	var dd6: Ship = _tf_for_side(ms6, TaskForce.Side.ROYAL_NAVY).ships.filter(
+		func(s: Ship) -> bool: return s.name == "DD Squadron")[0]
+	eq([dd6.hit_limit, dd6.torpedo_attack_limit], [1, 0],
+		"MS6: Jervis Bay affonda al primo Colpo e non ha siluri")
+	false_(Maneuver.can_make_smoke(dd6), "MS6: Jervis Bay non produce Fumo")

@@ -52,6 +52,21 @@ func first_phase() -> int:
 ## sono un fascicolo a parte e si accendono di comune accordo fra i giocatori.
 var advanced: bool = false
 
+## I mini-scenari arrivano dal fascicolo gia' disposti nelle zone corrette.
+## Una Battaglia nata sulla mappa operazionale, invece, deve ancora eseguire
+## il piazzamento normale di `deploy()`.
+var predeployed: bool = false
+
+## Attitudini espressamente imposte dal mini-scenario al piazzamento. Le navi
+## marcate ANY non entrano qui e restano una scelta del giocatore.
+var fixed_setup_attitudes: Dictionary = {}
+
+## Eccezioni dichiarate dal fascicolo dei mini-scenari. Restano dati dello
+## scenario: il motore applica la regola senza riconoscere nomi come "MS3".
+var skip_snafu: bool = false
+var starting_confusion_side: int = -1
+var minimum_break_away_round: int = 1
+
 ## La Battaglia e' gia' stata estesa per "nessuna nave in Corsa"? Si allunga
 ## una volta sola per quella condizione, se no due flotte decise a restare
 ## combatterebbero all'infinito.
@@ -82,6 +97,11 @@ var end_reason: String = ""
 
 ## Navi uscite dalla Battaglia (Fuga riuscita o Fuga parziale con Evasive).
 var withdrawn: Array[Ship] = []
+
+## Navi tenute fuori dalla Mappa di Battaglia. Il valore e' un dizionario con
+## round, fase, zona e attitudine d'ingresso; si usa sia per Snafu sia per gli
+## ingressi prescritti da un mini-scenario.
+var delayed_entry: Dictionary = {}
 
 var log: Array[String] = []
 
@@ -155,7 +175,7 @@ static func _afloat(tf: TaskForce) -> Array[Ship]:
 func ships_of(tf: TaskForce) -> Array[Ship]:
 	var out: Array[Ship] = []
 	for s in _afloat(tf):
-		if not withdrawn.has(s):
+		if not withdrawn.has(s) and not delayed_entry.has(s):
 			out.append(s)
 	return out
 
@@ -194,12 +214,22 @@ func ships_in_zone(tf: TaskForce, z: int) -> Array[Ship]:
 func check_end() -> bool:
 	if ended:
 		return true
-	if active_ships().is_empty():
+	if active_ships().is_empty() and not _has_delayed(active_tf):
 		_end("il giocatore Attivo non ha piu' navi sulla Mappa di Battaglia")
 		return true
-	if target_ships().is_empty():
+	if target_ships().is_empty() and not _has_delayed(target_tf):
 		_end("il giocatore Bersaglio non ha piu' navi sulla Mappa di Battaglia")
 		return true
+	return false
+
+
+func _has_delayed(tf: TaskForce) -> bool:
+	if tf == null:
+		return false
+	for s_v: Variant in delayed_entry.keys():
+		var s: Ship = s_v
+		if tf.ships.has(s) and not s.sunk:
+			return true
 	return false
 
 

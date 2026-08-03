@@ -216,10 +216,17 @@ func test_torpedo() -> void:
 	var a := Torpedo.attack(f, t, rng)
 	eq(a["sum"], 10, "somma 10")
 	eq(a["hits"], 0, "10 o meno: nessun effetto")
+	eq(f.torpedo_attacks_used, 1, "il lancio assegna No Siluri")
+	false_(Torpedo.can_attack(f), "la stessa nave non lancia una seconda volta")
+	true_(Torpedo.legality_error(f, t).contains("No Siluri"),
+		"il rifiuto nomina il segnalino")
 
+	var f2 := _ship("Seconda silurante", TimeLapse.Speed.FAST)
+	f2.has_torpedo = true
+	f2.battle_zone = BattleState.Zone.CLOSE
 	var rng2 := DiceRNG.new(0)
 	rng2.push_forced([6, 5])             # 11
-	eq(Torpedo.attack(f, t, rng2)["hits"], 2, "11 o piu': due Colpi")
+	eq(Torpedo.attack(f2, t, rng2)["hits"], 2, "11 o piu': due Colpi")
 
 	# il bersaglio lento aiuta anche i siluri, il fumo no
 	var slow := _ship("Lenta", TimeLapse.Speed.SLOW)
@@ -227,9 +234,17 @@ func test_torpedo() -> void:
 	slow.smoke = true
 	var rng3 := DiceRNG.new(0)
 	rng3.push_forced([5, 5])
-	var a3 := Torpedo.attack(f, slow, rng3)
+	var f3 := _ship("Terza silurante", TimeLapse.Speed.FAST)
+	f3.has_torpedo = true
+	f3.battle_zone = BattleState.Zone.CLOSE
+	var a3 := Torpedo.attack(f3, slow, rng3)
 	eq(a3["sum"], 11, "bersaglio lento +1, il fumo non conta")
 	eq(a3["hits"], 2, "e va a segno")
+	f3.damaged = true
+	false_(Torpedo.can_attack(f3), "una nave Danneggiata non silura")
+	f3.damaged = false
+	f3.torpedo_attacks_used = 0
+	false_(Torpedo.can_attack(f3, true), "una nave oscurata dal Fumo non silura")
 
 	var nt := _ship("Senza siluri", TimeLapse.Speed.FAST)
 	nt.battle_zone = BattleState.Zone.CLOSE

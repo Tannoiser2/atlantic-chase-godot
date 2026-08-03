@@ -17,17 +17,27 @@ const THRESHOLD := 11
 const HITS_ON_SUCCESS := 2
 
 
-static func can_attack(firer: Ship) -> bool:
-	return firer.has_torpedo and firer.battle_zone == Z.CLOSE and not firer.sunk
+static func can_attack(firer: Ship, obscured: bool = false) -> bool:
+	return (firer.has_torpedo and not firer.damaged and not firer.sunk
+		and not obscured
+		and firer.torpedo_attacks_used < firer.torpedo_attack_limit
+		and firer.battle_zone == Z.CLOSE)
 
 
 static func is_valid_target(target: Ship) -> bool:
 	return not target.sunk and TARGET_ZONES.has(target.battle_zone)
 
 
-static func legality_error(firer: Ship, target: Ship) -> String:
+static func legality_error(firer: Ship, target: Ship,
+		obscured: bool = false) -> String:
 	if not firer.has_torpedo:
 		return "%s non ha capacita' silurante" % firer.name
+	if firer.damaged:
+		return "%s e' Danneggiata e non ha piu' capacita' silurante" % firer.name
+	if obscured:
+		return "%s e' oscurata dal Fumo e non puo' silurare" % firer.name
+	if firer.torpedo_attacks_used >= firer.torpedo_attack_limit:
+		return "%s ha gia' usato i siluri (segnalino No Siluri)" % firer.name
 	if firer.battle_zone != Z.CLOSE:
 		return "%s deve trovarsi in zona Ravvicinata per silurare" % firer.name
 	if not TARGET_ZONES.has(target.battle_zone):
@@ -49,10 +59,12 @@ static func modifiers(target: Ship) -> Dictionary:
 
 
 ## Risolve un attacco con siluri. Come per i cannoni, NON applica i Colpi.
-static func attack(firer: Ship, target: Ship, rng: DiceRNG) -> Dictionary:
-	var err := legality_error(firer, target)
+static func attack(firer: Ship, target: Ship, rng: DiceRNG,
+		obscured: bool = false) -> Dictionary:
+	var err := legality_error(firer, target, obscured)
 	if err != "":
 		return {"ok": false, "reason": err, "hits": 0}
+	firer.torpedo_attacks_used += 1
 	var raw := rng.d6x2("siluri %s -> %s" % [firer.name, target.name])
 	var mods := modifiers(target)
 	var total: int = raw + int(mods["total"])

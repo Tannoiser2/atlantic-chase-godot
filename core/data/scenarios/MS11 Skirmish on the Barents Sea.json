@@ -2,7 +2,7 @@
  "name": "MS11 Skirmish on the Barents Sea",
  "reinforcements": {},
  "source": "MS11 Skirmish on the Barents Sea.vsav (modulo VASSAL Atlantic Chase v2.1)",
- "weather": 0,
+ "weather": 1,
  "initiative": 0,
  "round": 1,
  "task_forces": [],
@@ -11,14 +11,14 @@
   "ships": [
    {
     "ship": "Hipper",
-    "zone": "FAR",
+    "zone": "NEAR",
     "x": 3708,
     "y": 1787,
     "side": 0
    },
    {
     "ship": "Lutzow",
-    "zone": "FAR",
+    "zone": "NEAR",
     "x": 3575,
     "y": 1787,
     "side": 0
@@ -35,21 +35,27 @@
     "zone": "FAR",
     "x": 3557,
     "y": 1045,
-    "side": 1
+    "side": 1,
+    "torpedo_attack_limit": 2,
+    "hit_limit": 6
    },
    {
     "ship": "Fiji",
     "zone": "FAR",
     "x": 3864,
     "y": 914,
-    "side": 1
+    "side": 1,
+    "entry_round": 1,
+    "entry_phase": "BREAK_AWAY"
    },
    {
     "ship": "Sheffield",
     "zone": "FAR",
     "x": 3414,
     "y": 924,
-    "side": 1
+    "side": 1,
+    "entry_round": 1,
+    "entry_phase": "BREAK_AWAY"
    }
   ]
  },

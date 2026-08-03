@@ -28,7 +28,10 @@
     "zone": "FAR",
     "x": 3447,
     "y": 1021,
-    "side": 1
+    "side": 1,
+    "hit_limit": 1,
+    "torpedo_attack_limit": 0,
+    "smoke_allowed": false
    }
   ]
  },

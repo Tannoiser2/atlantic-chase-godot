@@ -2,7 +2,7 @@
  "name": "MS12 Finale",
  "reinforcements": {},
  "source": "MS12 Finale.vsav (modulo VASSAL Atlantic Chase v2.1)",
- "weather": 0,
+ "weather": 1,
  "initiative": 1,
  "round": 1,
  "task_forces": [],

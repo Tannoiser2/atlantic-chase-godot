@@ -28,7 +28,8 @@ static func can_move_to(ship: Ship, z: int) -> bool:
 ## creare Fumo". Una nave con segnalini Colpo puo' farlo finche' non e'
 ## Danneggiata.
 static func can_make_smoke(ship: Ship) -> bool:
-	return ship.kind == Ship.Kind.WARSHIP and not ship.damaged and not ship.sunk
+	return bool(ship.get_meta("smoke_allowed", true)) \
+		and ship.kind == Ship.Kind.WARSHIP and not ship.damaged and not ship.sunk
 
 
 ## Ordine di manovra: velocita' crescente, alternando i giocatori, con
@@ -89,6 +90,8 @@ static func obscured_ships(state: BattleState, tf: TaskForce) -> Array[Ship]:
 	for smoker in state.ships_of(tf):
 		if not smoker.smoke:
 			continue
+		if state.advanced and smoker.attitude != Attitude.Kind.RUNNING:
+			continue
 		if not out.has(smoker):
 			out.append(smoker)
 		var extra := 0
@@ -96,6 +99,9 @@ static func obscured_ships(state: BattleState, tf: TaskForce) -> Array[Ship]:
 			if extra >= 2:
 				break
 			if other == smoker or out.has(other):
+				continue
+			# In avanzato solo le navi in Corsa possono raggrupparsi nel Fumo.
+			if state.advanced and other.attitude != Attitude.Kind.RUNNING:
 				continue
 			out.append(other)
 			extra += 1

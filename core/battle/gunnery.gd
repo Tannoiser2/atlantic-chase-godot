@@ -122,7 +122,8 @@ static func result_label(hits: int) -> String:
 ## rinuncia alla colonna Acquisizione.
 static func attack(firer: Ship, target: Ship, rng: DiceRNG,
 		smoke_target: bool = false, smoke_firer: bool = false,
-		advanced: bool = false, targets: int = 1) -> Dictionary:
+		advanced: bool = false, targets: int = 1,
+		extra_modifiers: Array[Dictionary] = []) -> Dictionary:
 	var r := range_between(firer.battle_zone, target.battle_zone)
 	var band := band_for(r)
 	# un incendio o un allagamento gravi zittiscono la nave del tutto
@@ -143,13 +144,19 @@ static func attack(firer: Ship, target: Ship, rng: DiceRNG,
 	if se_mod != 0:
 		(mods["list"] as Array).append({"label": "effetti speciali",
 			"value": se_mod})
-	var total: int = int(roll["sum"]) + int(mods["total"]) + se_mod
+	var extra_total := 0
+	for m in extra_modifiers:
+		(mods["list"] as Array).append(m)
+		extra_total += int(m.get("value", 0))
+	var total: int = int(roll["sum"]) + int(mods["total"]) + se_mod \
+		+ extra_total
 	var hits := hits_for(total)
 	var out := {
 		"ok": true, "firer": firer, "target": target,
 		"range": r, "range_label": RANGE_LABELS[r], "band": band,
 		"rolled": roll["rolled"], "kept": roll["kept"], "raw": roll["sum"],
-		"modifiers": mods["list"], "modifier_total": mods["total"],
+		"modifiers": mods["list"],
+		"modifier_total": int(mods["total"]) + se_mod + extra_total,
 		"sum": total, "hits": hits, "label": result_label(hits),
 		"advanced": advanced,
 	}

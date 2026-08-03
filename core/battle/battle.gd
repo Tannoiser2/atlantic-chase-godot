@@ -28,6 +28,10 @@ var tracker: VictoryTracker = null
 ## le regole base.
 var snafu: Dictionary = {}
 
+## Scelta ancora da compiere durante il piazzamento Snafu. Le scelte sono
+## lasciate alla UI; il motore ne valida e applica l'esito.
+var pending_snafu: Dictionary = {}
+
 
 func _init(p_state: BattleState, p_rng: DiceRNG,
 		p_tracker: VictoryTracker = null) -> void:
@@ -37,13 +41,25 @@ func _init(p_state: BattleState, p_rng: DiceRNG,
 
 
 func start() -> void:
-	surprise_first_strike = state.deploy()
+	if state.predeployed:
+		surprise_first_strike = false
+		state.note("Schieramento dello scenario mantenuto nelle zone indicate.")
+	else:
+		surprise_first_strike = state.deploy()
 	state.round_number = 1
 	state.phase = state.first_phase()
 	state.note("Inizio Battaglia. Ultimo Round: %d (meteo %s)." % [
 		state.last_round,
 		"cattivo" if state.weather == TimeLapse.Weather.BAD else "buono"])
 	if not state.advanced:
+		return
+	if state.skip_snafu:
+		state.note("Istruzione dello scenario: la Verifica Snafu viene saltata.")
+		if state.starting_confusion_side >= 0:
+			state.confusion_side = state.starting_confusion_side
+			state.note("  Il segnalino Confusione parte alla %s." % (
+				"Kriegsmarine" if state.confusion_side == TaskForce.Side.KRIEGSMARINE
+				else "Royal Navy"))
 		return
 	# La Verifica Snafu si tira UNA VOLTA, prima del Round Uno, e decide con
 	# che disgrazia comincia la Battaglia.
@@ -55,13 +71,82 @@ func start() -> void:
 		state.last_round += 1
 		state.note("  Ultimo Round spostato a %d." % state.last_round)
 	if int(snafu["result"]) == Snafu.Result.CONFUSION:
-		# chi riceve il segnalino si decide con un dado: PARI, l'Attivo
-		var to_active := Snafu.beneficiary_is_active(rng)
-		var tf := state.active_tf if to_active else state.target_tf
-		state.confusion_side = tf.side if tf != null else -1
-		state.note("  Il segnalino Confusione va a %s."
-			% ("Kriegsmarine" if state.confusion_side
-				== TaskForce.Side.KRIEGSMARINE else "Royal Navy"))
+		_assign_confusion()
+	elif int(snafu["result"]) == Snafu.Result.MECHANICAL \
+			or int(snafu["result"]) == Snafu.Result.BOILER:
+		if state.active_ships().size() <= 1:
+			state.note("  Una sola nave Attiva: il risultato diventa Confusione.")
+			_assign_confusion()
+		else:
+			pending_snafu = {"kind": "delayed_entry",
+				"chooser_side": state.target_tf.side,
+				"candidates": state.active_ships(),
+				"round": 2 if int(snafu["result"]) == Snafu.Result.MECHANICAL else 1}
+			state.note("  Il giocatore Bersaglio deve scegliere una nave Attiva "
+				+ "che entrera' piu' tardi.")
+	elif int(snafu["result"]) == Snafu.Result.NO_RADAR:
+		var chooser_active := Snafu.beneficiary_is_active(rng)
+		var chooser_tf := state.active_tf if chooser_active else state.target_tf
+		var enemy_tf := state.target_tf if chooser_active else state.active_tf
+		pending_snafu = {"kind": "no_radar",
+			"chooser_side": chooser_tf.side,
+			"candidates": state.ships_of(enemy_tf)}
+		state.note("  %s deve scegliere una nave nemica per Niente Radar."
+			% chooser_tf.display_name())
+
+
+func _assign_confusion() -> void:
+	var to_active := Snafu.beneficiary_is_active(rng)
+	var tf := state.active_tf if to_active else state.target_tf
+	state.confusion_side = tf.side if tf != null else -1
+	state.note("  Il segnalino Confusione va a %s."
+		% ("Kriegsmarine" if state.confusion_side
+			== TaskForce.Side.KRIEGSMARINE else "Royal Navy"))
+
+
+func resolve_snafu_choice(ship: Ship) -> Dictionary:
+	if pending_snafu.is_empty():
+		return {"ok": false, "error": "nessuna scelta Snafu in attesa"}
+	if ship == null or not (pending_snafu.get("candidates", []) as Array).has(ship):
+		return {"ok": false, "error": "questa nave non e' una scelta valida"}
+	var kind := String(pending_snafu.get("kind", ""))
+	if kind == "no_radar":
+		if not ship.special_effects.has(Lingering.NO_RADAR_KEY):
+			ship.special_effects.append(Lingering.NO_RADAR_KEY)
+		state.note("Snafu - Niente Radar assegnato a %s." % ship.name)
+	elif kind == "delayed_entry":
+		var entry_round := int(pending_snafu.get("round", 1))
+		state.delayed_entry[ship] = {
+			"round": entry_round,
+			"phase": BattleState.Phase.LINGERING,
+			"zone": BattleState.Zone.FAR,
+			"attitude": Attitude.Kind.CLOSING,
+		}
+		state.note("Snafu - %s entrera' negli Effetti Duraturi del Round %d."
+			% [ship.name, entry_round])
+	else:
+		return {"ok": false, "error": "scelta Snafu non riconosciuta"}
+	pending_snafu.clear()
+	return {"ok": true, "error": ""}
+
+
+func setup_attitudes_for(ship: Ship) -> Array[int]:
+	if not Attitude.can_change(ship):
+		return [ship.attitude] as Array[int]
+	if state.round_number > 1:
+		return [Attitude.Kind.ACQUIRING, Attitude.Kind.CLOSING,
+			Attitude.Kind.RUNNING] as Array[int]
+	if state.fixed_setup_attitudes.has(ship):
+		return [int(state.fixed_setup_attitudes[ship])] as Array[int]
+	var is_active := state.active_ships().has(ship)
+	var result := int(snafu.get("result", -1))
+	if is_active and result == Snafu.Result.OPEN_ARC:
+		return [Attitude.Kind.ACQUIRING, Attitude.Kind.CLOSING,
+			Attitude.Kind.RUNNING] as Array[int]
+	if not is_active and result == Snafu.Result.UNEXPECTED_BEARING:
+		return [Attitude.Kind.ACQUIRING, Attitude.Kind.CLOSING,
+			Attitude.Kind.RUNNING] as Array[int]
+	return Attitude.setup_options(is_active)
 
 
 # -------------------------------------------------------- 1. Attitudine --
@@ -78,12 +163,12 @@ func attitude_phase(choices: Dictionary = {}) -> void:
 		var s: Ship = s_v
 		if s.sunk:
 			continue
-		# una nave ferma non puo' cambiare attitudine (carta di aiuto, riga
-		# "Stopped"): e' bloccata anche nelle intenzioni
-		if s.current_speed() == TimeLapse.Speed.STOPPED:
-			state.note("%s e' ferma: non puo' cambiare attitudine." % s.name)
+		var want := int(choices[s_v])
+		if not setup_attitudes_for(s).has(want):
+			state.note("%s: attitudine %s non consentita nel piazzamento."
+				% [s.name, Attitude.label(want)])
 			continue
-		s.attitude = int(choices[s_v])
+		s.attitude = want
 	# le Comunicazioni fanno male proprio adesso, a ogni Round
 	for s in state.all_ships():
 		if s.sunk:
@@ -117,6 +202,7 @@ func gunnery_phase(targeting: Dictionary) -> Array[Dictionary]:
 		_apply_hits(results)
 		state.check_end()
 		if state.ended:
+			clear_damage_control()
 			return results
 		var later := _resolve_wave(second_wave, targeting)
 		results.append_array(later)
@@ -125,6 +211,7 @@ func gunnery_phase(targeting: Dictionary) -> Array[Dictionary]:
 		results = _resolve_wave(second_wave, targeting)
 		_apply_hits(results)
 
+	clear_damage_control()
 	state.check_end()
 	return results
 
@@ -134,12 +221,29 @@ func _resolve_wave(firers: Array[Ship], targeting: Dictionary) -> Array[Dictiona
 	for firer in firers:
 		if firer.sunk or not targeting.has(firer):
 			continue
+		if blocked_by_damage_control(firer):
+			state.note("%s non spara: Controllo Danni dichiarato nel Round precedente."
+				% firer.name)
+			continue
 		var target: Ship = targeting[firer]
 		if target == null or target.sunk:
 			continue
 		var st := Maneuver.is_obscured(state, target)
 		var sf := Maneuver.is_obscured(state, firer)
-		var a := Gunnery.attack(firer, target, rng, st, sf, state.advanced)
+		var extra: Array[Dictionary] = []
+		if state.advanced:
+			var no_radar := Lingering.no_radar_modifier(firer,
+				Gunnery.range_between(firer.battle_zone, target.battle_zone))
+			if no_radar != 0:
+				extra.append({"label": "Niente Radar", "value": no_radar})
+			if not snafu.is_empty() \
+					and int(snafu.get("result", -1)) == Snafu.Result.POOR_VISIBILITY:
+				var vis := Snafu.visibility_modifier(true,
+					Gunnery.range_between(firer.battle_zone, target.battle_zone))
+				if vis != 0:
+					extra.append({"label": "Scarsa Visibilita'", "value": vis})
+		var a := Gunnery.attack(firer, target, rng, st, sf, state.advanced, 1,
+			extra)
 		state.note(Gunnery.describe(a))
 		out.append(a)
 	return out
@@ -233,8 +337,16 @@ func torpedo_phase(attacks: Dictionary) -> Array[Dictionary]:
 		var target: Ship = attacks[firer_v]
 		if firer.sunk or target == null or target.sunk:
 			continue
-		var a := AdvancedTorpedo.attack(firer, target, rng) if state.advanced \
-			else Torpedo.attack(firer, target, rng)
+		var obscured := Maneuver.is_obscured(state, firer)
+		var poor_visibility := 0
+		if state.advanced and not snafu.is_empty() \
+				and int(snafu.get("result", -1)) == Snafu.Result.POOR_VISIBILITY \
+				and firer.battle_zone == BattleState.Zone.NEAR \
+				and target.battle_zone == BattleState.Zone.NEAR:
+			poor_visibility = -1
+		var a := AdvancedTorpedo.attack(firer, target, rng, obscured,
+			poor_visibility) if state.advanced \
+			else Torpedo.attack(firer, target, rng, obscured)
 		state.note(AdvancedTorpedo.describe(a) if state.advanced
 			else Torpedo.describe(a))
 		out.append(a)
@@ -253,10 +365,14 @@ func maneuver_phase(moves: Dictionary) -> void:
 		if not moves.has(ship):
 			continue
 		var m: Dictionary = moves[ship]
-		var txt := Maneuver.apply(ship, int(m.get("zone", -1)),
-			bool(m.get("smoke", ship.smoke)))
+		var zone := int(m.get("zone", -1))
+		var smoke := bool(m.get("smoke", ship.smoke))
+		var refusal := Attitude.maneuver_refusal(ship, zone, smoke) \
+			if state.advanced else ""
+		var txt := "" if refusal != "" else Maneuver.apply(ship, zone, smoke)
 		if txt == "":
-			state.note("mossa illegale ignorata per %s" % ship.name)
+			state.note(refusal if refusal != "" \
+				else "mossa illegale ignorata per %s" % ship.name)
 		else:
 			state.note(txt)
 
@@ -273,12 +389,13 @@ func maneuver_phase(moves: Dictionary) -> void:
 func lingering_phase(damage_control: Array = []) -> Array[Dictionary]:
 	state.phase = BattleState.Phase.LINGERING
 	var out: Array[Dictionary] = []
+	_enter_delayed(BattleState.Phase.LINGERING)
 	for s in state.all_ships():
 		if s.sunk:
 			continue
 		var dc: bool = damage_control.has(s)
 		if dc:
-			s.set_meta("damage_control", true)
+			s.set_meta("damage_control_round", state.round_number + 1)
 		# ogni effetto si verifica DA SOLO, con un tiro suo: due effetti
 		# fanno due tiri, non uno
 		for effect in Lingering.lingering_checks(s):
@@ -297,12 +414,13 @@ func lingering_phase(damage_control: Array = []) -> Array[Dictionary]:
 
 ## Una nave che ha dichiarato il Controllo Danni non spara nel Round dopo.
 func blocked_by_damage_control(ship: Ship) -> bool:
-	return bool(ship.get_meta("damage_control", false))
+	return int(ship.get_meta("damage_control_round", -1)) == state.round_number
 
 
 func clear_damage_control() -> void:
 	for s in state.all_ships():
-		s.remove_meta("damage_control")
+		if int(s.get_meta("damage_control_round", -1)) <= state.round_number:
+			s.remove_meta("damage_control_round")
 
 
 # ------------------------------------------------------------------ 6. Fuga --
@@ -310,13 +428,32 @@ func clear_damage_control() -> void:
 ## `declare_active` / `declare_target`: chi annuncia di voler uscire.
 func break_away_phase(declare_active: bool, declare_target: bool) -> Dictionary:
 	state.phase = BattleState.Phase.BREAK_AWAY
+	_enter_delayed(BattleState.Phase.BREAK_AWAY)
+	if state.round_number < state.minimum_break_away_round:
+		state.note("Istruzione dello scenario: la Fuga non e' consentita prima "
+			+ "del Round %d." % state.minimum_break_away_round)
+		return {"mutual": false, "attempted": false, "blocked": true}
 	if declare_active and declare_target:
 		BreakAway.mutual(state)
 		return {"mutual": true, "success": true}
 	if not declare_active and not declare_target:
 		return {"mutual": false, "attempted": false}
 	var tf: TaskForce = state.active_tf if declare_active else state.target_tf
-	var a := BreakAway.attempt(state, tf, rng)
+	var eligible := false
+	for ship in state.ships_of(tf):
+		var min_round := int(ship.get_meta("break_away_min_round", 1))
+		var required_zone := int(ship.get_meta("break_away_required_zone", -1))
+		if state.round_number >= min_round \
+				and (required_zone < 0 or ship.battle_zone == required_zone):
+			eligible = true
+			break
+	if not eligible:
+		state.note("Fuga non consentita: nessuna nave soddisfa le istruzioni "
+			+ "speciali dello scenario.")
+		return {"mutual": false, "attempted": false, "blocked": true}
+	var fog := state.advanced and not snafu.is_empty() \
+		and int(snafu.get("result", -1)) == Snafu.Result.FOG
+	var a := BreakAway.attempt(state, tf, rng, fog)
 	state.note(BreakAway.describe(a))
 	if a["success"]:
 		BreakAway.apply_success(state, tf)
@@ -325,12 +462,29 @@ func break_away_phase(declare_active: bool, declare_target: bool) -> Dictionary:
 	return a
 
 
+func _enter_delayed(phase: int) -> void:
+	for s_v: Variant in state.delayed_entry.keys().duplicate():
+		var delayed: Ship = s_v
+		var entry_v: Variant = state.delayed_entry[s_v]
+		var entry: Dictionary = entry_v if typeof(entry_v) == TYPE_DICTIONARY \
+			else {"round": int(entry_v), "phase": BattleState.Phase.LINGERING,
+				"zone": BattleState.Zone.FAR, "attitude": Attitude.Kind.CLOSING}
+		if int(entry.get("round", 1)) != state.round_number \
+				or int(entry.get("phase", BattleState.Phase.LINGERING)) != phase:
+			continue
+		state.delayed_entry.erase(s_v)
+		delayed.battle_zone = int(entry.get("zone", BattleState.Zone.FAR))
+		delayed.attitude = int(entry.get("attitude", Attitude.Kind.CLOSING))
+		state.note("%s entra in zona %s, attitudine %s." % [delayed.name,
+			BattleState.ZONE_LABELS[delayed.battle_zone],
+			Attitude.label(delayed.attitude)])
+
+
 ## Chiude il Round e passa al successivo, oppure termina la Battaglia
 ## (RB p.62: fine dell'Ultimo Round, o un giocatore senza navi).
 func end_round() -> bool:
 	if state.check_end():
 		return true
-	clear_damage_control()
 	if state.round_number >= state.last_round:
 		# BATTAGLIA ESTESA (Regole Avanzate p.13): se alla fine dell'Ultimo
 		# Round nessuna nave e' in Corsa, se ne gioca un altro. E' la regola
@@ -444,10 +598,15 @@ func auto_torpedoes() -> Dictionary:
 	for side in [[state.active_ships(), state.target_ships()],
 			[state.target_ships(), state.active_ships()]]:
 		for f in side[0] as Array[Ship]:
-			if not Torpedo.can_attack(f):
+			var obscured := Maneuver.is_obscured(state, f)
+			var can_attack := AdvancedTorpedo.can_attack(f, obscured) \
+				if state.advanced else Torpedo.can_attack(f, obscured)
+			if not can_attack:
 				continue
 			for e in side[1] as Array[Ship]:
-				if Torpedo.is_valid_target(e):
+				var valid := AdvancedTorpedo.is_valid_target(e) \
+					if state.advanced else Torpedo.is_valid_target(e)
+				if valid:
 					out[f] = e
 					break
 	return out

@@ -12,6 +12,7 @@ func run() -> void:
 	test_bad_column()
 	test_arctic()
 	test_visibility()
+	test_snafu_applied_to_battle()
 	test_extended()
 	test_round_sequence()
 	test_stopped_cannot_change_attitude()
@@ -105,6 +106,51 @@ func test_visibility() -> void:
 		"ma non a Bruciapelo: da li' non c'e' visibilita' che tenga")
 
 
+func test_snafu_applied_to_battle() -> void:
+	_begin("Snafu collegato ai tiri e alla sequenza")
+	var fog_state := _battle(true)
+	var fog := BreakAway.attempt(fog_state, fog_state.active_tf,
+		_rng([1, 2, 6]), true)
+	eq((fog["rolled"] as Array).size(), 3, "Nebbia: si tirano tre dadi")
+	eq(fog["kept"], [2, 6], "Nebbia: si tengono i due maggiori")
+	eq(int(fog["raw"]), 8, "la somma usa solo i due maggiori")
+
+	var gun_state := _battle(true)
+	var firer := gun_state.active_ships()[0]
+	var target := gun_state.target_ships()[0]
+	firer.special_effects.append(Lingering.NO_RADAR_KEY)
+	var gun_battle := Battle.new(gun_state, _rng([4, 4, 4]))
+	gun_battle.snafu = {"result": Snafu.Result.POOR_VISIBILITY}
+	var shot := gun_battle.gunnery_phase({firer: target})[0]
+	eq(int(shot["modifier_total"]), -1,
+		"GV +2, Niente Radar -2 e Scarsa Visibilita' -1")
+	var labels: Array[String] = []
+	for m_v: Variant in shot["modifiers"]:
+		labels.append(String((m_v as Dictionary)["label"]))
+	true_(labels.has("Niente Radar"), "Niente Radar entra nel tiro reale")
+	true_(labels.has("Scarsa Visibilita'"), "Scarsa Visibilita' entra nel tiro reale")
+
+	var dc_state := _battle(true)
+	var dc_ship := dc_state.active_ships()[0]
+	dc_state.round_number = 2
+	dc_ship.set_meta("damage_control_round", 2)
+	var dc_battle := Battle.new(dc_state, _rng([6, 6]))
+	eq(dc_battle.gunnery_phase({dc_ship: dc_state.target_ships()[0]}).size(), 0,
+		"il Controllo Danni blocca davvero il fuoco del Round successivo")
+	false_(dc_ship.has_meta("damage_control_round"),
+		"il segnalino viene rimosso dopo la fase di Fuoco")
+
+	var delayed_state := _battle(true)
+	var delayed := delayed_state.active_ships()[0]
+	delayed_state.delayed_entry[delayed] = 1
+	eq(delayed_state.active_ships().size(), 0, "la nave ritardata non e' sulla mappa")
+	false_(delayed_state.check_end(), "ma la sua assenza non conclude la Battaglia")
+	Battle.new(delayed_state, _rng([])).lingering_phase()
+	true_(delayed_state.active_ships().has(delayed),
+		"entra negli Effetti Duraturi del Round indicato")
+	false_(delayed_state.delayed_entry.has(delayed), "il ritardo viene consumato")
+
+
 ## La Battaglia finisce quando qualcuno vuole andarsene.
 func test_extended() -> void:
 	_begin("Battaglia Estesa")
@@ -162,9 +208,9 @@ func test_round_sequence() -> void:
 	eq(adv.next_phase(), BattleState.Phase.ENDED, "e il Round e' finito")
 
 
-## Una nave ferma non puo' nemmeno cambiare idea.
+## Una nave Ferma non puo' cambiare Attitudine ne' usare la freccia.
 func test_stopped_cannot_change_attitude() -> void:
-	_begin("una nave ferma non cambia attitudine")
+	_begin("nave Ferma: niente attitudine ne' movimento")
 	var st := _battle(true)
 	var s: Ship = st.active_ships()[0]
 	SpecialEffects.apply(s, SpecialEffects.FLOOD_STOPPED)
@@ -172,9 +218,13 @@ func test_stopped_cannot_change_attitude() -> void:
 
 	var rng3 := DiceRNG.new(3)
 	var b := Battle.new(st, rng3)
+	st.round_number = 2
 	b.attitude_phase({s: Attitude.Kind.RUNNING})
-	ne(s.attitude, Attitude.Kind.RUNNING,
-		"e non puo' decidere di scappare: e' bloccata anche nelle intenzioni")
+	eq(s.attitude, Attitude.Kind.CLOSING,
+		"conserva l'attitudine precedente")
+	false_(Attitude.can_maneuver(s), "ma non puo' manovrare")
+	false_(Attitude.can_make_smoke(s), "ne' creare Fumo")
+	false_(Attitude.can_break_away(s), "ne' tentare la Fuga")
 
 
 ## Inseguimento: l'unico modo di muovere una nave avversaria.

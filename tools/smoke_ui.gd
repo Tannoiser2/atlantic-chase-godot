@@ -83,11 +83,15 @@ func _process(_delta: float) -> bool:
 
 	var before := st.phase
 	var before_round := st.round_number
+	var maneuvered_before := (bv.get("_maneuvered") as Array).size()
 	_key(KEY_SPACE)
 	var label := String(BattleState.PHASE_LABELS[st.phase])
 	if not _phases_seen.has(label):
 		_phases_seen.append(label)
 	if st.phase == before and st.round_number == before_round and not st.ended:
+		if before == BattleState.Phase.MANEUVER \
+				and (bv.get("_maneuvered") as Array).size() > maneuvered_before:
+			return false
 		_failures.append("SPAZIO non fa avanzare la fase (%s): "
 			% BattleState.PHASE_LABELS[before]
 			+ "i tasti non arrivano alla Battaglia")

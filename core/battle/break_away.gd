@@ -62,13 +62,23 @@ static func modifiers(state: BattleState, tf: TaskForce) -> Dictionary:
 
 
 ## Tentativo di Fuga di un solo giocatore.
-static func attempt(state: BattleState, tf: TaskForce, rng: DiceRNG) -> Dictionary:
+static func attempt(state: BattleState, tf: TaskForce, rng: DiceRNG,
+		fog: bool = false) -> Dictionary:
 	var mods := modifiers(state, tf)
-	var raw := rng.d6x2("Fuga di %s" % tf.display_name())
+	var rolled: Array[int] = []
+	var n := 3 if fog else 2
+	for i in n:
+		rolled.append(rng.d6("Fuga di %s, dado %d" % [tf.display_name(), i + 1]))
+	var kept := rolled.duplicate()
+	kept.sort()
+	if fog:
+		kept = [kept[1], kept[2]]
+	var raw: int = kept[0] + kept[1]
 	var total: int = raw + int(mods["total"])
 	var ok := total >= TARGET
 	return {
-		"tf": tf, "raw": raw, "modifiers": mods["list"],
+		"tf": tf, "raw": raw, "rolled": rolled, "kept": kept, "fog": fog,
+		"modifiers": mods["list"],
 		"modifier_total": mods["total"], "sum": total,
 		"target": TARGET, "success": ok,
 	}

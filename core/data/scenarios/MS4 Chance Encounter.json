@@ -28,7 +28,10 @@
     "zone": "FAR",
     "x": 3715,
     "y": 955,
-    "side": 1
+    "side": 1,
+    "hit_limit": 2,
+    "torpedo_attack_limit": 1,
+    "smoke": true
    },
    {
     "ship": "Glorious",

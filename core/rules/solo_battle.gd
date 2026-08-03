@@ -33,7 +33,8 @@ static func maneuver_moves(state: BattleState, imaginary_side: int) -> Dictionar
 	var out := {}
 	var enemies := _ships_of_side(state, 1 - imaginary_side)
 	for s in _ships_of_side(state, imaginary_side):
-		var to_zone := _maneuver_destination(s, imaginary_side, enemies)
+		var to_zone := _maneuver_destination(s, imaginary_side, enemies,
+			state.advanced)
 		out[s] = {"zone": to_zone, "smoke": s.smoke}
 	return out
 
@@ -71,7 +72,12 @@ static func _legal_targets(state: BattleState, firer: Ship, enemies: Array[Ship]
 		if e.sunk:
 			continue
 		if torpedoes:
-			if Torpedo.can_attack(firer) and Torpedo.is_valid_target(e):
+			var obscured := Maneuver.is_obscured(state, firer)
+			var can_attack := AdvancedTorpedo.can_attack(firer, obscured) \
+				if state.advanced else Torpedo.can_attack(firer, obscured)
+			var valid := AdvancedTorpedo.is_valid_target(e) \
+				if state.advanced else Torpedo.is_valid_target(e)
+			if can_attack and valid:
 				out.append(e)
 		else:
 			var r := Gunnery.range_between(firer.battle_zone, e.battle_zone)
@@ -105,7 +111,16 @@ static func _best_target(firer: Ship, candidates: Array[Ship],
 
 
 static func _maneuver_destination(ship: Ship, imaginary_side: int,
-		enemies: Array[Ship]) -> int:
+		enemies: Array[Ship], advanced: bool = false) -> int:
+	if advanced:
+		if ship.current_speed() == TimeLapse.Speed.STOPPED:
+			return -1
+		if ship.attitude == Attitude.Kind.ACQUIRING:
+			return -1
+		if ship.attitude == Attitude.Kind.CLOSING:
+			return _closer(ship)
+		if ship.attitude == Attitude.Kind.RUNNING:
+			return _away(ship)
 	if imaginary_side == TaskForce.Side.ROYAL_NAVY:
 		if ship.kind == Ship.Kind.CONVOY or ship.damaged:
 			return _away(ship)

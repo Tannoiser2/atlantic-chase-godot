@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **2500 verifiche, 17 suite, headless.**
+Tutti i test passano: **2560 verifiche, 17 suite, headless.**
 
 ---
 
@@ -20,7 +20,7 @@ Tutti i test passano: **2500 verifiche, 17 suite, headless.**
 | **M6** Scenari | ✅ **completo** | 22 scenari con navi, comandanti, rinforzi e briefing |
 | **M7** Regole complete | ✅ **completo** | Tutte e 9 le azioni, Convogli, finale di partita, salvataggio; tutti e 22 gli scenari hanno le condizioni di vittoria |
 | **M9** Battaglia decisa dal giocatore | ✅ **completo** | Bersagli scelti a mano, linee di fuoco con raggio e valore dei cannoni |
-| **M10** Regole Avanzate | ✅ **completo** | Attitudini, Fuoco a due colonne, Effetti Speciali, Tabelle dei Risultati, Effetti Duraturi, Disingaggio, Snafu, Confusione, Battaglia Estesa. Si accendono dalla schermata iniziale |
+| **M10** Regole Avanzate | 🟡 **quasi completo** | Attitudini, Fuoco a due colonne, Siluri, Tabelle dei Risultati, Effetti Duraturi, Disingaggio, Snafu e Battaglia Estesa sono collegati. Restano le scelte interattive di Plancia/Timone/Confusione e la divisione del fuoco |
 | **M8** Solitario | 🟡 **in corso** | 15 setup e tabelle presenti; bot attivo con Iniziativa, popup e audit. Restano 82 testi procedura segnaposto e Mine/Base Aerea di N2/N4 non modellate. |
 
 ### Ultima revisione del solitario
@@ -435,6 +435,17 @@ dal metodo con cui il reticolo è stato ricavato.
 ---
 
 ## Cosa manca, in ordine di importanza
+
+### 0. Ultime scelte delle Regole Avanzate di Battaglia
+
+L'audit del 3 agosto 2026 ha collegato la sequenza completa, i vincoli
+direzionali delle Attitudini, i Siluri una volta per partita, Snafu, ingressi
+ritardati e i segnalini GMT visibili. Restano quattro decisioni che il motore
+conosce solo in parte ma che la GUI non fa ancora compiere correttamente:
+Plancia (niente Fuoco oppure Ferma), il controllo avversario con Timone Fuori
+Uso, i tre usi del segnalino Confusione e la divisione del fuoco in
+Acquisizione. Anche MS12 richiede ancora la sua struttura speciale in tre
+parti; non va giocato come una singola Battaglia ordinaria.
 
 ### 1. Le tabelle di Vittoria che mancano
 

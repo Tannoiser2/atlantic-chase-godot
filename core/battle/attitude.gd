@@ -132,13 +132,22 @@ static func torpedo_target_modifier(target: Ship) -> int:
 
 ## Puo' muoversi durante la Manovra?
 static func can_maneuver(ship: Ship) -> bool:
-	return ship.attitude != Kind.ACQUIRING
+	return ship.current_speed() != TimeLapse.Speed.STOPPED \
+		and ship.attitude != Kind.ACQUIRING
+
+
+## Una nave Ferma conserva anche la propria attitudine: non puo' ruotare la
+## freccia nel passo Attitudine (Regole Avanzate p.10).
+static func can_change(ship: Ship) -> bool:
+	return ship.current_speed() != TimeLapse.Speed.STOPPED
 
 
 ## In che direzione si muove: verso il nemico (+1) o via (-1). 0 = ferma.
 ## La nave si muove nella direzione della sua freccia, e non puo' scegliere:
 ## l'attitudine e' gia' la scelta.
 static func maneuver_direction(ship: Ship) -> int:
+	if ship.current_speed() == TimeLapse.Speed.STOPPED:
+		return 0
 	match ship.attitude:
 		Kind.CLOSING:
 			return 1
@@ -149,13 +158,15 @@ static func maneuver_direction(ship: Ship) -> int:
 
 ## Puo' produrre Fumo? Solo in Corsa - e comunque mai un Convoglio (RB p.11).
 static func can_make_smoke(ship: Ship) -> bool:
-	return ship.attitude == Kind.RUNNING and Maneuver.can_make_smoke(ship)
+	return ship.current_speed() != TimeLapse.Speed.STOPPED \
+		and ship.attitude == Kind.RUNNING and Maneuver.can_make_smoke(ship)
 
 
 ## Puo' Inseguire (nuova opzione della Manovra)? Solo in Avvicinamento, e solo
 ## dalla zona Vicina o Ravvicinata.
 static func can_pursue(ship: Ship) -> bool:
-	return ship.attitude == Kind.CLOSING and (
+	return ship.current_speed() != TimeLapse.Speed.STOPPED \
+		and ship.attitude == Kind.CLOSING and (
 		ship.battle_zone == BattleState.Zone.NEAR
 		or ship.battle_zone == BattleState.Zone.CLOSE)
 
@@ -164,7 +175,35 @@ static func can_pursue(ship: Ship) -> bool:
 ## E' la regola che da' senso a tutte le altre: per andarsene bisogna aver
 ## deciso di andarsene, e averlo deciso PRIMA, nella fase dell'Attitudine.
 static func can_break_away(ship: Ship) -> bool:
-	return ship.attitude == Kind.RUNNING
+	return ship.current_speed() != TimeLapse.Speed.STOPPED \
+		and ship.attitude == Kind.RUNNING
+
+
+## Legalita' completa della Manovra avanzata. Restare fermi e' sempre una
+## scelta; quando ci si muove, pero', la destinazione e' imposta dalla freccia
+## dell'attitudine e non puo' essere scelta liberamente.
+static func maneuver_refusal(ship: Ship, to_zone: int,
+		make_smoke: bool) -> String:
+	var moving := to_zone >= 0 and to_zone != ship.battle_zone
+	if ship.current_speed() == TimeLapse.Speed.STOPPED:
+		if moving or make_smoke != ship.smoke:
+			return "%s e' Ferma: non puo' muovere, creare Fumo o Inseguire" % ship.name
+		return ""
+	if ship.attitude == Kind.ACQUIRING:
+		if moving or make_smoke != ship.smoke:
+			return "%s e' in Acquisizione: non puo' manovrare ne' creare Fumo" % ship.name
+		return ""
+	if moving:
+		if not Maneuver.can_move_to(ship, to_zone):
+			return "%s puo' muovere solo di una zona" % ship.name
+		var expected := ship.battle_zone + maneuver_direction(ship)
+		if to_zone != expected:
+			return "%s deve muovere nella direzione della freccia (%s)" % [
+				ship.name, "verso il nemico" if ship.attitude == Kind.CLOSING \
+				else "lontano dal nemico"]
+	if make_smoke and not can_make_smoke(ship):
+		return "%s puo' creare Fumo solo in attitudine Corsa" % ship.name
+	return ""
 
 
 ## Modificatore al tentativo di Fuga di `side`, dovuto alle navi nemiche.

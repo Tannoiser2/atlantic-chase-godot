@@ -18,6 +18,7 @@ func run() -> void:
 	test_acquiring()
 	test_closing()
 	test_running()
+	test_directional_maneuver()
 	test_break_away_modifier()
 	test_serialization()
 	test_scenario_attitudes()
@@ -57,6 +58,10 @@ func _battle(kind: int = BattleState.Kind.BATTLE) -> BattleState:
 	st.active_tf = a
 	st.target_tf = b
 	return st
+
+
+func _tf_for_side(st: BattleState, side: int) -> TaskForce:
+	return st.active_tf if st.active_tf.side == side else st.target_tf
 
 
 ## Le navi Attive DEVONO cominciare in Avvicinamento: e' l'unica non-scelta
@@ -168,6 +173,27 @@ func test_running() -> void:
 	false_(Attitude.can_make_smoke(c), "un Convoglio non fa Fumo mai")
 
 
+func test_directional_maneuver() -> void:
+	_begin("Manovra nella direzione della freccia")
+	var s := _ship("Hood", BattleState.Zone.NEAR, Attitude.Kind.CLOSING)
+	eq(Attitude.maneuver_refusal(s, BattleState.Zone.CLOSE, false), "",
+		"Avvicinamento: puo' andare verso il nemico")
+	true_(Attitude.maneuver_refusal(s, BattleState.Zone.FAR, false).contains("freccia"),
+		"Avvicinamento: non puo' arretrare")
+	s.attitude = Attitude.Kind.RUNNING
+	eq(Attitude.maneuver_refusal(s, BattleState.Zone.FAR, false), "",
+		"Corsa: puo' allontanarsi")
+	true_(Attitude.maneuver_refusal(s, BattleState.Zone.CLOSE, false).contains("freccia"),
+		"Corsa: non puo' avvicinarsi")
+	s.attitude = Attitude.Kind.ACQUIRING
+	true_(Attitude.maneuver_refusal(s, BattleState.Zone.CLOSE, false).contains("Acquisizione"),
+		"Acquisizione: non manovra")
+	s.attitude = Attitude.Kind.CLOSING
+	SpecialEffects.apply(s, SpecialEffects.FLOOD_STOPPED)
+	true_(Attitude.maneuver_refusal(s, BattleState.Zone.CLOSE, false).contains("Ferma"),
+		"una nave Ferma non segue la freccia")
+
+
 ## Il modificatore alla Fuga: -1 se un nemico e' vicino, -1 in piu' se quel
 ## nemico si sta anche avvicinando.
 func test_break_away_modifier() -> void:
@@ -234,22 +260,23 @@ func test_scenario_attitudes() -> void:
 	# MS9 e' l'unico che comincia in Acquisizione: lo Stretto di Danimarca,
 	# dove i tedeschi aprono il fuoco per primi e meglio
 	var ms9 := Scenario.load_by_id("MS9 Sink the Bismarck").make_battle_state()
-	for s in ms9.active_tf.ships:
+	for s in _tf_for_side(ms9, TaskForce.Side.KRIEGSMARINE).ships:
 		eq(s.attitude, Attitude.Kind.ACQUIRING,
 			"%s parte in Acquisizione" % s.name)
 		eq(Attitude.gunnery_column(s), "acquiring",
 			"e usa la colonna Acquisizione")
 		false_(Attitude.can_break_away(s), "ma non puo' fuggire")
-	for s in ms9.target_tf.ships:
+	for s in _tf_for_side(ms9, TaskForce.Side.ROYAL_NAVY).ships:
 		eq(s.attitude, Attitude.Kind.CLOSING, "%s si avvicina" % s.name)
 
 	# MS1: il Graf Spee scappa, i tre incrociatori lo inseguono
 	var ms1 := Scenario.load_by_id("MS1 Cornered").make_battle_state()
-	eq(ms1.active_tf.ships[0].attitude, Attitude.Kind.RUNNING,
+	var graf := _tf_for_side(ms1, TaskForce.Side.KRIEGSMARINE).ships[0]
+	eq(graf.attitude, Attitude.Kind.RUNNING,
 		"il Graf Spee corre")
-	true_(Attitude.can_break_away(ms1.active_tf.ships[0]),
+	true_(Attitude.can_break_away(graf),
 		"e quindi puo' tentare la Fuga")
-	for s in ms1.target_tf.ships:
+	for s in _tf_for_side(ms1, TaskForce.Side.ROYAL_NAVY).ships:
 		eq(s.attitude, Attitude.Kind.CLOSING, "%s lo insegue" % s.name)
 		false_(Attitude.can_break_away(s), "e non puo' andarsene")
 
@@ -257,7 +284,7 @@ func test_scenario_attitudes() -> void:
 	var ms2 := Scenario.load_by_id("MS2 Escape")
 	eq(String(ms2.attitudes().get("Ajax", "")), "ANY",
 		"in MS2 i britannici scelgono")
-	eq(ms2.make_battle_state().target_tf.ships[0].attitude,
+	eq(_tf_for_side(ms2.make_battle_state(), TaskForce.Side.ROYAL_NAVY).ships[0].attitude,
 		Attitude.Kind.CLOSING,
 		"e il motore lascia il valore predefinito invece di decidere")
 
@@ -482,3 +509,9 @@ func test_advanced_torpedo() -> void:
 	eq(int(a["result"]), AdvancedGunnery.Result.SEVERE, "Risultato Grave")
 	eq(String(a["effect"]), "Allagamento (molto lenta)",
 		"e il secondo tiro da' l'effetto")
+	eq(AdvancedTorpedo.waterline_catastrophic(2), "Incendio (molto lenta)",
+		"Linea di Galleggiamento catastrofica 2-5")
+	eq(AdvancedTorpedo.waterline_catastrophic(6), "Allagamento (molto lenta)",
+		"Linea di Galleggiamento catastrofica 6-7")
+	eq(AdvancedTorpedo.waterline_catastrophic(8), "Allagamento (ferma)",
+		"Linea di Galleggiamento catastrofica 8-12")

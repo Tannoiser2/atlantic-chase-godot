@@ -131,6 +131,12 @@ func make_battle_state(weather_override: int = -1) -> BattleState:
 		return null
 	var bs := BattleState.new(BattleState.Kind.BATTLE,
 		weather if weather_override < 0 else weather_override)
+	bs.predeployed = true
+	bs.skip_snafu = bool(battle_setup.get("skip_snafu", false))
+	bs.starting_confusion_side = int(battle_setup.get(
+		"starting_confusion_side", -1))
+	bs.minimum_break_away_round = int(battle_setup.get(
+		"minimum_break_away_round", 1))
 	var km := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
 	km.name = "Kriegsmarine"
 	var rn := TaskForce.new(2, TaskForce.Side.ROYAL_NAVY)
@@ -142,22 +148,50 @@ func make_battle_state(weather_override: int = -1) -> BattleState:
 		var sh := ShipRoster.shared().make(String(e.get("ship", "")))
 		if sh == null:
 			sh = Ship.new(String(e.get("ship", "")))
+		sh.torpedo_attack_limit = int(e.get("torpedo_attack_limit",
+			sh.torpedo_attack_limit))
+		sh.hit_limit = int(e.get("hit_limit", sh.hit_limit))
 		sh.battle_zone = int(zones.get(String(e.get("zone", "FAR")),
 			BattleState.Zone.FAR))
+		sh.smoke = bool(e.get("smoke", false))
+		if e.has("smoke_allowed"):
+			sh.set_meta("smoke_allowed", bool(e["smoke_allowed"]))
+		if bool(e.get("special_effects_immune", false)):
+			sh.set_meta("special_effects_immune", true)
+		if e.has("break_away_min_round"):
+			sh.set_meta("break_away_min_round", int(e["break_away_min_round"]))
+		if e.has("break_away_required_zone"):
+			sh.set_meta("break_away_required_zone", int(zones.get(
+				String(e["break_away_required_zone"]), BattleState.Zone.FAR)))
 		# l'attitudine di partenza, se lo scenario la indica. "ANY" resta al
 		# valore predefinito (Avvicinamento): la scelta e' del giocatore, e il
 		# motore non la fa al posto suo.
 		var att := String(attitudes().get(sh.name, ""))
 		if att != "" and att != "ANY":
 			sh.attitude = Attitude.from_marker(att)
+			bs.fixed_setup_attitudes[sh] = sh.attitude
 		if int(e.get("side", 1)) == TaskForce.Side.KRIEGSMARINE:
 			km.ships.append(sh)
 		else:
 			rn.ships.append(sh)
+		if e.has("entry_round"):
+			var phase_name := String(e.get("entry_phase", "LINGERING"))
+			var phases := {"LINGERING": BattleState.Phase.LINGERING,
+				"BREAK_AWAY": BattleState.Phase.BREAK_AWAY}
+			bs.delayed_entry[sh] = {
+				"round": int(e["entry_round"]),
+				"phase": int(phases.get(phase_name, BattleState.Phase.LINGERING)),
+				"zone": sh.battle_zone,
+				"attitude": sh.attitude,
+			}
 	km.recompute_speed()
 	rn.recompute_speed()
-	bs.active_tf = km
-	bs.target_tf = rn
+	if initiative == TaskForce.Side.ROYAL_NAVY:
+		bs.active_tf = rn
+		bs.target_tf = km
+	else:
+		bs.active_tf = km
+		bs.target_tf = rn
 	return bs
 
 

@@ -34,6 +34,38 @@ const BAND_COLORS := {
 	BattleState.Zone.CLOSE: Color(0.55, 0.71, 0.74, 0.9),
 }
 
+const ATTITUDE_COUNTERS := {
+	Attitude.Kind.ACQUIRING: preload("res://assets/counters/markers_snafu_acquire.png"),
+	Attitude.Kind.CLOSING: preload("res://assets/counters/markers_snafu_closing.png"),
+	Attitude.Kind.RUNNING: preload("res://assets/counters/markers_snafu_running.png"),
+}
+const SMOKE_COUNTER := preload("res://assets/counters/markers_smoke.png")
+const HIT_COUNTERS := [
+	preload("res://assets/counters/markers_hits1.png"),
+	preload("res://assets/counters/markers_hits2.png"),
+]
+const TORPEDO_ATTACK_COUNTER := preload("res://assets/counters/markers_torpedo_attack.png")
+const NO_TORPEDO_COUNTER := preload("res://assets/counters/markers_torpedo_no.png")
+const ROUND_COUNTER := preload("res://assets/counters/markers_battle_round.png")
+const LAST_ROUND_COUNTER := preload("res://assets/counters/markers_track_last_round.png")
+const FOG_COUNTER := preload("res://assets/counters/markers_track_fog.png")
+const CONFUSION_COUNTERS := {
+	TaskForce.Side.KRIEGSMARINE: preload("res://assets/counters/snafu_confusion_ge.png"),
+	TaskForce.Side.ROYAL_NAVY: preload("res://assets/counters/snafu_confusion_uk.png"),
+}
+const NO_RADAR_COUNTER := preload("res://assets/counters/snafu_no_radar.png")
+const DAMAGE_CONTROL_COUNTER := preload("res://assets/counters/special_effect_damage_control.png")
+const SPECIAL_COUNTERS := {
+	SpecialEffects.BATTERIES: preload("res://assets/counters/special_effect_batteries.png"),
+	SpecialEffects.BRIDGE: preload("res://assets/counters/special_effect_bridge.png"),
+	SpecialEffects.FIRE_SLOW: preload("res://assets/counters/special_effect_fire.png"),
+	SpecialEffects.FIRE_STOPPED: preload("res://assets/counters/special_effect_fire_stopped.png"),
+	SpecialEffects.FLOOD_SLOW: preload("res://assets/counters/special_effect_flooding_very_slow.png"),
+	SpecialEffects.FLOOD_STOPPED: preload("res://assets/counters/special_effect_flooding_stopped.png"),
+	SpecialEffects.RUDDER: preload("res://assets/counters/special_effect_rudder_out.png"),
+	SpecialEffects.TURRETS: preload("res://assets/counters/special_effect_turret.png"),
+}
+
 var battle: Battle
 var state: BattleState
 var roster: ShipRoster
@@ -83,6 +115,10 @@ var _assigning: Ship = null
 ## tirano tre dadi e tengono i due piu' alti, ma non spareranno nel Round
 ## successivo. Si dichiara PRIMA di tirare, e per questo va raccolto qui.
 var _damage_control: Array[Ship] = []
+
+## Navi che hanno gia' consumato la propria opportunita' nella Manovra del
+## Round corrente. Impedisce di trascinare la stessa nave avanti e indietro.
+var _maneuvered: Array[Ship] = []
 
 var _log: RichTextLabel
 var _header: RichTextLabel
@@ -194,8 +230,12 @@ func _rebuild_buttons() -> void:
 				if not targeting.is_empty():
 					items.append(["Azzera bersagli", "R", _clear_targets, false])
 			BattleState.Phase.ATTITUDE:
-				items.append(["Conferma Attitudini", "SPAZIO", _advance_phase,
-					true])
+				if not battle.pending_snafu.is_empty():
+					items.append(["Applica Snafu alla nave selezionata", "N",
+						_resolve_snafu_selected, true])
+				else:
+					items.append(["Conferma Attitudini", "SPAZIO", _advance_phase,
+						true])
 				items.append(["Cambia attitudine", "A", _cycle_attitude, false])
 			BattleState.Phase.LINGERING:
 				items.append(["Tira gli Effetti Duraturi", "SPAZIO",
@@ -204,16 +244,20 @@ func _rebuild_buttons() -> void:
 					selected.name if selected != null else "-"), "C",
 					_toggle_damage_control, false])
 			BattleState.Phase.MANEUVER:
-				items.append(["Fine Manovra", "SPAZIO", _advance_phase, true])
+				var current := _current_maneuver_ship()
+				items.append(["Resta: %s" % current.name, "SPAZIO",
+					_advance_phase, true] if current != null else
+					["Fine Manovra", "SPAZIO", _advance_phase, true])
 				items.append(["Fumo", "S", _smoke_selected, false])
 				if selected != null and Attitude.can_pursue(selected):
 					items.append(["Insegui", "I", _pursue_selected, false])
 			BattleState.Phase.BREAK_AWAY:
 				items.append(["Nessuna Fuga", "SPAZIO", _advance_phase, true])
-				items.append(["Fuga: %s" % _side_label(true), "F",
-					func() -> void: _do_break_away(true, false), false])
-				items.append(["Fuga: %s" % _side_label(false), "G",
-					func() -> void: _do_break_away(false, true), false])
+				if state.round_number >= state.minimum_break_away_round:
+					items.append(["Fuga: %s" % _side_label(true), "F",
+						func() -> void: _do_break_away(true, false), false])
+					items.append(["Fuga: %s" % _side_label(false), "G",
+						func() -> void: _do_break_away(false, true), false])
 		items.append(["Abbandona", "ESC", func() -> void: closed.emit(), false])
 
 	for it_v: Variant in items:
@@ -248,9 +292,12 @@ func _legal_targets(firer: Ship) -> Array[Ship]:
 		if e.sunk:
 			continue
 		if state.phase == BattleState.Phase.TORPEDO:
-			# i siluri partono solo dalla zona Ravvicinata e colpiscono solo
-			# Ravvicinata o Vicina (RB p.59)
-			if Torpedo.can_attack(firer) and Torpedo.is_valid_target(e):
+			var obscured := Maneuver.is_obscured(state, firer)
+			var can_attack := AdvancedTorpedo.can_attack(firer, obscured) \
+				if state.advanced else Torpedo.can_attack(firer, obscured)
+			var valid := AdvancedTorpedo.is_valid_target(e) \
+				if state.advanced else Torpedo.is_valid_target(e)
+			if can_attack and valid:
 				out.append(e)
 		else:
 			var r := Gunnery.range_between(firer.battle_zone, e.battle_zone)
@@ -356,14 +403,19 @@ func _cycle_attitude() -> void:
 		state.note("Attitudine: seleziona prima una nave.")
 		refresh()
 		return
-	if selected.current_speed() == TimeLapse.Speed.STOPPED:
-		state.note("%s e' ferma: non puo' cambiare attitudine." % selected.name)
-		refresh()
-		return
-	selected.attitude = (selected.attitude + 1) % 3
+	var legal := battle.setup_attitudes_for(selected)
+	var i := legal.find(selected.attitude)
+	selected.attitude = legal[wrapi(i + 1, 0, legal.size())]
 	state.note("%s: %s - %s" % [selected.name,
 		Attitude.label(selected.attitude),
 		Attitude.describe(selected.attitude)])
+	refresh()
+
+
+func _resolve_snafu_selected() -> void:
+	var r := battle.resolve_snafu_choice(selected)
+	if not bool(r.get("ok", false)):
+		state.note("Snafu: %s" % String(r.get("error", "scelta non valida")))
 	refresh()
 
 
@@ -384,7 +436,8 @@ func _toggle_damage_control() -> void:
 
 ## Inseguimento: la nave selezionata si tira dietro una nave nemica.
 func _pursue_selected() -> void:
-	if selected == null or not Attitude.can_pursue(selected):
+	if selected == null or selected != _current_maneuver_ship() \
+			or not Attitude.can_pursue(selected):
 		state.note("Inseguire: serve una nave in Avvicinamento in zona Vicina "
 			+ "o Ravvicinata.")
 		refresh()
@@ -402,15 +455,25 @@ func _pursue_selected() -> void:
 		return
 	var r := Attitude.pursue(selected, best)
 	state.note(String(r["log"]) if bool(r["ok"]) else String(r["error"]))
+	if bool(r["ok"]):
+		_maneuvered.append(selected)
+		_select_current_maneuver_ship()
 	refresh()
 
 
 func _smoke_selected() -> void:
 	if selected == null:
 		state.note("Fumo: seleziona prima una nave.")
+	elif state.phase == BattleState.Phase.MANEUVER \
+			and selected != _current_maneuver_ship():
+		state.note("Fumo: ora deve manovrare %s." % _current_maneuver_ship().name)
 	else:
-		var txt := Maneuver.apply(selected, -1, not selected.smoke)
-		state.note(txt if txt != "" else "%s non puo' creare Fumo" % selected.name)
+		var want := not selected.smoke
+		var refusal := Attitude.maneuver_refusal(selected, -1, want) \
+			if state.advanced else ""
+		var txt := "" if refusal != "" else Maneuver.apply(selected, -1, want)
+		state.note(txt if txt != "" else (refusal if refusal != "" \
+			else "%s non puo' creare Fumo" % selected.name))
 	refresh()
 
 
@@ -456,8 +519,10 @@ func _draw() -> void:
 
 		draw_rect(r, BAND_COLORS[zone])
 		if _drag_ship != null and i == _drag_target_band:
-			var reachable := Maneuver.can_move_to(_drag_ship, zone) \
-				or _drag_ship.battle_zone == zone
+			var reachable := (Attitude.maneuver_refusal(_drag_ship, zone,
+				_drag_ship.smoke) == "") if state.advanced else (
+				Maneuver.can_move_to(_drag_ship, zone) \
+				or _drag_ship.battle_zone == zone)
 			var same_side := (String(pair[0]) == "active") \
 				== state.active_ships().has(_drag_ship)
 			draw_rect(r, Color(0.3, 1.0, 0.4, 0.22) if (reachable and same_side)
@@ -473,6 +538,7 @@ func _draw() -> void:
 
 		_draw_ships_in(r, is_active, zone)
 		y += h
+	_draw_battle_markers(font)
 
 	# separatore fra i due lati: la linea di contatto
 	if _bands.size() >= 4:
@@ -603,7 +669,10 @@ func _draw_ships_in(band: Rect2, is_active: bool, zone: int) -> void:
 		var r := Rect2(Vector2(x, y), Vector2(cw, ch))
 		var tex: Texture2D = texs[i]
 		if tex != null:
-			draw_texture_rect(tex, r, false)
+			var rotation := _attitude_rotation(s, is_active) if state.advanced else 0.0
+			draw_set_transform(r.get_center(), rotation)
+			draw_texture_rect(tex, Rect2(-r.size * 0.5, r.size), false)
+			draw_set_transform(Vector2.ZERO, 0.0)
 		else:
 			draw_rect(r, Color(0.75, 0.72, 0.6))
 			draw_string(font, r.position + Vector2(8, 24), s.name,
@@ -612,18 +681,26 @@ func _draw_ships_in(band: Rect2, is_active: bool, zone: int) -> void:
 		if s == selected:
 			draw_rect(r.grow(4), Color(1, 0.95, 0.3), false, 4.0)
 		if s.smoke:
-			draw_rect(r, Color(0.85, 0.9, 0.95, 0.35))
-			draw_string(font, r.position + Vector2(6, ch - 8), "FUMO",
-				HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(0.1, 0.2, 0.3))
+			_draw_small_counter(SMOKE_COUNTER, r.position + Vector2(4, 4), 30.0)
 		if s.hits > 0:
-			var badge := Rect2(r.position + Vector2(cw - 30, 4), Vector2(26, 22))
-			draw_rect(badge, Color(0.75, 0.1, 0.1, 0.95))
-			draw_string(font, badge.position + Vector2(8, 17), str(s.hits),
-				HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color.WHITE)
+			var hit_tex: Texture2D = HIT_COUNTERS[1] if s.hits >= 2 else HIT_COUNTERS[0]
+			_draw_small_counter(hit_tex, r.position + Vector2(cw - 34, 4), 30.0)
+			if s.hits > 2:
+				draw_string(font, r.position + Vector2(cw - 18, 25), str(s.hits),
+					HORIZONTAL_ALIGNMENT_CENTER, -1, 14, Color.WHITE)
 
 		if state.advanced:
 			_draw_attitude_tab(r, s, font)
 			_draw_effect_chips(r, s, font)
+			if int(s.get_meta("damage_control_round", -1)) == state.round_number:
+				_draw_small_counter(DAMAGE_CONTROL_COUNTER,
+					r.position + Vector2(cw * 0.5 - 15, -33), 30.0)
+		if s.torpedo_attacks_used >= s.torpedo_attack_limit and s.has_torpedo:
+			_draw_small_counter(NO_TORPEDO_COUNTER,
+				r.position + Vector2(cw + 3, 3), 30.0)
+		elif state.phase == BattleState.Phase.TORPEDO and targeting.has(s):
+			_draw_small_counter(TORPEDO_ATTACK_COUNTER,
+				r.position + Vector2(cw + 3, 3), 30.0)
 
 		_ship_rects.append({"rect": r, "ship": s})
 		x += cw + gap
@@ -636,14 +713,8 @@ func _draw_ships_in(band: Rect2, is_active: bool, zone: int) -> void:
 ## chiedere di cambiarla senza mostrarla qual e' - come faceva prima questa
 ## vista - vuol dire chiedere al buio.
 func _draw_attitude_tab(r: Rect2, s: Ship, font: Font) -> void:
-	var w := 20.0
-	var tab := Rect2(r.position + Vector2(-w - 3, 0), Vector2(w, r.size.y))
-	draw_rect(tab, Attitude.color(s.attitude))
-	draw_rect(tab, Color(0, 0, 0, 0.55), false, 1.0)
-	var letter := Attitude.initial(s.attitude)
-	var tw := font.get_string_size(letter, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x
-	draw_string(font, tab.position + Vector2((w - tw) * 0.5, r.size.y * 0.5 + 6),
-		letter, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color.WHITE)
+	_draw_small_counter(ATTITUDE_COUNTERS[s.attitude],
+		r.position + Vector2(-33, r.size.y * 0.5 - 15), 30.0)
 
 
 ## Gli Effetti Speciali, sotto la pedina.
@@ -661,6 +732,14 @@ func _draw_effect_chips(r: Rect2, s: Ship, font: Font) -> void:
 	var y := r.position.y + r.size.y + 3.0
 	for e_v: Variant in s.special_effects:
 		var e := String(e_v)
+		if e == Lingering.NO_RADAR_KEY:
+			_draw_small_counter(NO_RADAR_COUNTER, Vector2(x, y), 30.0)
+			x += 34.0
+			continue
+		if SPECIAL_COUNTERS.has(e):
+			_draw_small_counter(SPECIAL_COUNTERS[e], Vector2(x, y), 30.0)
+			x += 34.0
+			continue
 		var short := e.substr(0, 3).to_upper()
 		# gli incendi e gli allagamenti hanno due gravita': si distinguono con
 		# un punto esclamativo, che e' quella che ferma la nave
@@ -676,6 +755,37 @@ func _draw_effect_chips(r: Rect2, s: Ship, font: Font) -> void:
 		draw_string(font, chip.position + Vector2(5, 13), short,
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color.WHITE)
 		x += chip.size.x + 4.0
+
+
+func _attitude_rotation(s: Ship, is_active: bool) -> float:
+	if s.attitude == Attitude.Kind.ACQUIRING:
+		return 0.0
+	var toward_enemy := -PI / 2.0 if is_active else PI / 2.0
+	return toward_enemy if s.attitude == Attitude.Kind.CLOSING \
+		else -toward_enemy
+
+
+func _draw_small_counter(texture: Texture2D, pos: Vector2, side: float) -> void:
+	draw_texture_rect(texture, Rect2(pos, Vector2(side, side)), false)
+
+
+func _draw_battle_markers(font: Font) -> void:
+	var p := Vector2(20, 88)
+	_draw_small_counter(ROUND_COUNTER, p, 44.0)
+	draw_string(font, p + Vector2(16, 31), str(state.round_number),
+		HORIZONTAL_ALIGNMENT_CENTER, -1, 16, Color.WHITE)
+	p.x += 50
+	_draw_small_counter(LAST_ROUND_COUNTER, p, 44.0)
+	draw_string(font, p + Vector2(16, 31), str(state.last_round),
+		HORIZONTAL_ALIGNMENT_CENTER, -1, 16, Color.WHITE)
+	p.x += 50
+	if not battle.snafu.is_empty() \
+			and int(battle.snafu.get("result", -1)) == Snafu.Result.FOG:
+		_draw_small_counter(FOG_COUNTER, p, 44.0)
+		p.x += 50
+	if state.confusion_side >= 0 and not state.confusion_used:
+		var tex: Texture2D = CONFUSION_COUNTERS[state.confusion_side]
+		draw_texture_rect(tex, Rect2(p, Vector2(96, 44)), false)
 
 
 # --------------------------------------------------------- effetti --
@@ -806,6 +916,12 @@ func _gui_input(event: InputEvent) -> void:
 					return
 				selected = clicked
 				if state.phase == BattleState.Phase.MANEUVER:
+					var current := _current_maneuver_ship()
+					if current != null and clicked != current:
+						selected = current
+						state.note("Ordine di Manovra: ora tocca a %s." % current.name)
+						refresh()
+						return
 					_drag_ship = selected
 					_drag_pos = mb.position
 				queue_redraw()
@@ -840,6 +956,29 @@ func _band_at(pos: Vector2) -> int:
 	return -1
 
 
+func _current_maneuver_ship() -> Ship:
+	if state == null or state.phase != BattleState.Phase.MANEUVER:
+		return null
+	var imaginary := _solo_imaginary_side()
+	for ship in Maneuver.move_order(state):
+		if _maneuvered.has(ship):
+			continue
+		var tf := state.own_tf_of(ship)
+		if imaginary >= 0 and tf != null and tf.side == imaginary:
+			continue
+		return ship
+	return null
+
+
+func _select_current_maneuver_ship() -> void:
+	var current := _current_maneuver_ship()
+	if current != null:
+		selected = current
+		state.note("Ordine di Manovra: ora tocca a %s (%s)." % [current.name,
+			Attitude.label(current.attitude) if state.advanced else
+			TimeLapse.speed_label(current.current_speed())])
+
+
 func _move_to_band(ship: Ship, band_index: int) -> void:
 	if band_index < 0:
 		return
@@ -850,10 +989,22 @@ func _move_to_band(ship: Ship, band_index: int) -> void:
 		state.note("una nave manovra solo nelle zone del proprio lato")
 		refresh()
 		return
-	var txt := Maneuver.apply(ship, int(pair[1]), ship.smoke)
+	var current := _current_maneuver_ship()
+	if current != null and ship != current:
+		state.note("Ordine di Manovra: ora tocca a %s." % current.name)
+		refresh()
+		return
+	var zone := int(pair[1])
+	var refusal := Attitude.maneuver_refusal(ship, zone, ship.smoke) \
+		if state.advanced else ""
+	var txt := "" if refusal != "" else Maneuver.apply(ship, zone, ship.smoke)
 	state.note(txt if txt != "" else
+		(refusal if refusal != "" else
 		"%s non puo' raggiungere quella zona (si muove di una zona per volta)"
-		% ship.name)
+		% ship.name))
+	if txt != "":
+		_maneuvered.append(ship)
+		_select_current_maneuver_ship()
 	refresh()
 
 
@@ -875,6 +1026,11 @@ func handle_key(k: InputEventKey) -> bool:
 		KEY_C:
 			if state.phase == BattleState.Phase.LINGERING:
 				_toggle_damage_control()
+			return true
+		KEY_N:
+			if state.phase == BattleState.Phase.ATTITUDE \
+					and not battle.pending_snafu.is_empty():
+				_resolve_snafu_selected()
 			return true
 		KEY_I:
 			if state.phase == BattleState.Phase.MANEUVER:
@@ -912,6 +1068,10 @@ func _advance_phase() -> void:
 		_fx.skip()
 	match state.phase:
 		BattleState.Phase.ATTITUDE:
+			if not battle.pending_snafu.is_empty():
+				state.note("Prima risolvi la scelta Snafu selezionando una nave.")
+				refresh()
+				return
 			# le attitudini le ha gia' scritte il giocatore cliccando le navi;
 			# qui si applicano gli effetti che scattano in questa fase
 			battle.attitude_phase({})
@@ -953,7 +1113,17 @@ func _advance_phase() -> void:
 			_assigning = null
 			if not state.ended:
 				state.phase = BattleState.Phase.MANEUVER
+				_maneuvered.clear()
+				_select_current_maneuver_ship()
 		BattleState.Phase.MANEUVER:
+			var current := _current_maneuver_ship()
+			if current != null:
+				state.note("%s resta in zona %s." % [current.name,
+					BattleState.ZONE_LABELS[current.battle_zone]])
+				_maneuvered.append(current)
+				_select_current_maneuver_ship()
+				refresh()
+				return
 			_apply_solo_maneuver()
 			state.note("Manovra conclusa.")
 			state.phase = state.next_phase()
@@ -1061,20 +1231,37 @@ func _hint_for_phase() -> String:
 			if _solo_imaginary_side() >= 0:
 				return "Solitario: i siluri dell'avversario sono assegnati se legali. Scegli i tuoi; SPAZIO risolve."
 			if targeting.is_empty():
-				return ("Siluri: clicca una nave in zona Ravvicinata, poi il "
-					+ "bersaglio.  A: automatici.  SPAZIO: nessun lancio")
+				var zones := "Vicina o Ravvicinata" if state.advanced \
+					else "Ravvicinata"
+				return ("Siluri: clicca una nave in zona %s, poi il bersaglio.  "
+					+ "A: automatici.  SPAZIO: nessun lancio") % zones
 			return "SPAZIO: lancia i siluri"
 		BattleState.Phase.ATTITUDE:
+			if not battle.pending_snafu.is_empty():
+				var candidates: Array = battle.pending_snafu.get("candidates", [])
+				var names: Array[String] = []
+				for s_v: Variant in candidates:
+					names.append((s_v as Ship).name)
+				return "Snafu: seleziona una nave fra %s, poi premi N." \
+					% ", ".join(names)
 			return ("Clicca una nave e premi A per cambiarle attitudine.  "
 				+ "SPAZIO: conferma e passa al Fuoco")
 		BattleState.Phase.LINGERING:
 			return ("Effetti Duraturi: C dichiara il Controllo Danni sulla "
 				+ "nave selezionata (tre dadi, ma non sparera').  SPAZIO: tira")
 		BattleState.Phase.MANEUVER:
+			var current := _current_maneuver_ship()
+			if current != null and state.advanced:
+				return ("Manovra di %s: %s. Trascinala solo nella direzione "
+					+ "della freccia; SPAZIO la lascia ferma. S: Fumo, I: Insegui.") \
+					% [current.name, Attitude.describe(current.attitude)]
 			if _solo_imaginary_side() >= 0:
 				return "Manovra: muovi le tue navi. SPAZIO muove l'avversario immaginario secondo il fascicolo e chiude la fase."
 			return "Manovra: muovi anche l'altro lato, in ordine di velocita' alternando i giocatori. S: Fumo. I: Insegui. SPAZIO: fine fase"
 		BattleState.Phase.BREAK_AWAY:
+			if state.round_number < state.minimum_break_away_round:
+				return "Lo scenario vieta la Fuga sino al Round %d. SPAZIO: continua." \
+					% state.minimum_break_away_round
 			if _solo_imaginary_side() >= 0:
 				return "Fuga: dichiara la tua con F/G se vuoi. SPAZIO applica anche la scelta dell'avversario immaginario."
 			return "F: la TF Attiva tenta la Fuga   G: la TF Bersaglio tenta la Fuga   SPAZIO: nessuno tenta"
