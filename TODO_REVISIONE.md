@@ -131,12 +131,35 @@ Uno scenario puo' essere marcato completo solo quando:
   casella fuori mappa e fuori cornice, poi le due pulizie topologiche che
   `build_map_graph.py` gia' fa sulla mappa grande. **29 esagoni** sul Mare del
   Nord, **27** sul Mare di Norvegia, con adiacenze.
-  **Anche i 16 porti stampati sono trovati e collocati**: il rilevatore cerca
+  **Anche i 16 punti stampati sono trovati e collocati**: il rilevatore cerca
   i pallini pieni rossi, ciano e neri e i cerchi vuoti, e distingue i cerchi
   dalle lettere 'o' ed 'e' delle etichette col cuore bianco (oltre 245 di
   luminosita' contro meno di 170). I nomi sono letti sulla mappa e accoppiati
   ai pallini uno a uno: se un pallino resta senza nome o un nome senza
   pallino, il programma si ferma.
+  **CORREZIONE**: i pallini PIENI sono porti, i cerchi VUOTI sono **Punti di
+  Interesse**, e al primo giro li avevo messi tutti insieme come porti.
+  Fascicolo p.16: "POINTS OF INTEREST - These points have no effect on game
+  play, except to orient the player". Sono 5 porti e 3 punti sul Mare del Nord,
+  2 porti e 6 punti sul Mare di Norvegia. Il loro ESAGONO conta lo stesso,
+  perche' la stessa pagina permette il Completamento in un esagono di Norvegia
+  con un Convoglio o uno Squadrone DD nella TF, e N1 chiede di posare le Mine
+  "in the hexes with Bud and Andalsnes".
+  **Le sette caselle fuori mappa sono trascritte**: Norwegian Sea, Kiel e
+  Portsmouth sul Mare del Nord; Murmansk, Denmark Strait, Scapa Flow e Kiel sul
+  Mare di Norvegia. Il fascicolo le usa davvero - p.18 manda a Completare "in
+  nearest Denmark Strait port hex" e mette Murmansk e Kiel nella Tabella dei
+  Porti, p.17 fa Completare a Scapa Flow i Convogli britannici di N1 e ci fa
+  partire i Gruppi Rinforzo. Quali esagoni una banda designi non e' scritto da
+  nessuna parte: si prendono quelli che la banda tocca, unica lettura
+  compatibile col "nearest ... port hex", e la percentuale di contatto resta
+  nel dato.
+  **CORREZIONE alla classificazione del terreno**: le frazioni si misurano
+  sull'area DI MAPPA, dentro la cornice, non sull'area intera dell'esagono. La
+  parte oltre la cornice non e' terra, non e' mappa, e contarla contro
+  l'esagono bocciava mezzo bordo. Gli esagoni passano da 29 a **34** sul Mare
+  del Nord e da 27 a **33** sul Mare di Norvegia, e (7,1) - Kiel Bay, chiamato
+  in causa da due frecce "non adiacente" - passa dal 39% all'88% di mare.
   Un esagono che contiene un porto e' giocabile per forza, come la mappa
   grande fa con `force_playable`: senza quella regola il colore buttava via
   Methil, Wilhelmshaven, Kiel, Kristiansand, Trondheim, Namsos, Andalsnes e
@@ -147,20 +170,17 @@ Uno scenario puo' essere marcato completo solo quando:
   posizioni sono lette sulle immagini ingrandite col reticolo etichettato
   sopra; il lato lo ricava il programma dai due esagoni piu' vicini e si ferma
   se non sono adiacenti.
-  **Quattro lati sono marcati `disputed`**, perche' toccano esagoni che la
-  classificazione per colore aveva scartato: (2,4)|(2,5) e (6,1)|(7,1) e
-  (6,2)|(7,1) sul Mare del Nord, (6,-1)|(6,0) sul Mare di Norvegia. Il
-  fascicolo stampa una freccia per negare un'adiacenza, e negarla ha senso solo
-  fra esagoni in gioco: o la classificazione sbaglia, o la freccia e' solo un
-  avviso cartografico. Il caso peggiore e' (2,4)|(2,5) sul Mare del Nord, dove
-  il riquadro di Portsmouth e' stampato sopra la mappa e mangia l'esagono. Non
-  e' deciso: lo decideranno le illustrazioni del fascicolo.
-  **Restano, e sono la parte che ancora blocca i cinque scenari**: le caselle
-  fuori mappa con le loro connessioni (Murmansk, Kiel, Scapa Flow, Portsmouth,
-  Denmark Strait, piu' le frecce verso Bear Island, Jan Mayen, le Shetlands e
-  il Mare di Norvegia), le basi aeree (i sette segnalini B e G, gia' visibili
-  al rilevatore), un secondo `MapGraph` nel motore e il disegno dell'inserto
-  come superficie di gioco nella GUI.
+  **Tre lati restano marcati `disputed`** (erano quattro): (2,4)|(2,5) sul Mare
+  del Nord, (6,-1)|(6,0) e (6,1)|(6,2) sul Mare di Norvegia. I due che
+  toccavano (7,1) si sono risolti da soli quando la classificazione ha smesso
+  di contare il fuori-cornice come terra - il che e' anche la conferma che
+  quelle frecce erano un indizio buono. I tre che restano toccano esagoni
+  davvero di terra o coperti dal riquadro di Portsmouth: lo decideranno le
+  illustrazioni del fascicolo.
+  **Restano, e sono la parte che ancora blocca i cinque scenari**: le basi
+  aeree (i sette segnalini B e G, gia' visibili al rilevatore), un secondo
+  `MapGraph` nel motore e il disegno dell'inserto come superficie di gioco
+  nella GUI.
   **Otto esagoni sono marcati `needs_check`**: hanno terra e mare quasi in
   parti uguali, e il colore non basta a decidere. Gli esagoni scartati per un
   soffio restano scritti in `excluded_near_miss`, col motivo: nessuno sparisce

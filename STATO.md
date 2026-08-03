@@ -379,9 +379,31 @@ Tutti i test passano: **2957 verifiche, 18 suite, headless.**
   giusta. Quattro lati escono `disputed` perche' toccano esagoni che il colore
   aveva scartato: una freccia si stampa per negare un'adiacenza, e negarla ha
   senso solo fra esagoni in gioco. Non e' deciso di nascosto, e' segnato.
+- **Le sette caselle fuori mappa degli inserti sono trascritte**, e per farlo
+  sono venute fuori due cose che avevo sbagliato prima.
+  La prima: i pallini PIENI sono porti, i cerchi VUOTI sono **Punti di
+  Interesse** (p.16, "no effect on game play, except to orient the player"), e
+  io li avevo messi tutti insieme come porti. Sono 5 porti e 3 punti sul Mare
+  del Nord, 2 porti e 6 punti sul Mare di Norvegia. Il loro esagono conta lo
+  stesso: p.16 permette il Completamento in un esagono di Norvegia con un
+  Convoglio o uno Squadrone DD, e N1 chiede di posare le Mine "in the hexes
+  with Bud and Andalsnes".
+  La seconda, piu' grossa: **le frazioni di terreno si misurano sull'area di
+  mappa**, dentro la cornice, non sull'area intera dell'esagono. La parte oltre
+  la cornice non e' terra: non e' mappa. Contarla contro l'esagono bocciava
+  mezzo bordo. Gli esagoni passano da 29 a 34 e da 27 a 33, e (7,1) del Mare
+  del Nord - Kiel Bay - passa dal 39% all'88% di mare. Due dei quattro lati
+  "non adiacente" marcati `disputed` si sono risolti da soli: erano un indizio
+  buono, e la classificazione era sbagliata.
+  Le caselle sono Norwegian Sea, Kiel e Portsmouth sul Mare del Nord; Murmansk,
+  Denmark Strait, Scapa Flow e Kiel sul Mare di Norvegia. Il fascicolo le usa:
+  p.18 manda a Completare "in nearest Denmark Strait port hex" e mette Murmansk
+  e Kiel nella Tabella dei Porti; p.17 fa Completare a Scapa Flow i Convogli
+  britannici di N1 e ci fa partire i Gruppi Rinforzo. Quali esagoni una banda
+  designi non e' scritto: si prendono quelli che tocca, e la percentuale di
+  contatto resta nel dato.
   **I cinque scenari inserto restano dichiarati non giocabili**: mancano le
-  caselle fuori mappa, le basi aeree, un secondo `MapGraph` nel motore e il
-  disegno nella GUI.
+  basi aeree, un secondo `MapGraph` nel motore e il disegno nella GUI.
 - **I Comandanti dicono la loro condizione stampata.** Gli undici testi sono
   trascritti da RB p.10 letta a 300 dpi: la scheda TF mostra la regola vera e
   non un riassunto, ed e' quella che decide se il beneficio si puo' usare

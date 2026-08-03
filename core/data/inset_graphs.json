@@ -22,17 +22,17 @@
    ],
    "origin_hex": "(0,0) e' la cella il cui centro e' piu' vicino all'angolo in alto a sinistra della cornice stampata",
    "sea_min": 0.45,
-   "hex_count": 29,
-   "needs_check_count": 7,
+   "hex_count": 34,
+   "needs_check_count": 8,
    "hexes": [
     {
      "q": 1,
      "r": 0,
      "cx": 135.3,
      "cy": 75.17,
-     "sea_frac": 0.656,
-     "land_frac": 0.013,
-     "box_frac": 0.058,
+     "sea_frac": 0.896,
+     "land_frac": 0.018,
+     "box_frac": 0.079,
      "outside_frac": 0.268,
      "reason": "contiene il porto di Scapa Flow",
      "neighbors": [
@@ -40,6 +40,11 @@
        "dir": 0,
        "q": 2,
        "r": 0
+      },
+      {
+       "dir": 1,
+       "q": 2,
+       "r": -1
       },
       {
        "dir": 5,
@@ -55,9 +60,9 @@
      "r": 1,
      "cx": 82.64,
      "cy": 282.5,
-     "sea_frac": 0.482,
-     "land_frac": 0.299,
-     "box_frac": 0.013,
+     "sea_frac": 0.607,
+     "land_frac": 0.376,
+     "box_frac": 0.017,
      "outside_frac": 0.205,
      "reason": "mare",
      "neighbors": [
@@ -90,8 +95,8 @@
      "r": 2,
      "cx": 29.99,
      "cy": 489.82,
-     "sea_frac": 0.237,
-     "land_frac": 0.246,
+     "sea_frac": 0.473,
+     "land_frac": 0.491,
      "box_frac": 0.0,
      "outside_frac": 0.5,
      "reason": "contiene il porto di Methil",
@@ -117,6 +122,36 @@
     },
     {
      "q": 2,
+     "r": -1,
+     "cx": 341.17,
+     "cy": 17.11,
+     "sea_frac": 0.959,
+     "land_frac": 0.01,
+     "box_frac": 0.021,
+     "outside_frac": 0.567,
+     "reason": "mare",
+     "neighbors": [
+      {
+       "dir": 0,
+       "q": 3,
+       "r": -1
+      },
+      {
+       "dir": 4,
+       "q": 1,
+       "r": 0
+      },
+      {
+       "dir": 5,
+       "q": 2,
+       "r": 0
+      }
+     ],
+     "coastal": true,
+     "needs_check": false
+    },
+    {
+     "q": 2,
      "r": 0,
      "cx": 288.52,
      "cy": 224.43,
@@ -137,6 +172,11 @@
        "r": -1
       },
       {
+       "dir": 2,
+       "q": 2,
+       "r": -1
+      },
+      {
        "dir": 3,
        "q": 1,
        "r": 0
@@ -152,7 +192,7 @@
        "r": 1
       }
      ],
-     "coastal": true,
+     "coastal": false,
      "needs_check": false
     },
     {
@@ -245,9 +285,9 @@
      "r": 3,
      "cx": 130.56,
      "cy": 846.41,
-     "sea_frac": 0.75,
-     "land_frac": 0.192,
-     "box_frac": 0.031,
+     "sea_frac": 0.767,
+     "land_frac": 0.196,
+     "box_frac": 0.032,
      "outside_frac": 0.022,
      "reason": "mare",
      "neighbors": [
@@ -265,10 +305,45 @@
        "dir": 2,
        "q": 2,
        "r": 2
+      },
+      {
+       "dir": 5,
+       "q": 2,
+       "r": 4
       }
      ],
      "coastal": true,
      "needs_check": false
+    },
+    {
+     "q": 2,
+     "r": 4,
+     "cx": 77.9,
+     "cy": 1053.74,
+     "sea_frac": 0.48,
+     "land_frac": 0.48,
+     "box_frac": 0.029,
+     "outside_frac": 0.228,
+     "reason": "mare",
+     "neighbors": [
+      {
+       "dir": 0,
+       "q": 3,
+       "r": 4
+      },
+      {
+       "dir": 1,
+       "q": 3,
+       "r": 3
+      },
+      {
+       "dir": 2,
+       "q": 2,
+       "r": 3
+      }
+     ],
+     "coastal": true,
+     "needs_check": true
     },
     {
      "q": 3,
@@ -290,6 +365,11 @@
        "dir": 1,
        "q": 4,
        "r": -2
+      },
+      {
+       "dir": 3,
+       "q": 2,
+       "r": -1
       },
       {
        "dir": 4,
@@ -472,12 +552,17 @@
        "r": 3
       },
       {
+       "dir": 4,
+       "q": 2,
+       "r": 4
+      },
+      {
        "dir": 5,
        "q": 3,
        "r": 4
       }
      ],
-     "coastal": true,
+     "coastal": false,
      "needs_check": false
     },
     {
@@ -485,12 +570,17 @@
      "r": 4,
      "cx": 231.12,
      "cy": 1203.0,
-     "sea_frac": 0.817,
-     "land_frac": 0.045,
-     "box_frac": 0.058,
+     "sea_frac": 0.88,
+     "land_frac": 0.048,
+     "box_frac": 0.062,
      "outside_frac": 0.071,
      "reason": "mare",
      "neighbors": [
+      {
+       "dir": 0,
+       "q": 4,
+       "r": 4
+      },
       {
        "dir": 1,
        "q": 4,
@@ -500,6 +590,11 @@
        "dir": 2,
        "q": 3,
        "r": 3
+      },
+      {
+       "dir": 3,
+       "q": 2,
+       "r": 4
       }
      ],
      "coastal": true,
@@ -510,9 +605,9 @@
      "r": -2,
      "cx": 700.27,
      "cy": 108.31,
-     "sea_frac": 0.786,
-     "land_frac": 0.004,
-     "box_frac": 0.098,
+     "sea_frac": 0.884,
+     "land_frac": 0.005,
+     "box_frac": 0.111,
      "outside_frac": 0.112,
      "reason": "mare",
      "neighbors": [
@@ -520,6 +615,11 @@
        "dir": 0,
        "q": 5,
        "r": -2
+      },
+      {
+       "dir": 1,
+       "q": 5,
+       "r": -3
       },
       {
        "dir": 4,
@@ -750,6 +850,66 @@
        "dir": 4,
        "q": 3,
        "r": 4
+      },
+      {
+       "dir": 5,
+       "q": 4,
+       "r": 4
+      }
+     ],
+     "coastal": false,
+     "needs_check": false
+    },
+    {
+     "q": 4,
+     "r": 4,
+     "cx": 384.35,
+     "cy": 1352.26,
+     "sea_frac": 0.952,
+     "land_frac": 0.048,
+     "box_frac": 0.0,
+     "outside_frac": 0.812,
+     "reason": "mare",
+     "neighbors": [
+      {
+       "dir": 1,
+       "q": 5,
+       "r": 3
+      },
+      {
+       "dir": 2,
+       "q": 4,
+       "r": 3
+      },
+      {
+       "dir": 3,
+       "q": 3,
+       "r": 4
+      }
+     ],
+     "coastal": true,
+     "needs_check": false
+    },
+    {
+     "q": 5,
+     "r": -3,
+     "cx": 906.15,
+     "cy": 50.24,
+     "sea_frac": 0.614,
+     "land_frac": 0.126,
+     "box_frac": 0.26,
+     "outside_frac": 0.433,
+     "reason": "mare",
+     "neighbors": [
+      {
+       "dir": 4,
+       "q": 4,
+       "r": -2
+      },
+      {
+       "dir": 5,
+       "q": 5,
+       "r": -2
       }
      ],
      "coastal": true,
@@ -766,6 +926,11 @@
      "outside_frac": 0.0,
      "reason": "contiene il porto di Bergen",
      "neighbors": [
+      {
+       "dir": 2,
+       "q": 5,
+       "r": -3
+      },
       {
        "dir": 3,
        "q": 4,
@@ -794,7 +959,7 @@
      "land_frac": 0.161,
      "box_frac": 0.0,
      "outside_frac": 0.0,
-     "reason": "contiene il porto di Stavanger",
+     "reason": "contiene il punto di interesse di Stavanger",
      "neighbors": [
       {
        "dir": 0,
@@ -965,9 +1130,9 @@
      "r": 3,
      "cx": 590.22,
      "cy": 1294.2,
-     "sea_frac": 0.219,
-     "land_frac": 0.232,
-     "box_frac": 0.013,
+     "sea_frac": 0.45,
+     "land_frac": 0.477,
+     "box_frac": 0.028,
      "outside_frac": 0.513,
      "reason": "contiene il porto di Wilhelmshaven",
      "neighbors": [
@@ -985,6 +1150,11 @@
        "dir": 3,
        "q": 4,
        "r": 3
+      },
+      {
+       "dir": 4,
+       "q": 4,
+       "r": 4
       }
      ],
      "coastal": true,
@@ -995,11 +1165,11 @@
      "r": -1,
      "cx": 954.06,
      "cy": 614.16,
-     "sea_frac": 0.263,
-     "land_frac": 0.442,
-     "box_frac": 0.004,
+     "sea_frac": 0.371,
+     "land_frac": 0.623,
+     "box_frac": 0.006,
      "outside_frac": 0.29,
-     "reason": "contiene il porto di Kristiansand",
+     "reason": "contiene il punto di interesse di Kristiansand",
      "neighbors": [
       {
        "dir": 3,
@@ -1025,9 +1195,9 @@
      "r": 0,
      "cx": 901.41,
      "cy": 821.48,
-     "sea_frac": 0.656,
-     "land_frac": 0.237,
-     "box_frac": 0.054,
+     "sea_frac": 0.687,
+     "land_frac": 0.248,
+     "box_frac": 0.056,
      "outside_frac": 0.045,
      "reason": "mare",
      "neighbors": [
@@ -1067,6 +1237,11 @@
      "reason": "mare",
      "neighbors": [
       {
+       "dir": 0,
+       "q": 7,
+       "r": 1
+      },
+      {
        "dir": 2,
        "q": 6,
        "r": 0
@@ -1095,12 +1270,17 @@
      "r": 2,
      "cx": 796.1,
      "cy": 1236.14,
-     "sea_frac": 0.415,
-     "land_frac": 0.366,
-     "box_frac": 0.004,
+     "sea_frac": 0.522,
+     "land_frac": 0.461,
+     "box_frac": 0.006,
      "outside_frac": 0.205,
      "reason": "contiene il porto di Kiel",
      "neighbors": [
+      {
+       "dir": 1,
+       "q": 7,
+       "r": 1
+      },
       {
        "dir": 2,
        "q": 6,
@@ -1119,12 +1299,39 @@
      ],
      "coastal": true,
      "needs_check": true
+    },
+    {
+     "q": 7,
+     "r": 1,
+     "cx": 1001.98,
+     "cy": 1178.07,
+     "sea_frac": 0.88,
+     "land_frac": 0.12,
+     "box_frac": 0.0,
+     "outside_frac": 0.554,
+     "reason": "mare",
+     "neighbors": [
+      {
+       "dir": 3,
+       "q": 6,
+       "r": 1
+      },
+      {
+       "dir": 4,
+       "q": 6,
+       "r": 2
+      }
+     ],
+     "coastal": true,
+     "needs_check": false
     }
    ],
    "ports": [
     {
      "name": "Bergen",
-     "kind": "nero",
+     "role": "porto",
+     "nation": "NO",
+     "shape": "nero",
      "dot_px": [
       910.7,
       257.3
@@ -1133,18 +1340,10 @@
      "r": -2
     },
     {
-     "name": "Egersund",
-     "kind": "cerchio",
-     "dot_px": [
-      827.0,
-      565.0
-     ],
-     "q": 5,
-     "r": -1
-    },
-    {
      "name": "Kiel",
-     "kind": "ciano",
+     "role": "porto",
+     "nation": "GE",
+     "shape": "ciano",
      "dot_px": [
       881.8,
       1238.4
@@ -1153,18 +1352,10 @@
      "r": 2
     },
     {
-     "name": "Kristiansand",
-     "kind": "cerchio",
-     "dot_px": [
-      957.0,
-      664.0
-     ],
-     "q": 6,
-     "r": -1
-    },
-    {
      "name": "Methil",
-     "kind": "rosso",
+     "role": "porto",
+     "nation": "UK",
+     "shape": "rosso",
      "dot_px": [
       37.9,
       544.5
@@ -1174,7 +1365,9 @@
     },
     {
      "name": "Scapa Flow",
-     "kind": "rosso",
+     "role": "porto",
+     "nation": "UK",
+     "shape": "rosso",
      "dot_px": [
       178.8,
       155.2
@@ -1183,24 +1376,115 @@
      "r": 0
     },
     {
-     "name": "Stavanger",
-     "kind": "cerchio",
-     "dot_px": [
-      861.0,
-      495.0
-     ],
-     "q": 5,
-     "r": -1
-    },
-    {
      "name": "Wilhelmshaven",
-     "kind": "ciano",
+     "role": "porto",
+     "nation": "GE",
+     "shape": "ciano",
      "dot_px": [
       658.2,
       1278.3
      ],
      "q": 5,
      "r": 3
+    }
+   ],
+   "points_of_interest": [
+    {
+     "name": "Egersund",
+     "role": "punto di interesse",
+     "nation": "NO",
+     "shape": "cerchio",
+     "dot_px": [
+      827.0,
+      565.0
+     ],
+     "q": 5,
+     "r": -1
+    },
+    {
+     "name": "Kristiansand",
+     "role": "punto di interesse",
+     "nation": "NO",
+     "shape": "cerchio",
+     "dot_px": [
+      957.0,
+      664.0
+     ],
+     "q": 6,
+     "r": -1
+    },
+    {
+     "name": "Stavanger",
+     "role": "punto di interesse",
+     "nation": "NO",
+     "shape": "cerchio",
+     "dot_px": [
+      861.0,
+      495.0
+     ],
+     "q": 5,
+     "r": -1
+    }
+   ],
+   "off_map_boxes": [
+    {
+     "name": "Norwegian Sea",
+     "kind": "passaggio",
+     "rect_px": [
+      642,
+      30,
+      992,
+      65
+     ],
+     "note": "Il Mare di Norvegia, cioe' l'altro inserto.",
+     "hexes": [
+      {
+       "q": 5,
+       "r": -3,
+       "contact": 0.57
+      },
+      {
+       "q": 4,
+       "r": -2,
+       "contact": 0.43
+      }
+     ]
+    },
+    {
+     "name": "Kiel",
+     "kind": "casella porto tedesca",
+     "rect_px": [
+      961,
+      753,
+      992,
+      850
+     ],
+     "note": "Casella Porto di Kiel. Sullo stesso inserto Kiel ha anche il suo esagono di porto, col pallino ciano.",
+     "hexes": [
+      {
+       "q": 6,
+       "r": 0,
+       "contact": 0.965
+      }
+     ]
+    },
+    {
+     "name": "Portsmouth",
+     "kind": "casella porto britannica",
+     "rect_px": [
+      30,
+      1260,
+      235,
+      1292
+     ],
+     "note": "Casella Porto di Portsmouth.",
+     "hexes": [
+      {
+       "q": 3,
+       "r": 4,
+       "contact": 1.0
+      }
+     ]
     }
    ],
    "not_adjacent_edges": [
@@ -1230,8 +1514,7 @@
      "blocks": "trajectory",
      "air_support_allowed": true,
      "disputed": [
-      "2,5",
-      "2,4"
+      "2,5"
      ]
     },
     {
@@ -1271,10 +1554,7 @@
      ],
      "where": "Jutland",
      "blocks": "trajectory",
-     "air_support_allowed": true,
-     "disputed": [
-      "7,1"
-     ]
+     "air_support_allowed": true
     },
     {
      "aq": 6,
@@ -1287,63 +1567,24 @@
      ],
      "where": "Kiel Bay",
      "blocks": "trajectory",
-     "air_support_allowed": true,
-     "disputed": [
-      "7,1"
-     ]
+     "air_support_allowed": true
     }
    ],
    "excluded_near_miss": [
     {
      "q": 2,
-     "r": -1,
-     "cx": 341.17,
-     "cy": 17.11,
-     "sea_frac": 0.415,
-     "land_frac": 0.004,
-     "box_frac": 0.009,
-     "outside_frac": 0.567,
-     "reason": "poco mare",
-     "needs_check": false
-    },
-    {
-     "q": 2,
-     "r": 4,
-     "cx": 77.9,
-     "cy": 1053.74,
-     "sea_frac": 0.371,
-     "land_frac": 0.371,
-     "box_frac": 0.022,
-     "outside_frac": 0.228,
+     "r": 5,
+     "cx": 25.25,
+     "cy": 1261.06,
+     "sea_frac": 0.278,
+     "land_frac": 0.444,
+     "box_frac": 0.264,
+     "outside_frac": 0.679,
      "reason": "poco mare",
      "needs_check": true
-    },
-    {
-     "q": 5,
-     "r": -3,
-     "cx": 906.15,
-     "cy": 50.24,
-     "sea_frac": 0.348,
-     "land_frac": 0.071,
-     "box_frac": 0.147,
-     "outside_frac": 0.433,
-     "reason": "poco mare",
-     "needs_check": false
-    },
-    {
-     "q": 7,
-     "r": 1,
-     "cx": 1001.98,
-     "cy": 1178.07,
-     "sea_frac": 0.393,
-     "land_frac": 0.054,
-     "box_frac": 0.0,
-     "outside_frac": 0.554,
-     "reason": "poco mare",
-     "needs_check": false
     }
    ],
-   "still_missing": "caselle fuori mappa e loro connessioni, basi aeree, un secondo MapGraph nel motore e il disegno dell'inserto nella GUI"
+   "still_missing": "basi aeree, un secondo MapGraph nel motore e il disegno dell'inserto nella GUI"
   },
   "map_norwegian_sea": {
    "name": "Mappa Inserto del Mare di Norvegia",
@@ -1365,17 +1606,17 @@
    ],
    "origin_hex": "(0,0) e' la cella il cui centro e' piu' vicino all'angolo in alto a sinistra della cornice stampata",
    "sea_min": 0.45,
-   "hex_count": 27,
-   "needs_check_count": 1,
+   "hex_count": 33,
+   "needs_check_count": 2,
    "hexes": [
     {
      "q": 1,
      "r": 0,
      "cx": 135.3,
      "cy": 75.17,
-     "sea_frac": 0.656,
-     "land_frac": 0.027,
-     "box_frac": 0.049,
+     "sea_frac": 0.896,
+     "land_frac": 0.037,
+     "box_frac": 0.067,
      "outside_frac": 0.268,
      "reason": "mare",
      "neighbors": [
@@ -1383,6 +1624,11 @@
        "dir": 0,
        "q": 2,
        "r": 0
+      },
+      {
+       "dir": 1,
+       "q": 2,
+       "r": -1
       },
       {
        "dir": 5,
@@ -1398,9 +1644,9 @@
      "r": 1,
      "cx": 82.64,
      "cy": 282.5,
-     "sea_frac": 0.79,
+     "sea_frac": 0.994,
      "land_frac": 0.0,
-     "box_frac": 0.004,
+     "box_frac": 0.006,
      "outside_frac": 0.205,
      "reason": "mare",
      "neighbors": [
@@ -1417,6 +1663,106 @@
       {
        "dir": 2,
        "q": 1,
+       "r": 0
+      },
+      {
+       "dir": 5,
+       "q": 1,
+       "r": 2
+      }
+     ],
+     "coastal": true,
+     "needs_check": false
+    },
+    {
+     "q": 1,
+     "r": 2,
+     "cx": 29.99,
+     "cy": 489.82,
+     "sea_frac": 0.75,
+     "land_frac": 0.018,
+     "box_frac": 0.223,
+     "outside_frac": 0.5,
+     "reason": "mare",
+     "neighbors": [
+      {
+       "dir": 0,
+       "q": 2,
+       "r": 2
+      },
+      {
+       "dir": 1,
+       "q": 2,
+       "r": 1
+      },
+      {
+       "dir": 2,
+       "q": 1,
+       "r": 1
+      },
+      {
+       "dir": 5,
+       "q": 1,
+       "r": 3
+      }
+     ],
+     "coastal": true,
+     "needs_check": false
+    },
+    {
+     "q": 1,
+     "r": 3,
+     "cx": -22.67,
+     "cy": 697.15,
+     "sea_frac": 0.543,
+     "land_frac": 0.065,
+     "box_frac": 0.37,
+     "outside_frac": 0.795,
+     "reason": "mare",
+     "neighbors": [
+      {
+       "dir": 0,
+       "q": 2,
+       "r": 3
+      },
+      {
+       "dir": 1,
+       "q": 2,
+       "r": 2
+      },
+      {
+       "dir": 2,
+       "q": 1,
+       "r": 2
+      }
+     ],
+     "coastal": true,
+     "needs_check": false
+    },
+    {
+     "q": 2,
+     "r": -1,
+     "cx": 341.17,
+     "cy": 17.11,
+     "sea_frac": 0.959,
+     "land_frac": 0.041,
+     "box_frac": 0.0,
+     "outside_frac": 0.567,
+     "reason": "mare",
+     "neighbors": [
+      {
+       "dir": 0,
+       "q": 3,
+       "r": -1
+      },
+      {
+       "dir": 4,
+       "q": 1,
+       "r": 0
+      },
+      {
+       "dir": 5,
+       "q": 2,
        "r": 0
       }
      ],
@@ -1445,6 +1791,11 @@
        "r": -1
       },
       {
+       "dir": 2,
+       "q": 2,
+       "r": -1
+      },
+      {
        "dir": 3,
        "q": 1,
        "r": 0
@@ -1460,7 +1811,7 @@
        "r": 1
       }
      ],
-     "coastal": true,
+     "coastal": false,
      "needs_check": false
     },
     {
@@ -1495,12 +1846,17 @@
        "r": 1
       },
       {
+       "dir": 4,
+       "q": 1,
+       "r": 2
+      },
+      {
        "dir": 5,
        "q": 2,
        "r": 2
       }
      ],
-     "coastal": true,
+     "coastal": false,
      "needs_check": false
     },
     {
@@ -1530,12 +1886,22 @@
        "r": 1
       },
       {
+       "dir": 3,
+       "q": 1,
+       "r": 2
+      },
+      {
+       "dir": 4,
+       "q": 1,
+       "r": 3
+      },
+      {
        "dir": 5,
        "q": 2,
        "r": 3
       }
      ],
-     "coastal": true,
+     "coastal": false,
      "needs_check": false
     },
     {
@@ -1543,7 +1909,7 @@
      "r": 3,
      "cx": 130.56,
      "cy": 846.41,
-     "sea_frac": 0.978,
+     "sea_frac": 1.0,
      "land_frac": 0.0,
      "box_frac": 0.0,
      "outside_frac": 0.022,
@@ -1565,6 +1931,11 @@
        "r": 2
       },
       {
+       "dir": 3,
+       "q": 1,
+       "r": 3
+      },
+      {
        "dir": 5,
        "q": 2,
        "r": 4
@@ -1578,7 +1949,7 @@
      "r": 4,
      "cx": 77.9,
      "cy": 1053.74,
-     "sea_frac": 0.772,
+     "sea_frac": 1.0,
      "land_frac": 0.0,
      "box_frac": 0.0,
      "outside_frac": 0.228,
@@ -1598,6 +1969,36 @@
        "dir": 2,
        "q": 2,
        "r": 3
+      },
+      {
+       "dir": 5,
+       "q": 2,
+       "r": 5
+      }
+     ],
+     "coastal": true,
+     "needs_check": false
+    },
+    {
+     "q": 2,
+     "r": 5,
+     "cx": 25.25,
+     "cy": 1261.06,
+     "sea_frac": 0.708,
+     "land_frac": 0.0,
+     "box_frac": 0.292,
+     "outside_frac": 0.679,
+     "reason": "mare",
+     "neighbors": [
+      {
+       "dir": 1,
+       "q": 3,
+       "r": 4
+      },
+      {
+       "dir": 2,
+       "q": 2,
+       "r": 4
       }
      ],
      "coastal": true,
@@ -1623,6 +2024,11 @@
        "dir": 1,
        "q": 4,
        "r": -2
+      },
+      {
+       "dir": 3,
+       "q": 2,
+       "r": -1
       },
       {
        "dir": 4,
@@ -1823,12 +2229,17 @@
      "r": 4,
      "cx": 231.12,
      "cy": 1203.0,
-     "sea_frac": 0.929,
+     "sea_frac": 1.0,
      "land_frac": 0.0,
      "box_frac": 0.0,
      "outside_frac": 0.071,
      "reason": "mare",
      "neighbors": [
+      {
+       "dir": 0,
+       "q": 4,
+       "r": 4
+      },
       {
        "dir": 1,
        "q": 4,
@@ -1843,6 +2254,11 @@
        "dir": 3,
        "q": 2,
        "r": 4
+      },
+      {
+       "dir": 4,
+       "q": 2,
+       "r": 5
       }
      ],
      "coastal": true,
@@ -1853,9 +2269,9 @@
      "r": -2,
      "cx": 700.27,
      "cy": 108.31,
-     "sea_frac": 0.884,
+     "sea_frac": 0.995,
      "land_frac": 0.0,
-     "box_frac": 0.004,
+     "box_frac": 0.005,
      "outside_frac": 0.112,
      "reason": "mare",
      "neighbors": [
@@ -2075,6 +2491,11 @@
      "reason": "mare",
      "neighbors": [
       {
+       "dir": 0,
+       "q": 5,
+       "r": 3
+      },
+      {
        "dir": 1,
        "q": 5,
        "r": 2
@@ -2093,6 +2514,41 @@
        "dir": 4,
        "q": 3,
        "r": 4
+      },
+      {
+       "dir": 5,
+       "q": 4,
+       "r": 4
+      }
+     ],
+     "coastal": false,
+     "needs_check": false
+    },
+    {
+     "q": 4,
+     "r": 4,
+     "cx": 384.35,
+     "cy": 1352.26,
+     "sea_frac": 0.976,
+     "land_frac": 0.0,
+     "box_frac": 0.024,
+     "outside_frac": 0.812,
+     "reason": "mare",
+     "neighbors": [
+      {
+       "dir": 1,
+       "q": 5,
+       "r": 3
+      },
+      {
+       "dir": 2,
+       "q": 4,
+       "r": 3
+      },
+      {
+       "dir": 3,
+       "q": 3,
+       "r": 4
       }
      ],
      "coastal": true,
@@ -2103,11 +2559,11 @@
      "r": -3,
      "cx": 906.15,
      "cy": 50.24,
-     "sea_frac": 0.277,
-     "land_frac": 0.174,
-     "box_frac": 0.116,
+     "sea_frac": 0.488,
+     "land_frac": 0.307,
+     "box_frac": 0.205,
      "outside_frac": 0.433,
-     "reason": "contiene il porto di Tromso",
+     "reason": "contiene il punto di interesse di Tromso",
      "neighbors": [
       {
        "dir": 4,
@@ -2121,7 +2577,7 @@
       }
      ],
      "coastal": true,
-     "needs_check": false
+     "needs_check": true
     },
     {
      "q": 5,
@@ -2167,7 +2623,7 @@
      "land_frac": 0.094,
      "box_frac": 0.0,
      "outside_frac": 0.0,
-     "reason": "contiene il porto di Bodo",
+     "reason": "contiene il punto di interesse di Bodo",
      "neighbors": [
       {
        "dir": 2,
@@ -2287,7 +2743,7 @@
      "land_frac": 0.027,
      "box_frac": 0.004,
      "outside_frac": 0.0,
-     "reason": "contiene il porto di Bud",
+     "reason": "contiene il punto di interesse di Bud",
      "neighbors": [
       {
        "dir": 1,
@@ -2308,6 +2764,41 @@
        "dir": 4,
        "q": 4,
        "r": 3
+      },
+      {
+       "dir": 5,
+       "q": 5,
+       "r": 3
+      }
+     ],
+     "coastal": true,
+     "needs_check": false
+    },
+    {
+     "q": 5,
+     "r": 3,
+     "cx": 590.22,
+     "cy": 1294.2,
+     "sea_frac": 0.771,
+     "land_frac": 0.009,
+     "box_frac": 0.22,
+     "outside_frac": 0.513,
+     "reason": "mare",
+     "neighbors": [
+      {
+       "dir": 2,
+       "q": 5,
+       "r": 2
+      },
+      {
+       "dir": 3,
+       "q": 4,
+       "r": 3
+      },
+      {
+       "dir": 4,
+       "q": 4,
+       "r": 4
       }
      ],
      "coastal": true,
@@ -2318,8 +2809,8 @@
      "r": 0,
      "cx": 901.41,
      "cy": 821.48,
-     "sea_frac": 0.366,
-     "land_frac": 0.576,
+     "sea_frac": 0.383,
+     "land_frac": 0.603,
      "box_frac": 0.0,
      "outside_frac": 0.045,
      "reason": "contiene il porto di Trondheim",
@@ -2352,7 +2843,7 @@
      "land_frac": 0.853,
      "box_frac": 0.0,
      "outside_frac": 0.0,
-     "reason": "contiene il porto di Andalsnes",
+     "reason": "contiene il punto di interesse di Andalsnes",
      "neighbors": [
       {
        "dir": 2,
@@ -2376,8 +2867,36 @@
    ],
    "ports": [
     {
+     "name": "Narvik",
+     "role": "porto",
+     "nation": "NO",
+     "shape": "nero",
+     "dot_px": [
+      920.3,
+      214.3
+     ],
+     "q": 5,
+     "r": -2
+    },
+    {
+     "name": "Trondheim",
+     "role": "porto",
+     "nation": "NO",
+     "shape": "nero",
+     "dot_px": [
+      867.0,
+      893.2
+     ],
+     "q": 6,
+     "r": 0
+    }
+   ],
+   "points_of_interest": [
+    {
      "name": "Andalsnes",
-     "kind": "cerchio",
+     "role": "punto di interesse",
+     "nation": "NO",
+     "shape": "cerchio",
      "dot_px": [
       765.0,
       1041.0
@@ -2387,7 +2906,9 @@
     },
     {
      "name": "Bodo",
-     "kind": "cerchio",
+     "role": "punto di interesse",
+     "nation": "NO",
+     "shape": "cerchio",
      "dot_px": [
       876.0,
       387.0
@@ -2397,7 +2918,9 @@
     },
     {
      "name": "Bud",
-     "kind": "cerchio",
+     "role": "punto di interesse",
+     "nation": "NO",
+     "shape": "cerchio",
      "dot_px": [
       706.0,
       1021.0
@@ -2407,7 +2930,9 @@
     },
     {
      "name": "Harstad",
-     "kind": "cerchio",
+     "role": "punto di interesse",
+     "nation": "NO",
+     "shape": "cerchio",
      "dot_px": [
       866.0,
       192.0
@@ -2417,7 +2942,9 @@
     },
     {
      "name": "Namsos",
-     "kind": "cerchio",
+     "role": "punto di interesse",
+     "nation": "NO",
+     "shape": "cerchio",
      "dot_px": [
       865.0,
       774.0
@@ -2426,34 +2953,95 @@
      "r": 0
     },
     {
-     "name": "Narvik",
-     "kind": "nero",
-     "dot_px": [
-      920.3,
-      214.3
-     ],
-     "q": 5,
-     "r": -2
-    },
-    {
      "name": "Tromso",
-     "kind": "cerchio",
+     "role": "punto di interesse",
+     "nation": "NO",
+     "shape": "cerchio",
      "dot_px": [
       903.0,
       69.0
      ],
      "q": 5,
      "r": -3
+    }
+   ],
+   "off_map_boxes": [
+    {
+     "name": "Murmansk",
+     "kind": "casella porto",
+     "rect_px": [
+      817,
+      30,
+      992,
+      67
+     ],
+     "note": "Porto di destinazione della Tabella dei Porti tedesca (p.18).",
+     "hexes": [
+      {
+       "q": 5,
+       "r": -3,
+       "contact": 0.955
+      }
+     ]
     },
     {
-     "name": "Trondheim",
-     "kind": "nero",
-     "dot_px": [
-      867.0,
-      893.2
+     "name": "Denmark Strait",
+     "kind": "area di mare",
+     "rect_px": [
+      31,
+      404,
+      60,
+      760
      ],
-     "q": 6,
-     "r": 0
+     "note": "Lo Stretto di Danimarca. Il risultato 'D' della Tabella Azioni tedesca ci manda a Completare (p.18), e l'obiettivo di N1 e' non lasciarci entrare una TF tedesca (p.17).",
+     "hexes": [
+      {
+       "q": 1,
+       "r": 2,
+       "contact": 0.513
+      },
+      {
+       "q": 1,
+       "r": 3,
+       "contact": 0.376
+      }
+     ]
+    },
+    {
+     "name": "Scapa Flow",
+     "kind": "casella porto britannica",
+     "rect_px": [
+      31,
+      1171,
+      65,
+      1292
+     ],
+     "note": "Casella Porto di Scapa Flow: in N1 i Convogli britannici Completano li' e i Gruppi Rinforzo A e B ci partono (p.17).",
+     "hexes": [
+      {
+       "q": 2,
+       "r": 5,
+       "contact": 0.902
+      }
+     ]
+    },
+    {
+     "name": "Kiel",
+     "kind": "casella porto tedesca",
+     "rect_px": [
+      496,
+      1259,
+      675,
+      1292
+     ],
+     "note": "Casella Porto di Kiel, fuori da questo inserto.",
+     "hexes": [
+      {
+       "q": 5,
+       "r": 3,
+       "contact": 0.913
+      }
+     ]
     }
    ],
    "not_adjacent_edges": [
@@ -2505,67 +3093,31 @@
    ],
    "excluded_near_miss": [
     {
-     "q": 1,
-     "r": 2,
-     "cx": 29.99,
-     "cy": 489.82,
-     "sea_frac": 0.375,
-     "land_frac": 0.009,
-     "box_frac": 0.112,
-     "outside_frac": 0.5,
-     "reason": "poco mare",
-     "needs_check": false
-    },
-    {
-     "q": 2,
+     "q": 6,
      "r": -1,
-     "cx": 341.17,
-     "cy": 17.11,
-     "sea_frac": 0.415,
-     "land_frac": 0.018,
+     "cx": 954.06,
+     "cy": 614.16,
+     "sea_frac": 0.239,
+     "land_frac": 0.761,
      "box_frac": 0.0,
-     "outside_frac": 0.567,
+     "outside_frac": 0.29,
      "reason": "poco mare",
-     "needs_check": false
-    },
-    {
-     "q": 2,
-     "r": 5,
-     "cx": 25.25,
-     "cy": 1261.06,
-     "sea_frac": 0.228,
-     "land_frac": 0.0,
-     "box_frac": 0.094,
-     "outside_frac": 0.679,
-     "reason": "poco mare",
-     "needs_check": false
-    },
-    {
-     "q": 5,
-     "r": 3,
-     "cx": 590.22,
-     "cy": 1294.2,
-     "sea_frac": 0.375,
-     "land_frac": 0.004,
-     "box_frac": 0.107,
-     "outside_frac": 0.513,
-     "reason": "poco mare",
-     "needs_check": false
+     "needs_check": true
     },
     {
      "q": 6,
      "r": 2,
      "cx": 796.1,
      "cy": 1236.14,
-     "sea_frac": 0.232,
-     "land_frac": 0.562,
+     "sea_frac": 0.292,
+     "land_frac": 0.708,
      "box_frac": 0.0,
      "outside_frac": 0.205,
      "reason": "poco mare",
      "needs_check": true
     }
    ],
-   "still_missing": "caselle fuori mappa e loro connessioni, basi aeree, un secondo MapGraph nel motore e il disegno dell'inserto nella GUI"
+   "still_missing": "basi aeree, un secondo MapGraph nel motore e il disegno dell'inserto nella GUI"
   }
  }
 }

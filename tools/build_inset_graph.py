@@ -33,6 +33,12 @@ Quattro categorie, per colore, campionando punti dentro l'esagono:
   terra     l'oliva della terraferma;
   mare      l'azzurro.
 
+Le frazioni si misurano sull'area DI MAPPA, cioe' dentro la cornice, non
+sull'area intera dell'esagono. La parte oltre la cornice non e' terra: non e'
+mappa. Contarla contro l'esagono bocciava mezzo bordo, e (7,1) del Mare del
+Nord - che e' Kiel Bay, e che due frecce "non adiacente" chiamano in causa -
+usciva al 39% di mare invece che all'88%.
+
 Un esagono e' giocabile se e' abbastanza mare. Poi due pulizie topologiche, le
 stesse che `build_map_graph.py` fa sulla mappa grande, perche' i criteri locali
 sbagliano sulle coste frastagliate e quelli topologici no:
@@ -41,6 +47,24 @@ sbagliano sulle coste frastagliate e quelli topologici no:
      staccati sono artefatti del colore;
   2. si riempiono i buchi: un esagono circondato solo da esagoni giocabili e'
      giocabile.
+
+## Porti, punti di interesse, caselle fuori mappa
+
+I pallini PIENI sono porti, i cerchi VUOTI sono punti di interesse: p.16,
+"POINTS OF INTEREST - These points have no effect on game play, except to
+orient the player". Il colore del pallino pieno dice la nazione. Un punto di
+interesse non e' un porto, ma il suo ESAGONO conta lo stesso, perche' la stessa
+pagina permette il Completamento in un esagono di Norvegia con un Convoglio o
+uno Squadrone DD nella TF, e N1 chiede di posare le Mine "in the hexes with Bud
+and Andalsnes".
+
+Le bande colorate sul bordo sono le caselle fuori mappa. Il fascicolo le usa
+davvero: p.18 manda a Completare "in nearest Denmark Strait port hex" e mette
+Murmansk e Kiel nella Tabella dei Porti, p.17 fa Completare a Scapa Flow i
+Convogli britannici di N1 e ci fa partire i Gruppi Rinforzo. Quali esagoni una
+banda designi non e' scritto da nessuna parte: si prendono quelli che la banda
+tocca, che e' l'unica lettura compatibile col "nearest ... port hex" ed e'
+misurabile. La percentuale di contatto resta nel dato.
 
 ## Le frecce "non adiacente"
 
@@ -62,9 +86,9 @@ cartografico. Non si decide qui.
 
 ## Che cosa questo NON fa
 
-Non collega le caselle fuori mappa e non mette le basi aeree. Finche' mancano
-quelle, piu' un secondo MapGraph nel motore e il disegno dell'inserto nella
-GUI, i cinque scenari inserto restano dichiarati non giocabili. La verita'
+Non mette le basi aeree, i sette segnalini B e G. Finche' mancano quelle, piu'
+un secondo MapGraph nel motore e il disegno dell'inserto nella GUI, i cinque
+scenari inserto restano dichiarati non giocabili. La verita'
 indipendente per validarli sono le illustrazioni di schieramento del fascicolo,
 che disegnano i segmenti di Traiettoria iniziali sull'inserto.
 """
@@ -94,6 +118,10 @@ FRAME = (30, 30, 992, 1292)
 # norvegese e le isole scozzesi porterebbero dentro mezze penisole.
 SEA_MIN = 0.45
 
+# Sotto questa frazione visibile dentro la cornice, la cella non e' un esagono
+# ma una scheggia di margine: non entra nemmeno nell'elenco.
+MIN_VISIBLE = 0.15
+
 # I nomi dei porti sono LETTI sull'immagine stampata, non dedotti. La chiave e'
 # la posizione del pallino trovata dal rilevatore; se un pallino resta senza
 # nome o un nome senza pallino il programma si ferma, cosi' una modifica
@@ -103,28 +131,102 @@ SEA_MIN = 0.45
 # sono fitte: il pallino ciano accanto a "KW Kanal" e' KIEL (l'etichetta sta
 # sotto), quello piu' a sinistra e' Wilhelmshaven. Verificato su ritaglio
 # ingrandito.
+# I nomi sono LETTI sull'immagine stampata, non dedotti. La chiave e' la
+# posizione del pallino trovata dal rilevatore; se un pallino resta senza nome o
+# un nome senza pallino il programma si ferma, cosi' una modifica all'immagine o
+# al rilevatore non passa in silenzio con meta' dei punti.
+#
+# ATTENZIONE alla distinzione, che avevo sbagliato al primo giro: i pallini
+# PIENI sono PORTI, i cerchi VUOTI sono PUNTI DI INTERESSE. Fascicolo p.16:
+# "POINTS OF INTEREST - These points have no effect on game play, except to
+# orient the player. For example, in Scenario N1, the player must strive to
+# place mines in the hexes with Bud and Andalsnes". Non sono porti: non ci si
+# Completa in quanto porti, ma il loro ESAGONO e' un bersaglio di gioco, perche'
+# la stessa pagina permette il Completamento in un esagono di Norvegia quando
+# nella TF c'e' un Convoglio o uno Squadrone DD.
+#
+# Il colore del pallino pieno dice la nazione: rosso britannico, ciano tedesco,
+# nero norvegese. Sempre p.16: in questi scenari "Norwegian ports are not
+# connected to port boxes", cioe' le Caselle Porto di Bergen, Trondheim e Narvik
+# sono fuori gioco.
+#
+# Attenzione all'angolo in basso a destra del Mare del Nord, dove le etichette
+# sono fitte: il pallino ciano accanto a "KW Kanal" e' KIEL (l'etichetta sta
+# sotto), quello piu' a sinistra e' Wilhelmshaven. Verificato su ritaglio
+# ingrandito. Sullo stesso inserto "Kiel" e' anche una banda fuori mappa: quella
+# e' la Casella Porto, il pallino e' l'esagono di porto - come sulla mappa
+# grande, dove porto e Casella convivono.
 PORT_NAMES = {
     "map_north_sea": [
-        ((179, 155), "Scapa Flow"),
-        ((38, 545), "Methil"),
-        ((911, 257), "Bergen"),
-        ((861, 495), "Stavanger"),
-        ((827, 565), "Egersund"),
-        ((957, 664), "Kristiansand"),
-        ((882, 1238), "Kiel"),
-        ((658, 1278), "Wilhelmshaven"),
+        ((179, 155), "Scapa Flow", "porto", "UK"),
+        ((38, 545), "Methil", "porto", "UK"),
+        ((911, 257), "Bergen", "porto", "NO"),
+        ((882, 1238), "Kiel", "porto", "GE"),
+        ((658, 1278), "Wilhelmshaven", "porto", "GE"),
+        ((861, 495), "Stavanger", "punto di interesse", "NO"),
+        ((827, 565), "Egersund", "punto di interesse", "NO"),
+        ((957, 664), "Kristiansand", "punto di interesse", "NO"),
     ],
     "map_norwegian_sea": [
-        ((903, 69), "Tromso"),
-        ((866, 192), "Harstad"),
-        ((920, 214), "Narvik"),
-        ((876, 387), "Bodo"),
-        ((865, 774), "Namsos"),
-        ((867, 893), "Trondheim"),
-        ((706, 1021), "Bud"),
-        ((765, 1041), "Andalsnes"),
+        ((920, 214), "Narvik", "porto", "NO"),
+        ((867, 893), "Trondheim", "porto", "NO"),
+        ((903, 69), "Tromso", "punto di interesse", "NO"),
+        ((866, 192), "Harstad", "punto di interesse", "NO"),
+        ((876, 387), "Bodo", "punto di interesse", "NO"),
+        ((865, 774), "Namsos", "punto di interesse", "NO"),
+        ((706, 1021), "Bud", "punto di interesse", "NO"),
+        ((765, 1041), "Andalsnes", "punto di interesse", "NO"),
     ],
 }
+
+# Le caselle fuori mappa: le bande colorate stampate sul bordo della cornice.
+# I rettangoli sono misurati (componenti di colore saturo dentro la cornice),
+# non stimati.
+#
+# A che servono, dal fascicolo:
+#   - p.18, risultato 'D': "COMPLETION ACTION to DENMARK STRAIT ... attempts to
+#     Complete in nearest Denmark Strait port hex". Il plurale e' la ragione per
+#     cui una banda designa ESAGONI, non un punto: gli esagoni che tocca.
+#   - p.18, Tabella dei Porti: Murmansk, Kiel, Trondheim, Narvik. E "create a
+#     new German TF in Kiel".
+#   - p.17 (N1): i Convogli britannici Completano a Scapa Flow, e i Gruppi
+#     Rinforzo A e B partono da li'.
+#   - p.17 (N1), obiettivo: "do not allow a German Task Force to enter the
+#     Denmark Strait".
+#
+# Quali esagoni una banda designi NON e' scritto in nessuna riga del fascicolo:
+# qui si prendono quelli che la banda tocca davvero, che e' l'unica lettura
+# compatibile col "nearest ... port hex" ed e' misurabile. La percentuale di
+# contatto resta nel dato, cosi' la scelta si puo' rigiudicare.
+OFF_MAP_BOXES = {
+    "map_north_sea": [
+        ("Norwegian Sea", (642, 30, 992, 65), "passaggio",
+         "Il Mare di Norvegia, cioe' l'altro inserto."),
+        ("Kiel", (961, 753, 992, 850), "casella porto tedesca",
+         "Casella Porto di Kiel. Sullo stesso inserto Kiel ha anche il suo "
+         "esagono di porto, col pallino ciano."),
+        ("Portsmouth", (30, 1260, 235, 1292), "casella porto britannica",
+         "Casella Porto di Portsmouth."),
+    ],
+    "map_norwegian_sea": [
+        ("Murmansk", (817, 30, 992, 67), "casella porto",
+         "Porto di destinazione della Tabella dei Porti tedesca (p.18)."),
+        ("Denmark Strait", (31, 404, 60, 760), "area di mare",
+         "Lo Stretto di Danimarca. Il risultato 'D' della Tabella Azioni "
+         "tedesca ci manda a Completare (p.18), e l'obiettivo di N1 e' non "
+         "lasciarci entrare una TF tedesca (p.17)."),
+        ("Scapa Flow", (31, 1171, 65, 1292), "casella porto britannica",
+         "Casella Porto di Scapa Flow: in N1 i Convogli britannici Completano "
+         "li' e i Gruppi Rinforzo A e B ci partono (p.17)."),
+        ("Kiel", (496, 1259, 675, 1292), "casella porto tedesca",
+         "Casella Porto di Kiel, fuori da questo inserto."),
+    ],
+}
+
+# Un esagono conta come designato da una banda da questa frazione di contatto
+# in su. Sotto, e' lo sfioramento di un angolo.
+BOX_CONTACT_MIN = 0.10
+
 NAME_TOLERANCE_PX = 12
 
 # Le frecce "non adiacente", lette sulle immagini ingrandite col reticolo
@@ -215,9 +317,9 @@ def name_dots(key, dots):
     l'accoppiamento non e' uno a uno."""
     wanted = list(PORT_NAMES[key])
     named = []
-    for cx, cy, kind in dots:
+    for cx, cy, shape in dots:
         hit = None
-        for i, ((nx, ny), nm) in enumerate(wanted):
+        for i, ((nx, ny), _nm, _role, _nation) in enumerate(wanted):
             if math.hypot(cx - nx, cy - ny) <= NAME_TOLERANCE_PX:
                 hit = i
                 break
@@ -225,11 +327,18 @@ def name_dots(key, dots):
             raise SystemExit("%s: pallino a (%.0f, %.0f) senza nome; "
                              "aggiungilo a PORT_NAMES dopo averlo letto sulla mappa"
                              % (key, cx, cy))
-        named.append({"name": wanted.pop(hit)[1], "kind": kind,
-                      "dot_px": [round(cx, 1), round(cy, 1)]})
+        _pos, name, role, nation = wanted.pop(hit)
+        # Il pallino pieno e' un porto, il cerchio vuoto un punto di interesse:
+        # se il disegno e il ruolo trascritto non concordano, meglio fermarsi.
+        expected = "punto di interesse" if shape == "cerchio" else "porto"
+        if role != expected:
+            raise SystemExit("%s: %s e' trascritto come '%s' ma il pallino e' "
+                             "'%s', cioe' un %s" % (key, name, role, shape, expected))
+        named.append({"name": name, "role": role, "nation": nation,
+                      "shape": shape, "dot_px": [round(cx, 1), round(cy, 1)]})
     if wanted:
         raise SystemExit("%s: nomi senza pallino: %s"
-                         % (key, ", ".join(nm for _p, nm in wanted)))
+                         % (key, ", ".join(n for _p, n, _r, _x in wanted)))
     return sorted(named, key=lambda d: d["name"])
 
 
@@ -301,12 +410,20 @@ def build(key, meta, rgb, overlay_dir=None):
                 & (p[:, 1] >= y0) & (p[:, 1] < y1)
             total = len(p)
             outside_frac = float((~inside_frame).sum()) / total
-            if outside_frac > 0.98:
-                continue
             m = inside_frame
-            sea_frac = float(sea[yi[m], xi[m]].sum()) / total
-            land_frac = float(land[yi[m], xi[m]].sum()) / total
-            box_frac = float(box[yi[m], xi[m]].sum()) / total
+            visible = 1.0 - outside_frac
+            if visible < MIN_VISIBLE:
+                continue
+            # Le frazioni si misurano sull'area DI MAPPA, cioe' dentro la
+            # cornice, non sull'area intera dell'esagono. La parte oltre la
+            # cornice non e' terra: non e' mappa. Contarla contro l'esagono
+            # bocciava mezzo bordo - e (7,1) del Mare del Nord, che e' Kiel Bay
+            # e che due frecce "non adiacente" chiamano in causa, usciva al 39%
+            # di mare invece che all'88%.
+            denom = total * visible
+            sea_frac = float(sea[yi[m], xi[m]].sum()) / denom
+            land_frac = float(land[yi[m], xi[m]].sum()) / denom
+            box_frac = float(box[yi[m], xi[m]].sum()) / denom
             cells[(i - i0, j - j0)] = {
                 "q": i - i0,
                 "r": j - j0,
@@ -345,7 +462,13 @@ def build(key, meta, rgb, overlay_dir=None):
         port["q"], port["r"] = q, r
         if (q, r) in cells:
             cells[(q, r)]["playable"] = True
-            cells[(q, r)]["reason"] = "contiene il porto di %s" % port["name"]
+            cells[(q, r)]["reason"] = (
+                "contiene il porto di %s" % port["name"]
+                if port["role"] == "porto"
+                # p.16: i punti di interesse non fanno nulla di per se', ma il
+                # loro esagono e' un bersaglio - N1 chiede di posare le Mine
+                # "in the hexes with Bud and Andalsnes".
+                else "contiene il punto di interesse di %s" % port["name"])
         else:
             raise SystemExit("%s: il porto di %s cade in (%d,%d), fuori dal "
                              "reticolo enumerato" % (key, port["name"], q, r))
@@ -404,6 +527,37 @@ def build(key, meta, rgb, overlay_dir=None):
     for h in cells.values():
         h["needs_check"] = h["land_frac"] >= 0.20 \
             and abs(h["sea_frac"] - SEA_MIN) < 0.25
+
+    # ---- caselle fuori mappa ----
+    boxes = []
+    for name, rect, kind, note in OFF_MAP_BOXES[key]:
+        bx0, by0, bx1, by1 = rect
+        # Si allarga di mezzo esagono verso l'interno: la banda e' stampata sul
+        # bordo, e cio' che conta e' quali esagoni di mappa le stanno contro.
+        pad = circumradius / 4.0
+        counts = {}
+        for px in np.arange(bx0 - pad, bx1 + pad, 4.0):
+            for py in np.arange(by0 - pad, by1 + pad, 4.0):
+                for qr, h in playable.items():
+                    d = np.array([px, py]) - np.array([h["cx"], h["cy"]])
+                    u = d[0] * math.cos(-th) - d[1] * math.sin(-th)
+                    v = d[0] * math.sin(-th) + d[1] * math.cos(-th)
+                    inr = circumradius * math.sqrt(3.0) / 2.0
+                    if abs(v) <= inr and abs(u) <= circumradius \
+                            and abs(v) <= math.sqrt(3.0) * (circumradius - abs(u)):
+                        counts[qr] = counts.get(qr, 0) + 1
+                        break
+        total_hits = sum(counts.values())
+        contacts = []
+        for (q, r), n in sorted(counts.items(), key=lambda kv: -kv[1]):
+            share = n / float(total_hits) if total_hits else 0.0
+            if share >= BOX_CONTACT_MIN:
+                contacts.append({"q": q, "r": r, "contact": round(share, 3)})
+        if not contacts:
+            raise SystemExit("%s: la casella %s non tocca nessun esagono giocabile"
+                             % (key, name))
+        boxes.append({"name": name, "kind": kind, "rect_px": list(rect),
+                      "note": note, "hexes": contacts})
 
     # ---- frecce "non adiacente" ----
     edges = []
@@ -467,6 +621,17 @@ def build(key, meta, rgb, overlay_dir=None):
             if live:
                 draw.text((c[0] - 22, c[1] - 6), "%d,%d" % (h["q"], h["r"]),
                           fill=(0, 90, 0))
+        for b in boxes:
+            draw.rectangle(b["rect_px"], outline=(255, 140, 0), width=5)
+            bx0, by0, bx1, by1 = b["rect_px"]
+            draw.text((bx0 + 6, by0 - 16), "%s -> %s"
+                      % (b["name"], " ".join("%d,%d" % (c["q"], c["r"])
+                                             for c in b["hexes"])),
+                      fill=(255, 140, 0))
+            for c in b["hexes"]:
+                h = playable[(c["q"], c["r"])]
+                draw.line([((bx0 + bx1) / 2.0, (by0 + by1) / 2.0),
+                           (h["cx"], h["cy"])], fill=(255, 140, 0), width=4)
         for e in edges:
             ca = np.array([cells[(e["aq"], e["ar"])]["cx"],
                            cells[(e["aq"], e["ar"])]["cy"]]) \
@@ -482,9 +647,10 @@ def build(key, meta, rgb, overlay_dir=None):
                       % (e["aq"], e["ar"], e["bq"], e["br"]), fill=(0, 0, 255))
         for port in ports:
             px, py = port["dot_px"]
-            draw.ellipse([px - 9, py - 9, px + 9, py + 9], outline=(255, 0, 255))
+            col = (255, 0, 255) if port["role"] == "porto" else (0, 160, 160)
+            draw.ellipse([px - 9, py - 9, px + 9, py + 9], outline=col, width=2)
             draw.text((px + 11, py - 5), "%s (%d,%d)"
-                      % (port["name"], port["q"], port["r"]), fill=(180, 0, 180))
+                      % (port["name"], port["q"], port["r"]), fill=col)
         img.save(os.path.join(overlay_dir, "hexes_%s.png" % key))
 
     return {
@@ -499,12 +665,13 @@ def build(key, meta, rgb, overlay_dir=None):
         "hex_count": len(ordered),
         "needs_check_count": sum(1 for h in ordered if h["needs_check"]),
         "hexes": ordered,
-        "ports": ports,
+        "ports": [p for p in ports if p["role"] == "porto"],
+        "points_of_interest": [p for p in ports if p["role"] != "porto"],
+        "off_map_boxes": boxes,
         "not_adjacent_edges": edges,
         "excluded_near_miss": dropped,
-        "still_missing": ("caselle fuori mappa e loro connessioni, basi aeree, "
-                          "un secondo MapGraph nel motore e il disegno "
-                          "dell'inserto nella GUI"),
+        "still_missing": ("basi aeree, un secondo MapGraph nel motore e il "
+                          "disegno dell'inserto nella GUI"),
     }
 
 
@@ -521,14 +688,21 @@ def main():
         g = build(key, meta, rgb, args.overlay_dir)
         out[key] = g
         coastal = sum(1 for h in g["hexes"] if h["coastal"])
-        print("%-38s %3d esagoni giocabili, %d costieri, %d porti, "
-              "%d frecce non adiacente, %d da verificare, %d scartati per un soffio"
+        print("%-38s %3d esagoni, %d costieri, %d porti, "
+              "%d punti, %d caselle, %d frecce, %d da verificare, %d scartati"
               % (g["name"], g["hex_count"], coastal, len(g["ports"]),
+                 len(g["points_of_interest"]), len(g["off_map_boxes"]),
                  len(g["not_adjacent_edges"]), g["needs_check_count"],
                  len(g["excluded_near_miss"])))
         for p_ in g["ports"]:
-            print("      porto %-14s (%2d,%2d)  pallino %s"
-                  % (p_["name"], p_["q"], p_["r"], p_["kind"]))
+            print("      porto %-14s (%2d,%2d)  %s" % (p_["name"], p_["q"], p_["r"], p_["nation"]))
+        for p_ in g["points_of_interest"]:
+            print("      punto %-14s (%2d,%2d)" % (p_["name"], p_["q"], p_["r"]))
+        for b_ in g["off_map_boxes"]:
+            print("      casella %-16s %-28s -> %s"
+                  % (b_["name"], b_["kind"],
+                     ", ".join("(%d,%d) %.0f%%" % (c["q"], c["r"], c["contact"] * 100)
+                               for c in b_["hexes"])))
         for e_ in g["not_adjacent_edges"]:
             print("      non adiacente (%2d,%2d)|(%2d,%2d)  %s%s"
                   % (e_["aq"], e_["ar"], e_["bq"], e_["br"], e_["where"],
