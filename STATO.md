@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **2750 verifiche, 18 suite, headless.**
+Tutti i test passano: **2781 verifiche, 18 suite, headless.**
 
 ---
 
@@ -228,6 +228,20 @@ Tutti i test passano: **2750 verifiche, 18 suite, headless.**
   come una ricerca quello che e' un passaggio; e una decisione senza effetto
   lasciava l'Iniziativa al bot senza accodare niente, cioe' fermava la partita
   in attesa di un giocatore che non doveva muovere.
+- **N4 e' il primo dei dodici a essere ripreso in mano.** La sua Tabella delle
+  Azioni e i modificatori coincidevano gia' col fascicolo; mancava tutto il
+  resto. Le sei procedure erano segnaposto che rimandavano a un dump grezzo e
+  sono ora trascritte per esteso, e **la Tabella della Reazione Norvegese
+  (p.30) e' stata aggiunta**: c'era nel fascicolo e non nei dati. Nel codice
+  sono entrate le clausole che il fascicolo stampa e il motore ignorava: il
+  primo R4 e' diverso dai successivi (prima si rifacevano sempre TF4 e TF5,
+  invece di far Completare a Narvik quelle gia' mandate li'), TF5 imbarca il CL
+  francese previsto e non un secondo incrociatore britannico, TF6 entra a
+  Methil se nessun DD tedesco ha Completato a Trondheim, il risultato Convoglio
+  diventa un R4 quando R4 e' gia' uscito, la X tira PARI/DISPARI dopo un R4 e
+  sceglie la TF con Forbes. E soprattutto la X **chiude lo scenario quando non
+  c'e' bersaglio**: e' il "(or possibly by Action Table result 'X')" del
+  riquadro The End, e senza restava una partita che non finiva.
 - **Quattro scenari solitari si giocavano sulla mappa sbagliata.** N1, N2, N3
   e N5 usano una MAPPA INSERTO - Mare di Norvegia o Mare del Nord - come BL3,
   che lo dichiarava. Loro no: piazzavano le Task Force su porti della Mappa

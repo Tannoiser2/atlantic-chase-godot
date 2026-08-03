@@ -75,6 +75,10 @@ func run() -> void:
 	test_solo_ai_a1_c_routes_to_named_port()
 	test_solo_ai_has_policy_for_action_codes()
 	test_solo_norwegian_completion_ports()
+	test_solo_ai_n4_r4_first_then_second()
+	test_solo_ai_n4_convoy_becomes_r4_after_r4()
+	test_solo_ai_n4_x_ends_the_scenario_without_a_target()
+	test_n4_norwegian_reaction_table_is_transcribed()
 	test_fueling()
 	test_bl1_fueling_trigger_conditions()
 	test_solo_ai_bl1_aux_tables_apply()
@@ -1588,3 +1592,132 @@ func test_solo_battle_view_preassigns_both_sides() -> void:
 		"quando arriva il suo turno il bot muove immediatamente")
 	true_(view._maneuvered.has(hipper), "e non puo' muovere la stessa nave due volte")
 	view.free()
+
+
+## N4, AC Solo scenarios 2022 pp.29-30, lette sulle pagine renderizzate.
+## Il fascicolo stampa DUE procedure sotto la lettera R4 e le fa dipendere da
+## quante volte R4 e' gia' uscito; altre due procedure - Convoglio e X -
+## guardano lo stesso conto. Prima si eseguiva sempre la prima, quindi al
+## secondo R4 il britannico ricreava TF4 e TF5 invece di far Completare a
+## Narvik quelle che aveva gia' mandato li'.
+func test_solo_ai_n4_r4_first_then_second() -> void:
+	_begin("AI solitaria N4: primo R4 e successivi")
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("N4 Operazione Weser (nord & sud)")
+	var st := GameState.new(graph, 3)
+	st.apply_dict(scenario.to_state_dict())
+	var british_before := st.forces_of(TaskForce.Side.ROYAL_NAVY).size()
+
+	var first := SoloAI.execute_code("R4", st, graph, engine,
+		scenario.port_control(), TaskForce.Side.ROYAL_NAVY)
+	eq(int(st.solo_counters.get("n4_r4_results", 0)), 1, "il primo R4 e' contato")
+	var after_first := st.forces_of(TaskForce.Side.ROYAL_NAVY)
+	true_(after_first.size() >= british_before + 3,
+		"il primo R4 crea TF4, TF5 e TF6 (nessun DD tedesco ha Completato a Trondheim)")
+	true_(_forces_include_ship(after_first, "Furious"),
+		"TF5 contiene la portaerei Furious, come stampato")
+	# p.30: TF5 e' "Furious (CV), French CL, and a British CA". Il CL francese
+	# non c'era: al suo posto c'era un secondo incrociatore britannico.
+	var has_french := false
+	for tf in after_first:
+		for ship in tf.ships:
+			if ship.nation == "FR":
+				has_french = true
+	true_(has_french, "TF5 imbarca il CL francese previsto dal fascicolo")
+	true_(_solo_ai_log_contains(first, "TF4 verso Narvik"), "TF4 punta a Narvik")
+	true_(_solo_ai_log_contains(first, "TF6 verso Trondheim"), "TF6 punta a Trondheim")
+
+	# Secondo R4: nessuna nuova Task Force, si Completa con quella che c'e'.
+	var count_before := st.forces_of(TaskForce.Side.ROYAL_NAVY).size()
+	var second := SoloAI.execute_code("R4", st, graph, engine,
+		scenario.port_control(), TaskForce.Side.ROYAL_NAVY)
+	eq(int(st.solo_counters.get("n4_r4_results", 0)), 2, "anche il secondo e' contato")
+	eq(st.forces_of(TaskForce.Side.ROYAL_NAVY).size(), count_before,
+		"il secondo R4 non crea altre Task Force")
+	true_(_solo_ai_log_contains(second, "R4 numero 2"),
+		"e il registro dice che e' il secondo")
+
+
+## p.29: "If the R4 Action Table result was garnered previously, treat this as
+## 'R4' instead." Il risultato Convoglio non lo faceva.
+func test_solo_ai_n4_convoy_becomes_r4_after_r4() -> void:
+	_begin("AI solitaria N4: Convoglio diventa R4 dopo un R4")
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("N4 Operazione Weser (nord & sud)")
+	var st := GameState.new(graph, 4)
+	st.apply_dict(scenario.to_state_dict())
+	var plain := SoloAI.execute_code("Conv", st, graph, engine,
+		scenario.port_control(), TaskForce.Side.ROYAL_NAVY)
+	false_(_solo_ai_log_contains(plain, "diventa un R4"),
+		"senza R4 precedenti il Convoglio resta un Convoglio")
+	st.solo_counters["n4_r4_results"] = 1
+	var redirected := SoloAI.execute_code("Conv", st, graph, engine,
+		scenario.port_control(), TaskForce.Side.ROYAL_NAVY)
+	true_(_solo_ai_log_contains(redirected, "diventa un R4"),
+		"dopo un R4 il risultato Convoglio diventa un R4")
+
+
+## p.30, PORTARE IN BATTAGLIA: due clausole stampate mancavano. Il rimando a R4
+## col dado PARI, e "If no target, the scenario ends" - che e' poi il
+## "(or possibly by Action Table result 'X')" del riquadro The End.
+func test_solo_ai_n4_x_ends_the_scenario_without_a_target() -> void:
+	_begin("AI solitaria N4: la X senza bersaglio chiude lo scenario")
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("N4 Operazione Weser (nord & sud)")
+	var st := GameState.new(graph, 5)
+	st.apply_dict(scenario.to_state_dict())
+	# Tolgo ogni TF tedesca: e' la condizione stampata.
+	for tf in st.forces_of(TaskForce.Side.KRIEGSMARINE):
+		st.remove_task_force(tf)
+	var out := SoloAI.execute_code("X", st, graph, engine,
+		scenario.port_control(), TaskForce.Side.ROYAL_NAVY)
+	true_(bool(out.get("end_scenario", false)), "la X dichiara la fine")
+	true_(st.solo_ended, "e lo stato risulta concluso")
+	true_(st.solo_end_reason.contains("Battaglia"),
+		"il motivo cita la mancanza di bersagli: %s" % st.solo_end_reason)
+
+	# Con R4 gia' uscito la X tira un dado: PARI la trasforma in R4.
+	var st2 := GameState.new(graph, 6)
+	st2.apply_dict(scenario.to_state_dict())
+	st2.solo_counters["n4_r4_results"] = 1
+	st2.rng.push_forced([2])
+	var even := SoloAI.execute_code("X", st2, graph, engine,
+		scenario.port_control(), TaskForce.Side.ROYAL_NAVY)
+	true_(_solo_ai_log_contains(even, "PARI: la X diventa un R4"),
+		"col dado PARI la X diventa un R4")
+	var st3 := GameState.new(graph, 7)
+	st3.apply_dict(scenario.to_state_dict())
+	st3.solo_counters["n4_r4_results"] = 1
+	st3.rng.push_forced([3])
+	var odd := SoloAI.execute_code("X", st3, graph, engine,
+		scenario.port_control(), TaskForce.Side.ROYAL_NAVY)
+	false_(_solo_ai_log_contains(odd, "PARI: la X diventa un R4"),
+		"col dado DISPARI resta una X")
+
+
+## La Reazione Norvegese di N4 (p.30) non era trascritta affatto: la tabella
+## c'era nel fascicolo e non nei dati.
+func test_n4_norwegian_reaction_table_is_transcribed() -> void:
+	_begin("N4: Reazione Norvegese trascritta")
+	var o := SoloOpponent.load_for("N4 Operazione Weser (nord & sud)")
+	var t: SoloTable = o.table("norwegian_reaction")
+	ne(t, null, "la tabella della Reazione Norvegese esiste")
+	eq(t.rows.size(), 2, "due righe: TF britannica nell'esagono si' e no")
+	# Le colonne stampate vanno da "1 o meno" a "7-8": la prima e l'ultima si
+	# raggiungono solo coi modificatori, quindi la riga parte da zero.
+	eq(String(t.read(1, 1)["code"]), "annullato",
+		"con TF britannica e 1 il Completamento e' annullato")
+	eq(String(t.read(1, 3)["code"]), "due_colpi", "con 3-4 sono due Colpi")
+	eq(String(t.read(1, 5)["code"]), "un_colpo", "con 5-6 e' un Colpo")
+	eq(String(t.read(1, 7)["code"]), "nessuno", "con 7-8 nessun effetto")
+	eq(String(t.read(0, 2)["code"]), "un_colpo",
+		"senza TF britannica il 2 e' gia' un Colpo")
+	eq(String(t.read(0, 7)["code"]), "base_aerea",
+		"senza TF britannica il 7-8 piazza una base aerea tedesca")
+	eq(t.modifier_total(["uno o piu' BC, CA o CL tedeschi sono nell'esagono"]), 1,
+		"il modificatore delle navi da guerra nell'esagono vale +1")
+	eq(t.modifier_total(["il marcatore di base aerea britannica e' nell'esagono di Completamento"]),
+		-2, "la base aerea britannica nell'esagono vale -2")
+	for code in ["nessuno", "un_colpo", "due_colpi", "annullato", "base_aerea"]:
+		ne(String(t.legend.get(code, "")), "",
+			"la procedura '%s' e' trascritta" % code)

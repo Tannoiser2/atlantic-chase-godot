@@ -2,7 +2,7 @@
  "_scenario": "N4 Operazione Weser (nord & sud)",
  "_source": "Fascicolo Scenari in Solitario, seconda edizione INGLESE (AC_Solo_scenarios_2022.pdf), pp.28-31. Trascritta a mano da render/testo del PDF aggiornato.",
  "_role": "Il giocatore e' il TEDESCO; le tabelle rappresentano l'avversario BRITANNICO.",
- "_status": "Tabelle dello scenario verificate contro la seconda edizione inglese 2022. Dove un dato non e' calibrabile o manca, resta dichiarato invece di essere inventato.",
+ "_status": "Tabella delle Azioni e Reazione Norvegese trascritte da AC_Solo_scenarios_2022 pp.28-30, lette sulle pagine renderizzate. Mine, basi aeree e forze furtive Sottomarino restano pedine non modellate: i risultati che le richiedono sono dichiarati, non approssimati.",
  "tables": [
   {
    "id": "actions",
@@ -76,12 +76,83 @@
     }
    ],
    "legend": {
-    "C": "Procedura 'C' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore.",
-    "Conv": "Procedura 'Conv' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore.",
-    "Mine": "Procedura 'Mine' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore.",
-    "R4": "Procedura 'R4' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore.",
-    "SA": "Procedura 'SA' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore.",
-    "X": "Procedura 'X' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore."
+    "C": "AZIONE DI COMPLETAMENTO verso...? -- Scelta: una TF britannica con un Convoglio. Se non ce n'e', una TF con una nave Danneggiata. Se non ce n'e', esegui invece un Attacco Aereo (con Meteo Cattivo o senza TF tedesche a portata, scegli la TF britannica con la Traiettoria piu' LUNGA). -- Azione: la TF scelta esegue un Completamento. Puo' dover fare prima un'azione Traiettoria EVITANDO i segnalini Informazioni, se possibile, sulla rotta piu' DIRETTA. -- Completamento dove? Dipende dalla TF: se contiene un Convoglio Completa a Methil; tutte le altre tentano il Completamento a Scapa Flow. -- Scorrere del Tempo: rimuovi i segmenti piu' LONTANI dal porto in cui sta tentando di Completare. -- Dopo il Completamento: Incidente Internazionale.",
+    "Conv": "CONVOGLIO. -- Scelta: la TF britannica con un Convoglio. Se il risultato R4 e' gia' uscito in precedenza, trattalo invece come un 'R4'. Se non c'e' nessuna TF britannica con un Convoglio, creane una nuova (Stazione) a Bergen, con dentro un Convoglio. -- Azione: la TF scelta esegue un Completamento a Methil. Puo' dover fare prima un'azione Traiettoria EVITANDO i segnalini Informazioni, se possibile, sulla rotta piu' DIRETTA. Se il Completamento e' impedito dalle Informazioni o dalla lunghezza della Traiettoria, esegue invece un Passare (con il suo Scorrere del Tempo). -- Scorrere del Tempo: rimuovi i segmenti piu' LONTANI da Methil. -- Dopo il Completamento: Incidente Internazionale.",
+    "Mine": "IL BRITANNICO POSA MINE O STABILISCE UNA BASE AEREA. -- Scelta: si tira un dado per l'esagono: 1 Bergen, 2-3 Trondheim, 4-6 Narvik. -- Azione: se l'esagono scelto non ha una forza furtiva Mine britannica, piazzane una (attacca segnalini Informazioni ai segmenti delle TF tedesche in quell'esagono). Poi Incidente Internazionale. -- Se ha gia' una forza Mine, quella forza esegue un Attacco Furtivo contro una TF tedesca NELL'esagono. Se non c'e' nessuna TF tedesca nell'esagono, o se l'attacco non e' eseguibile, piazza un marcatore di base aerea britannica nell'esagono, poi Incidente Internazionale. Se nell'esagono c'e' gia' un marcatore di base aerea (britannica o tedesca), piazza invece un segnalino Contatto sul bersaglio: attaccalo a una Stazione o a un segmento tedesco NELL'esagono scelto oppure nel piu' VICINO a quell'esagono; se piu' TF tedesche sono ugualmente vicine, attaccalo a tutte. Poi Incidente Internazionale. -- Marcatore di base aerea: si rimuove quando un Convoglio o un DD tedesco Completa con successo in quell'esagono.",
+    "R4": "OPERAZIONE R4. Il britannico lancia un'operazione per occupare la Norvegia. L'effetto dipende da quante volte R4 e' gia' uscito. -- PRIMO R4: crea due nuove Task Force. TF4 a Clyde/Liverpool (Convoglio e 1 CA). TF5 a Scapa Flow (Furious, un CL francese e un CA britannico). Se un DD Squadron tedesco non ha ancora Completato a Trondheim, crea una terza TF britannica a Methil (TF6 - Convoglio). -- Azioni: TF4 e TF5 eseguono un'azione Traiettoria verso Narvik. TF6, se in gioco, verso Trondheim. Prendono la rotta piu' DIRETTA evitando i segnalini Informazioni se possibile. -- Poi: TF6 esegue un Completamento a Trondheim, poi Incidente Internazionale. Se TF6 non e' in gioco, o non e' idonea per lunghezza della Traiettoria o segnalini Informazioni, TF4 esegue un Completamento a Narvik; se neanche questo e' idoneo il britannico esegue un Passare e TF4 fa Scorrere del Tempo rimuovendo i segmenti piu' LONTANI da Narvik. Poi Incidente Internazionale. -- SECONDO R4 E OLTRE: scegli una TF britannica con un Convoglio; se ce n'e' piu' d'una, quella a Narvik. Se non ci sono Convogli in gioco, una TF con una CV. Se non ce n'e', trattalo invece come una 'X'. -- Azione: se ha un Convoglio, la TF scelta Completa a Narvik; se una TF britannica ha gia' Completato a Narvik, tenta invece a Scapa Flow. Se la TF scelta ha una CV, esegue un Attacco Aereo; con Meteo Cattivo esegue invece un Completamento a Scapa Flow. La TF scelta prende la rotta piu' DIRETTA, senza riguardo per i segnalini Informazioni. -- Scorrere del Tempo: rimuovi i segmenti piu' VICINI a Scapa Flow.",
+    "SA": "ATTACCO FURTIVO. -- PRIMO risultato SA: il britannico esegue una Ricognizione Furtiva: piazza un Sottomarino nell'esagono di Bergen e attacca segnalini Informazioni a tutti i segmenti di Traiettoria tedeschi in quell'esagono. -- SECONDO risultato SA e oltre: scegli la forza furtiva Sottomarino britannica. Se non e' in gioco, scegli la base aerea britannica (o una TF con CV) piu' VICINA a una TF tedesca. -- Azione: il Sottomarino esegue un Attacco Furtivo; se dopo il britannico mantiene l'Iniziativa, esegue un'azione Segnalazione contro il segnalino Informazioni tedesco piu' VICINO a Bergen. Se non c'e' bersaglio, il britannico esegue un Passare Tutto. Se nessuna forza Sottomarino e' in gioco, la base aerea esegue un Attacco Aereo. Con Meteo Cattivo o senza bersagli idonei, il britannico esegue un Passare Tutto.",
+    "X": "PORTARE IN BATTAGLIA. -- Se il risultato R4 e' gia' uscito in precedenza, tira un dado: con PARI trattalo come un R4, con DISPARI come una X. -- Scelta: la TF britannica con Forbes. Se Forbes e' morto, ha gia' usato il suo beneficio o non e' in gioco, scegli la TF del Renown, oppure la TF con la somma dei Valori dei Cannoni piu' alta. Se non c'e' nessuna TF britannica, creane una nuova a Scapa Flow con due BB lente (ed e' quella scelta). -- Azione: per prima cosa rimuovi tutte le navi britanniche Danneggiate; se cosi' una TF resta vuota, toglila dal gioco. Poi la TF scelta agisce per portare in Battaglia la TF tedesca piu' VICINA a Narvik; se il bersaglio e' una Traiettoria, punta al suo segmento piu' VICINO, non necessariamente quello piu' vicino a Narvik. SE NON C'E' BERSAGLIO, LO SCENARIO FINISCE. -- Scorrere del Tempo: rimuovi i segmenti piu' LONTANI dall'esagono bersaglio, cioe' quello in cui il britannico cerca la Battaglia."
+   },
+   "note": "Si usa quando l'Iniziativa e' britannica. La riga si sceglie contando le azioni di Completamento tedesche riuscite. Le colonne stampate sono '1 o meno', 2, 3, 4, 5, '6 o piu''. Trascritta da AC_Solo_scenarios_2022 p.29, letta sulla pagina renderizzata a risoluzione nativa."
+  },
+  {
+   "id": "norwegian_reaction",
+   "title": "Reazione Norvegese: Completamenti tedeschi",
+   "note": "AC_Solo_scenarios_2022 p.30. Si tira quando un Convoglio o un DD tedesco esegue un Completamento riuscito NELL'esagono di Bergen, Trondheim o Narvik. La riga dice se nell'esagono c'e' una TF britannica. La colonna 0 e la colonna 7-8 si raggiungono solo coi modificatori, quindi la riga parte da roll_min 0.",
+   "rows": [
+    {
+     "label": "TF britannica nell'esagono: SI",
+     "min": 1,
+     "max": 1,
+     "roll_min": 0,
+     "cells": [
+      "annullato",
+      "annullato",
+      "due_colpi",
+      "due_colpi",
+      "un_colpo",
+      "un_colpo",
+      "nessuno",
+      "nessuno",
+      "nessuno"
+     ]
+    },
+    {
+     "label": "TF britannica nell'esagono: NO",
+     "min": 0,
+     "max": 0,
+     "roll_min": 0,
+     "cells": [
+      "annullato",
+      "annullato",
+      "un_colpo",
+      "un_colpo",
+      "un_colpo",
+      "nessuno",
+      "nessuno",
+      "base_aerea",
+      "base_aerea"
+     ]
+    }
+   ],
+   "modifiers": [
+    {
+     "label": "un Convoglio o un DD tedesco ha gia' Completato in Norvegia",
+     "value": 1
+    },
+    {
+     "label": "uno o piu' BC, CA o CL tedeschi sono nell'esagono",
+     "value": 1
+    },
+    {
+     "label": "un marcatore di base aerea britannica e' in Norvegia",
+     "value": -1
+    },
+    {
+     "label": "il marcatore di base aerea britannica e' nell'esagono di Completamento",
+     "value": -2
+    },
+    {
+     "label": "una o piu' Stazioni TF britanniche sono nell'esagono",
+     "value": -1
+    }
+   ],
+   "legend": {
+    "nessuno": "Nessun effetto aggiuntivo. NON e' una Reazione Aggressiva.",
+    "un_colpo": "Il Convoglio o il DD subisce un Colpo. E' una Reazione Aggressiva.",
+    "due_colpi": "Il Convoglio o il DD subisce due Colpi. Puoi dirottare uno dei due Colpi su un'altra nave tedesca nell'esagono. E' una Reazione Aggressiva.",
+    "annullato": "Il Completamento e' ANNULLATO. Il Convoglio o il DD tedesco subisce due Colpi e da quel momento puo' Completare solo a Kiel o Wilhelmshaven. E' una Reazione Aggressiva. L'Iniziativa passa al britannico.",
+    "base_aerea": "Se non ce n'e' gia' una in Norvegia, piazza un marcatore di base aerea TEDESCA nell'esagono. Rimuovi dalla Norvegia tutti i marcatori di base aerea britannici, se ce ne sono. Da quel momento non si possono piu' piazzare marcatori di base aerea britannici in Norvegia. NON e' una Reazione Aggressiva."
    }
   }
  ],

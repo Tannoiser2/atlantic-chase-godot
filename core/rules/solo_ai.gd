@@ -823,6 +823,12 @@ static func _n4(code: String, state: GameState, graph: MapGraph,
 			return _complete_or_route_to_port(state, graph, port_control, tf_c, port,
 				"Solitario AI N4: Completamento britannico")
 		"CONV":
+			# p.29: "If the R4 Action Table result was garnered previously,
+			# treat this as 'R4' instead."
+			if _n4_r4_count(state) > 0:
+				var as_r4 := _n4_r4(state, graph, engine, port_control, side)
+				as_r4["log"].append("Solitario AI N4: R4 e' gia' uscito, quindi il risultato Convoglio diventa un R4.")
+				return as_r4
 			var convoy := _shortest_force_with_convoy(state, side)
 			if convoy == null:
 				convoy = _create_force_at(state, graph, side, "Bergen",
@@ -842,8 +848,44 @@ static func _n4(code: String, state: GameState, graph: MapGraph,
 			no["pass_initiative"] = true
 			return no
 		"X":
-			return _n4_x(state, graph, engine, side)
+			return _n4_x(state, graph, engine, port_control, side)
 	return _air_or_attack(state, graph, engine, side)
+
+
+## Quante volte e' gia' uscito il risultato R4 di N4. Tre procedure diverse
+## dipendono da questo conto - R4 stesso, Convoglio e X - quindi il contatore
+## e' uno solo e sta nello stato, che e' anche l'unico posto in cui sopravvive
+## a un salvataggio.
+static func _n4_r4_count(state: GameState) -> int:
+	return int(state.solo_counters.get("n4_r4_results", 0))
+
+
+static func _n4_note_r4(state: GameState) -> int:
+	var n := _n4_r4_count(state) + 1
+	state.solo_counters["n4_r4_results"] = n
+	return n
+
+
+## AC Solo scenarios 2022 p.30, primo R4: "If a German DD Squadron has not yet
+## completed in Trondheim, create a third new British TF in Methil".
+static func _n4_german_dd_completed_at(state: GameState, port_name: String) -> bool:
+	for tf in state.task_forces:
+		if tf.side != TaskForce.Side.KRIEGSMARINE or not tf.completed:
+			continue
+		if tf.completed_port != port_name:
+			continue
+		for ship_name_v: Variant in tf.completed_ships:
+			if String(ship_name_v).contains("DD"):
+				return true
+	return false
+
+
+static func _n4_british_completed_at(state: GameState, port_name: String) -> bool:
+	for tf in state.task_forces:
+		if tf.side == TaskForce.Side.ROYAL_NAVY and tf.completed \
+				and tf.completed_port == port_name:
+			return true
+	return false
 
 
 static func _a1(code: String, state: GameState, graph: MapGraph,
@@ -1541,36 +1583,144 @@ static func _n3_sr(state: GameState, graph: MapGraph, side: int) -> Dictionary:
 	return out
 
 
+## OPERAZIONE R4 (p.30). Il fascicolo stampa due procedure diverse sotto la
+## stessa lettera, e quale si applichi dipende da quante volte R4 e' gia'
+## uscito. La versione precedente eseguiva sempre la prima: alla seconda uscita
+## ricreava daccapo TF4 e TF5, invece di far Completare a Narvik quelle che
+## aveva gia' mandato li'.
 static func _n4_r4(state: GameState, graph: MapGraph,
 		engine: ActionEngine, port_control: Dictionary, side: int) -> Dictionary:
+	var occurrence := _n4_note_r4(state)
+	if occurrence > 1:
+		return _n4_r4_again(state, graph, engine, port_control, side, occurrence)
+
+	var used := _ship_names_in_play(state)
 	var tf4 := _create_force_at(state, graph, side, "Liverpool",
 		["Convoy x3", "Sheffield"], false)
-	var tf5 := _create_force_at(state, graph, side, "Scapa Flow",
-		["Furious", "Belfast", "Birmingham"], false)
+	# p.30: TF5 e' "Furious (CV), French CL, and a British CA". Il CL francese
+	# mancava del tutto, e al suo posto c'era un secondo CA britannico.
+	var french_cl := _make_available_ship_from_pool("CL",
+		{"CL": ["G Leygues", "Gloire", "Montcalm"]}, used)
+	var tf5_ships: Array[String] = ["Furious"]
+	if french_cl != null:
+		tf5_ships.append(french_cl.name)
+	tf5_ships.append("Belfast")
+	var tf5 := _create_force_at(state, graph, side, "Scapa Flow", tf5_ships, false)
+
+	var out := _empty("Solitario AI N4 - primo R4: crea le Task Force previste dal fascicolo.")
+	if french_cl == null:
+		out["log"].append("Solitario AI N4: nessun CL francese disponibile nel ruolino; TF5 entra senza.")
 	var r4 := _route_toward_hex(state, graph, tf4, _port_hex(graph, "Narvik"),
 		"Solitario AI N4: R4 TF4 verso Narvik")
 	var r5 := _route_toward_hex(state, graph, tf5, _port_hex(graph, "Narvik"),
 		"Solitario AI N4: R4 TF5 verso Narvik")
-	var out := _empty("Solitario AI N4: primo R4 crea le TF britanniche previste.")
-	out["ok"] = bool(r4.get("ok", false)) or bool(r5.get("ok", false))
-	out["pass_initiative"] = true
 	out["log"].append_array(r4.get("log", []))
 	out["log"].append_array(r5.get("log", []))
-	return out
+
+	# "If a German DD Squadron has not yet completed in Trondheim, create a
+	# third new British TF in Methil (TF6 - Convoy)." Poi e' TF6 a Completare
+	# a Trondheim, e solo se non c'e' tocca a TF4 a Narvik.
+	var tf6: TaskForce = null
+	if not _n4_german_dd_completed_at(state, "Trondheim"):
+		tf6 = _create_force_at(state, graph, side, "Methil", ["Convoy x3"], false)
+		var r6 := _route_toward_hex(state, graph, tf6, _port_hex(graph, "Trondheim"),
+			"Solitario AI N4: R4 TF6 verso Trondheim")
+		out["log"].append_array(r6.get("log", []))
+	else:
+		out["log"].append("Solitario AI N4: un DD tedesco ha gia' Completato a Trondheim, quindi TF6 non entra.")
+
+	var completing := tf6 if tf6 != null else tf4
+	var destination := "Trondheim" if tf6 != null else "Narvik"
+	var completion := _attempt_completion_at_port(graph, port_control, completing,
+		destination, "Solitario AI N4 - R4")
+	completion["log"] = (out["log"] as Array) + (completion["log"] as Array)
+	completion["active"] = completing
+	return completion
 
 
+## SECONDO R4 e oltre (p.30): non si creano piu' Task Force, si porta a casa
+## quello che si e' mandato in Norvegia.
+static func _n4_r4_again(state: GameState, graph: MapGraph,
+		engine: ActionEngine, port_control: Dictionary, side: int,
+		occurrence: int) -> Dictionary:
+	var convoy := _shortest_force_with_convoy(state, side)
+	if convoy != null:
+		# "If a British TF already successfully completed in Narvik, it will
+		# attempt to complete in Scapa Flow instead."
+		var port := "Scapa Flow" if _n4_british_completed_at(state, "Narvik") \
+			else "Narvik"
+		var done := _complete_or_route_to_port(state, graph, port_control, convoy,
+			port, "Solitario AI N4 - R4 numero %d: Convoglio verso %s"
+				% [occurrence, port])
+		return done
+	var carrier := _nearest_force_with_type(state, side, "CV",
+		_enemy_center(state, side))
+	if carrier == null:
+		var as_x := _n4_x(state, graph, engine, port_control, side)
+		as_x["log"].append("Solitario AI N4: nessun Convoglio ne' CV in gioco: R4 diventa una X.")
+		return as_x
+	if state.weather == TimeLapse.Weather.BAD:
+		return _complete_or_route_to_port(state, graph, port_control, carrier,
+			"Scapa Flow",
+			"Solitario AI N4 - R4 numero %d: Meteo Cattivo, la CV rientra a Scapa Flow"
+				% occurrence)
+	var air := _legal_action_for(state, engine, "AIR_STRIKE", carrier,
+		_best_enemy_target(state, side, carrier))
+	if bool(air["ok"]):
+		air["log"].append("Solitario AI N4 - R4 numero %d: Attacco Aereo dalla CV."
+			% occurrence)
+		return air
+	return _complete_or_route_to_port(state, graph, port_control, carrier,
+		"Scapa Flow",
+		"Solitario AI N4 - R4 numero %d: nessun Attacco Aereo possibile, la CV rientra"
+			% occurrence)
+
+
+## PORTARE IN BATTAGLIA (p.30). Due clausole stampate mancavano: il rimando a
+## R4 con dado PARI, e soprattutto "If no target, the scenario ends" - che e'
+## poi il "(or possibly by Action Table result 'X')" del riquadro The End.
 static func _n4_x(state: GameState, graph: MapGraph,
-		engine: ActionEngine, side: int) -> Dictionary:
+		engine: ActionEngine, port_control: Dictionary, side: int) -> Dictionary:
+	if _n4_r4_count(state) > 0:
+		var swing := state.rng.d6("Solitario N4 X dopo R4")
+		if swing % 2 == 0:
+			var as_r4 := _n4_r4(state, graph, engine, port_control, side)
+			as_r4["log"].append("Solitario AI N4: R4 gia' uscito, 1d6=%d PARI: la X diventa un R4." % swing)
+			return as_r4
+		# DISPARI: si prosegue con la X vera e propria.
 	_remove_damaged_ships(state, side)
-	var tf := _force_with_ship_name(state, side, "Renown")
+	# "Select the British TF with Forbes." Veniva ignorato: si andava dritti
+	# al Renown, che il fascicolo mette al secondo posto.
+	var tf := _force_with_leader(state, side, "Forbes")
+	if tf == null:
+		tf = _force_with_ship_name(state, side, "Renown")
 	if tf == null:
 		tf = _best_type_priority(state, side, ["BB", "BC", "CA"])
 	if tf == null:
 		tf = _create_force_at(state, graph, side, "Scapa Flow",
 			["Nelson", "Rodney"], false)
-	return _attack_or_route_selected(state, graph, engine, tf,
-		_best_contact_or_port_target(state, graph, side, "Narvik"),
+	var target := _best_contact_or_port_target(state, graph, side, "Narvik")
+	if target == null:
+		# Il fascicolo e' esplicito: senza bersaglio lo scenario finisce. Senza
+		# questa riga N4 restava aperto e il replay lo segnalava come stallo.
+		state.solo_ended = true
+		state.solo_end_reason = ("Risultato X senza nessuna Task Force tedesca "
+			+ "da portare in Battaglia (p.30).")
+		var over := _empty("Solitario AI N4 - X: nessun bersaglio tedesco, lo scenario finisce.")
+		over["ok"] = true
+		over["turn_kind"] = "end"
+		over["end_scenario"] = true
+		return over
+	return _attack_or_route_selected(state, graph, engine, tf, target,
 		"Solitario AI N4: Bring on Battle")
+
+
+static func _force_with_leader(state: GameState, side: int,
+		leader: String) -> TaskForce:
+	for tf in state.forces_of(side):
+		if tf.leader == leader:
+			return tf
+	return null
 
 
 static func _marker_not_modeled(note: String) -> Dictionary:

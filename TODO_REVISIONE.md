@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Aggiornato dopo la chiusura di **R0** (3 agosto 2026). Baseline: **2750
+Aggiornato dopo la chiusura di **R0** (3 agosto 2026). Baseline: **2781
 verifiche su 18 suite**.
 
 Questo e' il backlog autorevole per continuare la revisione. `STATO.md`
@@ -26,7 +26,7 @@ vecchie sezioni "Cosa manca" non devono riaprire lavori gia' completati.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 2750 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 2781 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
@@ -121,8 +121,20 @@ Uno scenario puo' essere marcato completo solo quando:
 - [ ] **N2 Operazione Weser (nord)**: 26 procedure testuali; modellare Mine o
   mantenere il buco esplicito finche' dati e pedine non sono verificati.
 - [ ] **N3 Operazione Weser (sud)**: 11 procedure testuali.
-- [ ] **N4 Operazione Weser (nord & sud)**: 6 procedure testuali; Mine/Base
-  Aerea e' un buco dichiarato dall'audit.
+- [ ] **N4 Operazione Weser (nord & sud)**: tabella e modificatori gia'
+  coincidevano col fascicolo; le sei procedure sono ora trascritte per esteso e
+  la **Tabella della Reazione Norvegese (p.30) e' stata aggiunta**, prima
+  mancava del tutto. Implementate: primo R4 contro R4 successivi, il CL
+  francese e la TF6 a Methil che mancavano dal primo R4, il rimando
+  Convoglio -> R4, il dado PARI/DISPARI della X e soprattutto "If no target,
+  the scenario ends", cioe' il "(or possibly by Action Table result 'X')" del
+  riquadro The End. La X sceglie ora la TF con Forbes, come stampato.
+  **Restano**: i risultati Mine e SA, che richiedono Mine, basi aeree e forze
+  furtive Sottomarino - i tre sistemi non modellati; l'applicazione automatica
+  della Reazione Norvegese (la tabella c'e', la procedura che la tira no); la
+  regola "Urgency", per cui il britannico tenta SEMPRE di Sottrarre e non
+  prende mai Manovre Evasive; e "the British use Forbes' leader benefit only
+  during an Engage action".
 - [ ] **N5 Meglio Tardi che Mai**: 11 procedure testuali, incluse Reazioni
   norvegesi e modificatori di completamento.
 - [ ] **N6 Il Dilemma delle Operazioni**: 25 procedure testuali.
