@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **2871 verifiche, 18 suite, headless.**
+Tutti i test passano: **2896 verifiche, 18 suite, headless.**
 
 ---
 
@@ -228,6 +228,13 @@ Tutti i test passano: **2871 verifiche, 18 suite, headless.**
   come una ricerca quello che e' un passaggio; e una decisione senza effetto
   lasciava l'Iniziativa al bot senza accodare niente, cioe' fermava la partita
   in attesa di un giocatore che non doveva muovere.
+- **B4 aveva la stessa lacuna di B2, e una in piu' da verificare.** Dei tre
+  Gruppi di Rinforzo stampati - A a St. John's con un Convoglio, B a Gibilterra
+  con Renown, Ark Royal e Sheffield, C a Scapa Flow con la Victorious - nei
+  dati c'era solo il B, senza lo Sheffield e senza porto. Aggiunti tutti e tre
+  coi loro porti, B4 chiude sui tre Convogli. Leggendo il Display e' pero'
+  emerso che anche la composizione delle Task Force INIZIALI non coincide col
+  fascicolo: e' segnata come da verificare invece di essere riscritta in fretta.
 - **A B2 mancava meta' dello schieramento.** Il Display delle Task Force
   stampato a p.46 mostra due Gruppi di Rinforzo: il **A** a New York con un
   Convoglio e la Ramilles, il **B** a Gibilterra con Renown, Sheffield e Ark

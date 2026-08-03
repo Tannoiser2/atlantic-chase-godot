@@ -94,6 +94,9 @@ func run() -> void:
 	test_b2_reinforcement_groups_match_the_printed_display()
 	test_b2_replay_reaches_three_convoys()
 	test_b2_procedures_are_transcribed()
+	test_b4_reinforcement_groups_match_the_printed_display()
+	test_b4_replay_reaches_three_convoys()
+	test_b4_procedures_are_transcribed()
 	test_fueling()
 	test_bl1_fueling_trigger_conditions()
 	test_solo_ai_bl1_aux_tables_apply()
@@ -2153,3 +2156,68 @@ func test_b2_procedures_are_transcribed() -> void:
 			"il suffisso '%s' della X e' trascritto" % code)
 	eq(actions.modifier_total(["nessun Convoglio ha Completato"]), 1,
 		"il modificatore stampato vale +1")
+
+
+## B4, AC Solo scenarios 2022 pp.54-57. Stessa lacuna di B2: la fine stampata
+## chiede tre Convogli Completati e lo scenario ne schiera due, quindi il terzo
+## deve arrivare da un Gruppo di Rinforzo - che nei dati non c'era.
+func test_b4_reinforcement_groups_match_the_printed_display() -> void:
+	_begin("B4: i tre Gruppi di Rinforzo del Display stampato")
+	var sc := Scenario.load_by_id("B4 Decisione sui Mari")
+	var groups := sc.reinforcements
+	for name in ["RN Reinforcement A", "RN Reinforcement B", "RN Reinforcement C"]:
+		true_(groups.has(name), "il Gruppo %s esiste" % name.right(1))
+	true_((groups.get("RN Reinforcement A", []) as Array).has("Convoy x3"),
+		"il Gruppo A e' il terzo Convoglio")
+	var b: Array = groups.get("RN Reinforcement B", [])
+	for ship_name in ["Renown", "Ark Royal", "Sheffield"]:
+		true_(b.has(ship_name), "il Gruppo B contiene %s" % ship_name)
+	true_((groups.get("RN Reinforcement C", []) as Array).has("Victorious"),
+		"il Gruppo C e' la Victorious")
+	var ports := sc.reinforcement_ports()
+	eq(String(ports.get("RN Reinforcement A", "")), "St. John's",
+		"il Gruppo A e' a St. John's")
+	eq(String(ports.get("RN Reinforcement B", "")), "Gibilterra",
+		"il Gruppo B e' a Gibilterra")
+	eq(String(ports.get("RN Reinforcement C", "")), "Scapa Flow",
+		"il Gruppo C e' a Scapa Flow")
+
+
+func test_b4_replay_reaches_three_convoys() -> void:
+	_begin("B4: il replay arriva ai tre Convogli")
+	var runner := SoloRunner.new()
+	true_(runner.load_scenario("B4 Decisione sui Mari", 20260803),
+		"B4 caricato: %s" % runner.load_error)
+	var out := runner.run()
+	true_(bool(out.get("ended", false)),
+		"il replay di B4 si chiude per una condizione stampata")
+	true_(String(out.get("reason", "")).contains("Convogli"),
+		"e la condizione e' quella dei tre Convogli")
+	true_(runner.state.convoys_completed >= 3,
+		"tre Convogli hanno davvero Completato")
+
+
+func test_b4_procedures_are_transcribed() -> void:
+	_begin("B4: le 12 procedure sono trascritte")
+	var o := SoloOpponent.load_for("B4 Decisione sui Mari")
+	var placeholders := 0
+	var total := 0
+	for tid in ["actions", "identify"]:
+		var t: SoloTable = o.table(tid)
+		ne(t, null, "la tabella '%s' esiste" % tid)
+		for code_v: Variant in t.legend.keys():
+			total += 1
+			if String(t.legend[code_v]).contains("senza automatismi del motore"):
+				placeholders += 1
+	eq(total, 12, "le procedure trascritte sono dodici")
+	eq(placeholders, 0, "e nessuna e' rimasta un segnaposto")
+	var actions: SoloTable = o.table("actions")
+	# I suffissi di B4 non sono quelli di B2: qui c'e' 'Xa', la TF piu' vicina,
+	# che in B2 non esiste, e non c'e' 'XCA'.
+	for code in ["Xa", "XBB", "XBC", "Xu"]:
+		ne(String(actions.legend.get(code, "")), "",
+			"il suffisso '%s' della X e' trascritto" % code)
+	true_(String(actions.legend.get("XBC", "")).contains("Brest"),
+		"la 'XBC' di B4 crea la nuova TF a Brest")
+	true_(String(actions.legend.get("Xu", "")).contains("Narvik"),
+		"la 'Xu' tira dove creare la TF non identificata")
