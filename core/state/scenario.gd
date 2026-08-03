@@ -275,6 +275,13 @@ func reinforcement_routes() -> Dictionary:
 	return victory_data.get("reinforcement_routes", {})
 
 
+## Il segnalino Informazioni che una parte puo' piazzare una volta per scenario:
+## il B-Dienst tedesco di BL1 e il Bletchley Park britannico di A1 sono la
+## stessa facolta' con le parti scambiate. Vuoto = questo scenario non ce l'ha.
+func intel_marker_once() -> Dictionary:
+	return victory_data.get("intel_marker_once", {})
+
+
 ## Note manuali sullo schieramento, usate soprattutto dagli scenari solitari:
 ## molte rotte sono stampate come "Halifax -> Clyde/Liverpool, 11 segmenti",
 ## non come esagoni. Mostrarlo e' piu' onesto che lasciare "0 TF, 0 navi".
@@ -321,6 +328,7 @@ func to_state_dict() -> Dictionary:
 		"rendezvous_markers": rendezvous_markers,
 		"commanders": commanders,
 		"end_conditions": end_conditions(),
+		"intel_marker_once": intel_marker_once(),
 	}
 
 

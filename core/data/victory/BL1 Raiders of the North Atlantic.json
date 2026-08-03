@@ -177,5 +177,11 @@
         ]
       }
     ]
+  },
+  "intel_marker_once": {
+    "_source": "AC_Solo_scenarios_2022 p.5, letto sulla pagina renderizzata",
+    "_text": "When the Germans have Initiative, you may attach an Intel marker to a British Trajectory segment. You may do this at any time, but only once during the scenario.",
+    "side": "KRIEGSMARINE",
+    "label": "B-Dienst"
   }
 }

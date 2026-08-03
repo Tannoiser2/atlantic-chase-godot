@@ -110,6 +110,10 @@ var solo_end_reason: String = ""
 ## una partita ripresa deve finire quando finiva prima.
 var solo_end_conditions: Dictionary = {}
 
+## La facolta' di piazzare un segnalino Informazioni una volta per
+## scenario: B-Dienst in BL1, Bletchley Park in A1. Vuoto = non prevista.
+var solo_intel_marker_once: Dictionary = {}
+
 
 func add_vp(side: int, amount: float, reason: String = "") -> void:
 	vp[side] = float(vp.get(side, 0.0)) + amount
@@ -444,6 +448,7 @@ func to_dict() -> Dictionary:
 		"solo_ended": solo_ended,
 		"solo_end_reason": solo_end_reason,
 		"end_conditions": solo_end_conditions.duplicate(true),
+		"intel_marker_once": solo_intel_marker_once.duplicate(true),
 		"rng": rng.to_dict(),
 	}
 
@@ -486,6 +491,8 @@ func apply_dict(d: Dictionary) -> void:
 	solo_end_reason = String(d.get("solo_end_reason", ""))
 	var ec: Variant = d.get("end_conditions", {})
 	solo_end_conditions = ec if typeof(ec) == TYPE_DICTIONARY else {}
+	var im: Variant = d.get("intel_marker_once", {})
+	solo_intel_marker_once = im if typeof(im) == TYPE_DICTIONARY else {}
 	vp_once.clear()
 	for k_v: Variant in d.get("vp_once", []):
 		vp_once.append(String(k_v))

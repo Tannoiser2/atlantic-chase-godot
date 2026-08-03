@@ -195,28 +195,42 @@ static func apply_table_result(table_id: String, result: Dictionary,
 	return out
 
 
-## B-Dienst (BL1 p.5): "When the Germans have Initiative, you may attach an
-## Intel marker to a British Trajectory segment. You may do this at any time,
-## but only once during the scenario."
+## Il segnalino Informazioni che si piazza UNA VOLTA per scenario.
+##
+## Due scenari lo stampano, ed e' la stessa facolta' con le parti scambiate:
+## il **B-Dienst** tedesco di BL1 (p.5) - "When the Germans have Initiative,
+## you may attach an Intel marker to a British Trajectory segment... only once
+## during the scenario" - e il **Bletchley Park** britannico di A1 (p.59), che
+## dice la stessa cosa a parti invertite. Erano due regole da scrivere due
+## volte; adesso la parte variabile - chi puo' usarla e come si chiama - sta
+## nel dato di scenario, sotto `intel_marker_once`.
 ##
 ## E' una facolta' del GIOCATORE, non una procedura del bot: qui c'e' solo la
-## regola - chi puo' usarla, su cosa, e una volta sola - mentre la scelta del
-## segmento resta a chi gioca. Il servizio di decrittazione tedesco leggeva il
-## traffico radio britannico: nel gioco diventa un segnalino Informazioni
-## piazzato dove si vuole.
-static func bl1_bdienst_available(state: GameState) -> bool:
-	return state.scenario_name.begins_with("BL1") \
-		and state.initiative == TaskForce.Side.KRIEGSMARINE \
-		and not bool(state.solo_counters.get("bl1_bdienst_used", false))
+## regola, mentre la scelta del segmento resta a chi gioca.
+static func intel_marker_label(state: GameState) -> String:
+	return String(state.solo_intel_marker_once.get("label", "Segnalino Informazioni"))
 
 
-## Le Traiettorie britanniche su cui il B-Dienst puo' agire adesso: solo
-## Traiettorie (non Stazioni) e solo segmenti che non hanno gia' Informazioni.
-static func bl1_bdienst_targets(state: GameState) -> Array[TaskForce]:
+static func intel_marker_side(state: GameState) -> int:
+	var name := String(state.solo_intel_marker_once.get("side", ""))
+	return TaskForce.Side.ROYAL_NAVY if name == "ROYAL_NAVY" \
+		else TaskForce.Side.KRIEGSMARINE
+
+
+static func intel_marker_available(state: GameState) -> bool:
+	if state.solo_intel_marker_once.is_empty():
+		return false
+	return state.initiative == intel_marker_side(state) \
+		and not bool(state.solo_counters.get("intel_marker_once_used", false))
+
+
+## Le Traiettorie AVVERSARIE su cui puo' agire adesso: solo Traiettorie (non
+## Stazioni) e solo segmenti che non hanno gia' Informazioni.
+static func intel_marker_targets(state: GameState) -> Array[TaskForce]:
 	var out: Array[TaskForce] = []
-	if not bl1_bdienst_available(state):
+	if not intel_marker_available(state):
 		return out
-	for tf in state.forces_of(TaskForce.Side.ROYAL_NAVY):
+	for tf in state.forces_of(1 - intel_marker_side(state)):
 		if tf.trajectory.is_station():
 			continue
 		for i in tf.trajectory.segments.size():
@@ -226,34 +240,35 @@ static func bl1_bdienst_targets(state: GameState) -> Array[TaskForce]:
 	return out
 
 
-## Applica il B-Dienst a un segmento. Ritorna { ok, error, log }.
-static func bl1_bdienst_apply(state: GameState, tf: TaskForce,
+## Applica il segnalino a un segmento. Ritorna { ok, error, log }.
+static func intel_marker_apply(state: GameState, tf: TaskForce,
 		h: Vector2i) -> Dictionary:
 	var out := _empty("")
-	if not bl1_bdienst_available(state):
-		out["log"].append("B-Dienst: non disponibile (serve l'Iniziativa tedesca, e si usa una volta sola).")
+	var label := intel_marker_label(state)
+	if not intel_marker_available(state):
+		out["log"].append("%s: non disponibile (serve l'Iniziativa della propria parte, e si usa una volta sola)." % label)
 		return out
-	if tf == null or tf.side != TaskForce.Side.ROYAL_NAVY \
+	if tf == null or tf.side != 1 - intel_marker_side(state) \
 			or tf.trajectory.is_station():
-		out["log"].append("B-Dienst: il bersaglio deve essere una Traiettoria britannica.")
+		out["log"].append("%s: il bersaglio deve essere una Traiettoria avversaria." % label)
 		return out
 	for i in tf.trajectory.segments.size():
 		var seg: Dictionary = tf.trajectory.segments[i]
 		if seg["hex"] != h:
 			continue
 		if bool(seg["info"]):
-			out["log"].append("B-Dienst: quel segmento ha gia' un segnalino Informazioni.")
+			out["log"].append("%s: quel segmento ha gia' un segnalino Informazioni." % label)
 			return out
 		tf.trajectory.set_info(i, true)
-		state.solo_counters["bl1_bdienst_used"] = true
+		state.solo_counters["intel_marker_once_used"] = true
 		out["ok"] = true
 		out["active"] = tf
 		out["target_hex"] = h
-		out["turn_kind"] = "bdienst"
-		out["log"].append(("B-Dienst: segnalino Informazioni sul segmento %s di %s. "
-			+ "Si usa una volta sola per scenario.") % [str(h), tf.display_name()])
+		out["turn_kind"] = "intel_marker"
+		out["log"].append(("%s: segnalino Informazioni sul segmento %s di %s. "
+			+ "Si usa una volta sola per scenario.") % [label, str(h), tf.display_name()])
 		return out
-	out["log"].append("B-Dienst: %s non ha un segmento in %s." % [tf.display_name(), str(h)])
+	out["log"].append("%s: %s non ha un segmento in %s." % [label, tf.display_name(), str(h)])
 	return out
 
 

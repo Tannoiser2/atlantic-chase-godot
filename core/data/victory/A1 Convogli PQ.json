@@ -92,5 +92,11 @@
   },
   "reinforcement_ports": {
     "RN Reinforcement B": "Gibilterra"
+  },
+  "intel_marker_once": {
+    "_source": "AC_Solo_scenarios_2022 p.59, letto sulla pagina renderizzata",
+    "_text": "When the British have Initiative, you may attach an Intel marker to a German Trajectory segment. You may do this only once during the scenario.",
+    "side": "ROYAL_NAVY",
+    "label": "Bletchley Park"
   }
 }

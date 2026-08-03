@@ -100,6 +100,7 @@ func run() -> void:
 	test_a1_reinforcement_group_a_rolls_its_route()
 	test_solo_ai_a1_intercept_ends_when_a_german_bb_is_gone()
 	test_a1_replay_reaches_three_convoys()
+	test_intel_marker_once_works_for_both_sides()
 	test_fueling()
 	test_bl1_fueling_trigger_conditions()
 	test_solo_ai_bl1_aux_tables_apply()
@@ -1008,17 +1009,19 @@ func test_solo_ai_bl1_bdienst() -> void:
 	_begin("AI solitaria BL1: B-Dienst")
 	var st := GameState.new(graph, 9)
 	st.scenario_name = "BL1 Raiders of the North Atlantic"
+	st.solo_intel_marker_once = Scenario.load_by_id(
+		"BL1 Raiders of the North Atlantic").intel_marker_once()
 	st.initiative = TaskForce.Side.ROYAL_NAVY
-	false_(SoloAI.bl1_bdienst_available(st),
+	false_(SoloAI.intel_marker_available(st),
 		"senza Iniziativa tedesca il B-Dienst non e' disponibile")
 	st.initiative = TaskForce.Side.KRIEGSMARINE
-	true_(SoloAI.bl1_bdienst_available(st), "con l'Iniziativa tedesca lo e'")
+	true_(SoloAI.intel_marker_available(st), "con l'Iniziativa tedesca lo e'")
 
 	var station := TaskForce.new(1, TaskForce.Side.ROYAL_NAVY)
 	station.ships.append(ShipRoster.shared().make("Hood"))
 	station.trajectory.become_station(Vector2i(15, -3))
 	st.add_task_force(station)
-	eq(SoloAI.bl1_bdienst_targets(st).size(), 0,
+	eq(SoloAI.intel_marker_targets(st).size(), 0,
 		"una Stazione non e' una Traiettoria: non e' un bersaglio")
 
 	var moving := TaskForce.new(2, TaskForce.Side.ROYAL_NAVY)
@@ -1027,21 +1030,21 @@ func test_solo_ai_bl1_bdienst() -> void:
 	for h in graph.adjacent_hexes(Vector2i(14, -3)):
 		if moving.trajectory.extend(h, 1, graph):
 			break
-	eq(SoloAI.bl1_bdienst_targets(st).size(), 0,
+	eq(SoloAI.intel_marker_targets(st).size(), 0,
 		"la TF non e' ancora nello stato: non compare fra i bersagli")
 	st.add_task_force(moving)
-	eq(SoloAI.bl1_bdienst_targets(st).size(), 1,
+	eq(SoloAI.intel_marker_targets(st).size(), 1,
 		"una Traiettoria britannica senza Informazioni e' un bersaglio")
 
 	var target_hex: Vector2i = (moving.trajectory.segments[0] as Dictionary)["hex"]
-	var applied := SoloAI.bl1_bdienst_apply(st, moving, target_hex)
+	var applied := SoloAI.intel_marker_apply(st, moving, target_hex)
 	true_(bool(applied.get("ok", false)), "il segnalino viene attaccato")
 	eq(moving.info_count(), 1, "la Traiettoria ha ora un segnalino Informazioni")
 	false_(moving.can_complete(),
 		"e con Informazioni la TF non puo' piu' Completare (RB p.21)")
-	false_(SoloAI.bl1_bdienst_available(st),
+	false_(SoloAI.intel_marker_available(st),
 		"il B-Dienst vale una volta sola per scenario")
-	var again := SoloAI.bl1_bdienst_apply(st, moving, target_hex)
+	var again := SoloAI.intel_marker_apply(st, moving, target_hex)
 	false_(bool(again.get("ok", false)), "un secondo uso viene rifiutato")
 
 
@@ -2279,3 +2282,57 @@ func test_a1_replay_reaches_three_convoys() -> void:
 		"il replay di A1 si chiude per una condizione stampata")
 	true_(runner.state.convoys_completed >= 3,
 		"tre Convogli hanno davvero Completato")
+
+
+## B-Dienst (BL1 p.5) e Bletchley Park (A1 p.59) sono la STESSA facolta' con le
+## parti scambiate: un segnalino Informazioni su una Traiettoria avversaria,
+## quando la propria parte ha l'Iniziativa, una volta sola per scenario. Erano
+## due regole da scrivere due volte; ora la parte variabile sta nel dato.
+func test_intel_marker_once_works_for_both_sides() -> void:
+	_begin("Segnalino Informazioni una volta per scenario, per entrambe le parti")
+	for spec_v: Variant in [
+			["BL1 Raiders of the North Atlantic", TaskForce.Side.KRIEGSMARINE, "B-Dienst"],
+			["A1 Convogli PQ", TaskForce.Side.ROYAL_NAVY, "Bletchley Park"]]:
+		var spec: Array = spec_v
+		var scenario := Scenario.load_by_id(String(spec[0]))
+		var owner := int(spec[1])
+		var declared := scenario.intel_marker_once()
+		false_(declared.is_empty(), "%s dichiara la facolta'" % String(spec[0]))
+		var st := GameState.new(graph, 11)
+		st.scenario_name = String(spec[0])
+		st.solo_intel_marker_once = declared
+		eq(SoloAI.intel_marker_label(st), String(spec[2]),
+			"%s: il nome stampato e' quello del fascicolo" % String(spec[0]))
+		eq(SoloAI.intel_marker_side(st), owner,
+			"%s: la facolta' e' della parte giusta" % String(spec[0]))
+		# Con l'Iniziativa avversaria non e' disponibile.
+		st.initiative = 1 - owner
+		false_(SoloAI.intel_marker_available(st),
+			"%s: serve l'Iniziativa della propria parte" % String(spec[0]))
+		st.initiative = owner
+		true_(SoloAI.intel_marker_available(st),
+			"%s: con l'Iniziativa giusta e' disponibile" % String(spec[0]))
+		# Una Traiettoria AVVERSARIA e' il bersaglio; una propria non lo e'.
+		var enemy := TaskForce.new(1, 1 - owner)
+		enemy.trajectory.become_station(Vector2i(15, -3))
+		_extend_one_segment(enemy, st)
+		st.add_task_force(enemy)
+		var own := TaskForce.new(2, owner)
+		own.trajectory.become_station(Vector2i(13, -2))
+		_extend_one_segment(own, st)
+		st.add_task_force(own)
+		eq(SoloAI.intel_marker_targets(st).size(), 1,
+			"%s: solo la Traiettoria avversaria e' un bersaglio" % String(spec[0]))
+		var target_hex: Vector2i = (enemy.trajectory.segments[0] as Dictionary)["hex"]
+		var applied := SoloAI.intel_marker_apply(st, enemy, target_hex)
+		true_(bool(applied["ok"]), "%s: il segnalino viene attaccato" % String(spec[0]))
+		eq(enemy.info_count(), 1, "%s: la Traiettoria ha un segnalino" % String(spec[0]))
+		false_(SoloAI.intel_marker_available(st),
+			"%s: e vale una volta sola" % String(spec[0]))
+
+
+func _extend_one_segment(tf: TaskForce, st: GameState) -> void:
+	var from := tf.trajectory.station_hex
+	for h in graph.adjacent_hexes(from):
+		if tf.trajectory.extend(h, 1, graph, st.port_hexes(), false, tf.side):
+			return

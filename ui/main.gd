@@ -1532,7 +1532,7 @@ func _do_solo() -> void:
 				"detail": "Rifornimento, Murmansk, Incidente Internazionale, ecc."},
 			{"label": "Crea TF non identificata in porto",
 				"detail": "strumento manuale per le procedure del fascicolo"},
-			{"label": "B-Dienst", "detail": _bl1_bdienst_detail()},
+			{"label": _intel_marker_label(), "detail": _intel_marker_detail()},
 			{"label": "Chiudi", "detail": ""},
 		]
 		var i: int = await Choice.ask(self, "Solitario - %s" % scenario.title,
@@ -1550,7 +1550,7 @@ func _do_solo() -> void:
 			4:
 				await _solo_create_unidentified_tf()
 			5:
-				await _do_bl1_bdienst()
+				await _do_intel_marker()
 			_:
 				return
 		_refresh()
@@ -1597,32 +1597,39 @@ func _offer_gensoul(dec: ActionEngine.Declaration) -> void:
 	_refresh()
 
 
-## B-Dienst (BL1 p.5): il servizio di decrittazione tedesco. Il giocatore
-## attacca un segnalino Informazioni a un segmento di Traiettoria britannica,
-## quando ha l'Iniziativa, una volta sola per scenario. La regola sta nel core;
-## qui c'e' solo la scelta del segmento, che e' sua.
-func _bl1_bdienst_detail() -> String:
-	if scenario == null or not scenario.id.begins_with("BL1"):
-		return "solo in BL1"
-	if bool(state.solo_counters.get("bl1_bdienst_used", false)):
+## Il segnalino Informazioni che si piazza una volta per scenario: il B-Dienst
+## tedesco di BL1 e il Bletchley Park britannico di A1 sono la stessa facolta'
+## con le parti scambiate, e il nome lo dice il dato di scenario. La regola sta
+## nel core; qui c'e' solo la scelta del segmento, che e' del giocatore.
+func _intel_marker_label() -> String:
+	if state.solo_intel_marker_once.is_empty():
+		return "Segnalino Informazioni"
+	return SoloAI.intel_marker_label(state)
+
+
+func _intel_marker_detail() -> String:
+	if state.solo_intel_marker_once.is_empty():
+		return "questo scenario non lo prevede"
+	if bool(state.solo_counters.get("intel_marker_once_used", false)):
 		return "gia' usato: vale una volta sola per scenario"
-	if state.initiative != TaskForce.Side.KRIEGSMARINE:
-		return "serve l'Iniziativa tedesca"
-	return "un segnalino Informazioni su una Traiettoria britannica"
+	if state.initiative != SoloAI.intel_marker_side(state):
+		return "serve l'Iniziativa di %s" % Initiative.side_name(
+			SoloAI.intel_marker_side(state))
+	return "un segnalino Informazioni su una Traiettoria avversaria"
 
 
-func _do_bl1_bdienst() -> void:
-	if not SoloAI.bl1_bdienst_available(state):
-		_msg("B-Dienst: disponibile solo in BL1, con l'Iniziativa tedesca e "
-			+ "una volta sola per scenario.")
+func _do_intel_marker() -> void:
+	var label := _intel_marker_label()
+	if not SoloAI.intel_marker_available(state):
+		_msg("%s: %s." % [label, _intel_marker_detail()])
 		return
-	var candidates := SoloAI.bl1_bdienst_targets(state)
+	var candidates := SoloAI.intel_marker_targets(state)
 	if candidates.is_empty():
-		_msg("B-Dienst: nessuna Traiettoria britannica ha un segmento libero "
-			+ "da segnalini Informazioni.")
+		_msg("%s: nessuna Traiettoria avversaria ha un segmento libero da "
+			% label + "segnalini Informazioni.")
 		return
-	var tf := await _pick_tf(candidates, "B-Dienst - quale Traiettoria?",
-		"Solo Traiettorie britanniche con almeno un segmento senza Informazioni.",
+	var tf := await _pick_tf(candidates, "%s - quale Traiettoria?" % label,
+		"Solo Traiettorie avversarie con almeno un segmento senza Informazioni.",
 		true)
 	if tf == null:
 		return
@@ -1632,15 +1639,15 @@ func _do_bl1_bdienst() -> void:
 		if not bool(seg["info"]):
 			free_hexes.append(seg["hex"])
 	var picked := await _pick_hex_on_map(free_hexes,
-		"B-Dienst: scegli il segmento di %s su cui mettere il segnalino "
-			% tf.display_name() + "Informazioni. ESC annulla.")
+		"%s: scegli il segmento di %s su cui mettere il segnalino Informazioni. "
+			% [label, tf.display_name()] + "ESC annulla.")
 	if picked == Vector2i.MAX:
 		return
-	var applied := SoloAI.bl1_bdienst_apply(state, tf, picked)
+	var applied := SoloAI.intel_marker_apply(state, tf, picked)
 	for line_v: Variant in applied.get("log", []):
 		_msg(String(line_v))
 	if bool(applied.get("ok", false)):
-		log.record("BL1: B-Dienst")
+		log.record(label)
 		state.changed.emit()
 		_refresh()
 
