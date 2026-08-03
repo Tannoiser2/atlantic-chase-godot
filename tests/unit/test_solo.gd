@@ -717,6 +717,8 @@ func test_bl2_end_procedure() -> void:
 	true_(limits.solo_ended, "la condizione generale marca lo scenario concluso")
 	true_(limits.solo_end_reason.contains("Due Convogli"),
 		"la causa della fine resta leggibile")
+	false_(SoloAI.enforce_scenario_end(limits),
+		"dopo la fine non si riapre un altro ciclo della Tabella Azioni")
 	var losses := GameState.new(graph, 11)
 	losses.scenario_name = "BL2 Contain and Destroy"
 	losses.casualties.append({"side": TaskForce.Side.KRIEGSMARINE,

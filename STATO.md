@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **2569 verifiche, 17 suite, headless.**
+Tutti i test passano: **2570 verifiche, 17 suite, headless.**
 
 ---
 
@@ -131,6 +131,9 @@ Tutti i test passano: **2569 verifiche, 17 suite, headless.**
   hanno policy dedicate. Identificazione e Incidente Internazionale applicano
   i propri risultati; le condizioni di fine a 2 Convogli o 4 navi sono
   automatiche e persistono nel salvataggio;
+- raggiunta una condizione di fine BL2, il ciclo automatico la applica prima
+  di accodare il tiro successivo: il bot non puo' piu' iniziare una terza
+  procedura dopo il secondo Completamento;
 - i Convogli iniziali BL2 hanno destinazioni esplicite: Africa-Portsmouth non
   puo' Completare ad Africa e Halifax-Clyde/Liverpool non puo' Completare ad
   Halifax. Il porto di origine non assegna piu' VP ne' altera prematuramente la

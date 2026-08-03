@@ -1492,6 +1492,9 @@ func _do_solo() -> void:
 	if solo == null:
 		_msg("Solitario: questo scenario non ha tabelle trascritte.")
 		return
+	if state.solo_ended:
+		_msg("Solitario: lo scenario e' terminato. Apri Punteggio per il Debriefing.")
+		return
 	while true:
 		var opts: Array = [
 			{"label": "Tira Tabella delle Azioni",
@@ -1604,6 +1607,10 @@ func _solo_modifiers(t: SoloTable) -> Array:
 
 func _solo_roll_action(auto: bool = false) -> void:
 	if solo == null:
+		return
+	if state.solo_ended:
+		if not auto:
+			_msg("Solitario: lo scenario e' terminato. Apri Punteggio per il Debriefing.")
 		return
 	solo.set_phase(state.solo_phase, state.solo_phase_reason)
 	var tid := solo.action_table_id()
@@ -1838,6 +1845,14 @@ func _resolve_solo_ai_action(decision: Dictionary) -> String:
 
 
 func _queue_next_solo_action(reason: String) -> void:
+	# Alcune procedure concludono lo scenario e, nello stesso frame, tentano di
+	# accodare il tiro successivo. La fine va applicata qui, prima del deferred:
+	# aspettare il refresh lascia partire un'intera azione oltre la fine.
+	if SoloAI.enforce_scenario_end(state):
+		_msg("Solitario BL2 - FINE SCENARIO: %s" % state.solo_end_reason)
+		return
+	if state.solo_ended:
+		return
 	if _solo_is_imaginary_turn():
 		call_deferred("_kick_solo_opponent_turn", reason)
 
