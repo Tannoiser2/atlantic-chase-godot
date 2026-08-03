@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Aggiornato dopo la chiusura di **R0** (3 agosto 2026). Baseline: **2896
+Aggiornato dopo la chiusura di **R0** (3 agosto 2026). Baseline: **2909
 verifiche su 18 suite**.
 
 Questo e' il backlog autorevole per continuare la revisione. `STATO.md`
@@ -26,7 +26,7 @@ vecchie sezioni "Cosa manca" non devono riaprire lavori gia' completati.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 2896 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 2909 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
@@ -196,8 +196,16 @@ Uno scenario puo' essere marcato completo solo quando:
   Rodney col Convoglio di Gibilterra). La mappa da' i conti per classe e il
   Display i nomi: serve una lettura incrociata. **Restano** anche i -3 VP del
   Gruppo B, la regola Rationing, i limiti di classe e le basi aeree.
-- [ ] **A1 Convogli PQ**: 3 procedure testuali; la forza U-Boat iniziale e'
-  ancora una nota perche' manca una pedina nave operazionale verificata.
+- [ ] **A1 Convogli PQ**: 3 procedure trascritte. Il suo Gruppo di Rinforzo A
+  **non ha un porto fisso**: partenza e destinazione si tirano sul dado (1-2
+  Clyde/Liverpool verso Murmansk, 3-5 Hvalfiord verso Murmansk, 6 Hvalfiord
+  verso Archangel). E' l'unico scenario in cui succede, ed e' il motivo per cui
+  il Gruppo non compariva fra i porti: ora e' in `reinforcement_routes` e il
+  replay lo tira. Implementata anche la fine stampata nella 'X' (una BB tedesca
+  affondata o Completata). **Restano**: la forza U-Boat iniziale (manca una
+  pedina nave operazionale verificata), le basi aeree, i limiti di classe, i
+  -3 VP del Gruppo B e **Bletchley Park** - il gemello britannico del B-Dienst,
+  gia' implementato per BL1 e da generalizzare.
 - [ ] **A2 L'Ultima Battaglia**: 20 procedure testuali.
 
 I numeri sopra contano tutte le stringhe `senza automatismi del motore` nei
@@ -212,9 +220,8 @@ riga dice che cosa manca.
 
 | esito | scenari | che cosa serve |
 |---|---|---|
-| finisce per condizione stampata | BL1, BL2, N4, N6, B1, B2, B3, B4 | niente: chiudere le procedure segnaposto |
+| finisce per condizione stampata | BL1, BL2, N4, N6, B1, B2, B3, B4, A1 | niente: chiudere le procedure segnaposto |
 | non giocabile, mappa inserto | BL3, N1, N2, N3, N5 | calibrare i reticoli inserto |
-| stallo dichiarato | A1 | il terzo Convoglio non entra mai: i suoi Gruppi di Rinforzo non hanno porto trascritto, come B2 e B4 prima della revisione |
 | stallo dichiarato | A2 | lo schieramento si compra coi VP prima della prima azione (p.63): passaggio non modellato |
 
 ## P0 - Sistemi mancanti al solitario

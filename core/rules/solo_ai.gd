@@ -1085,6 +1085,30 @@ static func _n6_intercept(state: GameState, graph: MapGraph,
 		"Solitario AI N6 - X: Intercettazione")
 
 
+## Una corazzata tedesca e' uscita di scena? Affondata oppure entrata in porto
+## con un Completamento: A1 mette le due cose sullo stesso piano (p.62).
+static func _a1_german_bb_gone(state: GameState) -> bool:
+	for tf in state.task_forces:
+		if tf.side != TaskForce.Side.KRIEGSMARINE:
+			continue
+		if tf.completed:
+			for ship_name_v: Variant in tf.completed_ships:
+				var sh := ShipRoster.shared().make(String(ship_name_v))
+				if sh != null and sh.type_code == "BB":
+					return true
+		for ship in tf.ships:
+			if ship.sunk and ship.type_code == "BB":
+				return true
+	for loss_v: Variant in state.casualties:
+		if int((loss_v as Dictionary).get("side", -1)) != TaskForce.Side.KRIEGSMARINE:
+			continue
+		for name_v: Variant in (loss_v as Dictionary).get("ships", []):
+			var lost := ShipRoster.shared().make(String(name_v))
+			if lost != null and lost.type_code == "BB":
+				return true
+	return false
+
+
 static func _a1(code: String, state: GameState, graph: MapGraph,
 		engine: ActionEngine, port_control: Dictionary, side: int) -> Dictionary:
 	match code:
@@ -1105,6 +1129,18 @@ static func _a1(code: String, state: GameState, graph: MapGraph,
 			return _complete_or_route_to_port(state, graph, port_control, tf, port_name,
 				"Solitario AI A1: Completamento tedesco")
 		"X":
+			# p.62: "End? If a German BB has Completed or was sunk, the
+			# scenario ends. Proceed to Debriefing." Non era verificata.
+			if _a1_german_bb_gone(state):
+				state.solo_ended = true
+				state.solo_end_reason = ("Una BB tedesca e' stata affondata o ha "
+					+ "Completato (p.62).")
+				var over := _empty("Solitario AI A1 - FINE SCENARIO: %s"
+					% state.solo_end_reason)
+				over["ok"] = true
+				over["turn_kind"] = "end"
+				over["end_scenario"] = true
+				return over
 			var active := _nearest_force_to_convoy(state, side)
 			if active == null:
 				var r := state.rng.d6("Solitario A1 nuova TF X")

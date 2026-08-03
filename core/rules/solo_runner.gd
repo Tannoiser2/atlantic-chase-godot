@@ -232,12 +232,33 @@ func _declared_stall() -> String:
 		+ "nessuna condizione di fine stampata puo' piu' avverarsi.")
 
 
+## Tira la rotta di un Gruppo di Rinforzo che non ha un porto fisso. La tabella
+## e' nel dato (`reinforcement_routes`), qui c'e' solo il dado: la regola dice
+## quali porti, non quando tirare.
+func _rolled_reinforcement_route(group: String) -> Dictionary:
+	var routes: Array = scenario.reinforcement_routes().get(group, [])
+	if routes.is_empty():
+		return {}
+	var roll := state.rng.d6("Rotta del Gruppo di Rinforzo %s" % group)
+	for entry_v: Variant in routes:
+		var entry: Dictionary = entry_v
+		if roll <= int(entry.get("max", 6)):
+			return entry
+	return routes[routes.size() - 1]
+
+
 func _has_available_reinforcements() -> bool:
 	var prefix := "KM" if player_side == TaskForce.Side.KRIEGSMARINE else "RN"
 	var ports := scenario.reinforcement_ports()
+	var routes := scenario.reinforcement_routes()
 	for k_v: Variant in scenario.reinforcements.keys():
 		var group := String(k_v)
-		if not group.begins_with(prefix) or not ports.has(group):
+		# Un Gruppo e' utilizzabile se ha un porto fisso OPPURE una rotta da
+		# tirare: senza nessuno dei due il motore si rifiuta di farlo entrare,
+		# perche' non sa dove metterlo.
+		if not group.begins_with(prefix):
+			continue
+		if not ports.has(group) and not routes.has(group):
 			continue
 		if not (scenario.reinforcements[k_v] as Array).is_empty():
 			return true
@@ -523,12 +544,23 @@ func _player_reinforce() -> bool:
 		var ships: Array = scenario.reinforcements[k_v]
 		if ships.is_empty():
 			continue
-		if not ports.has(group):
+		var port_name := String(ports.get(group, ""))
+		var destination := ""
+		if port_name == "":
+			# Un Gruppo puo' non avere un porto FISSO e averlo invece tirato:
+			# succede solo col Gruppo A di A1 (p.59), che determina col dado
+			# sia il porto di partenza sia quello di destinazione.
+			var route := _rolled_reinforcement_route(group)
+			port_name = String(route.get("from", ""))
+			destination = String(route.get("to", ""))
+		if port_name == "":
 			_line("GIOCATORE (policy harness): il Gruppo %s non ha un porto "
 				% group + "trascritto; non viene fatto entrare.")
 			continue
-		var port := graph.port_hex(String(ports[group]))
+		var port := graph.port_hex(port_name)
 		if port == Vector2i.MAX:
+			_line("GIOCATORE (policy harness): il porto %s del Gruppo %s non e' "
+				% [port_name, group] + "nel grafo calibrato.")
 			continue
 		var r := Reorganize.attempt_reinforcement(state, player_side, port,
 			ships, group)
@@ -544,6 +576,13 @@ func _player_reinforce() -> bool:
 			var new_tf: TaskForce = r.get("tf", null)
 			if leaders.has(group) and new_tf != null:
 				new_tf.leader = String(leaders[group])
+			# Una rotta tirata porta anche la destinazione: senza, il Convoglio
+			# entrerebbe senza sapere dove deve andare, e il Completamento non
+			# potrebbe mai riuscire.
+			if destination != "" and new_tf != null:
+				new_tf.solo_flags["completion_ports"] = [destination]
+				_line("GIOCATORE   rotta tirata: da %s a %s."
+					% [port_name, destination])
 			scenario.reinforcements[k_v] = []
 			_seek_initiative("GIOCATORE")
 		elif bool(r["initiative_passes"]):

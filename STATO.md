@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **2896 verifiche, 18 suite, headless.**
+Tutti i test passano: **2909 verifiche, 18 suite, headless.**
 
 ---
 
@@ -228,6 +228,17 @@ Tutti i test passano: **2896 verifiche, 18 suite, headless.**
   come una ricerca quello che e' un passaggio; e una decisione senza effetto
   lasciava l'Iniziativa al bot senza accodare niente, cioe' fermava la partita
   in attesa di un giocatore che non doveva muovere.
+- **A1 non aveva la stessa lacuna: ne aveva una diversa.** I suoi due Gruppi di
+  Rinforzo contenevano gia' i Convogli, ma il Gruppo A **non ha un porto
+  fisso**: il fascicolo (p.59) fa tirare un dado per determinare porto di
+  partenza e destinazione insieme - 1-2 Clyde/Liverpool verso Murmansk, 3-5
+  Hvalfiord verso Murmansk, 6 Hvalfiord verso Archangel. E' l'unico scenario in
+  cui succede, e per questo il Gruppo non compariva fra i porti: la sua assenza
+  era corretta, mancava il meccanismo. Ora la tabella e' nel dato
+  (`reinforcement_routes`), il replay la tira e assegna al Convoglio anche il
+  porto di destinazione, senza il quale non potrebbe Completare.
+  Con la fine stampata nella 'X' - una BB tedesca affondata o Completata -
+  **nove scenari su dieci giocabili chiudono ora per una condizione stampata**.
 - **B4 aveva la stessa lacuna di B2, e una in piu' da verificare.** Dei tre
   Gruppi di Rinforzo stampati - A a St. John's con un Convoglio, B a Gibilterra
   con Renown, Ark Royal e Sheffield, C a Scapa Flow con la Victorious - nei

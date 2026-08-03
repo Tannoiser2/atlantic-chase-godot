@@ -266,6 +266,15 @@ func reinforcement_leaders() -> Dictionary:
 	return victory_data.get("reinforcement_leaders", {})
 
 
+## Rotte tirate sul dado per i Gruppi di Rinforzo che non hanno un porto fisso.
+## Ne esiste uno solo, il Gruppo A di A1 (fascicolo p.59): partenza e
+## destinazione si determinano con un tiro quando il Gruppo entra in gioco.
+## Un dizionario vuoto significa "questo scenario non ne ha", non "non
+## trascritto": i Gruppi normali stanno in `reinforcement_ports`.
+func reinforcement_routes() -> Dictionary:
+	return victory_data.get("reinforcement_routes", {})
+
+
 ## Note manuali sullo schieramento, usate soprattutto dagli scenari solitari:
 ## molte rotte sono stampate come "Halifax -> Clyde/Liverpool, 11 segmenti",
 ## non come esagoni. Mostrarlo e' piu' onesto che lasciare "0 TF, 0 navi".

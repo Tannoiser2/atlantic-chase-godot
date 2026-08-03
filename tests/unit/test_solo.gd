@@ -97,6 +97,9 @@ func run() -> void:
 	test_b4_reinforcement_groups_match_the_printed_display()
 	test_b4_replay_reaches_three_convoys()
 	test_b4_procedures_are_transcribed()
+	test_a1_reinforcement_group_a_rolls_its_route()
+	test_solo_ai_a1_intercept_ends_when_a_german_bb_is_gone()
+	test_a1_replay_reaches_three_convoys()
 	test_fueling()
 	test_bl1_fueling_trigger_conditions()
 	test_solo_ai_bl1_aux_tables_apply()
@@ -2221,3 +2224,58 @@ func test_b4_procedures_are_transcribed() -> void:
 		"la 'XBC' di B4 crea la nuova TF a Brest")
 	true_(String(actions.legend.get("Xu", "")).contains("Narvik"),
 		"la 'Xu' tira dove creare la TF non identificata")
+
+
+## A1, AC Solo scenarios 2022 pp.59-62. Il suo Gruppo di Rinforzo A non ha un
+## porto FISSO: partenza e destinazione si tirano sul dado. E' l'unico scenario
+## in cui succede, e per questo il Gruppo non compariva in reinforcement_ports.
+func test_a1_reinforcement_group_a_rolls_its_route() -> void:
+	_begin("A1: la rotta del Gruppo A si tira")
+	var sc := Scenario.load_by_id("A1 Convogli PQ")
+	var routes := sc.reinforcement_routes()
+	true_(routes.has("RN Reinforcement A"),
+		"il Gruppo A ha una rotta da tirare invece di un porto fisso")
+	var table: Array = routes.get("RN Reinforcement A", [])
+	eq(table.size(), 3, "la tabella stampata ha tre righe")
+	eq(String((table[0] as Dictionary).get("to", "")), "Murmansk",
+		"con 1-2 si va a Murmansk")
+	eq(String((table[2] as Dictionary).get("to", "")), "Archangel",
+		"con 6 si va ad Archangel")
+	eq(String((table[2] as Dictionary).get("from", "")), "Hvalfjordur",
+		"e si parte da Hvalfiord")
+	# Il Gruppo B ha invece un porto fisso, e costa -3 VP.
+	eq(String(sc.reinforcement_ports().get("RN Reinforcement B", "")), "Gibilterra",
+		"il Gruppo B parte da Gibilterra")
+	false_(sc.reinforcement_ports().has("RN Reinforcement A"),
+		"il Gruppo A non ha - e non deve avere - un porto fisso")
+
+
+## p.62: "End? If a German BB has Completed or was sunk, the scenario ends."
+func test_solo_ai_a1_intercept_ends_when_a_german_bb_is_gone() -> void:
+	_begin("A1: una BB tedesca perduta chiude lo scenario")
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("A1 Convogli PQ")
+	var st := GameState.new(graph, 5)
+	st.apply_dict(scenario.to_state_dict())
+	SoloAI.execute_code("X", st, graph, engine, scenario.port_control(),
+		TaskForce.Side.KRIEGSMARINE)
+	false_(st.solo_ended, "senza perdite la 'X' non chiude niente")
+	st.casualties.append({"side": TaskForce.Side.KRIEGSMARINE,
+		"ships": ["Tirpitz"], "convoys": 0})
+	var over := SoloAI.execute_code("X", st, graph, engine,
+		scenario.port_control(), TaskForce.Side.KRIEGSMARINE)
+	true_(bool(over.get("end_scenario", false)), "la 'X' dichiara la fine")
+	true_(st.solo_end_reason.contains("BB"),
+		"e il motivo cita la corazzata: %s" % st.solo_end_reason)
+
+
+func test_a1_replay_reaches_three_convoys() -> void:
+	_begin("A1: il replay arriva ai tre Convogli")
+	var runner := SoloRunner.new()
+	true_(runner.load_scenario("A1 Convogli PQ", 20260803),
+		"A1 caricato: %s" % runner.load_error)
+	var out := runner.run()
+	true_(bool(out.get("ended", false)),
+		"il replay di A1 si chiude per una condizione stampata")
+	true_(runner.state.convoys_completed >= 3,
+		"tre Convogli hanno davvero Completato")
