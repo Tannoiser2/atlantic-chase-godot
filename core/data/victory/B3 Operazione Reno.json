@@ -46,5 +46,24 @@
  ],
  "rules": {
   "convoy_dispersal": "vedi raw_victory_text e scenario_text"
+ },
+ "end_conditions": {
+  "_source": "AC_Solo_scenarios_2022 p.49, riquadro 'The End', letto sulla pagina renderizzata",
+  "_text": "The scenario ends when three or fewer Rendezvous markers remain and the Germans have no Task Forces in play. It may also end as a result of the British Action Table.",
+  "any": [
+   {
+    "reason": "Restano tre o meno marker Rendezvous e il tedesco non ha piu' Task Force in gioco.",
+    "all": [
+     {
+      "kind": "rendezvous_at_most",
+      "value": 3
+     },
+     {
+      "kind": "no_task_forces",
+      "side": "KRIEGSMARINE"
+     }
+    ]
+   }
+  ]
  }
 }

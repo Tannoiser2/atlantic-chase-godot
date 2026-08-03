@@ -19,6 +19,19 @@ extends SceneTree
 const DEFAULT_RUNS := [
 	{"id": "BL1 Raiders of the North Atlantic", "seed": 20260803},
 	{"id": "BL2 Contain and Destroy", "seed": 20260803},
+	{"id": "BL3 Raiders of the North Sea", "seed": 20260803},
+	{"id": "N1 Operazione Wilfred", "seed": 20260803},
+	{"id": "N2 Operazione Weser (nord)", "seed": 20260803},
+	{"id": "N3 Operazione Weser (sud)", "seed": 20260803},
+	{"id": "N4 Operazione Weser (nord & sud)", "seed": 20260803},
+	{"id": "N5 Meglio Tardi che Mai", "seed": 20260803},
+	{"id": "N6 Il Dilemma delle Operazioni", "seed": 20260803},
+	{"id": "B1 Operazione Berlino", "seed": 20260803},
+	{"id": "B2 La Battaglia dell'Atlantico", "seed": 20260803},
+	{"id": "B3 Operazione Reno", "seed": 20260803},
+	{"id": "B4 Decisione sui Mari", "seed": 20260803},
+	{"id": "A1 Convogli PQ", "seed": 20260803},
+	{"id": "A2 L'Ultima Battaglia", "seed": 20260803},
 ]
 
 

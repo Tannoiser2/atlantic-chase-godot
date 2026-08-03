@@ -127,9 +127,16 @@ func test_all_solo_transcriptions_load() -> void:
 		true_(o.tables.size() >= 1, "%s: almeno una tabella" % id)
 		var sc := Scenario.load_by_id(id)
 		eq(sc.load_error, "", "%s: scenario manuale caricato" % id)
-		if id == "BL3 Raiders of the North Sea":
+		# Cinque scenari solitari si giocano su una MAPPA INSERTO, non sulla
+		# Mappa Operazionale: il loro reticolo non e' calibrato in questo
+		# progetto, quindi non hanno - e non devono avere - uno schieramento
+		# sulla mappa grande. Prima ce l'avevano, fatto di porti usati come
+		# sostituti, cioe' di posizioni inventate.
+		if not sc.map_info.is_empty():
 			true_(str(sc.raw_setup_notes()).contains("Mappa Inserto"),
 				"%s: dichiara perche' non piazza TF sulla mappa principale" % id)
+			eq(sc.task_forces.size(), 0,
+				"%s: nessuna TF piazzata sulla mappa sbagliata" % id)
 		else:
 			true_(sc.task_forces.size() > 0, "%s: schieramento iniziale piazzato" % id)
 		true_(sc.has_victory_table(), "%s: tabella Esito/Debriefing" % id)
@@ -710,6 +717,11 @@ func test_bl2_end_procedure() -> void:
 		"i contatori della procedura vengono salvati")
 	var limits := GameState.new(graph, 10)
 	limits.scenario_name = "BL2 Contain and Destroy"
+	# Le condizioni di fine non sono piu' scritte nel codice: stanno nel dato
+	# di scenario e arrivano nello stato con `to_state_dict`. Un GameState
+	# costruito a mano deve quindi caricarle, come fa una partita vera.
+	limits.solo_end_conditions = Scenario.load_by_id(
+		"BL2 Contain and Destroy").end_conditions()
 	limits.count_convoy_completed(TaskForce.Side.ROYAL_NAVY)
 	eq(limits.convoys_completed_for(TaskForce.Side.KRIEGSMARINE), 0,
 		"una parte senza arrivi non eredita il totale dell'altra parte")
@@ -725,6 +737,8 @@ func test_bl2_end_procedure() -> void:
 		"dopo la fine non si riapre un altro ciclo della Tabella Azioni")
 	var losses := GameState.new(graph, 11)
 	losses.scenario_name = "BL2 Contain and Destroy"
+	losses.solo_end_conditions = Scenario.load_by_id(
+		"BL2 Contain and Destroy").end_conditions()
 	losses.casualties.append({"side": TaskForce.Side.KRIEGSMARINE,
 		"ships": ["uno", "due", "tre", "Convoglio"], "convoys": 1})
 	true_(SoloAI.enforce_scenario_end(losses), "quattro navi affondate terminano BL2")

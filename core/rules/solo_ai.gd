@@ -78,43 +78,81 @@ static func execute_code(code: String, state: GameState, graph: MapGraph,
 ## Condizioni di fine stampate, verificate dopo qualunque cambiamento di stato.
 ## I risultati delle Tabelle Azioni aggiungono condizioni proprie, ma non
 ## sostituiscono quelle scritte nel riquadro "The End" di ciascuno scenario.
+##
+## Non sono scritte qui: stanno in `core/data/victory/<scenario>.json`, sotto
+## `end_conditions`, insieme al testo inglese e alla pagina da cui vengono.
+## Erano due rami di codice - uno per BL1, uno per BL2 - e gli altri tredici
+## scenari semplicemente non finivano mai; con quindici rami sarebbe stato
+## peggio. Il fascicolo usa poche forme ricorrenti, e quelle sono le uniche che
+## l'interprete conosce: una forma nuova deve fallire in modo visibile, non
+## essere approssimata a quella che le somiglia di piu'.
 static func enforce_scenario_end(state: GameState) -> bool:
 	if state.solo_ended:
 		return false
-	var reason := ""
-	if state.scenario_name.begins_with("BL1"):
-		reason = _bl1_end_reason(state)
-	elif state.scenario_name.begins_with("BL2"):
-		reason = _bl2_end_reason(state)
-	if reason == "":
+	var conditions: Dictionary = state.solo_end_conditions
+	for rule_v: Variant in conditions.get("any", []):
+		var rule: Dictionary = rule_v
+		if not _end_rule_met(state, rule):
+			continue
+		state.solo_ended = true
+		state.solo_end_reason = String(rule.get("reason", "Condizione di fine raggiunta."))
+		return true
+	return false
+
+
+## Una regola e' soddisfatta solo se lo sono TUTTE le sue condizioni: il
+## fascicolo scrive "two or fewer Rendezvous markers remain AND the Germans
+## have no Task Forces in play", e le due cose valgono insieme. Le alternative
+## stanno invece in voci separate di `any`.
+static func _end_rule_met(state: GameState, rule: Dictionary) -> bool:
+	var all: Array = rule.get("all", [])
+	if all.is_empty():
 		return false
-	state.solo_ended = true
-	state.solo_end_reason = reason
+	for cond_v: Variant in all:
+		if not _end_condition_met(state, cond_v):
+			return false
 	return true
 
 
-## AC Solo scenarios 2022 p.5: "The scenario ends when there are two or fewer
-## Rendezvous markers remaining and the Germans have no Task Forces in play."
-## Le due condizioni valgono insieme, non in alternativa.
-static func _bl1_end_reason(state: GameState) -> String:
-	var remaining := state.active_rendezvous_count()
-	if remaining > 2:
-		return ""
-	if not state.forces_of(TaskForce.Side.KRIEGSMARINE).is_empty():
-		return ""
-	return ("Restano %d marker Rendezvous (due o meno) e il tedesco non ha "
-		+ "piu' Task Force in gioco.") % remaining
+static func _end_condition_met(state: GameState, cond: Dictionary) -> bool:
+	var value := int(cond.get("value", 0))
+	match String(cond.get("kind", "")):
+		"rendezvous_at_most":
+			return state.active_rendezvous_count() <= value
+		"no_task_forces":
+			return state.forces_of(_side_from_name(String(cond.get("side", "")))).is_empty()
+		"convoys_completed_total":
+			return state.convoys_completed >= value
+		"convoys_completed_by":
+			return state.convoys_completed_for(
+				_side_from_name(String(cond.get("side", "")))) >= value
+		"ships_sunk_total":
+			return state.sunk_count(TaskForce.Side.KRIEGSMARINE) \
+				+ state.sunk_count(TaskForce.Side.ROYAL_NAVY) >= value
+		"any_force_lost_or_completed":
+			# A2 p.63 scrive "no Task Forces in play (they are sunk or
+			# Completed)": la parentesi non e' un commento, distingue "non ne
+			# ha piu'" da "non ne ha ancora". Senza, A2 finirebbe al turno zero,
+			# perche' il tedesco le sue navi le compra coi VP prima di agire.
+			var side := _side_from_name(String(cond.get("side", "")))
+			if state.sunk_count(side) > 0:
+				return true
+			for tf in state.task_forces:
+				if tf.side == side and tf.completed:
+					return true
+			for loss_v: Variant in state.casualties:
+				if int((loss_v as Dictionary).get("side", -1)) == side:
+					return true
+			return false
+	# Una condizione che l'interprete non conosce NON viene ignorata in
+	# silenzio: rende la regola non soddisfatta, cosi' lo scenario non finisce
+	# per caso e il difetto si vede come una partita che non termina.
+	return false
 
 
-## AC Solo scenarios 2022 p.9: due Convogli Completati (britannici e/o
-## tedeschi), oppure quattro navi affondate contando i Convogli distrutti.
-static func _bl2_end_reason(state: GameState) -> String:
-	if state.convoys_completed >= 2:
-		return "Due Convogli britannici e/o tedeschi hanno Completato."
-	if state.sunk_count(TaskForce.Side.KRIEGSMARINE) \
-			+ state.sunk_count(TaskForce.Side.ROYAL_NAVY) >= 4:
-		return "Quattro navi, contando i Convogli distrutti, sono state affondate."
-	return ""
+static func _side_from_name(name: String) -> int:
+	return TaskForce.Side.ROYAL_NAVY if name == "ROYAL_NAVY" \
+		else TaskForce.Side.KRIEGSMARINE
 
 
 ## Continua una sequenza stampata che richiede piu' azioni senza tirare di

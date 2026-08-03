@@ -231,6 +231,14 @@ func rules() -> Dictionary:
 	return victory_data.get("rules", {})
 
 
+## Le condizioni di fine stampate nel riquadro "The End" dello scenario in
+## solitario. Un dizionario vuoto significa "non trascritte": lo scenario non
+## potra' finire da solo, e questo si vede subito in un replay invece di
+## sembrare una partita molto lunga.
+func end_conditions() -> Dictionary:
+	return victory_data.get("end_conditions", {})
+
+
 ## I Convogli possono disperdersi in questo scenario? La dispersione non e' un
 ## diritto, e' un permesso che danno le istruzioni.
 func convoy_dispersal_allowed() -> bool:
@@ -303,6 +311,7 @@ func to_state_dict() -> Dictionary:
 		"info_triggers": info_triggers,
 		"rendezvous_markers": rendezvous_markers,
 		"commanders": commanders,
+		"end_conditions": end_conditions(),
 	}
 
 

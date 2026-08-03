@@ -2,6 +2,7 @@
  "_scenario": "N1 Operazione Wilfred",
  "_source": "Fascicolo Scenari in Solitario, seconda edizione INGLESE (AC_Solo_scenarios_2022.pdf), pp.17-20. Trascritta a mano da render/testo del PDF aggiornato.",
  "_role": "Il giocatore e' il BRITANNICO; le tabelle rappresentano l'avversario TEDESCO.",
+ "_map": "ATTENZIONE: questo scenario NON si gioca sulla Mappa Operazionale ma sulla MAPPA INSERTO DEL MARE DI NORVEGIA (AC_Solo_scenarios_2022 p.17), che e' un'altra mappa con un'altra griglia. Il reticolo di questo progetto e' calibrato solo sulla mappa grande: finche' non e' calibrato anche l'inserto lo scenario non e' giocabile qui, e le sue tabelle servono da riferimento.",
  "_status": "Tabelle dello scenario verificate contro la seconda edizione inglese 2022. Dove un dato non e' calibrabile o manca, resta dichiarato invece di essere inventato.",
  "tables": [
   {

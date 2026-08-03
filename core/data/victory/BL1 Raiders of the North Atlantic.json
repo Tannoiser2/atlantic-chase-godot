@@ -158,5 +158,24 @@
   "port_control": {
     "Murmansk": "KRIEGSMARINE",
     "South America": "NONE"
+  },
+  "end_conditions": {
+    "_source": "AC_Solo_scenarios_2022 p.5, riquadro 'The End', letto sulla pagina renderizzata",
+    "_text": "The scenario ends when there are two or fewer Rendezvous markers remaining and the Germans have no Task Forces in play. It may also end as a result of the British Action Table.",
+    "any": [
+      {
+        "reason": "Restano due o meno marker Rendezvous e il tedesco non ha piu' Task Force in gioco.",
+        "all": [
+          {
+            "kind": "rendezvous_at_most",
+            "value": 2
+          },
+          {
+            "kind": "no_task_forces",
+            "side": "KRIEGSMARINE"
+          }
+        ]
+      }
+    ]
   }
 }

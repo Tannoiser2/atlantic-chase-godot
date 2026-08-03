@@ -103,6 +103,13 @@ var solo_counters: Dictionary = {}
 var solo_ended: bool = false
 var solo_end_reason: String = ""
 
+## Le condizioni di fine STAMPATE dello scenario in solitario, trascritte in
+## `core/data/victory/<scenario>.json` sotto `end_conditions`. Vivono nello
+## stato, non solo nel file, per due motivi: le legge `SoloAI` a ogni
+## cambiamento senza dover riaprire lo scenario, e finiscono nel salvataggio -
+## una partita ripresa deve finire quando finiva prima.
+var solo_end_conditions: Dictionary = {}
+
 
 func add_vp(side: int, amount: float, reason: String = "") -> void:
 	vp[side] = float(vp.get(side, 0.0)) + amount
@@ -422,6 +429,7 @@ func to_dict() -> Dictionary:
 		"solo_counters": solo_counters.duplicate(true),
 		"solo_ended": solo_ended,
 		"solo_end_reason": solo_end_reason,
+		"end_conditions": solo_end_conditions.duplicate(true),
 		"rng": rng.to_dict(),
 	}
 
@@ -462,6 +470,8 @@ func apply_dict(d: Dictionary) -> void:
 	solo_counters = (d.get("solo_counters", {}) as Dictionary).duplicate(true)
 	solo_ended = bool(d.get("solo_ended", false))
 	solo_end_reason = String(d.get("solo_end_reason", ""))
+	var ec: Variant = d.get("end_conditions", {})
+	solo_end_conditions = ec if typeof(ec) == TYPE_DICTIONARY else {}
 	vp_once.clear()
 	for k_v: Variant in d.get("vp_once", []):
 		vp_once.append(String(k_v))

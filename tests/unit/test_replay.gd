@@ -52,6 +52,10 @@ func run() -> void:
 	test_sequence_rules_are_shared_by_both_cycles()
 	test_declaration_drops_a_coordinating_tf_out_of_position()
 	test_gensoul_removes_one_intel_from_a_designated_force()
+	test_every_playable_solo_scenario_has_printed_end_conditions()
+	test_inset_map_scenarios_refuse_the_operations_map()
+	test_unknown_end_condition_never_ends_the_scenario()
+	test_a2_does_not_end_before_the_germans_ever_sailed()
 
 
 ## Il conto delle verifiche di ogni suite e' fisso (`EXPECTED` in
@@ -275,6 +279,7 @@ func test_bl1_scenario_end_needs_both_conditions() -> void:
 	var graph := MapGraph.load_default()
 	var st := GameState.new(graph, 1)
 	st.scenario_name = BL1
+	st.solo_end_conditions = Scenario.load_by_id(BL1).end_conditions()
 	st.rendezvous_markers = [
 		{"q": 10, "r": 3, "active": true},
 		{"q": 9, "r": -2, "active": true},
@@ -583,3 +588,105 @@ func _extend_with_info(tf: TaskForce, graph: MapGraph, st: GameState) -> void:
 	for h in graph.adjacent_hexes(from):
 		if tf.trajectory.extend(h, 1, graph, st.port_hexes(), true, tf.side):
 			return
+
+
+const OPERATIONS_MAP_SOLO := [
+	"BL1 Raiders of the North Atlantic", "BL2 Contain and Destroy",
+	"N4 Operazione Weser (nord & sud)", "N6 Il Dilemma delle Operazioni",
+	"B1 Operazione Berlino", "B2 La Battaglia dell'Atlantico",
+	"B3 Operazione Reno", "B4 Decisione sui Mari",
+	"A1 Convogli PQ", "A2 L'Ultima Battaglia",
+]
+
+## Cinque scenari solitari si giocano su una MAPPA INSERTO, con un'altra
+## griglia. Questo progetto ha calibrato solo la mappa grande.
+const INSET_MAP_SOLO := [
+	"BL3 Raiders of the North Sea", "N1 Operazione Wilfred",
+	"N2 Operazione Weser (nord)", "N3 Operazione Weser (sud)",
+	"N5 Meglio Tardi che Mai",
+]
+
+
+## Senza condizioni di fine trascritte uno scenario non finisce mai, e nel
+## replay questo si vedeva come "120 turni": un difetto travestito da partita
+## lunga. Ogni scenario giocabile deve averle, e con la fonte accanto.
+func test_every_playable_solo_scenario_has_printed_end_conditions() -> void:
+	_begin("condizioni di fine trascritte e citate")
+	var missing: Array[String] = []
+	var unsourced: Array[String] = []
+	for id in OPERATIONS_MAP_SOLO:
+		var sc := Scenario.load_by_id(id)
+		var ec := sc.end_conditions()
+		var rules: Array = ec.get("any", [])
+		if rules.is_empty():
+			missing.append(id)
+			continue
+		if not String(ec.get("_source", "")).contains("AC_Solo_scenarios_2022") \
+				or String(ec.get("_text", "")) == "":
+			unsourced.append(id)
+	eq(missing.size(), 0, "scenari senza condizioni di fine: %s" % ", ".join(missing))
+	eq(unsourced.size(), 0, "condizioni senza fonte o testo stampato: %s"
+		% ", ".join(unsourced))
+
+
+func test_inset_map_scenarios_refuse_the_operations_map() -> void:
+	_begin("gli scenari su mappa inserto lo dichiarano")
+	var undeclared: Array[String] = []
+	var misplaced: Array[String] = []
+	for id in INSET_MAP_SOLO:
+		var sc := Scenario.load_by_id(id)
+		if sc.map_info.is_empty():
+			undeclared.append(id)
+		if not sc.task_forces.is_empty():
+			misplaced.append(id)
+	eq(undeclared.size(), 0, "non dichiarano la mappa inserto: %s"
+		% ", ".join(undeclared))
+	# E' il punto: prima quattro di questi piazzavano le TF su porti della
+	# mappa grande usati come sostituti, cioe' su posizioni inventate.
+	eq(misplaced.size(), 0, "piazzano TF sulla mappa sbagliata: %s"
+		% ", ".join(misplaced))
+	# Il replay deve rifiutarsi di giocarli, non giocarli male.
+	var runner := SoloRunner.new()
+	false_(runner.load_scenario(INSET_MAP_SOLO[0], 1),
+		"il replay rifiuta uno scenario su mappa inserto")
+	true_(runner.load_error.contains("Inserto"),
+		"e dice che il problema e' la mappa: %s" % runner.load_error)
+
+
+## L'interprete conosce poche forme, quelle che il fascicolo usa davvero. Una
+## forma che non conosce deve rendere la regola NON soddisfatta: uno scenario
+## che non finisce e' un difetto visibile, uno che finisce quando non deve e'
+## una partita sbagliata in silenzio.
+func test_unknown_end_condition_never_ends_the_scenario() -> void:
+	_begin("una condizione sconosciuta non chiude lo scenario")
+	var st := GameState.new(MapGraph.load_default(), 1)
+	st.scenario_name = "prova"
+	st.solo_end_conditions = {"any": [{"reason": "mai",
+		"all": [{"kind": "condizione_inventata", "value": 1}]}]}
+	false_(SoloAI.enforce_scenario_end(st),
+		"una condizione non riconosciuta non fa finire la partita")
+	false_(st.solo_ended, "e lo stato resta aperto")
+	# Una regola senza condizioni non vale come "sempre vera".
+	st.solo_end_conditions = {"any": [{"reason": "vuota", "all": []}]}
+	false_(SoloAI.enforce_scenario_end(st), "una regola vuota non e' soddisfatta")
+
+
+## A2 p.63: "no Task Forces in play (they are sunk or Completed)". La parentesi
+## distingue "non ne ha piu'" da "non ne ha ancora", e in A2 conta davvero: lo
+## schieramento tedesco si compra coi VP prima della prima azione, passaggio
+## non modellato, quindi la partita comincia senza Task Force tedesche.
+func test_a2_does_not_end_before_the_germans_ever_sailed() -> void:
+	_begin("A2 non finisce prima di aver cominciato")
+	var graph := MapGraph.load_default()
+	var st := GameState.new(graph, 1)
+	st.scenario_name = "A2 L'Ultima Battaglia"
+	st.solo_end_conditions = Scenario.load_by_id("A2 L'Ultima Battaglia").end_conditions()
+	false_(SoloAI.enforce_scenario_end(st),
+		"senza TF tedesche mai entrate in gioco lo scenario non finisce")
+	# Una nave persa: adesso la clausola stampata e' soddisfatta.
+	st.casualties.append({"side": TaskForce.Side.KRIEGSMARINE,
+		"ships": ["Tirpitz"], "convoys": 0})
+	true_(SoloAI.enforce_scenario_end(st),
+		"perse le navi, la condizione stampata scatta")
+	true_(st.solo_end_reason.contains("Task Force"),
+		"e il motivo cita le Task Force")

@@ -41,5 +41,22 @@
  ],
  "rules": {
   "convoy_dispersal": "vedi raw_victory_text e scenario_text"
+ },
+ "end_conditions": {
+  "_source": "AC_Solo_scenarios_2022 p.36, riquadro 'The End', letto sulla pagina renderizzata",
+  "_text": "The scenario ends when two British Convoys successfully Complete. However, if Norway is invaded (see p. 38), the scenario ends only after three British Convoys have Completed (the third is a reinforcement, and may only Complete in Norway or Scapa Flow). It may also end by the German Action Table.",
+  "_gap": "L'invasione della Norvegia non e' modellata: finche' non lo e', vale la soglia base di due Convogli britannici. Con la Norvegia invasa il fascicolo ne chiede tre.",
+  "any": [
+   {
+    "reason": "Due Convogli britannici hanno Completato.",
+    "all": [
+     {
+      "kind": "convoys_completed_by",
+      "side": "ROYAL_NAVY",
+      "value": 2
+     }
+    ]
+   }
+  ]
  }
 }

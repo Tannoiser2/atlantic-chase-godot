@@ -209,14 +209,27 @@ func _declared_stall() -> String:
 		return ""
 	if _has_available_reinforcements():
 		return ""
-	if not scenario.id.begins_with("BL1"):
-		return ""
-	if state.rendezvous_markers.size() <= 2:
-		return ""
-	return ("il giocatore non ha piu' Task Force ne' Gruppi di Rinforzo e "
-		+ "restano %d marker Rendezvous: la condizione di fine stampata "
-		+ "(due o meno marker E nessuna TF tedesca) non puo' piu' avverarsi.") \
-		% state.rendezvous_markers.size()
+	# Il giocatore non ha ne' Task Force ne' Gruppi di Rinforzo: non puo' piu'
+	# fare niente che avvicini una condizione di fine. Se la fine non e' gia'
+	# scattata, non scattera' mai, e continuare a tirare la Tabella per il bot
+	# non e' una partita: e' un ciclo che consuma turni.
+	if state.solo_end_conditions.is_empty():
+		return ("il giocatore non ha piu' Task Force ne' Gruppi di Rinforzo, e "
+			+ "lo scenario non ha condizioni di fine trascritte.")
+	if turns <= 1:
+		# Non ne ha mai avute: e' lo schieramento a mancare, non la partita ad
+		# essere finita male. A2 compra le proprie forze coi VP prima della
+		# prima azione (p.63) e quel passaggio non e' modellato.
+		return ("il giocatore non ha Task Force fin dall'inizio e non ha Gruppi "
+			+ "di Rinforzo utilizzabili: lo schieramento di questo scenario non "
+			+ "e' modellato, quindi non c'e' partita da giocare.")
+	if scenario.id.begins_with("BL1"):
+		return ("il giocatore non ha piu' Task Force ne' Gruppi di Rinforzo e "
+			+ "restano %d marker Rendezvous: la condizione di fine stampata "
+			+ "(due o meno marker E nessuna TF tedesca) non puo' piu' avverarsi.") \
+			% state.active_rendezvous_count()
+	return ("il giocatore non ha piu' Task Force ne' Gruppi di Rinforzo: "
+		+ "nessuna condizione di fine stampata puo' piu' avverarsi.")
 
 
 func _has_available_reinforcements() -> bool:

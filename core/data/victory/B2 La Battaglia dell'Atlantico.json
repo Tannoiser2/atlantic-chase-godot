@@ -51,5 +51,20 @@
  ],
  "rules": {
   "convoy_dispersal": "vedi raw_victory_text e scenario_text"
+ },
+ "end_conditions": {
+  "_source": "AC_Solo_scenarios_2022 p.45, riquadro 'The End', letto sulla pagina renderizzata",
+  "_text": "The scenario ends when three Convoys have successfully Completed in their destination ports.",
+  "any": [
+   {
+    "reason": "Tre Convogli hanno Completato nei loro porti di destinazione.",
+    "all": [
+     {
+      "kind": "convoys_completed_total",
+      "value": 3
+     }
+    ]
+   }
+  ]
  }
 }

@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **2733 verifiche, 18 suite, headless.**
+Tutti i test passano: **2750 verifiche, 18 suite, headless.**
 
 ---
 
@@ -228,6 +228,31 @@ Tutti i test passano: **2733 verifiche, 18 suite, headless.**
   come una ricerca quello che e' un passaggio; e una decisione senza effetto
   lasciava l'Iniziativa al bot senza accodare niente, cioe' fermava la partita
   in attesa di un giocatore che non doveva muovere.
+- **Quattro scenari solitari si giocavano sulla mappa sbagliata.** N1, N2, N3
+  e N5 usano una MAPPA INSERTO - Mare di Norvegia o Mare del Nord - come BL3,
+  che lo dichiarava. Loro no: piazzavano le Task Force su porti della Mappa
+  Operazionale usati come sostituti, Narvik per Vestfjorden, Trondheim per Bud,
+  Bergen per Andalsnes. Sono posizioni inventate, ed erano scritte nelle note
+  di schieramento senza che nessuno le trattasse come un problema. Ora tutti e
+  cinque lo dichiarano e il replay si rifiuta di giocarli; lo schieramento
+  trascritto resta in `unplaced_forces`, pronto per quando l'inserto sara'
+  calibrato. Il progetto ha percio' **meno** scenari giocabili di ieri, e il
+  numero di prima era falso.
+- **Le condizioni di fine sono un dato, non quindici rami di codice.** Stavano
+  in `SoloAI` per BL1 e BL2; gli altri tredici scenari non finivano mai, e nel
+  replay questo si vedeva come "120 turni", cioe' un difetto travestito da
+  partita lunga. Ora ogni scenario giocabile ha in `core/data/victory/` il
+  riquadro "The End" trascritto dalla pagina renderizzata, col testo inglese e
+  la pagina accanto, e `SoloAI` interpreta le poche forme che il fascicolo usa
+  davvero. Una forma che l'interprete non conosce rende la regola NON
+  soddisfatta: uno scenario che non finisce e' un difetto visibile, uno che
+  finisce quando non deve e' una partita sbagliata in silenzio.
+- **A2 finiva al turno zero.** La sua condizione e' "the Germans have no Task
+  Forces in play (they are sunk or Completed)", e quella parentesi non e' un
+  commento: distingue "non ne ha piu'" da "non ne ha ancora". In A2 il tedesco
+  le proprie navi le compra coi VP prima della prima azione (p.63), passaggio
+  non modellato, quindi la partita comincia senza Task Force tedesche. Senza la
+  parentesi lo scenario si dichiarava concluso prima di cominciare.
 - **I Comandanti dicono la loro condizione stampata.** Gli undici testi sono
   trascritti da RB p.10 letta a 300 dpi: la scheda TF mostra la regola vera e
   non un riassunto, ed e' quella che decide se il beneficio si puo' usare

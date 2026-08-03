@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Aggiornato dopo la chiusura di **R0** (3 agosto 2026). Baseline: **2733
+Aggiornato dopo la chiusura di **R0** (3 agosto 2026). Baseline: **2750
 verifiche su 18 suite**.
 
 Questo e' il backlog autorevole per continuare la revisione. `STATO.md`
@@ -26,7 +26,7 @@ vecchie sezioni "Cosa manca" non devono riaprire lavori gia' completati.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 2733 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 2750 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
@@ -107,9 +107,15 @@ Uno scenario puo' essere marcato completo solo quando:
   TF designata nell'Azione corrente, una volta per scenario, e l'offerta arriva
   PRIMA della risoluzione perche' l'Interruzione si tira proprio su quei
   segnalini. **Resta Forbes.**
-- [ ] **BL3 Raiders of the North Sea**: calibrare il reticolo della Mappa
-  Inserto del Mare del Nord e applicare lo setup. Le tabelle sono trascritte;
-  non fingere coordinate sulla Mappa Operazionale.
+- [ ] **CINQUE scenari solitari si giocano su una MAPPA INSERTO**, non sulla
+  Mappa Operazionale: BL3 e N3 sul Mare del Nord, N1, N2 e N5 sul Mare di
+  Norvegia (fascicolo pp.12, 17, 21, 25, 32). Solo BL3 lo dichiarava; gli altri
+  quattro piazzavano le Task Force su porti della mappa grande usati come
+  sostituti - Narvik per Vestfjorden, Trondheim per Bud, Bergen per Andalsnes -
+  cioe' su posizioni inventate. Ora lo dichiarano tutti e cinque e il replay si
+  rifiuta di giocarli; lo schieramento trascritto resta in `unplaced_forces`,
+  pronto per quando l'inserto sara' calibrato. **Il lavoro vero e' uno solo:
+  calibrare i due reticoli inserto**, e sblocca cinque scenari insieme.
 - [ ] **N1 Operazione Wilfred**: 30 procedure testuali nel JSON; completare
   Azioni, Identificazione, porti, reazioni e setup.
 - [ ] **N2 Operazione Weser (nord)**: 26 procedure testuali; modellare Mine o
@@ -131,6 +137,19 @@ Uno scenario puo' essere marcato completo solo quando:
 I numeri sopra contano tutte le stringhe `senza automatismi del motore` nei
 rispettivi JSON. L'audit automatico conta solo quelle nelle Tabelle Azioni e
 per questo riporta 82, non la somma dell'elenco.
+
+### Che cosa dice oggi il replay, scenario per scenario
+
+`godot --headless --path . --script res://tools/replay_solo.gd` gioca tutti e
+quindici e distingue tre esiti. Non e' piu' "120 turni" per tutti: adesso ogni
+riga dice che cosa manca.
+
+| esito | scenari | che cosa serve |
+|---|---|---|
+| finisce per condizione stampata | BL1, BL2, N4, N6, B1, B3 | niente: chiudere le procedure segnaposto |
+| non giocabile, mappa inserto | BL3, N1, N2, N3, N5 | calibrare i reticoli inserto |
+| stallo dichiarato | B2, B4, A1 | il terzo Convoglio non entra mai: servono le procedure di rinforzo, oggi segnaposto |
+| stallo dichiarato | A2 | lo schieramento si compra coi VP prima della prima azione (p.63): passaggio non modellato |
 
 ## P0 - Sistemi mancanti al solitario
 
