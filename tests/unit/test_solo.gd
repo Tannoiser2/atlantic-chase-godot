@@ -55,6 +55,8 @@ func run() -> void:
 	test_bl2_air_strike_fallbacks_and_removals()
 	test_bl2_end_procedure()
 	test_bl2_identification_and_incident()
+	test_bl2_completion_destinations()
+	test_bl2_battle_identifies_unknown_tf()
 	test_bl2_x_keeps_damaged_selection()
 	test_solo_ai_bl3_completion_port_by_phase()
 	test_solo_ai_bl1_x_creates_unknown_hunter()
@@ -759,6 +761,47 @@ func test_bl2_identification_and_incident() -> void:
 		st, graph, ActionEngine.load_default(), {}, unknown.side)
 	true_(String((airbase["log"] as Array)[0]).contains("non e' ancora modellata"),
 		"la Base Aerea mancante resta un buco dichiarato")
+
+
+func test_bl2_completion_destinations() -> void:
+	_begin("BL2: i Convogli completano solo alla destinazione stampata")
+	var sc := Scenario.load_by_id("BL2 Contain and Destroy")
+	var st := GameState.new(graph, 71)
+	st.apply_dict(sc.to_state_dict())
+	var africa := _tf_named(st, "Convoglio Africa-Portsmouth")
+	var halifax := _tf_named(st, "Convoglio Halifax-Clyde")
+	ne(africa, null, "Convoglio Africa-Portsmouth caricato")
+	ne(halifax, null, "Convoglio Halifax-Clyde caricato")
+	eq(Completion.port_options(africa, graph, sc.port_control()).size(), 0,
+		"Africa e' il porto di partenza, non una destinazione valida")
+	false_(Completion.port_options(halifax, graph, sc.port_control())
+		.any(func(p: Dictionary) -> bool: return String(p["name"]) == "Halifax"),
+		"Halifax e' il porto di partenza, non una destinazione valida")
+	eq(africa.solo_flags.get("completion_ports", []), ["Portsmouth"],
+		"la destinazione Africa-Portsmouth resta esplicita nei dati")
+	eq(halifax.solo_flags.get("completion_ports", []), ["Clyde", "Liverpool"],
+		"entrambe le destinazioni stampate Halifax-Clyde/Liverpool sono ammesse")
+
+
+func test_bl2_battle_identifies_unknown_tf() -> void:
+	_begin("BL2: una TF ignota viene identificata prima della Battaglia")
+	var sc := Scenario.load_by_id("BL2 Contain and Destroy")
+	var st := GameState.new(graph, 72)
+	st.scenario_name = sc.id
+	var unknown := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
+	unknown.unidentified = true
+	unknown.trajectory.become_station(Vector2i(11, -3))
+	st.add_task_force(unknown)
+	var opponent := SoloOpponent.load_for(sc.id)
+	var result := SoloAI.identify_for_battle(opponent, st, graph,
+		ActionEngine.load_default(), sc.port_control(), unknown)
+	true_(bool(result.get("ok", false)), "tiro e applicazione riescono nel core")
+	true_(bool(result.get("needed", false)), "l'identificazione era necessaria")
+	false_(unknown.unidentified, "la TF non resta ignota")
+	true_(unknown.afloat_ships().size() > 0,
+		"la TF ha navi prima di essere trasferita alla Battaglia")
+	true_((result.get("roll", {}) as Dictionary).has("code"),
+		"il risultato del tiro resta disponibile per il registro")
 
 
 func test_bl2_x_keeps_damaged_selection() -> void:

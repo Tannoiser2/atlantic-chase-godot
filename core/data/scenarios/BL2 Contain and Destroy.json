@@ -37,6 +37,12 @@
    ],
    "leader": "",
    "speed": 2,
+   "solo_flags": {
+    "completion_ports": [
+     "Clyde",
+     "Liverpool"
+    ]
+   },
    "trajectory": {
     "segments": [
      {
@@ -123,6 +129,11 @@
    ],
    "leader": "",
    "speed": 2,
+   "solo_flags": {
+    "completion_ports": [
+     "Portsmouth"
+    ]
+   },
    "trajectory": {
     "segments": [],
     "station_q": 11,

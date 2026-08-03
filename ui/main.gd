@@ -463,7 +463,7 @@ func _on_key(k: InputEventKey) -> void:
 			# Mappa di Battaglia senza dipendere dal tiro di dadi.
 			if selected_tf != null:
 				var en := _nearest_enemy(selected_tf)
-				if en != null:
+				if en != null and await _prepare_solo_battle(selected_tf, en):
 					var t := selected_tf.trajectory
 					_open_battle(Results.Battle.FULL, selected_tf, en,
 						t.station_hex if t.is_station() else t.end_hex(0))
@@ -618,6 +618,9 @@ func _declare_action(key: String) -> void:
 		_solo_maybe_go_late("air_strike", "e' stato eseguito un Attacco Aereo")
 	elif key == "STEALTH_ATTACK":
 		_solo_maybe_go_late("stealth_attack", "e' stato eseguito un Attacco Furtivo")
+	if pending_battle != Results.Battle.NONE \
+			and not await _prepare_solo_battle(dec.active, target):
+		pending_battle = Results.Battle.NONE
 	if pending_battle != Results.Battle.NONE:
 		_solo_maybe_go_late("battle", "un risultato ha aperto una Battaglia")
 		_battle_post_time_lapse.clear()
@@ -913,6 +916,45 @@ func _open_battle(kind_result: int, active: TaskForce, target: TaskForce,
 	bstate.target_tf = target
 	bstate.hex = hex
 	_show_battle(bstate)
+
+
+## Regole solitarie generali: una TF ignota viene identificata appena un
+## risultato trasferisce le sue navi alla Mappa di Battaglia. La scelta delle
+## navi e' del core; qui rendiamo leggibili tiro, applicazione ed eventuale gap.
+func _prepare_solo_battle(active: TaskForce, target: TaskForce) -> bool:
+	if solo == null:
+		return true
+	for tf_v: Variant in [active, target]:
+		var tf: TaskForce = tf_v
+		var identified := SoloAI.identify_for_battle(solo, state, graph, engine,
+			_port_control(), tf)
+		if not bool(identified.get("needed", false)):
+			continue
+		_msg("Solitario - Identificazione automatica prima della Battaglia: %s"
+			% tf.display_name())
+		var roll: Dictionary = identified.get("roll", {})
+		if not roll.is_empty():
+			for line in SoloTable.describe(roll).split("\n"):
+				_msg("  " + line)
+		for line_v: Variant in identified.get("log", []):
+			var line := String(line_v)
+			if line != "":
+				_msg("  " + line)
+		if not bool(identified.get("ok", false)):
+			var failure := "Identificazione automatica non applicabile."
+			var failure_log: Array = identified.get("log", [])
+			if not failure_log.is_empty():
+				failure = String(failure_log[0])
+			_msg("Battaglia non aperta: %s"
+				% failure)
+			log.record("Solitario: Identificazione automatica non riuscita")
+			state.changed.emit()
+			return false
+		log.record("Solitario: Identificazione automatica di %s"
+			% tf.display_name())
+	_resync_selection()
+	state.changed.emit()
+	return true
 
 
 ## I dodici mini-scenari partono direttamente qui: sono Battaglie gia'
@@ -1691,6 +1733,9 @@ func _resolve_solo_ai_action(decision: Dictionary) -> String:
 		_solo_maybe_go_late("air_strike", "il bot ha eseguito un Attacco Aereo")
 	elif key == "STEALTH_ATTACK":
 		_solo_maybe_go_late("stealth_attack", "il bot ha eseguito un Attacco Furtivo")
+	if pending_battle != Results.Battle.NONE \
+			and not await _prepare_solo_battle(active, target):
+		pending_battle = Results.Battle.NONE
 	if pending_battle != Results.Battle.NONE:
 		_solo_maybe_go_late("battle", "un risultato del bot ha aperto una Battaglia")
 		_open_battle(pending_battle, active, target, dec.target_hex)

@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **2426 verifiche, 17 suite, headless.**
+Tutti i test passano: **2437 verifiche, 17 suite, headless.**
 
 ---
 
@@ -119,6 +119,15 @@ Tutti i test passano: **2426 verifiche, 17 suite, headless.**
   hanno policy dedicate. Identificazione e Incidente Internazionale applicano
   i propri risultati; le condizioni di fine a 2 Convogli o 4 navi sono
   automatiche e persistono nel salvataggio;
+- i Convogli iniziali BL2 hanno destinazioni esplicite: Africa-Portsmouth non
+  puo' Completare ad Africa e Halifax-Clyde/Liverpool non puo' Completare ad
+  Halifax. Il porto di origine non assegna piu' VP ne' altera prematuramente la
+  colonna della Tabella delle Azioni;
+- quando un risultato porta in Battaglia una TF non identificata, il core tira
+  e applica automaticamente la Tabella di Identificazione prima di aprire la
+  Mappa di Battaglia. Tiro e composizione rivelata restano nel Registro; un
+  dato o una nave indisponibile producono un blocco dichiarato, non una TF
+  vuota che assorbe altri Ingaggi;
 - nelle procedure composte BL2, la seconda azione non puo' piu' generare una
   seconda Traiettoria: dopo la rotta prescritta tenta il Completamento sulla
   posizione corrente oppure Passa se non raggiunge il porto, supera 6 segmenti
@@ -309,8 +318,8 @@ cd atlantic_chase && godot --path .
   illegali vengono rifiutate *con il motivo scritto* nel log.
 - Il pannello mostra il **Totale Traiettoria** sempre aggiornato: è la
   contabilità che nel gioco fisico si sbaglia di continuo.
-- **T** applica lo Scorrere del Tempo con la velocità della TF e il meteo
-  correnti; **Ctrl+W** cambia il meteo.
+- Lo Scorrere del Tempo compare soltanto quando lo innesca un'Azione o un
+  evento; non ha comando autonomo. **Ctrl+W** cambia il meteo.
 - **1** dichiara un'azione Ingaggiare completa: Totale Traiettoria → verifica di
   Interruzione → tiro 2d6 → lettura tabella → applicazione del risultato, con
   tutti i passaggi scritti nel log.

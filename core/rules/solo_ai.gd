@@ -234,6 +234,31 @@ static func _bl2_table_result(table_id: String, result: Dictionary,
 	return _empty("Solitario AI BL2: tabella '%s' non applicabile automaticamente." % table_id)
 
 
+## Le regole solitarie impongono di identificare immediatamente una TF ignota
+## quando le sue navi devono passare alla Mappa di Battaglia. Il tiro e la sua
+## applicazione restano qui, nel core, cosi' il flusso non dipende dalla UI.
+static func identify_for_battle(opponent: SoloOpponent, state: GameState,
+		graph: MapGraph, engine: ActionEngine, port_control: Dictionary,
+		tf: TaskForce) -> Dictionary:
+	if tf == null or not tf.unidentified:
+		return {"ok": true, "needed": false, "roll": {},
+			"log": [] as Array[String]}
+	if opponent == null:
+		return _empty("Identificazione automatica impossibile: modo solitario non caricato.")
+	var roll := opponent.identify(state.rng, tf)
+	if not bool(roll.get("ok", false)):
+		var failed := _empty("Identificazione automatica impossibile: %s"
+			% String(roll.get("error", "tabella non disponibile")))
+		failed["needed"] = true
+		failed["roll"] = roll
+		return failed
+	var applied := apply_table_result("identify", roll, state, graph, engine,
+		port_control, tf.side, tf)
+	applied["needed"] = true
+	applied["roll"] = roll
+	return applied
+
+
 static func _bl2_identify(state: GameState, tf: TaskForce, code: String) -> Dictionary:
 	if tf == null or not tf.unidentified:
 		return _empty("Solitario AI BL2: nessuna TF tedesca non identificata selezionata.")

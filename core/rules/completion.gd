@@ -90,11 +90,17 @@ static func port_options(tf: TaskForce, graph: MapGraph,
 		port_control: Dictionary = {}) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	var seen: Array[String] = []
+	var required_ports: Array[String] = []
+	for port_v: Variant in tf.solo_flags.get("completion_ports", []):
+		required_ports.append(String(port_v))
+	# Compatibilita' con i dati BL1 trascritti prima del vincolo generico.
+	var legacy_port := String(tf.solo_flags.get("bl1_completion_port", ""))
+	if required_ports.is_empty() and legacy_port != "":
+		required_ports.append(legacy_port)
 	for h in occupied_hexes(tf):
 		for pname_v: Variant in graph.ports_in(h):
 			var pname := String(pname_v)
-			var required := String(tf.solo_flags.get("bl1_completion_port", ""))
-			if required != "" and pname != required:
+			if not required_ports.is_empty() and not required_ports.has(pname):
 				continue
 			if seen.has(pname):
 				continue
