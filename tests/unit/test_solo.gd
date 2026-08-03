@@ -1330,6 +1330,23 @@ func test_solo_battle_behavior() -> void:
 	true_(SoloBattle.wants_break_away(st, TaskForce.Side.KRIEGSMARINE),
 		"i tedeschi tentano la Fuga davanti a una BB/BC britannica integra")
 
+	st.advanced = true
+	var attitudes := SoloBattle.attitude_choices(st, TaskForce.Side.ROYAL_NAVY)
+	eq(int(attitudes[convoy]), Attitude.Kind.RUNNING,
+		"il bot mette il Convoglio in Corsa")
+	eq(int(attitudes[hood]), Attitude.Kind.ACQUIRING,
+		"una nave britannica senza siluri gia' Vicina acquisisce il bersaglio")
+	hipper.attitude = Attitude.Kind.CLOSING
+	var hipper_move := SoloBattle.maneuver_for_ship(st, hipper,
+		TaskForce.Side.KRIEGSMARINE)
+	eq(int(hipper_move["zone"]), BattleState.Zone.CLOSE,
+		"la Manovra automatica avanza di una sola zona")
+	convoy.attitude = Attitude.Kind.RUNNING
+	convoy.battle_zone = BattleState.Zone.FAR
+	hipper.attitude = Attitude.Kind.CLOSING
+	eq(SoloBattle.pursuit_target(st, hipper, TaskForce.Side.KRIEGSMARINE), convoy,
+		"il bot Insegue una nave in Corsa prima del passo Fuga")
+
 
 func test_solo_battle_view_preassigns_both_sides() -> void:
 	_begin("Battaglia solitaria: bersagli proposti per entrambi i lati")
@@ -1354,4 +1371,23 @@ func test_solo_battle_view_preassigns_both_sides() -> void:
 	var auto: Dictionary = view._auto_targeting_for_phase()
 	eq(auto[hipper], hood, "l'avversario immaginario ha un bersaglio")
 	eq(auto[hood], hipper, "anche il giocatore riceve un bersaglio proposto")
+	true_(view._can_control_ship(hood), "il giocatore controlla la propria nave")
+	false_(view._can_control_ship(hipper), "ma non puo' comandare quella del bot")
+
+	st.advanced = true
+	st.phase = BattleState.Phase.TORPEDO
+	hipper.has_torpedo = true
+	hipper.attitude = Attitude.Kind.CLOSING
+	var torpedoes := view._auto_targeting_for_phase()
+	eq(torpedoes.get(hipper), hood,
+		"i siluri legali del bot vengono assegnati nella fase Siluri")
+
+	st.phase = BattleState.Phase.MANEUVER
+	hipper.attitude = Attitude.Kind.CLOSING
+	hipper.battle_zone = BattleState.Zone.NEAR
+	view._maneuvered = [hood] as Array[Ship]
+	view._run_bot_maneuvers_until_player()
+	eq(hipper.battle_zone, BattleState.Zone.CLOSE,
+		"quando arriva il suo turno il bot muove immediatamente")
+	true_(view._maneuvered.has(hipper), "e non puo' muovere la stessa nave due volte")
 	view.free()

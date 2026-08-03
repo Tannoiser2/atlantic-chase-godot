@@ -33,10 +33,56 @@ static func maneuver_moves(state: BattleState, imaginary_side: int) -> Dictionar
 	var out := {}
 	var enemies := _ships_of_side(state, 1 - imaginary_side)
 	for s in _ships_of_side(state, imaginary_side):
-		var to_zone := _maneuver_destination(s, imaginary_side, enemies,
-			state.advanced)
-		out[s] = {"zone": to_zone, "smoke": s.smoke}
+		out[s] = maneuver_for_ship(state, s, imaginary_side, enemies)
 	return out
+
+
+static func maneuver_for_ship(state: BattleState, ship: Ship,
+		imaginary_side: int, enemies: Array[Ship] = []) -> Dictionary:
+	if enemies.is_empty():
+		enemies = _ships_of_side(state, 1 - imaginary_side)
+	return {"zone": _maneuver_destination(ship, imaginary_side, enemies,
+		state.advanced), "smoke": ship.smoke}
+
+
+## L'avversario immaginario sceglie da solo le proprie Attitudini. Non sono
+## movimenti obbligatori: sono la sua decisione tattica, poi il motore applica
+## gli stessi limiti di piazzamento e di scenario del giocatore umano.
+static func attitude_choices(state: BattleState, imaginary_side: int) -> Dictionary:
+	var out := {}
+	var enemies := _ships_of_side(state, 1 - imaginary_side)
+	for ship in _ships_of_side(state, imaginary_side):
+		if not Attitude.can_change(ship):
+			continue
+		var choice := Attitude.Kind.CLOSING
+		if ship.kind == Ship.Kind.CONVOY or ship.damaged:
+			choice = Attitude.Kind.RUNNING
+		elif ship.has_torpedo and ship.torpedo_attacks_used \
+				< ship.torpedo_attack_limit:
+			choice = Attitude.Kind.CLOSING
+		elif imaginary_side == TaskForce.Side.ROYAL_NAVY:
+			choice = Attitude.Kind.CLOSING if ship.battle_zone == BattleState.Zone.FAR \
+				else Attitude.Kind.ACQUIRING
+		elif _has_capital(enemies):
+			choice = Attitude.Kind.RUNNING
+		else:
+			choice = Attitude.Kind.ACQUIRING
+		out[ship] = choice
+	return out
+
+
+## Se puo', il bot usa Inseguimento contro una nave che sta gia' Correndo:
+## rinuncia al proprio movimento e la trascina una zona piu' vicina. E' la
+## risposta tattica prevista dal regolamento a un futuro tentativo di Fuga.
+static func pursuit_target(state: BattleState, pursuer: Ship,
+		imaginary_side: int) -> Ship:
+	if not state.advanced or not Attitude.can_pursue(pursuer):
+		return null
+	for enemy in _ships_of_side(state, 1 - imaginary_side):
+		if enemy.attitude == Attitude.Kind.RUNNING \
+				and Attitude.pursuit_refusal(pursuer, enemy) == "":
+			return enemy
+	return null
 
 
 static func wants_break_away(state: BattleState, imaginary_side: int) -> bool:

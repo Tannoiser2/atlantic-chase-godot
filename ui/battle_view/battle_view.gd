@@ -225,7 +225,9 @@ func _rebuild_buttons() -> void:
 				if not targeting.is_empty():
 					items.append(["Azzera bersagli", "R", _clear_targets, false])
 			BattleState.Phase.TORPEDO:
-				items.append(["Lancia i Siluri", "SPAZIO", _advance_phase, true])
+				items.append(["Lancia %d attacchi con Siluri" % targeting.size()
+					if not targeting.is_empty() else "Nessun Siluro legale: continua",
+					"SPAZIO", _advance_phase, true])
 				items.append(["Bersagli automatici", "A", _auto_assign, false])
 				if not targeting.is_empty():
 					items.append(["Azzera bersagli", "R", _clear_targets, false])
@@ -249,16 +251,22 @@ func _rebuild_buttons() -> void:
 					_advance_phase, true] if current != null else
 					["Fine Manovra", "SPAZIO", _advance_phase, true])
 				items.append(["Fumo", "S", _smoke_selected, false])
+				if current != null and state.advanced \
+						and _direction_destination(current) >= 0:
+					items.append(["Muovi 1 zona: %s" % BattleState.ZONE_LABELS[
+						_direction_destination(current)], "M", _move_current_direction,
+						false])
 				if selected != null and Attitude.can_pursue(selected):
 					items.append(["Insegui", "I", _pursue_selected, false])
 			BattleState.Phase.BREAK_AWAY:
 				items.append(["Nessuna Fuga", "SPAZIO", _advance_phase, true])
 				if state.round_number >= state.minimum_break_away_round:
-					items.append(["Fuga: %s" % _side_label(true), "F",
-						func() -> void: _do_break_away(true, false), false])
-					items.append(["Fuga: %s" % _side_label(false), "G",
-						func() -> void: _do_break_away(false, true), false])
-		items.append(["Abbandona", "ESC", func() -> void: closed.emit(), false])
+					if solo_player_side < 0 or state.active_tf.side == solo_player_side:
+						items.append(["Fuga: %s" % _side_label(true), "F",
+							func() -> void: _do_break_away(true, false), false])
+					if solo_player_side < 0 or state.target_tf.side == solo_player_side:
+						items.append(["Fuga: %s" % _side_label(false), "G",
+							func() -> void: _do_break_away(false, true), false])
 
 	for it_v: Variant in items:
 		var it: Array = it_v
@@ -277,6 +285,13 @@ func _rebuild_buttons() -> void:
 func _is_targeting_phase() -> bool:
 	return not state.ended and (state.phase == BattleState.Phase.GUNNERY
 		or state.phase == BattleState.Phase.TORPEDO)
+
+
+func _can_control_ship(ship: Ship) -> bool:
+	if ship == null or solo_player_side < 0:
+		return true
+	var tf := state.own_tf_of(ship)
+	return tf != null and tf.side == solo_player_side
 
 
 ## Le navi nemiche che questa puo' colpire ADESSO, nella fase in corso.
@@ -312,6 +327,10 @@ func _can_fire_now(firer: Ship) -> bool:
 
 ## Assegna un bersaglio, o lo toglie se si riclicca lo stesso.
 func _assign_target(firer: Ship, target: Ship) -> void:
+	if not _can_control_ship(firer):
+		state.note("Solitario: il bersaglio di %s e' deciso dal bot." % firer.name)
+		refresh()
+		return
 	if not _legal_targets(firer).has(target):
 		state.note("%s non puo' colpire %s da qui." % [firer.name, target.name])
 		refresh()
@@ -357,6 +376,8 @@ func _preassign() -> void:
 	var auto: Dictionary = _auto_targeting_for_phase()
 	for f_v: Variant in auto.keys():
 		targeting[f_v] = auto[f_v]
+	if state.phase == BattleState.Phase.TORPEDO and targeting.is_empty():
+		state.note("Siluri: %s" % _torpedo_status())
 
 
 func _auto_targeting_for_phase() -> Dictionary:
@@ -371,10 +392,55 @@ func _auto_targeting_for_phase() -> Dictionary:
 
 
 func _clear_targets() -> void:
-	targeting.clear()
+	if _solo_imaginary_side() < 0:
+		targeting.clear()
+	else:
+		for f_v: Variant in targeting.keys().duplicate():
+			if _can_control_ship(f_v as Ship):
+				targeting.erase(f_v)
 	_assigning = null
-	state.note("Bersagli azzerati.")
+	state.note("Bersagli del giocatore azzerati; le decisioni del bot restano."
+		if _solo_imaginary_side() >= 0 else "Bersagli azzerati.")
 	refresh()
+
+
+func _torpedo_status() -> String:
+	var reasons: Array[String] = []
+	var candidates := state.all_ships()
+	for ship in candidates:
+		if not _can_control_ship(ship) and _solo_imaginary_side() >= 0:
+			continue
+		if not ship.has_torpedo:
+			continue
+		var why := ""
+		if ship.damaged:
+			why = "Danneggiata"
+		elif ship.torpedo_attacks_used >= ship.torpedo_attack_limit:
+			why = "ha gia' lanciato"
+		elif Maneuver.is_obscured(state, ship):
+			why = "oscurata dal Fumo"
+		elif state.advanced and ship.attitude != Attitude.Kind.CLOSING:
+			why = "non e' in Avvicinamento"
+		elif state.advanced and ship.battle_zone == BattleState.Zone.FAR:
+			why = "e' in zona Lontana"
+		elif not state.advanced and ship.battle_zone != BattleState.Zone.CLOSE:
+			why = "non e' in zona Ravvicinata"
+		else:
+			var enemies := state.target_ships() if state.active_ships().has(ship) \
+				else state.active_ships()
+			var target_found := false
+			for enemy in enemies:
+				if (AdvancedTorpedo.is_valid_target(enemy) if state.advanced \
+						else Torpedo.is_valid_target(enemy)):
+					target_found = true
+					break
+			if not target_found:
+				why = "nessun bersaglio in zona Vicina/Ravvicinata"
+		if why != "":
+			reasons.append("%s: %s" % [ship.name, why])
+	if reasons.is_empty():
+		return "nessuna nave controllata ha capacita' silurante e un bersaglio legale"
+	return "; ".join(reasons.slice(0, mini(3, reasons.size())))
 
 
 ## Chi potrebbe sparare ma non ha ancora un bersaglio.
@@ -401,6 +467,11 @@ func _side_label(active: bool) -> String:
 func _cycle_attitude() -> void:
 	if selected == null:
 		state.note("Attitudine: seleziona prima una nave.")
+		refresh()
+		return
+	if not _can_control_ship(selected):
+		state.note("Solitario: l'attitudine di %s la decide l'avversario immaginario."
+			% selected.name)
 		refresh()
 		return
 	var legal := battle.setup_attitudes_for(selected)
@@ -901,6 +972,13 @@ func _gui_input(event: InputEvent) -> void:
 					if _assigning != null and _assigning != clicked:
 						_assign_target(_assigning, clicked)
 						return
+					if not _can_control_ship(clicked):
+						_assigning = null
+						selected = clicked
+						state.note("Solitario: %s e' del bot; la sua assegnazione non "
+							+ "puo' essere modificata." % clicked.name)
+						refresh()
+						return
 					if _can_fire_now(clicked):
 						_assigning = clicked
 						selected = clicked
@@ -959,24 +1037,70 @@ func _band_at(pos: Vector2) -> int:
 func _current_maneuver_ship() -> Ship:
 	if state == null or state.phase != BattleState.Phase.MANEUVER:
 		return null
-	var imaginary := _solo_imaginary_side()
 	for ship in Maneuver.move_order(state):
 		if _maneuvered.has(ship):
 			continue
-		var tf := state.own_tf_of(ship)
-		if imaginary >= 0 and tf != null and tf.side == imaginary:
-			continue
-		return ship
+		return ship if _can_control_ship(ship) else null
 	return null
 
 
+func _next_maneuver_ship() -> Ship:
+	for ship in Maneuver.move_order(state):
+		if not _maneuvered.has(ship):
+			return ship
+	return null
+
+
+func _run_bot_maneuvers_until_player() -> void:
+	var imaginary := _solo_imaginary_side()
+	if imaginary < 0:
+		return
+	while true:
+		var ship := _next_maneuver_ship()
+		if ship == null or _can_control_ship(ship):
+			return
+		var pursuit := SoloBattle.pursuit_target(state, ship, imaginary)
+		if pursuit != null:
+			var result := Attitude.pursue(ship, pursuit)
+			state.note("Solitario: %s" % String(result.get("log", "Inseguimento")))
+			_maneuvered.append(ship)
+			continue
+		var move := SoloBattle.maneuver_for_ship(state, ship, imaginary)
+		state.note("Solitario: manovra automatica di %s." % ship.name)
+		battle.maneuver_phase({ship: move})
+		_maneuvered.append(ship)
+
+
 func _select_current_maneuver_ship() -> void:
+	_run_bot_maneuvers_until_player()
 	var current := _current_maneuver_ship()
 	if current != null:
 		selected = current
 		state.note("Ordine di Manovra: ora tocca a %s (%s)." % [current.name,
 			Attitude.label(current.attitude) if state.advanced else
 			TimeLapse.speed_label(current.current_speed())])
+
+
+func _direction_destination(ship: Ship) -> int:
+	if ship == null or not state.advanced:
+		return -1
+	var direction := Attitude.maneuver_direction(ship)
+	var destination := ship.battle_zone + direction
+	return destination if direction != 0 and destination >= BattleState.Zone.FAR \
+		and destination <= BattleState.Zone.CLOSE else -1
+
+
+func _move_current_direction() -> void:
+	var ship := _current_maneuver_ship()
+	var destination := _direction_destination(ship)
+	if ship == null or destination < 0:
+		return
+	var side_name := "active" if state.active_ships().has(ship) else "target"
+	for i in ZONE_ORDER.size():
+		if String(ZONE_ORDER[i][0]) == side_name \
+				and int(ZONE_ORDER[i][1]) == destination:
+			_move_to_band(ship, i)
+			return
 
 
 func _move_to_band(ship: Ship, band_index: int) -> void:
@@ -1036,6 +1160,10 @@ func handle_key(k: InputEventKey) -> bool:
 			if state.phase == BattleState.Phase.MANEUVER:
 				_pursue_selected()
 			return true
+		KEY_M:
+			if state.phase == BattleState.Phase.MANEUVER:
+				_move_current_direction()
+			return true
 		KEY_R:
 			if _is_targeting_phase():
 				_clear_targets()
@@ -1049,7 +1177,12 @@ func handle_key(k: InputEventKey) -> bool:
 				_do_break_away(false, true)
 			return true
 		KEY_ESCAPE:
-			closed.emit()
+			if state.ended:
+				closed.emit()
+			else:
+				state.note("La Battaglia e' ancora in corso: usa la Fuga nel suo "
+					+ "passo, non ESC.")
+				refresh()
 			return true
 	return false
 
@@ -1074,7 +1207,13 @@ func _advance_phase() -> void:
 				return
 			# le attitudini le ha gia' scritte il giocatore cliccando le navi;
 			# qui si applicano gli effetti che scattano in questa fase
-			battle.attitude_phase({})
+			var bot_attitudes := {}
+			var imaginary := _solo_imaginary_side()
+			if imaginary >= 0:
+				bot_attitudes = SoloBattle.attitude_choices(state, imaginary)
+				state.note("Solitario: l'avversario immaginario sceglie le proprie "
+					+ "Attitudini.")
+			battle.attitude_phase(bot_attitudes)
 			if not state.ended:
 				state.phase = BattleState.Phase.GUNNERY
 				_preassign()
@@ -1116,6 +1255,7 @@ func _advance_phase() -> void:
 				_maneuvered.clear()
 				_select_current_maneuver_ship()
 		BattleState.Phase.MANEUVER:
+			_run_bot_maneuvers_until_player()
 			var current := _current_maneuver_ship()
 			if current != null:
 				state.note("%s resta in zona %s." % [current.name,
@@ -1124,7 +1264,6 @@ func _advance_phase() -> void:
 				_select_current_maneuver_ship()
 				refresh()
 				return
-			_apply_solo_maneuver()
 			state.note("Manovra conclusa.")
 			state.phase = state.next_phase()
 		BattleState.Phase.BREAK_AWAY:
@@ -1157,6 +1296,12 @@ func _player_targeting() -> Dictionary:
 
 
 func _do_break_away(active: bool, target: bool) -> void:
+	if solo_player_side >= 0:
+		var requested := state.active_tf if active else state.target_tf
+		if requested != null and requested.side != solo_player_side:
+			state.note("Solitario: la Fuga dell'avversario la decide il bot.")
+			refresh()
+			return
 	_resolve_break_away(active, target)
 	if not state.ended:
 		if battle.end_round():
@@ -1233,10 +1378,8 @@ func _hint_for_phase() -> String:
 			if _solo_imaginary_side() >= 0:
 				return "Solitario: i siluri dell'avversario sono assegnati se legali. Scegli i tuoi; SPAZIO risolve."
 			if targeting.is_empty():
-				var zones := "Vicina o Ravvicinata" if state.advanced \
-					else "Ravvicinata"
-				return ("Siluri: clicca una nave in zona %s, poi il bersaglio.  "
-					+ "A: automatici.  SPAZIO: nessun lancio") % zones
+				return "Nessun lancio legale: %s. SPAZIO: continua." \
+					% _torpedo_status()
 			return "SPAZIO: lancia i siluri"
 		BattleState.Phase.ATTITUDE:
 			if not battle.pending_snafu.is_empty():
@@ -1254,8 +1397,9 @@ func _hint_for_phase() -> String:
 		BattleState.Phase.MANEUVER:
 			var current := _current_maneuver_ship()
 			if current != null and state.advanced:
-				return ("Manovra di %s: %s. Trascinala solo nella direzione "
-					+ "della freccia; SPAZIO la lascia ferma. S: Fumo, I: Insegui.") \
+				return ("Manovra di %s: %s. M la muove di UNA zona nella "
+					+ "direzione della freccia; SPAZIO la lascia ferma. "
+					+ "I: Insegui ora, prima del passo Fuga. S: Fumo.") \
 					% [current.name, Attitude.describe(current.attitude)]
 			if _solo_imaginary_side() >= 0:
 				return "Manovra: muovi le tue navi. SPAZIO muove l'avversario immaginario secondo il fascicolo e chiude la fase."
