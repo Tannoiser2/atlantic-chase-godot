@@ -141,13 +141,26 @@ Uno scenario puo' essere marcato completo solo quando:
   grande fa con `force_playable`: senza quella regola il colore buttava via
   Methil, Wilhelmshaven, Kiel, Kristiansand, Trondheim, Namsos, Andalsnes e
   Tromso, che sono meta' terraferma.
-  **Restano, e sono la parte che ancora blocca i cinque scenari**: i lati
-  **"not adjacent"** stampati lungo la costa, le caselle fuori mappa con le
-  loro connessioni (Murmansk, Kiel, Scapa Flow, Portsmouth, Denmark Strait,
-  piu' le frecce verso Bear Island, Jan Mayen, le Shetlands e il Mare di
-  Norvegia), le basi aeree (i sette segnalini B e G, gia' visibili al
-  rilevatore), un secondo `MapGraph` nel motore e il disegno dell'inserto come
-  superficie di gioco nella GUI.
+  **Anche le nove frecce "non adiacente" sono trascritte**: sei sul Mare del
+  Nord, tre sul Mare di Norvegia. RB p.4 e FAQ p.44: negano la Traiettoria fra
+  i due esagoni che collegano, ma **il Supporto Aereo resta permesso**. Le
+  posizioni sono lette sulle immagini ingrandite col reticolo etichettato
+  sopra; il lato lo ricava il programma dai due esagoni piu' vicini e si ferma
+  se non sono adiacenti.
+  **Quattro lati sono marcati `disputed`**, perche' toccano esagoni che la
+  classificazione per colore aveva scartato: (2,4)|(2,5) e (6,1)|(7,1) e
+  (6,2)|(7,1) sul Mare del Nord, (6,-1)|(6,0) sul Mare di Norvegia. Il
+  fascicolo stampa una freccia per negare un'adiacenza, e negarla ha senso solo
+  fra esagoni in gioco: o la classificazione sbaglia, o la freccia e' solo un
+  avviso cartografico. Il caso peggiore e' (2,4)|(2,5) sul Mare del Nord, dove
+  il riquadro di Portsmouth e' stampato sopra la mappa e mangia l'esagono. Non
+  e' deciso: lo decideranno le illustrazioni del fascicolo.
+  **Restano, e sono la parte che ancora blocca i cinque scenari**: le caselle
+  fuori mappa con le loro connessioni (Murmansk, Kiel, Scapa Flow, Portsmouth,
+  Denmark Strait, piu' le frecce verso Bear Island, Jan Mayen, le Shetlands e
+  il Mare di Norvegia), le basi aeree (i sette segnalini B e G, gia' visibili
+  al rilevatore), un secondo `MapGraph` nel motore e il disegno dell'inserto
+  come superficie di gioco nella GUI.
   **Otto esagoni sono marcati `needs_check`**: hanno terra e mare quasi in
   parti uguali, e il colore non basta a decidere. Gli esagoni scartati per un
   soffio restano scritti in `excluded_near_miss`, col motivo: nessuno sparisce

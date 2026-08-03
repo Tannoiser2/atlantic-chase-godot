@@ -1203,6 +1203,96 @@
      "r": 3
     }
    ],
+   "not_adjacent_edges": [
+    {
+     "aq": 1,
+     "ar": 1,
+     "bq": 1,
+     "br": 2,
+     "arrow_px": [
+      70,
+      385
+     ],
+     "where": "Scozia, fra Moray Firth e Firth of Forth",
+     "blocks": "trajectory",
+     "air_support_allowed": true
+    },
+    {
+     "aq": 2,
+     "ar": 5,
+     "bq": 2,
+     "br": 4,
+     "arrow_px": [
+      78,
+      1180
+     ],
+     "where": "Gran Bretagna, fra The Wash e il Tamigi",
+     "blocks": "trajectory",
+     "air_support_allowed": true,
+     "disputed": [
+      "2,5",
+      "2,4"
+     ]
+    },
+    {
+     "aq": 5,
+     "ar": 3,
+     "bq": 4,
+     "br": 3,
+     "arrow_px": [
+      492,
+      1262
+     ],
+     "where": "Paesi Bassi, Texel",
+     "blocks": "trajectory",
+     "air_support_allowed": true
+    },
+    {
+     "aq": 5,
+     "ar": -1,
+     "bq": 6,
+     "br": -1,
+     "arrow_px": [
+      880,
+      535
+     ],
+     "where": "Norvegia, fra Stavanger ed Egersund",
+     "blocks": "trajectory",
+     "air_support_allowed": true
+    },
+    {
+     "aq": 6,
+     "ar": 1,
+     "bq": 7,
+     "br": 1,
+     "arrow_px": [
+      918,
+      1105
+     ],
+     "where": "Jutland",
+     "blocks": "trajectory",
+     "air_support_allowed": true,
+     "disputed": [
+      "7,1"
+     ]
+    },
+    {
+     "aq": 6,
+     "ar": 2,
+     "bq": 7,
+     "br": 1,
+     "arrow_px": [
+      880,
+      1198
+     ],
+     "where": "Kiel Bay",
+     "blocks": "trajectory",
+     "air_support_allowed": true,
+     "disputed": [
+      "7,1"
+     ]
+    }
+   ],
    "excluded_near_miss": [
     {
      "q": 2,
@@ -1253,7 +1343,7 @@
      "needs_check": false
     }
    ],
-   "still_missing": "porti costieri, lati 'not adjacent' stampati lungo la costa, caselle fuori mappa e loro connessioni"
+   "still_missing": "caselle fuori mappa e loro connessioni, basi aeree, un secondo MapGraph nel motore e il disegno dell'inserto nella GUI"
   },
   "map_norwegian_sea": {
    "name": "Mappa Inserto del Mare di Norvegia",
@@ -2366,6 +2456,53 @@
      "r": 0
     }
    ],
+   "not_adjacent_edges": [
+    {
+     "aq": 6,
+     "ar": -1,
+     "bq": 6,
+     "br": 0,
+     "arrow_px": [
+      945,
+      720
+     ],
+     "where": "Norvegia, a nord di Namsos",
+     "blocks": "trajectory",
+     "air_support_allowed": true,
+     "disputed": [
+      "6,-1"
+     ]
+    },
+    {
+     "aq": 6,
+     "ar": 1,
+     "bq": 6,
+     "br": 0,
+     "arrow_px": [
+      915,
+      940
+     ],
+     "where": "Norvegia, a Trondheim",
+     "blocks": "trajectory",
+     "air_support_allowed": true
+    },
+    {
+     "aq": 6,
+     "ar": 1,
+     "bq": 6,
+     "br": 2,
+     "arrow_px": [
+      790,
+      1120
+     ],
+     "where": "Norvegia, a sud di Andalsnes",
+     "blocks": "trajectory",
+     "air_support_allowed": true,
+     "disputed": [
+      "6,2"
+     ]
+    }
+   ],
    "excluded_near_miss": [
     {
      "q": 1,
@@ -2428,7 +2565,7 @@
      "needs_check": true
     }
    ],
-   "still_missing": "porti costieri, lati 'not adjacent' stampati lungo la costa, caselle fuori mappa e loro connessioni"
+   "still_missing": "caselle fuori mappa e loro connessioni, basi aeree, un secondo MapGraph nel motore e il disegno dell'inserto nella GUI"
   }
  }
 }

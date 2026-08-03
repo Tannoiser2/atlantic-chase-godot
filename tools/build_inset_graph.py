@@ -42,11 +42,29 @@ sbagliano sulle coste frastagliate e quelli topologici no:
   2. si riempiono i buchi: un esagono circondato solo da esagoni giocabili e'
      giocabile.
 
+## Le frecce "non adiacente"
+
+Regolamento p.4: "non e' consentita una Traiettoria attraverso esagoni 'non
+adiacenti'. E' consentito il Supporto Aereo". La FAQ di p.44 lo conferma. Il
+riquadro del Canale KW sulla stessa pagina dice che "i due esagoni collegati da
+una freccia" sono i due interessati: la freccia scavalca il lato che nega.
+
+Le posizioni sono lette sulle immagini ingrandite col reticolo etichettato
+sopra; il lato lo ricava il programma, prendendo i due esagoni piu' vicini e
+fermandosi se non risultano adiacenti. Sei frecce sul Mare del Nord, tre sul
+Mare di Norvegia.
+
+Quando una freccia tocca un esagono che la classificazione ha scartato, il lato
+viene marcato `disputed` invece di essere corretto di nascosto. Il fascicolo
+stampa una freccia per negare un'adiacenza, e negarla ha senso solo fra esagoni
+in gioco: o il colore ha sbagliato, o la freccia e' solo un avviso
+cartografico. Non si decide qui.
+
 ## Che cosa questo NON fa
 
-Non mette i porti costieri, non traduce le frecce "not adjacent" stampate lungo
-la costa in lati negati, e non collega le caselle fuori mappa. Finche' mancano
-quelli, i cinque scenari inserto restano dichiarati non giocabili. La verita'
+Non collega le caselle fuori mappa e non mette le basi aeree. Finche' mancano
+quelle, piu' un secondo MapGraph nel motore e il disegno dell'inserto nella
+GUI, i cinque scenari inserto restano dichiarati non giocabili. La verita'
 indipendente per validarli sono le illustrazioni di schieramento del fascicolo,
 che disegnano i segmenti di Traiettoria iniziali sull'inserto.
 """
@@ -108,6 +126,32 @@ PORT_NAMES = {
     ],
 }
 NAME_TOLERANCE_PX = 12
+
+# Le frecce "non adiacente", lette sulle immagini ingrandite col reticolo
+# etichettato sopra. Regolamento p.4: "non e' consentita una Traiettoria
+# attraverso esagoni 'non adiacenti'. E' consentito il Supporto Aereo", e la
+# FAQ di p.44 lo ripete: "una Traiettoria puo' collegare solamente esagoni
+# adiacenti, non quelli attraverso una freccia 'non adiacente'".
+#
+# La posizione e' il centro della freccia. Il riquadro del Canale KW a p.4 dice
+# che "i due esagoni collegati da una freccia" sono i due interessati, quindi il
+# lato negato e' quello che la freccia scavalca: il programma lo ricava dai due
+# esagoni piu' vicini e si ferma se non sono adiacenti.
+NOT_ADJACENT = {
+    "map_north_sea": [
+        ((70, 385), "Scozia, fra Moray Firth e Firth of Forth"),
+        ((78, 1180), "Gran Bretagna, fra The Wash e il Tamigi"),
+        ((492, 1262), "Paesi Bassi, Texel"),
+        ((880, 535), "Norvegia, fra Stavanger ed Egersund"),
+        ((918, 1105), "Jutland"),
+        ((880, 1198), "Kiel Bay"),
+    ],
+    "map_norwegian_sea": [
+        ((945, 720), "Norvegia, a nord di Namsos"),
+        ((915, 940), "Norvegia, a Trondheim"),
+        ((790, 1120), "Norvegia, a sud di Andalsnes"),
+    ],
+}
 
 
 def find_port_dots(a):
@@ -361,6 +405,43 @@ def build(key, meta, rgb, overlay_dir=None):
         h["needs_check"] = h["land_frac"] >= 0.20 \
             and abs(h["sea_frac"] - SEA_MIN) < 0.25
 
+    # ---- frecce "non adiacente" ----
+    edges = []
+    for (ax, ay), where in NOT_ADJACENT[key]:
+        approx = inv.dot(np.array([ax, ay]) - origin)
+        near = []
+        for di in range(-2, 3):
+            for dj in range(-2, 3):
+                q = int(round(approx[0])) + di - i0
+                r = int(round(approx[1])) + dj - j0
+                c = origin + (q + i0) * e1 + (r + j0) * e2
+                near.append((math.hypot(ax - c[0], ay - c[1]), q, r))
+        near.sort()
+        (_d1, q1, r1), (_d2, q2, r2) = near[0], near[1]
+        if (q2 - q1, r2 - r1) not in DIRS:
+            raise SystemExit("%s: la freccia a (%d,%d) cade fra (%d,%d) e "
+                             "(%d,%d), che non sono adiacenti"
+                             % (key, ax, ay, q1, r1, q2, r2))
+        edges.append({
+            "aq": q1, "ar": r1, "bq": q2, "br": r2,
+            "arrow_px": [ax, ay],
+            "where": where,
+            # p.4: la freccia nega la Traiettoria, non il Supporto Aereo.
+            "blocks": "trajectory",
+            "air_support_allowed": True,
+        })
+
+    # Una freccia che tocca un esagono NON giocabile e' una contraddizione da
+    # guardare, non da correggere di nascosto: il fascicolo stampa la freccia
+    # per negare un'adiacenza, e negarla ha senso solo fra esagoni in gioco.
+    # Puo' voler dire che la classificazione per colore ha sbagliato, oppure
+    # che la freccia e' solo un avviso cartografico. Si segna e si va avanti.
+    for e in edges:
+        missing = [(q, r) for q, r in ((e["aq"], e["ar"]), (e["bq"], e["br"]))
+                   if (q, r) not in playable]
+        if missing:
+            e["disputed"] = ["%d,%d" % qr for qr in missing]
+
     ordered = [playable[k] for k in sorted(playable)]
     for h in ordered:
         h.pop("playable", None)
@@ -386,6 +467,19 @@ def build(key, meta, rgb, overlay_dir=None):
             if live:
                 draw.text((c[0] - 22, c[1] - 6), "%d,%d" % (h["q"], h["r"]),
                           fill=(0, 90, 0))
+        for e in edges:
+            ca = np.array([cells[(e["aq"], e["ar"])]["cx"],
+                           cells[(e["aq"], e["ar"])]["cy"]]) \
+                if (e["aq"], e["ar"]) in cells \
+                else origin + (e["aq"] + i0) * e1 + (e["ar"] + j0) * e2
+            cb = np.array([cells[(e["bq"], e["br"])]["cx"],
+                           cells[(e["bq"], e["br"])]["cy"]]) \
+                if (e["bq"], e["br"]) in cells \
+                else origin + (e["bq"] + i0) * e1 + (e["br"] + j0) * e2
+            draw.line([tuple(ca), tuple(cb)], fill=(0, 0, 255), width=5)
+            mid = (ca + cb) / 2.0
+            draw.text((mid[0] - 30, mid[1] - 6), "%d,%d | %d,%d"
+                      % (e["aq"], e["ar"], e["bq"], e["br"]), fill=(0, 0, 255))
         for port in ports:
             px, py = port["dot_px"]
             draw.ellipse([px - 9, py - 9, px + 9, py + 9], outline=(255, 0, 255))
@@ -406,9 +500,11 @@ def build(key, meta, rgb, overlay_dir=None):
         "needs_check_count": sum(1 for h in ordered if h["needs_check"]),
         "hexes": ordered,
         "ports": ports,
+        "not_adjacent_edges": edges,
         "excluded_near_miss": dropped,
-        "still_missing": ("porti costieri, lati 'not adjacent' stampati lungo "
-                          "la costa, caselle fuori mappa e loro connessioni"),
+        "still_missing": ("caselle fuori mappa e loro connessioni, basi aeree, "
+                          "un secondo MapGraph nel motore e il disegno "
+                          "dell'inserto nella GUI"),
     }
 
 
@@ -426,12 +522,19 @@ def main():
         out[key] = g
         coastal = sum(1 for h in g["hexes"] if h["coastal"])
         print("%-38s %3d esagoni giocabili, %d costieri, %d porti, "
-              "%d da verificare, %d scartati per un soffio"
+              "%d frecce non adiacente, %d da verificare, %d scartati per un soffio"
               % (g["name"], g["hex_count"], coastal, len(g["ports"]),
-                 g["needs_check_count"], len(g["excluded_near_miss"])))
+                 len(g["not_adjacent_edges"]), g["needs_check_count"],
+                 len(g["excluded_near_miss"])))
         for p_ in g["ports"]:
             print("      porto %-14s (%2d,%2d)  pallino %s"
                   % (p_["name"], p_["q"], p_["r"], p_["kind"]))
+        for e_ in g["not_adjacent_edges"]:
+            print("      non adiacente (%2d,%2d)|(%2d,%2d)  %s%s"
+                  % (e_["aq"], e_["ar"], e_["bq"], e_["br"], e_["where"],
+                     "" if "disputed" not in e_
+                     else "  [DISCUSSO: %s non giocabile]"
+                     % " e ".join(e_["disputed"])))
         for h in g["hexes"]:
             if h["needs_check"]:
                 print("      DA VERIFICARE (%d,%d): mare %.2f, terra %.2f"

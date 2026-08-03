@@ -370,9 +370,18 @@ Tutti i test passano: **2957 verifiche, 18 suite, headless.**
   (`force_playable`) e serviva anche qui. Otto esagoni restano marcati
   `needs_check` perche' terra e mare sono quasi pari, e quelli scartati per un
   soffio restano scritti col motivo.
-  **I cinque scenari inserto restano dichiarati non giocabili**: mancano i lati
-  "not adjacent", le caselle fuori mappa, le basi aeree, un secondo `MapGraph`
-  nel motore e il disegno nella GUI.
+- **Le nove frecce "non adiacente" degli inserti sono trascritte.** RB p.4 e
+  FAQ p.44: negano la Traiettoria fra i due esagoni che collegano, e lasciano
+  passare il Supporto Aereo. Sei sul Mare del Nord, tre sul Mare di Norvegia.
+  Le posizioni sono lette sulle immagini ingrandite col reticolo etichettato
+  sopra; il lato lo ricava il programma dai due esagoni piu' vicini, e si ferma
+  se non risultano adiacenti - il che e' anche il controllo che la lettura sia
+  giusta. Quattro lati escono `disputed` perche' toccano esagoni che il colore
+  aveva scartato: una freccia si stampa per negare un'adiacenza, e negarla ha
+  senso solo fra esagoni in gioco. Non e' deciso di nascosto, e' segnato.
+  **I cinque scenari inserto restano dichiarati non giocabili**: mancano le
+  caselle fuori mappa, le basi aeree, un secondo `MapGraph` nel motore e il
+  disegno nella GUI.
 - **I Comandanti dicono la loro condizione stampata.** Gli undici testi sono
   trascritti da RB p.10 letta a 300 dpi: la scheda TF mostra la regola vera e
   non un riassunto, ed e' quella che decide se il beneficio si puo' usare
