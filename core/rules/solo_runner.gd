@@ -417,6 +417,12 @@ func _player_turn() -> void:
 	# replay non arriverebbe mai a meta' partita.
 	if _player_completion(true):
 		return
+	# Alcuni scenari chiedono piu' Convogli Completati di quanti ne siano in
+	# gioco: B2, B4 e A1 ne vogliono tre e ne schierano due. Il terzo sta in un
+	# Gruppo di Rinforzo, e va chiamato o la condizione di fine stampata non
+	# potra' mai avverarsi. Non e' una tattica: e' l'unico modo di finire.
+	if _needs_more_convoys() and _player_reinforce():
+		return
 	if _player_attack():
 		return
 	# Il rientro va tentato PRIMA della Traiettoria, non dopo: una TF che puo'
@@ -480,6 +486,28 @@ func _bl1_fueling_checks() -> void:
 		if String(applied.get("initiative", "")) == "vie":
 			_seek_initiative("RIFORNIMENTO")
 		candidates = SoloAI.bl1_fueling_candidates(state)
+
+
+## Servono altri Convogli per arrivare alla fine stampata?
+##
+## Si guarda la soglia piu' alta fra le condizioni di fine dello scenario e la
+## si confronta con quelli gia' Completati piu' quelli ancora a galla. Se non
+## bastano, l'unico posto da cui possono arrivare e' un Gruppo di Rinforzo.
+func _needs_more_convoys() -> bool:
+	var needed := 0
+	for rule_v: Variant in state.solo_end_conditions.get("any", []):
+		for cond_v: Variant in (rule_v as Dictionary).get("all", []):
+			var cond: Dictionary = cond_v
+			var kind := String(cond.get("kind", ""))
+			if kind == "convoys_completed_total" or kind == "convoys_completed_by":
+				needed = maxi(needed, int(cond.get("value", 0)))
+	if needed == 0:
+		return false
+	var available := state.convoys_completed
+	for tf in state.forces_of(player_side):
+		if _carries_convoy(tf):
+			available += 1
+	return available < needed
 
 
 ## Chiama il primo Gruppo di Rinforzo del giocatore che abbia ancora navi e un

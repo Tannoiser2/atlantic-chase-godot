@@ -1,214 +1,220 @@
 {
- "name": "B2 La Battaglia dell'Atlantico",
- "source": "Fascicolo Scenari in Solitario, seconda edizione INGLESE (AC_Solo_scenarios_2022.pdf), pp.45-48. Trascritta a mano da render/testo del PDF aggiornato.",
- "weather": 0,
- "initiative": 1,
- "round": 1,
- "task_forces": [
-  {
-   "id": 1,
-   "side": 1,
-   "color": "Brown",
-   "slot": 0,
-   "name": "Home Fleet",
-   "ships": [
-    "Malaya",
-    "Norfolk",
-    "Suffolk"
-   ],
-   "leader": "Tovey",
-   "speed": 2,
-   "trajectory": {
-    "segments": [],
-    "station_q": 15,
-    "station_r": -4,
-    "station_contact": false,
-    "station_port": "Clyde"
-   }
-  },
-  {
-   "id": 2,
-   "side": 1,
-   "color": "Tan",
-   "slot": 0,
-   "name": "Convoglio Halifax-Clyde",
-   "ships": [
-    "Convoy x3"
-   ],
-   "leader": "",
-   "speed": 2,
-   "trajectory": {
-    "segments": [
-     {
-      "q": 5,
-      "r": 4,
-      "info": false,
-      "contact": false
-     },
-     {
-      "q": 6,
-      "r": 3,
-      "info": false,
-      "contact": false
-     },
-     {
-      "q": 7,
-      "r": 2,
-      "info": false,
-      "contact": false
-     },
-     {
-      "q": 8,
-      "r": 1,
-      "info": false,
-      "contact": false
-     },
-     {
-      "q": 9,
-      "r": 0,
-      "info": false,
-      "contact": false
-     },
-     {
-      "q": 10,
-      "r": -1,
-      "info": false,
-      "contact": false
-     },
-     {
-      "q": 11,
-      "r": -2,
-      "info": false,
-      "contact": false
-     },
-     {
-      "q": 12,
-      "r": -3,
-      "info": false,
-      "contact": false
-     },
-     {
-      "q": 13,
-      "r": -3,
-      "info": false,
-      "contact": false
-     },
-     {
-      "q": 14,
-      "r": -4,
-      "info": false,
-      "contact": false
-     },
-     {
-      "q": 15,
-      "r": -4,
-      "info": false,
-      "contact": false
-     }
+  "name": "B2 La Battaglia dell'Atlantico",
+  "source": "Fascicolo Scenari in Solitario, seconda edizione INGLESE (AC_Solo_scenarios_2022.pdf), pp.45-48. Trascritta a mano da render/testo del PDF aggiornato.",
+  "weather": 0,
+  "initiative": 1,
+  "round": 1,
+  "task_forces": [
+    {
+      "id": 1,
+      "side": 1,
+      "color": "Brown",
+      "slot": 0,
+      "name": "Home Fleet",
+      "ships": [
+        "Malaya",
+        "Norfolk",
+        "Suffolk"
+      ],
+      "leader": "Tovey",
+      "speed": 2,
+      "trajectory": {
+        "segments": [],
+        "station_q": 15,
+        "station_r": -4,
+        "station_contact": false,
+        "station_port": "Clyde"
+      }
+    },
+    {
+      "id": 2,
+      "side": 1,
+      "color": "Tan",
+      "slot": 0,
+      "name": "Convoglio Halifax-Clyde",
+      "ships": [
+        "Convoy x3"
+      ],
+      "leader": "",
+      "speed": 2,
+      "trajectory": {
+        "segments": [
+          {
+            "q": 5,
+            "r": 4,
+            "info": false,
+            "contact": false
+          },
+          {
+            "q": 6,
+            "r": 3,
+            "info": false,
+            "contact": false
+          },
+          {
+            "q": 7,
+            "r": 2,
+            "info": false,
+            "contact": false
+          },
+          {
+            "q": 8,
+            "r": 1,
+            "info": false,
+            "contact": false
+          },
+          {
+            "q": 9,
+            "r": 0,
+            "info": false,
+            "contact": false
+          },
+          {
+            "q": 10,
+            "r": -1,
+            "info": false,
+            "contact": false
+          },
+          {
+            "q": 11,
+            "r": -2,
+            "info": false,
+            "contact": false
+          },
+          {
+            "q": 12,
+            "r": -3,
+            "info": false,
+            "contact": false
+          },
+          {
+            "q": 13,
+            "r": -3,
+            "info": false,
+            "contact": false
+          },
+          {
+            "q": 14,
+            "r": -4,
+            "info": false,
+            "contact": false
+          },
+          {
+            "q": 15,
+            "r": -4,
+            "info": false,
+            "contact": false
+          }
+        ],
+        "station_q": 5,
+        "station_r": 4,
+        "station_contact": false,
+        "station_port": ""
+      }
+    },
+    {
+      "id": 3,
+      "side": 1,
+      "color": "Tan",
+      "slot": 1,
+      "name": "Convoglio Gibilterra-Clyde",
+      "ships": [
+        "Convoy x3"
+      ],
+      "leader": "",
+      "speed": 2,
+      "trajectory": {
+        "segments": [
+          {
+            "q": 14,
+            "r": 2,
+            "info": false,
+            "contact": false
+          },
+          {
+            "q": 13,
+            "r": 2,
+            "info": false,
+            "contact": false
+          },
+          {
+            "q": 12,
+            "r": 2,
+            "info": false,
+            "contact": false
+          },
+          {
+            "q": 12,
+            "r": 1,
+            "info": false,
+            "contact": false
+          },
+          {
+            "q": 12,
+            "r": 0,
+            "info": false,
+            "contact": false
+          },
+          {
+            "q": 12,
+            "r": -1,
+            "info": false,
+            "contact": false
+          },
+          {
+            "q": 12,
+            "r": -2,
+            "info": false,
+            "contact": false
+          },
+          {
+            "q": 13,
+            "r": -3,
+            "info": false,
+            "contact": false
+          },
+          {
+            "q": 14,
+            "r": -4,
+            "info": false,
+            "contact": false
+          },
+          {
+            "q": 15,
+            "r": -4,
+            "info": false,
+            "contact": false
+          }
+        ],
+        "station_q": 14,
+        "station_r": 2,
+        "station_contact": false,
+        "station_port": ""
+      }
+    }
+  ],
+  "reinforcements": {
+    "RN Reinforcement A": [
+      "Convoy x3",
+      "Ramilles"
     ],
-    "station_q": 5,
-    "station_r": 4,
-    "station_contact": false,
-    "station_port": ""
-   }
+    "RN Reinforcement B": [
+      "Renown",
+      "Sheffield",
+      "Ark Royal"
+    ]
   },
-  {
-   "id": 3,
-   "side": 1,
-   "color": "Tan",
-   "slot": 1,
-   "name": "Convoglio Gibilterra-Clyde",
-   "ships": [
-    "Convoy x3"
-   ],
-   "leader": "",
-   "speed": 2,
-   "trajectory": {
-    "segments": [
-     {
-      "q": 14,
-      "r": 2,
-      "info": false,
-      "contact": false
-     },
-     {
-      "q": 13,
-      "r": 2,
-      "info": false,
-      "contact": false
-     },
-     {
-      "q": 12,
-      "r": 2,
-      "info": false,
-      "contact": false
-     },
-     {
-      "q": 12,
-      "r": 1,
-      "info": false,
-      "contact": false
-     },
-     {
-      "q": 12,
-      "r": 0,
-      "info": false,
-      "contact": false
-     },
-     {
-      "q": 12,
-      "r": -1,
-      "info": false,
-      "contact": false
-     },
-     {
-      "q": 12,
-      "r": -2,
-      "info": false,
-      "contact": false
-     },
-     {
-      "q": 13,
-      "r": -3,
-      "info": false,
-      "contact": false
-     },
-     {
-      "q": 14,
-      "r": -4,
-      "info": false,
-      "contact": false
-     },
-     {
-      "q": 15,
-      "r": -4,
-      "info": false,
-      "contact": false
-     }
-    ],
-    "station_q": 14,
-    "station_r": 2,
-    "station_contact": false,
-    "station_port": ""
-   }
-  }
- ],
- "reinforcements": {
-  "RN Reinforcement B": [
-   "Ark Royal",
-   "Renown"
-  ]
- },
- "info_triggers": [],
- "briefing": {
-  "title": "B2 La Battaglia dell'Atlantico",
-  "end": "Vedi le istruzioni Fine dello scenario nel file solo e nel fascicolo.",
-  "victory": "Modo solitario: calcolare i VP manuali e leggere la Tabella dell'Esito.",
-  "historical": "Trascritto dal fascicolo solitario italiano; testo completo in core/data/solo."
- },
- "setup_notes": [
-  "Meteo Buono; iniziativa britannica. Nessuna TF tedesca iniziale. Convogli Halifax-Clyde/Liverpool 11 segmenti e Clyde/Liverpool-Gibilterra 10 segmenti. Malaya in una delle TF; Tovey in una TF iniziale; Pound presente; Somerville nel rinforzo B.",
-  "Nessuna TF tedesca iniziale, come da fascicolo."
- ],
- "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati."
+  "info_triggers": [],
+  "briefing": {
+    "title": "B2 La Battaglia dell'Atlantico",
+    "end": "Vedi le istruzioni Fine dello scenario nel file solo e nel fascicolo.",
+    "victory": "Modo solitario: calcolare i VP manuali e leggere la Tabella dell'Esito.",
+    "historical": "Trascritto dal fascicolo solitario italiano; testo completo in core/data/solo."
+  },
+  "setup_notes": [
+    "Meteo Buono; iniziativa britannica. Nessuna TF tedesca iniziale. Convogli Halifax-Clyde/Liverpool 11 segmenti e Clyde/Liverpool-Gibilterra 10 segmenti. Malaya in una delle TF; Tovey in una TF iniziale; Pound presente; Somerville nel rinforzo B.",
+    "Nessuna TF tedesca iniziale, come da fascicolo.",
+    "Gruppi di Rinforzo letti dal Display delle Task Force stampato a p.46: il Gruppo A contiene un Convoglio e la Ramilles ed e' a New York; il Gruppo B contiene Renown, Sheffield e Ark Royal ed e' a Gibilterra. Il Gruppo A mancava del tutto nei dati e al Gruppo B mancava lo Sheffield: senza il Convoglio del Gruppo A la condizione di fine stampata - tre Convogli Completati - era irraggiungibile, perche' in gioco ce ne sono due."
+  ],
+  "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati."
 }

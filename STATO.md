@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **2848 verifiche, 18 suite, headless.**
+Tutti i test passano: **2871 verifiche, 18 suite, headless.**
 
 ---
 
@@ -228,6 +228,15 @@ Tutti i test passano: **2848 verifiche, 18 suite, headless.**
   come una ricerca quello che e' un passaggio; e una decisione senza effetto
   lasciava l'Iniziativa al bot senza accodare niente, cioe' fermava la partita
   in attesa di un giocatore che non doveva muovere.
+- **A B2 mancava meta' dello schieramento.** Il Display delle Task Force
+  stampato a p.46 mostra due Gruppi di Rinforzo: il **A** a New York con un
+  Convoglio e la Ramilles, il **B** a Gibilterra con Renown, Sheffield e Ark
+  Royal. Nei dati c'era solo il B, e senza lo Sheffield. Il Gruppo A e' quello
+  che porta il **terzo Convoglio**, e la condizione di fine di B2 ne chiede tre
+  mentre lo scenario ne schiera due: senza quel Gruppo la partita non poteva
+  finire, e infatti il replay si fermava dichiarando lo stallo. Aggiunti anche
+  i porti dei due Gruppi - un Gruppo senza porto trascritto non entra, per
+  scelta - e Somerville sul B.
 - **B3 aveva una cella sbagliata nella tabella di Identificazione.** La colonna
   3 stampa CV/CA/CA - tre navi - e il dato ne aveva due: una Task Force
   britannica non identificata entrava in Battaglia con un incrociatore in meno.

@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Aggiornato dopo la chiusura di **R0** (3 agosto 2026). Baseline: **2848
+Aggiornato dopo la chiusura di **R0** (3 agosto 2026). Baseline: **2871
 verifiche su 18 suite**.
 
 Questo e' il backlog autorevole per continuare la revisione. `STATO.md`
@@ -26,7 +26,7 @@ vecchie sezioni "Cosa manca" non devono riaprire lavori gia' completati.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 2848 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 2871 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
@@ -164,7 +164,15 @@ Uno scenario puo' essere marcato completo solo quando:
   non in South America - e `apply_table_result` conosce solo BL1 e BL2); la
   Verifica della Scorta; le basi aeree e la portata del supporto aereo, che
   compaiono in quasi tutte le procedure.
-- [ ] **B2 La Battaglia dell'Atlantico**: 10 procedure testuali.
+- [ ] **B2 La Battaglia dell'Atlantico**: 10 procedure trascritte. **Mancava
+  meta' dello schieramento**: il Gruppo di Rinforzo A - un Convoglio e la
+  Ramilles, a New York - non era nei dati, e al Gruppo B mancava lo Sheffield.
+  Il Gruppo A porta il TERZO Convoglio, e senza di lui la condizione di fine
+  stampata non poteva avverarsi: lo scenario schiera due Convogli e ne chiede
+  tre. Aggiunti anche i porti dei Gruppi e Somerville sul B. **Restano**: la
+  penalita' di -3 VP per il Gruppo B (trascritta, non applicata: nessuno
+  scenario fa ancora pagare un Gruppo), la regola Rationing, e i rami delle
+  procedure che dipendono dalle basi aeree tedesche.
 - [ ] **B3 Operazione Reno**: 24 procedure ora trascritte. **Corretta una cella
   sbagliata**: la colonna 3 della tabella di Identificazione stampa CV/CA/CA,
   tre navi, e il dato ne aveva due - una TF non identificata entrava in
@@ -193,9 +201,9 @@ riga dice che cosa manca.
 
 | esito | scenari | che cosa serve |
 |---|---|---|
-| finisce per condizione stampata | BL1, BL2, N4, N6, B1, B3 | niente: chiudere le procedure segnaposto |
+| finisce per condizione stampata | BL1, BL2, N4, N6, B1, B2, B3 | niente: chiudere le procedure segnaposto |
 | non giocabile, mappa inserto | BL3, N1, N2, N3, N5 | calibrare i reticoli inserto |
-| stallo dichiarato | B2, B4, A1 | il terzo Convoglio non entra mai: servono le procedure di rinforzo, oggi segnaposto |
+| stallo dichiarato | B4, A1 | il terzo Convoglio non entra mai: i loro Gruppi di Rinforzo non hanno porto trascritto, come B2 prima della revisione |
 | stallo dichiarato | A2 | lo schieramento si compra coi VP prima della prima azione (p.63): passaggio non modellato |
 
 ## P0 - Sistemi mancanti al solitario

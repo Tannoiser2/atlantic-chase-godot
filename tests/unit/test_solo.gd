@@ -91,6 +91,9 @@ func run() -> void:
 	test_solo_ai_b3_intercept_end_conditions()
 	test_b3_identify_third_column_has_three_ships()
 	test_b3_procedures_are_transcribed()
+	test_b2_reinforcement_groups_match_the_printed_display()
+	test_b2_replay_reaches_three_convoys()
+	test_b2_procedures_are_transcribed()
 	test_fueling()
 	test_bl1_fueling_trigger_conditions()
 	test_solo_ai_bl1_aux_tables_apply()
@@ -2079,3 +2082,74 @@ func test_b3_procedures_are_transcribed() -> void:
 	# fanno: e' scritto in cima alla pagina della tabella.
 	true_(String(o.table("fueling").note).contains("almeno un Controllo"),
 		"la nota ricorda l'obbligo di almeno un Controllo Rifornimento")
+
+
+## B2, AC Solo scenarios 2022 pp.45-48. La Tabella delle Azioni Tedesche e il
+## suo modificatore coincidevano gia'; a mancare erano le 10 procedure e, cosa
+## piu' grave, meta' dello schieramento.
+func test_b2_reinforcement_groups_match_the_printed_display() -> void:
+	_begin("B2: i Gruppi di Rinforzo letti dal Display stampato")
+	var sc := Scenario.load_by_id("B2 La Battaglia dell'Atlantico")
+	var groups := sc.reinforcements
+	# Il Gruppo A mancava del tutto: e' quello che porta il TERZO Convoglio,
+	# senza il quale la fine stampata - tre Convogli Completati - non poteva
+	# avverarsi, perche' in gioco ce ne sono due.
+	true_(groups.has("RN Reinforcement A"),
+		"il Gruppo A esiste: e' il terzo Convoglio")
+	var a: Array = groups.get("RN Reinforcement A", [])
+	true_(a.has("Convoy x3"), "il Gruppo A contiene un Convoglio")
+	true_(a.has("Ramilles"), "e la Ramilles, come sul Display di p.46")
+	var b: Array = groups.get("RN Reinforcement B", [])
+	eq(b.size(), 3, "il Gruppo B ha tre navi")
+	for ship_name in ["Renown", "Sheffield", "Ark Royal"]:
+		true_(b.has(ship_name), "il Gruppo B contiene %s" % ship_name)
+	# Senza porto trascritto un Gruppo non entra: il motore dichiara il buco
+	# invece di scegliere un porto a caso.
+	var ports := sc.reinforcement_ports()
+	eq(String(ports.get("RN Reinforcement A", "")), "New York",
+		"il Gruppo A e' a New York")
+	eq(String(ports.get("RN Reinforcement B", "")), "Gibilterra",
+		"il Gruppo B e' a Gibilterra")
+	eq(String(sc.reinforcement_leaders().get("RN Reinforcement B", "")),
+		"Somerville", "Somerville entra col Gruppo B")
+
+
+## La condizione di fine di B2 chiede tre Convogli Completati e lo scenario ne
+## schiera due: il terzo deve arrivare da un Gruppo di Rinforzo, o la partita
+## non finisce. Il replay lo dimostra invece di darlo per scontato.
+func test_b2_replay_reaches_three_convoys() -> void:
+	_begin("B2: il replay arriva ai tre Convogli")
+	var runner := SoloRunner.new()
+	true_(runner.load_scenario("B2 La Battaglia dell'Atlantico", 20260803),
+		"B2 caricato: %s" % runner.load_error)
+	var out := runner.run()
+	true_(bool(out.get("ended", false)),
+		"il replay di B2 si chiude per una condizione stampata")
+	true_(String(out.get("reason", "")).contains("Convogli"),
+		"e la condizione e' quella dei tre Convogli: %s" % String(out.get("reason", "")))
+	true_(runner.state.convoys_completed >= 3,
+		"tre Convogli hanno davvero Completato")
+
+
+func test_b2_procedures_are_transcribed() -> void:
+	_begin("B2: le 10 procedure sono trascritte")
+	var o := SoloOpponent.load_for("B2 La Battaglia dell'Atlantico")
+	var placeholders := 0
+	var total := 0
+	for tid in ["actions", "identify"]:
+		var t: SoloTable = o.table(tid)
+		ne(t, null, "la tabella '%s' esiste" % tid)
+		for code_v: Variant in t.legend.keys():
+			total += 1
+			if String(t.legend[code_v]).contains("senza automatismi del motore"):
+				placeholders += 1
+	eq(total, 10, "le procedure trascritte sono dieci")
+	eq(placeholders, 0, "e nessuna e' rimasta un segnaposto")
+	var actions: SoloTable = o.table("actions")
+	# I quattro suffissi della X scelgono TF diverse: e' la meta' della
+	# procedura che un riassunto perderebbe.
+	for code in ["XBC", "XCA", "XPB", "XU"]:
+		ne(String(actions.legend.get(code, "")), "",
+			"il suffisso '%s' della X e' trascritto" % code)
+	eq(actions.modifier_total(["nessun Convoglio ha Completato"]), 1,
+		"il modificatore stampato vale +1")
