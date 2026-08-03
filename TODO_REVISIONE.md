@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Aggiornato dopo la chiusura di **R0** (3 agosto 2026). Baseline: **2927
+Aggiornato dopo la chiusura di **R0** (3 agosto 2026). Baseline: **2957
 verifiche su 18 suite**.
 
 Questo e' il backlog autorevole per continuare la revisione. `STATO.md`
@@ -26,7 +26,7 @@ vecchie sezioni "Cosa manca" non devono riaprire lavori gia' completati.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 2927 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 2957 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
@@ -208,7 +208,18 @@ Uno scenario puo' essere marcato completo solo quando:
   Convogli bersagliabili. **Bletchley Park e' fatto**: era il B-Dienst con le
   parti scambiate, e ora i due condividono lo stesso meccanismo
   (`intel_marker_once` nel dato di scenario).
-- [ ] **A2 L'Ultima Battaglia**: 20 procedure testuali.
+- [ ] **A2 L'Ultima Battaglia**: le venti procedure sono trascritte (pp.63-68,
+  lette sulle pagine renderizzate) e le due fini stampate DENTRO la Tabella di
+  Azione Britannica sono implementate: il risultato 'E' consuma un marker
+  Rendezvous col Meteo Cattivo e un marker U-Boat col Meteo Buono, e finisce lo
+  scenario quando non ce n'e' piu'; il risultato 'X' finisce lo scenario se una
+  BB tedesca e' affondata, o se tre navi tedesche sono affondate, o se quattro
+  Convogli hanno Completato. Il replay chiude su tutti i semi provati.
+  **Restano**: l'acquisto delle forze coi VP (p.65: il motore usa un acquisto
+  di ripiego dichiarato, Tirpitz + Prinz Eugen a Kiel piu' lo Squadrone DD,
+  -3 VP), la pedina U-Boat sulla mappa (ne e' modellato solo il CONTEGGIO, che
+  serve alla fine stampata), il marker Contatto e le Manovre Evasive dei
+  risultati del Rifornimento, e la TF Coordinatrice dei risultati con la stella.
 
 I numeri sopra contano tutte le stringhe `senza automatismi del motore` nei
 rispettivi JSON. L'audit automatico conta solo quelle nelle Tabelle Azioni e
@@ -222,9 +233,13 @@ riga dice che cosa manca.
 
 | esito | scenari | che cosa serve |
 |---|---|---|
-| finisce per condizione stampata | BL1, BL2, N4, N6, B1, B2, B3, B4, A1 | niente: chiudere le procedure segnaposto |
+| finisce per condizione stampata | BL1, BL2, N4, N6, B1, B2, B3, B4, A1, A2 | niente: chiudere le procedure segnaposto |
 | non giocabile, mappa inserto | BL3, N1, N2, N3, N5 | calibrare i reticoli inserto |
-| stallo dichiarato | A2 | lo schieramento si compra coi VP prima della prima azione (p.63): passaggio non modellato |
+
+**Tutti e dieci gli scenari sulla Mappa Operazionale chiudono su una
+condizione stampata.** Gli unici cinque che non si giocano sono i cinque
+dell'inserto, e il lavoro che li sblocca e' uno solo: calibrare i due
+reticoli.
 
 ## P0 - Sistemi mancanti al solitario
 
@@ -313,7 +328,7 @@ riga dice che cosa manca.
 | R1 BL | chiudere BL1, BL2, BL3 | tre scenari end-to-end, inserto BL3 calibrato |
 | R2 Norvegia | chiudere N1-N6 | zero segnaposto N, Mine e Basi modellate e testate |
 | R3 Atlantico | chiudere B1-B4 | zero segnaposto B, replay per ogni scenario |
-| R4 Artico | chiudere A1-A2 | zero segnaposto A, U-Boat e regole artiche verificate |
+| R4 Artico | chiudere A1-A2 | zero segnaposto A, U-Boat e regole artiche verificate (fini stampate: fatte) |
 | R5 Battaglia | chiudere Avanzate e MS12 | tutte le scelte GUI e bot testate |
 | R6 Due giocatori | audit Tutorial + Operazione | replay completi senza regressioni solo |
 | R7 Prodotto | Debriefing, layout, iPad | release candidate usabile e documentata |

@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **2927 verifiche, 18 suite, headless.**
+Tutti i test passano: **2957 verifiche, 18 suite, headless.**
 
 ---
 
@@ -326,6 +326,23 @@ Tutti i test passano: **2927 verifiche, 18 suite, headless.**
   le proprie navi le compra coi VP prima della prima azione (p.63), passaggio
   non modellato, quindi la partita comincia senza Task Force tedesche. Senza la
   parentesi lo scenario si dichiarava concluso prima di cominciare.
+- **Le due fini di A2 stanno dentro la Tabella di Azione Britannica**, non nel
+  riquadro "The End" di p.63. Il risultato 'E' consuma un marker Rendezvous col
+  Meteo Cattivo e un marker U-Boat col Meteo Buono, e chiude lo scenario quando
+  non ce n'e' piu' da togliere; il risultato 'X' lo chiude se una BB tedesca e'
+  affondata, oppure se tre navi tedesche sono affondate, oppure se quattro
+  Convogli hanno Completato con successo (pp.67-68). Erano le uniche fini
+  stampate rimaste non implementate fra i dieci scenari sulla Mappa
+  Operazionale. Il fascicolo da' al tedesco **due marker U-Boat gratis** a
+  p.65: il motore ne modella solo il CONTEGGIO, in `solo_counters`, perche' e'
+  quello che la fine stampata consuma. La pedina U-Boat sulla mappa resta una
+  lacuna dichiarata nel dato dello scenario, e i marker RV di A2 sono zero
+  perche' p.63 li dichiara opzionali - con zero, la prima 'E' col Meteo Cattivo
+  chiude subito, come stampato.
+- **Tutti e dieci gli scenari sulla Mappa Operazionale chiudono ora su una
+  condizione stampata**: BL1, BL2, N4, N6, B1, B2, B3, B4, A1, A2. I cinque che
+  restano fuori sono i cinque della mappa inserto, e li sblocca un lavoro solo:
+  calibrare i due reticoli.
 - **I Comandanti dicono la loro condizione stampata.** Gli undici testi sono
   trascritti da RB p.10 letta a 300 dpi: la scheda TF mostra la regola vera e
   non un riassunto, ed e' quella che decide se il beneficio si puo' usare

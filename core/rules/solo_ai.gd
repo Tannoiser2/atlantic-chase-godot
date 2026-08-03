@@ -51,6 +51,8 @@ static func execute_code(code: String, state: GameState, graph: MapGraph,
 		return _b1(normalized, state, graph, engine, port_control, side)
 	if state.scenario_name.begins_with("B3"):
 		return _b3(normalized, state, graph, engine, port_control, side)
+	if state.scenario_name.begins_with("A2"):
+		return _a2(normalized, state, graph, engine, port_control, side)
 	if state.scenario_name.begins_with("A1"):
 		return _a1(normalized, state, graph, engine, port_control, side)
 	if state.scenario_name.begins_with("BL1"):
@@ -1362,6 +1364,281 @@ static func _b3_scenario_end(state: GameState, reason: String) -> Dictionary:
 	state.solo_ended = true
 	state.solo_end_reason = reason
 	var out := _empty("Solitario AI B3 - FINE SCENARIO: %s" % reason)
+	out["ok"] = true
+	out["turn_kind"] = "end"
+	out["end_scenario"] = true
+	return out
+
+
+## Tabella di Azione Britannica di A2 "L'Ultima Battaglia"
+## (AC Solo scenarios 2022 pp.67-68). Il britannico e' il bot; il giocatore e'
+## il tedesco. Due delle quattro caselle portano una fine STAMPATA dello
+## scenario, ed e' il motivo per cui questa policy esiste: senza di lei A2
+## poteva finire solo per "il tedesco non ha piu' Task Force in gioco", che e'
+## la condizione di p.63, non le due della Tabella.
+static func _a2(code: String, state: GameState, graph: MapGraph,
+		engine: ActionEngine, port_control: Dictionary, side: int) -> Dictionary:
+	match code:
+		"A":
+			# "Bad Weather: if the Weather is Bad, treat as an 'X' result."
+			if state.weather == TimeLapse.Weather.BAD:
+				var as_x := _a2("X", state, graph, engine, port_control, side)
+				as_x["log"].append("Solitario AI A2 - A: Meteo Cattivo, trattata come una 'X'.")
+				return as_x
+			var air := _best_legal_action(state, engine, side, "AIR_STRIKE")
+			if bool(air["ok"]):
+				air["log"].append("Solitario AI A2 - A: Attacco Aereo col Meteo Buono.")
+				return air
+			# "No Target? ... treat as an 'X' result (and a 'c.' result on the
+			# X Selection Table)": il fascicolo salta il tiro di scelta e
+			# impone la riga 'c.', la TF piu' vicina con un CV.
+			var no_target := _a2_interception(state, graph, engine, port_control, side, "c")
+			no_target["log"].append(
+				"Solitario AI A2 - A: nessun bersaglio aereo, 'X' con la riga 'c.' imposta.")
+			return no_target
+		"C":
+			return _a2_completion(state, graph, engine, port_control, side)
+		"E":
+			return _a2_end_result(state, graph, engine, port_control, side)
+		"X":
+			return _a2_interception(state, graph, engine, port_control, side, "")
+	return _a2_completion(state, graph, engine, port_control, side)
+
+
+## Risultato 'E' (p.67). Le due meta' non sono simmetriche: col Meteo Cattivo
+## si consuma un marker Rendezvous, col Meteo Buono un marker U-Boat, e i due
+## rilanci vanno su caselle diverse ('X'/'C' contro 'A'/'C').
+static func _a2_end_result(state: GameState, graph: MapGraph,
+		engine: ActionEngine, port_control: Dictionary, side: int) -> Dictionary:
+	if state.weather == TimeLapse.Weather.BAD:
+		var freed := state.remove_any_rendezvous()
+		if freed == Vector2i.MAX:
+			return _a2_scenario_end(state,
+				"Meteo Cattivo e nessun marker Rendezvous da rimuovere (p.67).")
+		var roll_bad := state.rng.d6("Solitario A2 rilancio E col Meteo Cattivo")
+		var branch_bad := "X" if roll_bad % 2 == 0 else "C"
+		var after_bad := _a2(branch_bad, state, graph, engine, port_control, side)
+		after_bad["log"].append(
+			"Solitario AI A2 - E, Meteo Cattivo: marker Rendezvous rimosso da %s (ne restano %d); 1d6=%d, diventa una '%s'."
+			% [str(freed), state.active_rendezvous_count(), roll_bad, branch_bad])
+		return after_bad
+	var left := _a2_uboats(state)
+	if left <= 0:
+		return _a2_scenario_end(state,
+			"Meteo Buono e nessun marker U-Boat da rimuovere (p.67).")
+	state.solo_counters["a2_uboat_markers"] = left - 1
+	var roll_good := state.rng.d6("Solitario A2 rilancio E col Meteo Buono")
+	var branch_good := "A" if roll_good % 2 == 0 else "C"
+	var after_good := _a2(branch_good, state, graph, engine, port_control, side)
+	after_good["log"].append(
+		"Solitario AI A2 - E, Meteo Buono: marker U-Boat rimosso (ne restano %d); 1d6=%d, diventa una '%s'."
+		% [left - 1, roll_good, branch_good])
+	return after_good
+
+
+## Quanti marker U-Boat restano. Il fascicolo ne da' due gratis allo
+## schieramento (p.65) e il motore ne tiene solo il CONTEGGIO: la pedina sulla
+## mappa e' una lacuna dichiarata nel dato dello scenario.
+static func _a2_uboats(state: GameState) -> int:
+	return int(state.solo_counters.get("a2_uboat_markers", 0))
+
+
+## Risultato 'C' (p.67). L'ordine e' quello stampato: prima si tolgono le navi
+## britanniche Danneggiate, poi si guarda se servono Convogli nuovi, poi si
+## sceglie il Convoglio con la Traiettoria piu' corta.
+static func _a2_completion(state: GameState, graph: MapGraph,
+		engine: ActionEngine, port_control: Dictionary, side: int) -> Dictionary:
+	_remove_damaged_ships(state, side)
+	var note := ""
+	if _a2_convoys_in_play(state, side) < 2:
+		var fresh := _a2_new_convoy_force(state, graph, side)
+		if not fresh.is_empty():
+			var tf_new: TaskForce = fresh["tf"]
+			return _complete_or_route_to_port(state, graph, port_control, tf_new,
+				String(fresh["destination"]),
+				"Solitario AI A2 - C: nuovo Convoglio %s (1d6=%d)"
+					% [String(fresh["route"]), int(fresh["roll"])])
+	var convoy := _shortest_force_with_convoy(state, side)
+	if convoy == null:
+		var passed := _empty(
+			"Solitario AI A2 - C: nessuna TF britannica con un Convoglio, il britannico Passa.")
+		passed["ok"] = true
+		passed["turn_kind"] = "pass"
+		passed["pass_initiative"] = true
+		passed["time_lapse_before_pass"] = true
+		return passed
+	var port := _b1_convoy_destination(graph, convoy)
+	return _complete_or_route_to_port(state, graph, port_control, convoy, port,
+		"Solitario AI A2 - C: Completamento britannico verso %s%s" % [port, note])
+
+
+## Quanti Convogli britannici sono in gioco. Il fascicolo conta i CONVOGLI, non
+## le Task Force: una TF con due segnalini Convoglio ne vale due.
+static func _a2_convoys_in_play(state: GameState, side: int) -> int:
+	var total := 0
+	for tf in state.forces_of(side):
+		if tf.completed:
+			continue
+		for sh in tf.ships:
+			if sh.kind == Ship.Kind.CONVOY and not sh.sunk:
+				total += 1
+	return total
+
+
+## "New Convoy? If there are less than 2 Convoys in play, create and select a
+## new TF and place a Convoy and a CA in it. Roll a die and find its starting
+## port and destination port in the New Convoy TF table" (p.67).
+static func _a2_new_convoy_force(state: GameState, graph: MapGraph,
+		side: int) -> Dictionary:
+	var roll := state.rng.d6("Solitario A2 TF Nuovo Convoglio")
+	var origin := "Hvalfjordur"
+	var destination := "Murmansk"
+	if roll >= 6:
+		origin = "Archangel"
+		destination = "Hvalfjordur"
+	elif roll >= 4:
+		origin = "St. John's"
+		destination = "Clyde"
+	if not graph.ports.has(origin):
+		return {}
+	var ships: Array[String] = ["Convoy x2"]
+	var escort := _make_available_ship("CA", _ship_names_in_play(state))
+	if escort != null:
+		ships.append(escort.name)
+	var tf := _create_force_at(state, graph, side, origin, ships, false)
+	return {
+		"tf": tf,
+		"roll": roll,
+		"route": "%s -> %s" % [origin, destination],
+		"destination": destination,
+	}
+
+
+## Risultato 'X' (pp.67-68). `forced_row` non vuoto salta il tiro sulla Tabella
+## di Scelta: serve al risultato 'A' senza bersaglio aereo, che il fascicolo
+## manda qui imponendo la riga 'c.'.
+static func _a2_interception(state: GameState, graph: MapGraph,
+		engine: ActionEngine, port_control: Dictionary, side: int,
+		forced_row: String) -> Dictionary:
+	# "End? If a German BB is sunk, or three German ships are sunk, or four
+	# Convoys have successfully Completed, the scenario ends."
+	var german := 1 - side
+	if _a2_german_bb_sunk(state, german):
+		return _a2_scenario_end(state, "Una corazzata tedesca e' affondata (p.67).")
+	if state.sunk_count(german) >= 3:
+		return _a2_scenario_end(state, "Tre navi tedesche sono affondate (p.67).")
+	if state.convoys_completed >= 4:
+		return _a2_scenario_end(state,
+			"Quattro Convogli hanno Completato con successo (p.67).")
+	_remove_damaged_ships(state, side)
+	# Passo 1: se una TF con Convoglio non e' ancora arrivata, si allunga la sua
+	# Traiettoria verso il porto di destinazione.
+	var convoy := _shortest_force_with_convoy(state, side)
+	if convoy == null:
+		var fallback := _a2_completion(state, graph, engine, port_control, side)
+		fallback["log"].append(
+			"Solitario AI A2 - X: nessuna TF britannica con un Convoglio, trattata come una 'C'.")
+		return fallback
+	# Passo 2: scelta della TF che porta in Battaglia.
+	var row := forced_row
+	var roll := 0
+	if row == "":
+		roll = state.rng.d6("Solitario A2 Tabella di Scelta della X")
+		row = _a2_selection_row(roll)
+	var hunter := _a2_hunter_for_row(state, side, row)
+	if hunter == null:
+		hunter = _nearest_heavy_without_convoy(state, side, _enemy_center(state, side))
+	if hunter == null:
+		var no_hunter := _a2_completion(state, graph, engine, port_control, side)
+		no_hunter["log"].append(
+			"Solitario AI A2 - X: nessuna TF britannica disponibile per l'Intercettazione, trattata come una 'C'.")
+		return no_hunter
+	# "Which German target? 1-4 = select the TF with a BB in it; 5-6 = select
+	# the German TF nearest a British Convoy."
+	var which := state.rng.d6("Solitario A2 quale bersaglio tedesco")
+	var target: TaskForce = null
+	if which <= 4:
+		target = _nearest_force_with_type(state, german, "BB", _anchor_hex(hunter))
+	if target == null:
+		target = _nearest_heavy_without_convoy(state, german, _anchor_hex(convoy))
+	if target == null:
+		target = _best_enemy_target(state, side, hunter)
+	if target == null:
+		var no_target := _a2_completion(state, graph, engine, port_control, side)
+		no_target["log"].append(
+			"Solitario AI A2 - X: nessuna TF tedesca da intercettare, trattata come una 'C'.")
+		return no_target
+	var out := _attack_or_route_selected(state, graph, engine, hunter, target,
+		"Solitario AI A2 - X: Intercettazione, riga '%s'%s (bersaglio 1d6=%d)"
+			% [row, "" if roll == 0 else " (1d6=%d)" % roll, which])
+	if row.ends_with("*"):
+		# La stella chiede una TF Coordinatrice quando nell'esagono bersaglio
+		# non c'e' gia' un Convoglio. Il tiro di scelta della CTF e' stampato,
+		# ma la designazione passa da ActionEngine e non e' automatizzata qui:
+		# resta una lacuna dichiarata, non un tiro inventato.
+		out["log"].append(
+			"Solitario AI A2 - X: il risultato ha la stella; la TF Coordinatrice va designata a mano (p.68).")
+	return out
+
+
+## Tabella di Scelta della X (p.68, nessun modificatore): 1-2 = n., 3 = a.,
+## 4 = a.*, 5 = b.*, 6 = c.
+static func _a2_selection_row(roll: int) -> String:
+	if roll <= 2:
+		return "n"
+	if roll == 3:
+		return "a"
+	if roll == 4:
+		return "a*"
+	if roll == 5:
+		return "b*"
+	return "c"
+
+
+## La TF britannica che la riga della Tabella di Scelta indica. "Piu' vicina"
+## e' misurata dal centro dello schieramento nemico, come nelle altre policy.
+static func _a2_hunter_for_row(state: GameState, side: int, row: String) -> TaskForce:
+	var toward := _enemy_center(state, side)
+	match row.trim_suffix("*"):
+		"a":
+			return _nearest_force_with_type(state, side, "BC", toward)
+		"b":
+			return _nearest_force_with_type(state, side, "BB", toward)
+		"c":
+			return _nearest_force_with_type(state, side, "CV", toward)
+		"n":
+			var bb := _nearest_force_with_type(state, side, "BB", toward)
+			if bb != null:
+				return bb
+			return _nearest_force_with_type(state, side, "BC", toward)
+	return null
+
+
+## La sola BB tedesca del listino di A2 e' la Tirpitz (p.65): il resto sono BC,
+## PB, CA e lo Squadrone DD. Percio' "a German BB is sunk" si verifica per
+## classe sulle navi in gioco e per nome sulle TF gia' eliminate, dove la
+## cronologia conserva i nomi ma non le classi.
+static func _a2_german_bb_sunk(state: GameState, german: int) -> bool:
+	for tf in state.task_forces:
+		if tf.side != german:
+			continue
+		for sh in tf.ships:
+			if sh.sunk and sh.type_code == "BB":
+				return true
+	for loss_v: Variant in state.casualties:
+		var loss: Dictionary = loss_v
+		if int(loss.get("side", -1)) != german:
+			continue
+		for name_v: Variant in loss.get("ships", []):
+			if String(name_v) == "Tirpitz":
+				return true
+	return false
+
+
+static func _a2_scenario_end(state: GameState, reason: String) -> Dictionary:
+	state.solo_ended = true
+	state.solo_end_reason = reason
+	var out := _empty("Solitario AI A2 - FINE SCENARIO: %s" % reason)
 	out["ok"] = true
 	out["turn_kind"] = "end"
 	out["end_scenario"] = true

@@ -40,7 +40,7 @@ godot --path . --script res://tools/smoke_solo_flow.gd
 godot --path . --script res://tools/smoke_solo_flow.gd -- BL1
 ```
 
-Baseline corrente: **2927 verifiche, 18 suite** (era 2570 su 17 prima della
+Baseline corrente: **2957 verifiche, 18 suite** (era 2570 su 17 prima della
 suite `test_replay.gd`). Il totale non puo' scendere senza una rimozione
 intenzionale di test spiegata nel commit.
 
@@ -52,12 +52,14 @@ godot --headless --path . --script res://tools/simulate_flow.gd
 godot --headless --path . --script res://tools/replay_solo.gd
 ```
 
-`replay_solo.gd` gioca BL1 e BL2 dall'inizio alla fine con `SoloRunner` e
-distingue tre esiti: `OK` (fine stampata), `STALLO` (lacuna dichiarata del
-fascicolo) e `FALLITO` (il ciclo non converge: un difetto).
+`replay_solo.gd` gioca tutti e quindici gli scenari solitari dall'inizio alla
+fine con `SoloRunner` e distingue tre esiti: `OK` (fine stampata), `STALLO`
+(lacuna dichiarata del fascicolo) e `FALLITO` (il ciclo non converge: un
+difetto). Al passaggio: dieci `OK` - tutti gli scenari sulla Mappa Operazionale
+- e cinque `SALTATO`, i cinque della mappa inserto non calibrata.
 
 `audit_solo.gd` verde non significa completo: al passaggio stampa 93 caselle
-uniche, 46 procedure Azione segnaposto, 2 buchi dichiarati e 0 blocchi.
+uniche, 42 procedure Azione segnaposto, 2 buchi dichiarati e 0 blocchi.
 
 ## Metodo di revisione
 

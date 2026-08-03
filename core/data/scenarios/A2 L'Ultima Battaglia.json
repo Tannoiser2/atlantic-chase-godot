@@ -198,6 +198,45 @@
     "station_contact": false,
     "station_port": ""
    }
+  },
+  {
+   "id": 10,
+   "side": 0,
+   "color": "GE",
+   "slot": 0,
+   "name": "Gruppo Tirpitz",
+   "ships": [
+    "Tirpitz",
+    "Preugen"
+   ],
+   "leader": "",
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 18,
+    "station_r": -6,
+    "station_contact": false,
+    "station_port": "Kiel"
+   }
+  },
+  {
+   "id": 11,
+   "side": 0,
+   "color": "GE",
+   "slot": 1,
+   "name": "Squadrone DD",
+   "ships": [
+    "DD Squadron"
+   ],
+   "leader": "",
+   "speed": 3,
+   "trajectory": {
+    "segments": [],
+    "station_q": 18,
+    "station_r": -6,
+    "station_contact": false,
+    "station_port": "Kiel"
+   }
   }
  ],
  "reinforcements": {},
@@ -210,7 +249,11 @@
  },
  "setup_notes": [
   "Meteo Buono; iniziativa tedesca. TF e Mine britanniche iniziali come mappa; U-Boat tedesco entro 3 da porto tedesco e non in spazio con Stazione/porto/base nemica. Convogli New York-Clyde/Liverpool 12 segmenti e Hvalfjordur-Murmansk 10 segmenti. Le forze tedesche sono scelte spendendo VP; massimo due gruppi rinforzi; RV opzionali. Raeder presente.",
-  "Le forze tedesche iniziali sono scelte spendendo VP: non vengono piazzate automaticamente per non scegliere al posto del giocatore."
+  "Le forze tedesche si COMPRANO coi VP (p.65). L'app parte con un acquisto di ripiego legale e dichiarato: Tirpitz e Prinz Eugen in una TF a Kiel, piu' lo Squadrone DD, per un costo di -3 VP registrato come premio manuale. E' lo stesso criterio usato da BL2 per le sue quattro navi 'any': un valore legale che rende lo scenario giocabile senza interazione, non una scelta al posto del giocatore. Una partita normale dovrebbe far scegliere l'acquisto sul listino.",
+  "AC_Solo_scenarios_2022 p.65: \"You start with two U-Boat force markers, Raeder, and one RV marker, all free of charge\". Il motore ne modella solo il CONTEGGIO degli U-Boat (solo_counters.a2_uboat_markers = 2), perche' la fine stampata sul risultato 'E' con Meteo Buono consuma un marker per volta e finisce lo scenario quando non ce n'e' piu'. La pedina U-Boat sulla mappa, il suo piazzamento a 3 esagoni o meno da un porto tedesco e il segnalino Informazioni che attacca a una Traiettoria britannica restano una LACUNA DICHIARATA. Il marker RV gratuito non e' piazzato: p.63 scrive \"RV markers: Optional\", quindi zero e' uno schieramento legale, e con zero RV il risultato 'E' col Meteo Cattivo chiude subito lo scenario, come stampato."
  ],
- "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati."
+ "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati.",
+ "solo_counters": {
+  "a2_uboat_markers": 2
+ }
 }

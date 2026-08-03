@@ -51,6 +51,9 @@ var rendezvous_markers: Array = []
 var commanders: Array = []
 var map_info: Dictionary = {}
 
+## Contatori solitari gia' pieni allo schieramento: vedi solo_start_counters().
+var start_counters: Dictionary = {}
+
 var load_error: String = ""
 
 
@@ -101,6 +104,8 @@ func load_from(path: String) -> bool:
 	battle_setup = bs if typeof(bs) == TYPE_DICTIONARY else {}
 	var sp: Variant = d.get("ship_pool", null)
 	_pool = sp if typeof(sp) == TYPE_DICTIONARY else {}
+	var sc: Variant = d.get("solo_counters", null)
+	start_counters = sc if typeof(sc) == TYPE_DICTIONARY else {}
 	title = String(briefing.get("title", id))
 	_load_victory()
 	return true
@@ -275,6 +280,15 @@ func reinforcement_routes() -> Dictionary:
 	return victory_data.get("reinforcement_routes", {})
 
 
+## Contatori solitari gia' pieni allo schieramento. Servono per i segnalini che
+## il fascicolo conta ma che il motore non mette sulla mappa: A2 "start with two
+## U-Boat force markers" (p.65) e la fine stampata sul risultato 'E' li consuma
+## uno alla volta. Modellare il CONTEGGIO non e' modellare la pedina, ed e'
+## scritto cosi' anche nel dato: il resto resta una lacuna dichiarata.
+func solo_start_counters() -> Dictionary:
+	return start_counters.duplicate(true)
+
+
 ## Il segnalino Informazioni che una parte puo' piazzare una volta per scenario:
 ## il B-Dienst tedesco di BL1 e il Bletchley Park britannico di A1 sono la
 ## stessa facolta' con le parti scambiate. Vuoto = questo scenario non ce l'ha.
@@ -329,6 +343,7 @@ func to_state_dict() -> Dictionary:
 		"commanders": commanders,
 		"end_conditions": end_conditions(),
 		"intel_marker_once": intel_marker_once(),
+		"solo_counters": solo_start_counters(),
 	}
 
 

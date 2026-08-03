@@ -25,13 +25,18 @@ const BL2 := "BL2 Contain and Destroy"
 const BL1_SEED := 20260803
 const BL2_SEED := 20260803
 
+## A2 e' l'unico scenario le cui fini stampate stanno DENTRO i risultati della
+## Tabella di Azione Britannica, non nelle condizioni di p.63.
+const A2 := "A2 L'Ultima Battaglia"
+const A2_SEED := 20260803
+
 ## Semi ulteriori per la proprieta' "termina o dichiara una lacuna". Ne bastano
 ## pochi: la suite deve restare veloce.
 const SWEEP_SEEDS := [2, 3, 7, 42]
 
 
 func name() -> String:
-	return "Replay solitario BL1/BL2"
+	return "Replay solitario BL1/BL2/A2"
 
 
 func run() -> void:
@@ -56,6 +61,11 @@ func run() -> void:
 	test_inset_map_scenarios_refuse_the_operations_map()
 	test_unknown_end_condition_never_ends_the_scenario()
 	test_a2_does_not_end_before_the_germans_ever_sailed()
+	test_a2_reaches_a_printed_end_of_the_british_action_table()
+	test_a2_end_result_consumes_rendezvous_then_uboat_markers()
+	test_a2_interception_ends_on_each_printed_clause()
+	test_a2_selection_table_matches_the_printed_die()
+	test_start_counters_survive_setup_and_reload()
 
 
 ## Il conto delle verifiche di ogni suite e' fisso (`EXPECTED` in
@@ -690,3 +700,133 @@ func test_a2_does_not_end_before_the_germans_ever_sailed() -> void:
 		"perse le navi, la condizione stampata scatta")
 	true_(st.solo_end_reason.contains("Task Force"),
 		"e il motivo cita le Task Force")
+
+
+## A2 pp.67-68. Fino a ieri A2 poteva chiudersi solo per la condizione di p.63
+## ("il tedesco non ha piu' Task Force in gioco"): le due fini stampate DENTRO
+## la Tabella di Azione Britannica non esistevano nel codice.
+func test_a2_reaches_a_printed_end_of_the_british_action_table() -> void:
+	_begin("A2 arriva a una fine stampata")
+	var runner := SoloRunner.new()
+	true_(runner.load_scenario(A2, A2_SEED), "A2 si carica: %s" % runner.load_error)
+	var out := runner.run()
+	true_(bool(out["ended"]), "la partita finisce")
+	eq(String(out["stopped"]), "", "e non per un blocco del ciclo")
+	true_(int(out["turns"]) < SoloRunner.MAX_TURNS,
+		"entro il limite di turni (%d)" % int(out["turns"]))
+	true_(String(out["reason"]).contains("p.67"),
+		"per una condizione della Tabella di Azione Britannica: %s" % String(out["reason"]))
+
+
+## Il risultato 'E' consuma marker: Rendezvous col Meteo Cattivo, U-Boat col
+## Meteo Buono. Finiti quelli, lo scenario chiude. E' l'unico consumatore dei
+## due marker, quindi se il conteggio non scende la fine non arriva mai.
+func test_a2_end_result_consumes_rendezvous_then_uboat_markers() -> void:
+	_begin("il risultato E di A2 consuma i marker")
+	var graph := MapGraph.load_default()
+	var uk := TaskForce.Side.ROYAL_NAVY
+	# Meteo Buono: si consumano gli U-Boat, due come da p.65.
+	var st := _a2_state(graph)
+	st.weather = TimeLapse.Weather.GOOD
+	eq(int(st.solo_counters.get("a2_uboat_markers", -1)), 2,
+		"A2 parte con due marker U-Boat (p.65)")
+	var engine := ActionEngine.load_default()
+	st.rng.push_forced([2])
+	SoloAI.execute_code("E", st, graph, engine, {}, uk)
+	eq(int(st.solo_counters.get("a2_uboat_markers", -1)), 1, "il primo E ne toglie uno")
+	false_(st.solo_ended, "e non chiude ancora la partita")
+	st.solo_counters["a2_uboat_markers"] = 0
+	SoloAI.execute_code("E", st, graph, engine, {}, uk)
+	true_(st.solo_ended, "senza marker U-Boat lo scenario finisce")
+	true_(st.solo_end_reason.contains("U-Boat"), "e il motivo lo dice: %s" % st.solo_end_reason)
+	# Meteo Cattivo: si consumano i Rendezvous. A2 ne schiera zero (p.63 li
+	# dichiara opzionali), quindi la prima 'E' col Meteo Cattivo chiude subito.
+	var st2 := _a2_state(graph)
+	st2.weather = TimeLapse.Weather.BAD
+	eq(st2.active_rendezvous_count(), 0, "A2 non schiera marker Rendezvous")
+	SoloAI.execute_code("E", st2, graph, ActionEngine.load_default(), {}, uk)
+	true_(st2.solo_ended, "col Meteo Cattivo e senza Rendezvous lo scenario finisce")
+	true_(st2.solo_end_reason.contains("Rendezvous"),
+		"e il motivo cita i Rendezvous: %s" % st2.solo_end_reason)
+
+
+## "End? If a German BB is sunk, or three German ships are sunk, or four
+## Convoys have successfully Completed, the scenario ends." Tre clausole in OR:
+## ognuna va verificata da sola, altrimenti una che non scatta resta invisibile.
+func test_a2_interception_ends_on_each_printed_clause() -> void:
+	_begin("le tre clausole di fine del risultato X di A2")
+	var graph := MapGraph.load_default()
+	var uk := TaskForce.Side.ROYAL_NAVY
+	var ge := TaskForce.Side.KRIEGSMARINE
+
+	var bb := _a2_state(graph)
+	bb.casualties.append({"side": ge, "ships": ["Tirpitz"], "convoys": 0})
+	SoloAI.execute_code("X", bb, graph, ActionEngine.load_default(), {}, uk)
+	true_(bb.solo_ended, "una BB tedesca affondata chiude lo scenario")
+	true_(bb.solo_end_reason.contains("corazzata"), "e il motivo la cita")
+
+	var three := _a2_state(graph)
+	three.casualties.append({"side": ge,
+		"ships": ["Scharnhorst", "Hipper", "Preugen"], "convoys": 0})
+	SoloAI.execute_code("X", three, graph, ActionEngine.load_default(), {}, uk)
+	true_(three.solo_ended, "tre navi tedesche affondate chiudono lo scenario")
+	true_(three.solo_end_reason.contains("Tre navi"), "e il motivo le conta")
+
+	var convoys := _a2_state(graph)
+	convoys.convoys_completed = 4
+	SoloAI.execute_code("X", convoys, graph, ActionEngine.load_default(), {}, uk)
+	true_(convoys.solo_ended, "quattro Convogli Completati chiudono lo scenario")
+	true_(convoys.solo_end_reason.contains("Quattro"), "e il motivo li conta")
+
+	# Sotto soglia nessuna delle tre scatta: la 'X' resta un'azione normale.
+	var open_game := _a2_state(graph)
+	open_game.convoys_completed = 3
+	open_game.casualties.append({"side": ge, "ships": ["Hipper", "Preugen"], "convoys": 0})
+	SoloAI.execute_code("X", open_game, graph, ActionEngine.load_default(), {}, uk)
+	false_(open_game.solo_ended, "sotto soglia la partita continua")
+
+
+## Tabella di Scelta della X (p.68, nessun modificatore): 1-2 n., 3 a., 4 a.*,
+## 5 b.*, 6 c. Le stelle non sono decorative: segnano i risultati che chiedono
+## anche una TF Coordinatrice.
+func test_a2_selection_table_matches_the_printed_die() -> void:
+	_begin("la Tabella di Scelta della X di A2")
+	eq(SoloAI._a2_selection_row(1), "n", "1 = n.")
+	eq(SoloAI._a2_selection_row(2), "n", "2 = n.")
+	eq(SoloAI._a2_selection_row(3), "a", "3 = a.")
+	eq(SoloAI._a2_selection_row(4), "a*", "4 = a. con la stella")
+	eq(SoloAI._a2_selection_row(5), "b*", "5 = b. con la stella")
+	eq(SoloAI._a2_selection_row(6), "c", "6 = c.")
+
+
+## I contatori di partenza sono dato dello scenario, non stato inventato dal
+## bot: devono arrivare nello stato allo schieramento e sopravvivere a un
+## salvataggio, altrimenti la fine stampata di A2 si perde ricaricando.
+func test_start_counters_survive_setup_and_reload() -> void:
+	_begin("i contatori di partenza arrivano nello stato e si salvano")
+	var sc := Scenario.load_by_id(A2)
+	eq(int(sc.solo_start_counters().get("a2_uboat_markers", -1)), 2,
+		"lo scenario dichiara due marker U-Boat")
+	var graph := MapGraph.load_default()
+	var st := GameState.new(graph, 1)
+	st.apply_dict(sc.to_state_dict())
+	eq(int(st.solo_counters.get("a2_uboat_markers", -1)), 2,
+		"e lo schieramento li mette nello stato")
+	st.solo_counters["a2_uboat_markers"] = 1
+	var reloaded := GameState.new(graph, 1)
+	reloaded.apply_dict(st.to_dict())
+	eq(int(reloaded.solo_counters.get("a2_uboat_markers", -1)), 1,
+		"il salvataggio conserva il conteggio consumato")
+	# Uno scenario che non li dichiara non se li inventa.
+	eq(Scenario.load_by_id(BL1).solo_start_counters().size(), 0,
+		"BL1 non dichiara contatori di partenza")
+
+
+## Stato di A2 schierato dal dato, senza passare da SoloRunner: serve ai test
+## che forzano una singola casella della Tabella di Azione Britannica.
+func _a2_state(graph: MapGraph) -> GameState:
+	var sc := Scenario.load_by_id(A2)
+	var st := GameState.new(graph, 1)
+	st.apply_dict(sc.to_state_dict())
+	st.scenario_name = A2
+	return st
