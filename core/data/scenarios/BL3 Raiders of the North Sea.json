@@ -4,8 +4,20 @@
  "weather": 1,
  "initiative": 0,
  "round": 1,
+ "_map": {
+  "name": "Mappa Inserto del Mare del Nord",
+  "status": "immagine presente in assets/boards/map_north_sea.jpg; reticolo e coordinate non calibrati, quindi non sostituibile con la Mappa Operazionale"
+ },
+ "commanders": [
+  "Raeder"
+ ],
  "task_forces": [],
- "reinforcements": {},
+ "reinforcements": {
+  "KM Reinforcement A": [
+   "Karlsruhe",
+   "Koln"
+  ]
+ },
  "info_triggers": [],
  "briefing": {
   "title": "BL3 Raiders of the North Sea",
@@ -16,6 +28,7 @@
  },
  "setup_notes": [
   "Mappa Inserto del Mare del Nord: griglia non calibrata in questo progetto. Le tabelle sono trascritte, ma lo schieramento non e' convertibile sulla Mappa Operazionale senza calibrare l'inserto."
+  ,"Setup stampato non ancora applicabile: Scharnhorst, Gneisenau e Hipper; Marschall assegnato a una nave, Raeder disponibile; TF britannica non identificata e forza Sottomarino nelle posizioni illustrate. Karlsruhe e Koln sono nel Gruppo Rinforzi A, la cui casella va scelta fra Wilhelmshaven e Kiel."
  ],
  "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati."
 }

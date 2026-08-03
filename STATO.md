@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **2437 verifiche, 17 suite, headless.**
+Tutti i test passano: **2476 verifiche, 17 suite, headless.**
 
 ---
 
@@ -134,9 +134,26 @@ Tutti i test passano: **2437 verifiche, 17 suite, headless.**
   o ha Informazioni. Il log dice `puo' tentare` finche' il normale tentativo
   sull'Iniziativa non ha stabilito che il Completamento riesce davvero;
 - BL2 fa scegliere sulla mappa la Stazione iniziale della Home Fleet, adiacente
-  a un porto controllato britannico eccetto Scapa Flow e Methil. Restano
-  dichiarati, senza coordinate inventate, la rotta Azzorre-Faroe, il confine
-  delle Acque Neutrali e la pedina Base Aerea di Trondheim;
+  a un porto controllato britannico eccetto Scapa Flow e Methil. La Home Fleet
+  contiene Repulse, tre CA e un CL: i quattro `any` vengono scelti dal
+  giocatore nel pannello di stato. I porti norvegesi sono neutrali e non
+  compaiono fra gli esagoni legali;
+- BL2 piazza entrambe le rotte Convoglio stampate, inclusi gli otto segmenti
+  Africa-Portsmouth. Rodney e Valiant sono nel Gruppo Rinforzi A a Scapa Flow,
+  non in una TF iniziale; il Gruppo B e' a Brest e porta Gensoul quando entra;
+- Pound e' modellato correttamente come comandante non assegnato e abilita
+  Passare Tutti. Forbes parte con la Home Fleet. Gli effetti una tantum di
+  Forbes e Gensoul sono ancora descritti ma non automatizzati;
+- il confine rosa delle Acque Neutrali BL2 e' calibrato sugli esagoni della
+  Mappa Operazionale. Ingaggiare o Attacco Aereo britannico contro una TF al
+  suo interno tira automaticamente l'Incidente Internazionale dopo la
+  risoluzione, come stampato. Restano dichiarati la rotta Azzorre-Faroe e la
+  pedina Base Aerea di Trondheim;
+- BL3 e' stato verificato contro le pp.12-15 della seconda edizione: tabelle,
+  rinforzi e audit dello setup sono trascritti, ma lo scenario non e' ancora
+  giocabile. Usa la Mappa Inserto del Mare del Nord; immagine presente, reticolo
+  e coordinate non calibrati. L'app lo dichiara invece di piazzare le TF sulla
+  Mappa Operazionale sbagliata;
 - riepilogo persistente nel pannello di stato e procedura espandibile nel log
   mostrano tabella, tiro, TF scelta, bersaglio, risultato e ragione della policy;
 - `tools/audit_solo.gd`: 93 caselle azione, 0 blocchi, 82 testi segnaposto e 2

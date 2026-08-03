@@ -29,6 +29,9 @@ static func is_implemented(name: String) -> bool:
 
 
 static func has_commander(state: GameState, name: String, side: int) -> bool:
+	if state.commanders.has(name):
+		return (name == "Raeder" and side == TaskForce.Side.KRIEGSMARINE) \
+			or (name == "Pound" and side == TaskForce.Side.ROYAL_NAVY)
 	for tf in state.task_forces:
 		if tf.side == side and tf.leader == name:
 			return true

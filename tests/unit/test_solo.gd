@@ -56,9 +56,11 @@ func run() -> void:
 	test_bl2_end_procedure()
 	test_bl2_identification_and_incident()
 	test_bl2_completion_destinations()
+	test_bl2_complete_setup_and_neutral_waters()
 	test_bl2_battle_identifies_unknown_tf()
 	test_bl2_x_keeps_damaged_selection()
 	test_solo_ai_bl3_completion_port_by_phase()
+	test_bl3_declares_inset_setup_gaps()
 	test_solo_ai_bl1_x_creates_unknown_hunter()
 	test_solo_ai_bl1_blockade_and_french_action()
 	test_solo_ai_b1_convoy_creates_and_routes()
@@ -772,8 +774,11 @@ func test_bl2_completion_destinations() -> void:
 	var halifax := _tf_named(st, "Convoglio Halifax-Clyde")
 	ne(africa, null, "Convoglio Africa-Portsmouth caricato")
 	ne(halifax, null, "Convoglio Halifax-Clyde caricato")
-	eq(Completion.port_options(africa, graph, sc.port_control()).size(), 0,
-		"Africa e' il porto di partenza, non una destinazione valida")
+	var africa_ports := Completion.port_options(africa, graph, sc.port_control())
+	eq(africa_ports.size(), 1,
+		"la rotta completa offre una sola destinazione valida")
+	eq(String(africa_ports[0]["name"]), "Portsmouth",
+		"Africa e' il porto di partenza, Portsmouth la destinazione")
 	false_(Completion.port_options(halifax, graph, sc.port_control())
 		.any(func(p: Dictionary) -> bool: return String(p["name"]) == "Halifax"),
 		"Halifax e' il porto di partenza, non una destinazione valida")
@@ -781,6 +786,48 @@ func test_bl2_completion_destinations() -> void:
 		"la destinazione Africa-Portsmouth resta esplicita nei dati")
 	eq(halifax.solo_flags.get("completion_ports", []), ["Clyde", "Liverpool"],
 		"entrambe le destinazioni stampate Halifax-Clyde/Liverpool sono ammesse")
+
+
+func test_bl2_complete_setup_and_neutral_waters() -> void:
+	_begin("BL2: setup completo e Acque Neutrali calibrate")
+	var sc := Scenario.load_by_id("BL2 Contain and Destroy")
+	var st := GameState.new(graph, 73)
+	st.apply_dict(sc.to_state_dict())
+	var home := _tf_named(st, "Home Fleet")
+	var africa := _tf_named(st, "Convoglio Africa-Portsmouth")
+	ne(home, null, "Home Fleet piazzata")
+	eq(home.afloat_ships().size(), 5, "Repulse, tre CA e un CL")
+	eq(home.ships.filter(func(ship: Ship) -> bool:
+		return ship.type_code == "CA").size(), 3,
+		"le tre CA indicate come any sono presenti")
+	eq(home.ships.filter(func(ship: Ship) -> bool:
+		return ship.type_code == "CL").size(), 1,
+		"il CL indicato come any e' presente")
+	eq(home.leader, "Forbes", "Forbes e' assegnato alla Home Fleet")
+	eq(africa.trajectory.length(), 8, "Africa-Portsmouth ha gli 8 segmenti stampati")
+	eq(africa.trajectory.end_hex(0), Vector2i(12, 4), "la rotta parte da Africa")
+	eq(africa.trajectory.end_hex(1), Vector2i(16, -3), "la rotta arriva a Portsmouth")
+	true_(_trajectory_is_contiguous(africa), "Africa-Portsmouth e' continua")
+	true_(st.commanders.has("Pound"), "Pound e' disponibile senza essere assegnato")
+	true_(LeaderRules.has_commander(st, "Pound", TaskForce.Side.ROYAL_NAVY),
+		"Pound abilita Passare Tutti")
+	eq(String(sc.reinforcement_ports().get("RN Reinforcement A", "")),
+		"Scapa Flow", "Rodney e Valiant sono nella casella Scapa Flow")
+	eq(String(sc.reinforcement_ports().get("RN Reinforcement B", "")),
+		"Brest", "il Gruppo Rinforzi B e' nella casella Brest")
+	eq(String(sc.reinforcement_leaders().get("RN Reinforcement B", "")),
+		"Gensoul", "Gensoul entra col Gruppo francese")
+	eq(Completion.control_of(graph.ports["Bergen"], sc.port_control()), "NONE",
+		"Bergen e' neutrale, non un porto controllato britannico")
+	var legal := SoloAI.bl2_home_fleet_station_hexes(graph, sc.port_control())
+	true_(not legal.is_empty(), "esistono esagoni legali per la Home Fleet")
+	for norwegian in ["Bergen", "Trondheim", "Narvik"]:
+		for h in graph.adjacent_hexes(graph.port_hex(norwegian)):
+			false_(legal.has(h), "%s non offre esagoni alla Home Fleet" % norwegian)
+	true_(SoloAI.bl2_is_neutral_water(sc.rules(), Vector2i(17, -9)),
+		"il Mare di Norvegia entro il bordo rosa e' Acqua Neutrale")
+	false_(SoloAI.bl2_is_neutral_water(sc.rules(), Vector2i(15, -5)),
+		"Scapa Flow resta fuori dalle Acque Neutrali")
 
 
 func test_bl2_battle_identifies_unknown_tf() -> void:
@@ -849,6 +896,25 @@ func test_solo_ai_bl3_completion_port_by_phase() -> void:
 		{}, TaskForce.Side.ROYAL_NAVY)
 	eq(String((late["completion_port"] as Dictionary)["name"]), "Scapa Flow",
 		"la tabella Tardi usa Scapa Flow")
+
+
+func test_bl3_declares_inset_setup_gaps() -> void:
+	_begin("BL3: audit dello setup sulla Mappa Inserto")
+	var sc := Scenario.load_by_id("BL3 Raiders of the North Sea")
+	eq(String(sc.map_info.get("name", "")), "Mappa Inserto del Mare del Nord",
+		"BL3 dichiara la plancia corretta")
+	true_(String(sc.map_info.get("status", "")).contains("non calibrati"),
+		"il reticolo mancante e' dichiarato")
+	eq(sc.task_forces.size(), 0,
+		"non inventa coordinate sulla Mappa Operazionale")
+	true_(sc.commanders.has("Raeder"), "Raeder e' trascritto come comandante strategico")
+	var group: Array = sc.reinforcements.get("KM Reinforcement A", [])
+	eq(group.size(), 2, "il Gruppo Rinforzi A contiene due CL")
+	true_(group.has("Karlsruhe"), "Karlsruhe e' nel Gruppo A")
+	true_(group.has("Koln"), "Koln e' nel Gruppo A")
+	var notes := " ".join(sc.raw_setup_notes())
+	true_(notes.contains("Marschall") and notes.contains("Sottomarino"),
+		"Marschall e la forza Sottomarino restano nell'audit dello setup")
 
 
 func test_solo_ai_bl1_x_creates_unknown_hunter() -> void:

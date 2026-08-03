@@ -259,6 +259,40 @@ static func identify_for_battle(opponent: SoloOpponent, state: GameState,
 	return applied
 
 
+## BL2 p.9: la Home Fleet parte adiacente a qualunque porto controllato dal
+## britannico eccetto Scapa Flow e Methil. Le acque norvegesi sono neutrali,
+## quindi i loro porti non entrano nell'elenco tramite port_control.
+static func bl2_home_fleet_station_hexes(graph: MapGraph,
+		port_control: Dictionary) -> Array[Vector2i]:
+	var port_hexes := {}
+	for port_v: Variant in graph.ports.values():
+		for h_v: Variant in (port_v as Dictionary).get("hexes", []):
+			port_hexes[h_v] = true
+	var legal: Array[Vector2i] = []
+	for pname_v: Variant in graph.ports.keys():
+		var pname := String(pname_v)
+		if pname == "Scapa Flow" or pname == "Methil":
+			continue
+		var port: Dictionary = graph.ports[pname]
+		if Completion.control_of(port, port_control) != "ROYAL_NAVY":
+			continue
+		for port_hex_v: Variant in port.get("hexes", []):
+			for h in graph.adjacent_hexes(port_hex_v as Vector2i):
+				if not port_hexes.has(h) and not legal.has(h):
+					legal.append(h)
+	legal.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+		return a.x < b.x or (a.x == b.x and a.y < b.y))
+	return legal
+
+
+static func bl2_is_neutral_water(rules: Dictionary, h: Vector2i) -> bool:
+	for h_v: Variant in rules.get("neutral_waters", []):
+		var entry: Dictionary = h_v
+		if h == Vector2i(int(entry.get("q", 0)), int(entry.get("r", 0))):
+			return true
+	return false
+
+
 static func _bl2_identify(state: GameState, tf: TaskForce, code: String) -> Dictionary:
 	if tf == null or not tf.unidentified:
 		return _empty("Solitario AI BL2: nessuna TF tedesca non identificata selezionata.")

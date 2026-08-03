@@ -48,6 +48,8 @@ var victory_data: Dictionary = {}
 var battle_setup: Dictionary = {}
 var setup_notes: Array = []
 var rendezvous_markers: Array = []
+var commanders: Array = []
+var map_info: Dictionary = {}
 
 var load_error: String = ""
 
@@ -92,6 +94,9 @@ func load_from(path: String) -> bool:
 	import_warnings = d.get("import_warnings", [])
 	setup_notes = d.get("setup_notes", [])
 	rendezvous_markers = d.get("rendezvous_markers", [])
+	commanders = d.get("commanders", [])
+	var map_v: Variant = d.get("_map", {})
+	map_info = map_v if typeof(map_v) == TYPE_DICTIONARY else {}
 	var bs: Variant = d.get("battle_setup", null)
 	battle_setup = bs if typeof(bs) == TYPE_DICTIONARY else {}
 	var sp: Variant = d.get("ship_pool", null)
@@ -215,6 +220,10 @@ func reinforcement_ports() -> Dictionary:
 	return victory_data.get("reinforcement_ports", {})
 
 
+func reinforcement_leaders() -> Dictionary:
+	return victory_data.get("reinforcement_leaders", {})
+
+
 ## Note manuali sullo schieramento, usate soprattutto dagli scenari solitari:
 ## molte rotte sono stampate come "Halifax -> Clyde/Liverpool, 11 segmenti",
 ## non come esagoni. Mostrarlo e' piu' onesto che lasciare "0 TF, 0 navi".
@@ -259,6 +268,7 @@ func to_state_dict() -> Dictionary:
 		"task_forces": task_forces,
 		"info_triggers": info_triggers,
 		"rendezvous_markers": rendezvous_markers,
+		"commanders": commanders,
 	}
 
 

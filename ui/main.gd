@@ -69,6 +69,7 @@ var _active_bot_trace: int = 0
 var _expanded_bot_traces: Dictionary = {}
 var _last_bot_summary: String = ""
 var _battle_post_time_lapse: Array[TaskForce] = []
+var _battle_post_bl2_incident: bool = false
 var _hex_choice_active: bool = false
 var _hex_choice_options: Dictionary = {}
 var _hex_choice_prompt: String = ""
@@ -217,6 +218,10 @@ func _load_scenario_at(idx: int, offer_setup_choices: bool = true) -> void:
 	if solo != null:
 		_msg("Solitario: tabelle caricate (%s). Premi O per l'avversario immaginario."
 			% ("Tardi" if solo.phase == SoloOpponent.Phase.LATE else "Presto"))
+	if not scenario.map_info.is_empty() and state.task_forces.is_empty():
+		_msg("Scenario non ancora giocabile: %s. %s" % [
+			String(scenario.map_info.get("name", "mappa speciale")),
+			String(scenario.map_info.get("status", "reticolo non calibrato"))])
 	if scenario.has_import_warnings():
 		for w_v: Variant in scenario.import_warnings:
 			_msg("  [avviso di import] %s" % String(w_v))
@@ -229,38 +234,76 @@ func _load_scenario_at(idx: int, offer_setup_choices: bool = true) -> void:
 		call_deferred("_kick_solo_opponent_turn", "inizio scenario")
 	call_deferred("_kick_bl1_fueling_check")
 	if offer_setup_choices and scenario.id == "BL2 Contain and Destroy":
-		call_deferred("_choose_bl2_home_fleet_station")
+		call_deferred("_choose_bl2_setup")
+
+
+## BL2 lascia al giocatore quattro navi indicate come "any" e la posizione
+## iniziale della Home Fleet. I nomi nel JSON sono soltanto il ripiego valido
+## per test e avvii senza interazione; una partita normale chiede le scelte.
+func _choose_bl2_setup() -> void:
+	var home_fleet := _bl2_home_fleet()
+	if home_fleet == null:
+		_msg("BL2: Home Fleet non trovata; scelte di schieramento non disponibili.")
+		return
+	await _choose_bl2_home_fleet_ships(home_fleet)
+	await _choose_bl2_home_fleet_station(home_fleet)
+	_msg("BL2: Gruppo Rinforzi A con Rodney e Valiant nella casella Scapa Flow; "
+		+ "non e' una TF finche' non entra con Riorganizzare.")
+	_refresh()
+
+
+func _bl2_home_fleet() -> TaskForce:
+	for tf in state.task_forces:
+		if tf.display_name() == "Home Fleet":
+			return tf
+	return null
+
+
+func _choose_bl2_home_fleet_ships(home_fleet: TaskForce) -> void:
+	var chosen: Array[String] = ["Repulse"]
+	for spec_v: Variant in [{"type": "CA", "count": 3}, {"type": "CL", "count": 1}]:
+		var spec: Dictionary = spec_v
+		for index in int(spec["count"]):
+			var candidates: Array[Ship] = []
+			for roster_name_v: Variant in ShipRoster.shared().names():
+				var ship := ShipRoster.shared().make(String(roster_name_v))
+				if ship != null and ship.nation == "UK" \
+						and ship.type_code == String(spec["type"]) \
+						and not chosen.has(ship.name):
+					candidates.append(ship)
+			candidates.sort_custom(func(a: Ship, b: Ship) -> bool:
+				return a.name < b.name)
+			var options: Array = []
+			for ship in candidates:
+				options.append({"label": ship.name, "detail": ship.type_code})
+			var picked: int = await Choice.ask(self, "Schieramento BL2 - Home Fleet",
+				"Scegli %s %d di %d. Il fascicolo indica 'any'." % [
+					String(spec["type"]), index + 1, int(spec["count"])], options)
+			if picked < 0:
+				_msg("BL2: scelta navi annullata; resta la composizione di ripiego valida.")
+				return
+			chosen.append(candidates[picked].name)
+	var ships: Array[Ship] = []
+	for ship_name in chosen:
+		ships.append(ShipRoster.shared().make(ship_name))
+	home_fleet.ships = ships
+	home_fleet.recompute_speed()
+	_msg("Schieramento BL2: Home Fleet contiene %s; Forbes e' assegnato alla TF."
+		% ", ".join(chosen))
 
 
 ## BL2 lascia al giocatore la posizione iniziale della Home Fleet. La scelta
 ## usa soltanto porti e adiacenze calibrati; il valore nel JSON e' un ripiego
 ## legale per avvii headless, screenshot e annullamento.
-func _choose_bl2_home_fleet_station() -> void:
+func _choose_bl2_home_fleet_station(home_fleet: TaskForce = null) -> void:
 	if scenario == null or scenario.id != "BL2 Contain and Destroy":
 		return
-	var home_fleet: TaskForce = null
-	for tf in state.task_forces:
-		if tf.display_name() == "Home Fleet":
-			home_fleet = tf
-			break
+	if home_fleet == null:
+		home_fleet = _bl2_home_fleet()
 	if home_fleet == null:
 		_msg("BL2: Home Fleet non trovata; scelta di schieramento non disponibile.")
 		return
-	var port_hexes := state.port_hexes()
-	var legal: Array[Vector2i] = []
-	for pname_v: Variant in graph.ports.keys():
-		var pname := String(pname_v)
-		if pname == "Scapa Flow" or pname == "Methil":
-			continue
-		var port: Dictionary = graph.ports[pname]
-		if Completion.control_of(port, scenario.port_control()) != "ROYAL_NAVY":
-			continue
-		for port_hex_v: Variant in port.get("hexes", []):
-			for h in graph.adjacent_hexes(port_hex_v as Vector2i):
-				if not port_hexes.has(h) and not legal.has(h):
-					legal.append(h)
-	legal.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
-		return a.x < b.x or (a.x == b.x and a.y < b.y))
+	var legal := SoloAI.bl2_home_fleet_station_hexes(graph, scenario.port_control())
 	if legal.is_empty():
 		_msg("BL2: nessun esagono calibrato soddisfa lo schieramento della Home Fleet.")
 		return
@@ -622,6 +665,8 @@ func _declare_action(key: String) -> void:
 			and not await _prepare_solo_battle(dec.active, target):
 		pending_battle = Results.Battle.NONE
 	if pending_battle != Results.Battle.NONE:
+		_battle_post_bl2_incident = _bl2_neutral_incident_required(key,
+			dec.active, dec.target_hex)
 		_solo_maybe_go_late("battle", "un risultato ha aperto una Battaglia")
 		_battle_post_time_lapse.clear()
 		for tf in [dec.active_coordinating, dec.active_air_support]:
@@ -630,11 +675,13 @@ func _declare_action(key: String) -> void:
 				_battle_post_time_lapse.append(tf)
 		_open_battle(pending_battle, dec.active, target, dec.target_hex)
 	elif initiative_changed:
+		await _maybe_bl2_neutral_incident(key, dec.active, dec.target_hex)
 		if bool(engine.action(key).get("causes_time_lapse", false)):
 			await _time_lapse_designated_active(dec)
 		if _change_initiative_to(1 - dec.active.side):
 			await _maybe_run_solo_opponent_turn("risultato dell'azione")
 	else:
+		await _maybe_bl2_neutral_incident(key, dec.active, dec.target_hex)
 		await _post_table_action_flow(key, dec)
 	_refresh()
 
@@ -999,6 +1046,9 @@ func _close_battle(b: Battle) -> void:
 		if tf != null and state.task_force(tf.id) != null:
 			await _do_time_lapse_for(tf)
 	_battle_post_time_lapse.clear()
+	if _battle_post_bl2_incident:
+		_battle_post_bl2_incident = false
+		await _roll_bl2_international_incident()
 	if _seek_initiative():
 		await _maybe_run_solo_opponent_turn("fine Battaglia")
 	if _battle_layer != null:
@@ -2184,6 +2234,13 @@ func _reorg_reinforce() -> bool:
 			await _maybe_run_solo_opponent_turn("Rinforzi falliti")
 		return true
 	if bool(r["success"]):
+		var leaders := scenario.reinforcement_leaders()
+		if leaders.has(keys[i]):
+			var reinforced_tf: TaskForce = r.get("tf", null)
+			if reinforced_tf != null:
+				reinforced_tf.leader = String(leaders[keys[i]])
+				_msg("%s entra assegnato a %s."
+					% [reinforced_tf.leader, reinforced_tf.display_name()])
 		scenario.reinforcements[keys[i]] = []
 	return false
 
@@ -2228,6 +2285,35 @@ func _solo_maybe_go_late(event: String, reason: String) -> bool:
 	_msg("Solitario: passa automaticamente alla tabella Tardi: %s." % reason)
 	state.changed.emit()
 	return true
+
+
+func _bl2_neutral_incident_required(action_key: String, active: TaskForce,
+		target_hex: Vector2i) -> bool:
+	if scenario == null or scenario.id != "BL2 Contain and Destroy" \
+			or active == null or active.side != TaskForce.Side.ROYAL_NAVY \
+			or not ["ENGAGE", "AIR_STRIKE"].has(action_key):
+		return false
+	return SoloAI.bl2_is_neutral_water(scenario.rules(), target_hex)
+
+
+func _maybe_bl2_neutral_incident(action_key: String, active: TaskForce,
+		target_hex: Vector2i) -> void:
+	if _bl2_neutral_incident_required(action_key, active, target_hex):
+		await _roll_bl2_international_incident()
+
+
+## BL2 p.11: si tira dopo aver risolto Ingaggiare/Battaglia o Attacco Aereo.
+func _roll_bl2_international_incident() -> void:
+	if solo == null or not solo.has("incident"):
+		_msg("BL2: Incidente Internazionale richiesto, ma tabella non disponibile.")
+		return
+	var table: SoloTable = solo.table("incident")
+	var result := table.roll_and_read(state.rng, 0)
+	_msg("Solitario - Incidente Internazionale nelle Acque Neutrali")
+	for line in SoloTable.describe(result).split("\n"):
+		_msg("  " + line)
+	await _apply_solo_table_result("incident", result)
+	log.record("BL2: Incidente Internazionale")
 
 
 ## Segnalazione (RB p.39): una Traiettoria nemica con un segnalino Informazioni
@@ -3526,6 +3612,7 @@ func _refresh_roster() -> void:
 		_append_roster_side(out, TaskForce.Side.ROYAL_NAVY, "Royal Navy")
 		_append_completed_forces(out)
 	_append_reinforcements(out)
+	_append_global_commanders(out)
 	_lbl_roster.text = "\n".join(out)
 
 
@@ -3600,6 +3687,7 @@ func _append_reinforcements(out: Array[String]) -> void:
 		out.append("[color=#c8b8a0]Tutti i gruppi disponibili sono gia' entrati o vuoti.[/color]")
 		return
 	var ports := scenario.reinforcement_ports()
+	var leaders := scenario.reinforcement_leaders()
 	for k_v: Variant in scenario.reinforcements.keys():
 		var group := String(k_v)
 		var ships: Array = scenario.reinforcements[k_v]
@@ -3616,6 +3704,18 @@ func _append_reinforcements(out: Array[String]) -> void:
 			port_txt = " -> porto non trascritto"
 		out.append("[b]%s[/b]%s" % [group, port_txt])
 		out.append("  %s" % ", ".join(ships))
+		if leaders.has(group):
+			out.append("  Cmd: %s (entra assegnato al Gruppo)" % String(leaders[group]))
+
+
+func _append_global_commanders(out: Array[String]) -> void:
+	if state == null or state.commanders.is_empty():
+		return
+	out.append("")
+	out.append("[b]Comandanti non assegnati[/b]")
+	for commander in state.commanders:
+		out.append("[b]%s[/b] - %s (utilizzi rimasti: %d)" % [commander,
+			LeaderRules.effect_text(commander), LeaderRules.uses_left(state, commander)])
 
 
 func _append_rendezvous_markers(out: Array[String]) -> void:

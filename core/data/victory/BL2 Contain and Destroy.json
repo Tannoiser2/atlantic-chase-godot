@@ -117,8 +117,27 @@
    "text": "Forbes viene silurato e risorse navali sono sottratte dall'Asia e dal Pacifico per bloccare la crisi."
   }
  ],
+ "reinforcement_ports": {
+  "RN Reinforcement A": "Scapa Flow",
+  "RN Reinforcement B": "Brest"
+ },
+ "reinforcement_leaders": {
+  "RN Reinforcement B": "Gensoul"
+ },
+ "port_control": {
+  "NO": "NONE"
+ },
  "rules": {
-  "convoy_dispersal": false
+  "convoy_dispersal": false,
+  "neutral_waters": [
+   {"q": 17, "r": -11},
+   {"q": 17, "r": -10},
+   {"q": 17, "r": -9},
+   {"q": 17, "r": -8},
+   {"q": 16, "r": -7},
+   {"q": 16, "r": -6},
+   {"q": 17, "r": -6}
+  ]
  },
  "notes": [
   "I Convogli britannici sono distrutti da 2 Colpi; quelli tedeschi da 1 Colpo; nessun Convoglio puo' disperdersi.",

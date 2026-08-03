@@ -86,6 +86,10 @@ var rendezvous_markers: Array[Dictionary] = []
 ## utilizzi, gli altri uno (RB p.10); il dato deve sopravvivere al salvataggio.
 var commander_uses: Dictionary = {}
 
+## Raeder e Pound non sono assegnati a una nave (RB p.10): sono comandanti
+## strategici disponibili alla parte. Gli altri continuano a stare sulla TF.
+var commanders: Array[String] = []
+
 ## Perdite gia' rimosse dalla mappa. Servono alle tabelle solitarie che
 ## distinguono "Danneggiata in gioco" da "affondata in precedenza": lasciare
 ## una TF eliminata sulla mappa conservava l'informazione, ma mentiva al
@@ -399,6 +403,7 @@ func to_dict() -> Dictionary:
 		"solo_phase_reason": solo_phase_reason,
 		"rendezvous_markers": rendezvous_markers.duplicate(true),
 		"commander_uses": commander_uses.duplicate(),
+		"commanders": commanders.duplicate(),
 		"casualties": casualties.duplicate(true),
 		"solo_counters": solo_counters.duplicate(true),
 		"solo_ended": solo_ended,
@@ -433,6 +438,9 @@ func apply_dict(d: Dictionary) -> void:
 	var saved_commanders: Dictionary = d.get("commander_uses", {})
 	for name_v: Variant in saved_commanders.keys():
 		commander_uses[String(name_v)] = int(saved_commanders[name_v])
+	commanders.clear()
+	for commander_v: Variant in d.get("commanders", []):
+		commanders.append(String(commander_v))
 	casualties.clear()
 	for loss_v: Variant in d.get("casualties", []):
 		var loss: Dictionary = loss_v
