@@ -63,6 +63,8 @@ func run() -> void:
 	test_bl3_declares_inset_setup_gaps()
 	test_solo_ai_bl1_x_creates_unknown_hunter()
 	test_solo_ai_bl1_blockade_and_french_action()
+	test_solo_ai_bl1_convoy_procedure()
+	test_solo_ai_bl1_four_cruisers_add_the_french_action()
 	test_solo_ai_b1_convoy_creates_and_routes()
 	test_solo_ai_b1_x_creates_unknown_interceptor()
 	test_solo_ai_x_suffix_prefers_ship_type()
@@ -951,6 +953,84 @@ func test_solo_ai_bl1_blockade_and_french_action() -> void:
 	true_((french.get("active", null) as TaskForce).ships.any(
 		func(ship: Ship) -> bool: return ship.name == "Dunkerque"),
 		"F seleziona davvero la Forza francese")
+
+
+## AC Solo scenarios 2022 p.7, risultato CONVOGLIO. Prima di questa revisione
+## il codice cadeva nel ripiego generico: non tirava il dado di rimando e non
+## creava mai la nuova TF con Convoglio e CL.
+func test_solo_ai_bl1_convoy_procedure() -> void:
+	_begin("AI solitaria BL1: procedura Convoglio")
+	var scenario := Scenario.load_by_id("BL1 Raiders of the North Atlantic")
+	var engine := ActionEngine.load_default()
+
+	# Ramo 1: c'e' gia' una TF con un Convoglio -> si tira e si rimanda.
+	var st := GameState.new(graph, 1)
+	st.apply_dict(scenario.to_state_dict())
+	var convoys_before := 0
+	for tf in st.forces_of(TaskForce.Side.ROYAL_NAVY):
+		if SoloAI._has_convoy(tf):
+			convoys_before += 1
+	true_(convoys_before > 0, "BL1 parte con Convogli britannici in gioco")
+	st.rng.push_forced([3])
+	var redirected := SoloAI.execute_code("convoy", st, graph, engine,
+		scenario.port_control(), TaskForce.Side.ROYAL_NAVY)
+	true_(_solo_ai_log_contains(redirected, "1d6=3 -> risultato 'C'"),
+		"con 3 il fascicolo rimanda al risultato C")
+
+	# Ramo 2: nessun Convoglio in gioco -> nuova TF con Convoglio e un CL.
+	var st2 := GameState.new(graph, 2)
+	st2.scenario_name = "BL1 Raiders of the North Atlantic"
+	var german := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
+	german.ships.append(ShipRoster.shared().make("Lutzow"))
+	german.trajectory.become_station(Vector2i(15, -2))
+	st2.add_task_force(german)
+	st2.rng.push_forced([2])            # PARI -> Africa
+	var created := SoloAI.execute_code("convoy", st2, graph, engine,
+		scenario.port_control(), TaskForce.Side.ROYAL_NAVY)
+	var british := st2.forces_of(TaskForce.Side.ROYAL_NAVY)
+	eq(british.size(), 1, "viene creata una sola TF britannica")
+	true_(SoloAI._has_convoy(british[0]) if british.size() == 1 else false,
+		"la nuova TF contiene un Convoglio")
+	true_(_tf_has_type(british[0] if british.size() == 1 else null, "CL"),
+		"e anche un CL, come stampato")
+	true_(_solo_ai_log_contains(created, "PARI"),
+		"il dado PARI/DISPARI sceglie il porto di partenza")
+	eq(int(st2.solo_counters.get("bl1_international_incidents", 0)), 1,
+		"la procedura chiude con un Incidente Internazionale")
+
+
+## p.7: "4+ CAs? If there are four or more British CAs in play, and there is no
+## target for an Air Strike, treat this as BOTH an 'A' and an 'F' result. The
+## French TF will be the Active TF and the British TF the Coordinating TF."
+func test_solo_ai_bl1_four_cruisers_add_the_french_action() -> void:
+	_begin("AI solitaria BL1: quattro CA fanno agire la francese")
+	var scenario := Scenario.load_by_id("BL1 Raiders of the North Atlantic")
+	var st := GameState.new(graph, 3)
+	st.apply_dict(scenario.to_state_dict())
+	st.weather = TimeLapse.Weather.GOOD
+	# Con meno di quattro CA agisce la TF con il CA, non la francese.
+	var few := SoloAI.execute_code("A", st, graph, ActionEngine.load_default(),
+		scenario.port_control(), TaskForce.Side.ROYAL_NAVY)
+	var few_active: TaskForce = few.get("active", null)
+	false_(few_active != null and _forces_include_ship([few_active], "Dunkerque"),
+		"con pochi CA la francese non e' l'Attiva")
+
+	var st2 := GameState.new(graph, 3)
+	st2.apply_dict(scenario.to_state_dict())
+	st2.weather = TimeLapse.Weather.GOOD
+	var cruisers := TaskForce.new(0, TaskForce.Side.ROYAL_NAVY)
+	cruisers.trajectory.become_station(Vector2i(15, -3))
+	for cruiser_name in ["Norfolk", "Suffolk", "Devonshire", "Dorsetshire"]:
+		cruisers.ships.append(ShipRoster.shared().make(cruiser_name))
+	cruisers.recompute_speed()
+	st2.add_task_force(cruisers)
+	var many := SoloAI.execute_code("A", st2, graph, ActionEngine.load_default(),
+		scenario.port_control(), TaskForce.Side.ROYAL_NAVY)
+	var active: TaskForce = many.get("active", null)
+	true_(active != null and _forces_include_ship([active], "Dunkerque"),
+		"con quattro CA l'Attiva e' la TF francese")
+	ne(many.get("coordinating", null), null,
+		"e la TF britannica con i CA e' designata Coordinatrice")
 
 
 func test_solo_ai_b1_convoy_creates_and_routes() -> void:

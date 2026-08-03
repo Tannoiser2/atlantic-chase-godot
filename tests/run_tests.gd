@@ -29,13 +29,13 @@ const EXPECTED := {
 	"res://tests/unit/test_scenarios.gd": 228,
 	"res://tests/unit/test_victory.gd": 184,
 	"res://tests/unit/test_reorganize_signal.gd": 138,
-	"res://tests/unit/test_solo.gd": 646,
+	"res://tests/unit/test_solo.gd": 656,
 	"res://tests/unit/test_attitude.gd": 167,
 	"res://tests/unit/test_special_effects.gd": 67,
 	"res://tests/unit/test_result_tables.gd": 34,
 	"res://tests/unit/test_lingering.gd": 63,
 	"res://tests/unit/test_snafu.gd": 90,
-	"res://tests/unit/test_replay.gd": 80,
+	"res://tests/unit/test_replay.gd": 83,
 }
 
 const SUITES := [

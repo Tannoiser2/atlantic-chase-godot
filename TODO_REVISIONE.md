@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Aggiornato dopo la chiusura di **R0** (3 agosto 2026). Baseline: **2650
+Aggiornato dopo la chiusura di **R0** (3 agosto 2026). Baseline: **2663
 verifiche su 18 suite**.
 
 Questo e' il backlog autorevole per continuare la revisione. `STATO.md`
@@ -16,7 +16,7 @@ vecchie sezioni "Cosa manca" non devono riaprire lavori gia' completati.
 | Battaglia base | completa | regressioni GUI e bot solo |
 | Battaglia avanzata | quasi completa | quattro scelte interattive e MS12 |
 | Salvataggio/undo | completo | includere ogni nuovo stato solo |
-| Solitario BL1 | giocabile, replay end-to-end verde | chiudere 4+CA, B-Dienst e Murmansk |
+| Solitario BL1 | giocabile, replay end-to-end verde | chiudere B-Dienst e Murmansk |
 | Solitario BL2 | giocabile, replay end-to-end verde | automatizzare Forbes e Gensoul |
 | Solitario BL3 | tabelle trascritte, non giocabile | calibrare Mappa Inserto Mare del Nord |
 | Altri 12 solitari | setup e testo presenti, automazione parziale | sostituire i segnaposto scenario per scenario |
@@ -26,10 +26,10 @@ vecchie sezioni "Cosa manca" non devono riaprire lavori gia' completati.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i quattro comandi in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 2650 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 2663 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
-  `tests/unit/test_replay.gd` (80 verifiche). `tools/simulate_flow.gd` ne
+  `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
   stampa il riepilogo in coda.
 - [x] Verificare che nessuna callback differita continui dopo `solo_ended`:
   `test_nothing_acts_after_scenario_end` legge la trascrizione e pretende zero
@@ -70,15 +70,18 @@ Uno scenario puo' essere marcato completo solo quando:
   Tabella Azioni (conta i Convogli britannici Completati **e distrutti**, non i
   Completamenti tedeschi), la condizione di fine di p.5, il ramo Meteo Cattivo
   della 'A' (con CA -> 'X', senza CA -> 'B'), i Limiti di Carburante di F e X e
-  la chiusura di South America. **Restano**: la clausola "4 o piu' CA" della
-  'A' (che vale come 'A' *e* 'F' insieme, con la francese Attiva e la
-  britannica Coordinante), il B-Dienst (un segnalino Informazioni una volta per
-  scenario) e la Tabella Murmansk prima del Debriefing.
+  la chiusura di South America, la procedura CONVOGLIO per intero (prima
+  cadeva nel ripiego generico: niente dado di rimando, niente nuova TF con
+  Convoglio e CL) e la clausola "4 o piu' CA" della 'A', che vale come 'A' *e*
+  'F' insieme con la francese Attiva e la britannica Coordinatrice.
+  **Restano**: il B-Dienst (un segnalino Informazioni una volta per scenario,
+  a scelta del giocatore) e la Tabella Murmansk da tirare automaticamente
+  prima del Debriefing quando una TF tedesca vi ha Completato.
 - [ ] **BL1: la fine stampata non copre la posizione "nessuna TF tedesca con
   piu' di due marker RV".** Un RV si rimuove solo con un Controllo
   Rifornimento, che richiede una Stazione tedesca: perse tutte le navi e i
   Rinforzi, la partita non puo' piu' finire. Il replay lo dichiara (`STALLO`,
-  6 semi su 40) invece di inventare una condizione. Va chiesto o cercato un
+  9 semi su 40) invece di inventare una condizione. Va chiesto o cercato un
   chiarimento GMT prima di scrivere una regola.
 - [ ] **BL2 Contain and Destroy**: audit finale pagina per pagina. Home Fleet,
   Convogli, Acque Neutrali, Pound/Forbes, Identificazione e procedure

@@ -857,19 +857,91 @@ static func _bl1(code: String, state: GameState, graph: MapGraph,
 			if bool(air["ok"]):
 				air["log"].append("Solitario AI BL1: col meteo buono prova l'Attacco Aereo.")
 				return air
+			# "4+ CAs? If there are four or more British CAs in play, and there
+			# is no target for an Air Strike, treat this as BOTH an 'A' and an
+			# 'F' result. The French TF will be the Active TF and the British
+			# TF the Coordinating TF." (p.7)
+			var french_tf := _force_with_ship_name(state, side, "Dunkerque")
+			if _count_ships_of_type(state, side, "CA") >= 4 and french_tf != null:
+				var coordinating := _nearest_force_with_type(state, side, "CA",
+					_enemy_center(state, side))
+				var german_target := _best_enemy_target(state, side, french_tf)
+				if german_target != null:
+					var both := _attack_or_route_selected(state, graph, engine,
+						french_tf, german_target,
+						"Solitario AI BL1: quattro o piu' CA e nessun bersaglio aereo, 'A' e 'F' insieme")
+					if coordinating != null and coordinating != french_tf:
+						both["coordinating"] = coordinating
+						both["log"].append(("La TF francese e' l'Attiva, %s e' la "
+							+ "Coordinatrice.") % coordinating.display_name())
+					_bl1_fuel_limits(state, 3, both)
+					return both
 			var ca := _nearest_force_with_type(state, side, "CA", _enemy_center(state, side))
 			if ca == null:
 				ca = _create_unidentified_at(state, graph, side, "Portsmouth")
 			return _attack_or_route_selected(state, graph, engine, ca,
 				_best_enemy_target(state, side, ca), "Solitario AI BL1: caccia con CA/TF Portsmouth")
 		"C":
+			var removed := _remove_damaged_ships_of_side(state, side, "BL1",
+				"bl1_removed_ships")
 			var convoy := _shortest_force_with_convoy(state, side)
 			if convoy == null:
-				return _bl1("convoy", state, graph, engine, port_control, side)
+				var as_convoy := _bl1("CONV", state, graph, engine, port_control, side)
+				(as_convoy["log"] as Array).append_array(removed)
+				as_convoy["log"].append("Solitario AI BL1: nessun Convoglio in gioco: la 'C' diventa un risultato Convoglio.")
+				return as_convoy
 			var port := _nearest_named_port(graph, _anchor_hex(convoy),
 				["Clyde", "Liverpool", "Portsmouth"])
-			return _complete_or_route_to_port(state, graph, port_control, convoy, port,
+			var completion := _complete_or_route_to_port(state, graph, port_control,
+				convoy, port,
 				"Solitario AI BL1: Convoglio verso il porto britannico piu' vicino")
+			(completion["log"] as Array).append_array(removed)
+			if bool(completion.get("completion", false)):
+				_bl1_international_incident(state, completion)
+			return completion
+		"CONV":
+			# CONVOGLIO (p.7). Il fascicolo stampa due rami distinti, e finora
+			# nessuno dei due era implementato: il codice cadeva nel ripiego
+			# generico `_completion_or_route`, che non tira il dado e non crea
+			# la nuova TF.
+			var convoy_removed := _remove_damaged_ships_of_side(state, side,
+				"BL1", "bl1_removed_ships")
+			var existing := _shortest_force_with_convoy(state, side)
+			if existing != null:
+				var branch := state.rng.d6("Solitario BL1 Convoglio")
+				var redirect := "A" if branch <= 2 else ("C" if branch <= 5 else "F")
+				var result := _bl1(redirect, state, graph, engine, port_control, side)
+				(result["log"] as Array).append_array(convoy_removed)
+				result["log"].append(("Solitario AI BL1 Convoglio: c'e' gia' una TF "
+					+ "con un Convoglio; 1d6=%d -> risultato '%s'.")
+					% [branch, redirect])
+				return result
+			var where := state.rng.d6("Solitario BL1 nuovo Convoglio")
+			var origin := "Africa" if where % 2 == 0 else "Halifax"
+			if not graph.ports.has(origin):
+				var gap := _empty(("Solitario AI BL1 Convoglio: il porto %s non e' "
+					+ "nel grafo calibrato; nessuna TF creata.") % origin)
+				gap["pass_initiative"] = true
+				(gap["log"] as Array).append_array(convoy_removed)
+				return gap
+			var new_tf := _create_force_at(state, graph, side, origin,
+				["Convoy x3"], false)
+			var escort := _make_available_ship("CL", _ship_names_in_play(state))
+			if escort != null:
+				new_tf.ships.append(escort)
+				new_tf.recompute_speed()
+			var destination := _nearest_named_port(graph, _anchor_hex(new_tf),
+				["Portsmouth", "Clyde", "Liverpool"])
+			var route := _complete_or_route_to_port(state, graph, port_control,
+				new_tf, destination,
+				"Solitario AI BL1 Convoglio: nuova TF verso il porto britannico piu' vicino")
+			(route["log"] as Array).append_array(convoy_removed)
+			route["log"].append(("Solitario AI BL1 Convoglio: 1d6=%d (%s) -> nuova TF "
+				+ "in %s con Convoglio%s.") % [where,
+				"PARI" if where % 2 == 0 else "DISPARI", origin,
+				" e " + escort.name if escort != null else ""])
+			_bl1_international_incident(state, route)
+			return route
 		"B":
 			# AC Solo scenarios 2022 p.7: il cilindro rosso e' nel primo
 			# esagono a NE di Scapa Flow. La griglia calibrata lo identifica
@@ -1089,6 +1161,17 @@ static func _bl2_automatic_convoy_completion(state: GameState, tf: TaskForce) ->
 
 
 static func _bl2_remove_damaged_ships(state: GameState, side: int) -> Array[String]:
+	return _remove_damaged_ships_of_side(state, side, "BL2", "bl2_removed_ships")
+
+
+## "Remove Damaged British ships. If this empties a TF, remove it." Compare
+## identica in BL1 (risultati C e Convoglio, p.7) e in BL2 (risultato A, p.10).
+##
+## La nave rimossa NON e' affondata: le tabelle degli Esiti la contano fra le
+## Danneggiate ("damaged, includes removed ships"), e il registro deve dirlo,
+## se no il conto dei VP a fine partita sembra sbagliato.
+static func _remove_damaged_ships_of_side(state: GameState, side: int,
+		label: String, counter_key: String) -> Array[String]:
 	var lines: Array[String] = []
 	var removed := 0
 	for tf in state.forces_of(side).duplicate():
@@ -1096,16 +1179,29 @@ static func _bl2_remove_damaged_ships(state: GameState, side: int) -> Array[Stri
 		for ship in tf.ships:
 			if ship.damaged and not ship.sunk:
 				removed += 1
-				lines.append("Solitario AI BL2: rimossa %s Danneggiata da %s; conta come Danneggiata, non affondata, per i VP." % [ship.name, tf.display_name()])
+				lines.append(("Solitario AI %s: rimossa %s Danneggiata da %s; "
+					+ "conta come Danneggiata, non affondata, per i VP.")
+					% [label, ship.name, tf.display_name()])
 			else:
 				keep.append(ship)
 		tf.ships = keep
 		tf.recompute_speed()
 		if tf.ships.is_empty() and not tf.unidentified:
 			state.remove_task_force(tf)
-	state.solo_counters["bl2_removed_ships"] = \
-		int(state.solo_counters.get("bl2_removed_ships", 0)) + removed
+	state.solo_counters[counter_key] = \
+		int(state.solo_counters.get(counter_key, 0)) + removed
 	return lines
+
+
+## Incidente Internazionale in BL1 (p.4): "There is no immediate effect ... but
+## it may have an effect on the Action Table and on Debriefing". Non c'e' una
+## tabella da tirare come in BL2: si tiene il conto, e basta.
+static func _bl1_international_incident(state: GameState,
+		out: Dictionary) -> void:
+	var n := int(state.solo_counters.get("bl1_international_incidents", 0)) + 1
+	state.solo_counters["bl1_international_incidents"] = n
+	out["log"].append(("Incidente Internazionale numero %d. In BL1 non ha "
+		+ "effetto immediato: pesa sul Debriefing.") % n)
 
 
 static func _bl2_identification_replacement(state: GameState, spec: String) -> String:
@@ -1141,6 +1237,16 @@ static func _count_type(tf: TaskForce, type_code: String) -> int:
 			if ship.type_code == type_code and not ship.sunk:
 				count += 1
 	return count
+
+
+## Quante navi di un tipo ha una parte su TUTTA la mappa. Serve alla clausola
+## "4+ CAs" di BL1, che conta i CA in gioco, non quelli di una singola TF.
+static func _count_ships_of_type(state: GameState, side: int,
+		type_code: String) -> int:
+	var total := 0
+	for tf in state.forces_of(side):
+		total += _count_type(tf, type_code)
+	return total
 
 
 static func _make_available_ship_from_pool(type_code: String, pools: Dictionary,

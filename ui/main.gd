@@ -1775,6 +1775,14 @@ func _resolve_solo_ai_action(decision: Dictionary) -> String:
 	dec.target = target
 	dec.launch_hex = decision.get("launch_hex", Vector2i.MAX)
 	dec.target_hex = decision.get("target_hex", Vector2i.MAX)
+	# RB p.47: la Coordinatrice deve occupare l'esagono Bersaglio. Se la
+	# procedura ne indica una che non ci sta, si rinuncia invece di rendere
+	# illegale tutta l'azione.
+	var coordinating: TaskForce = decision.get("coordinating", null)
+	if coordinating != null and dec.target_hex != Vector2i.MAX \
+			and coordinating.trajectory.occupies(dec.target_hex):
+		dec.active_coordinating = coordinating
+		_msg("Solitario AI: %s coordina l'azione." % coordinating.display_name())
 	if key == "AIR_STRIKE":
 		traj_layer.set_air_action_markers(active.side, dec.launch_hex, dec.target_hex)
 		await get_tree().create_timer(0.55).timeout

@@ -338,6 +338,13 @@ func _resolve_bot_action(decision: Dictionary) -> void:
 	dec.target = target
 	dec.launch_hex = decision.get("launch_hex", Vector2i.MAX)
 	dec.target_hex = decision.get("target_hex", Vector2i.MAX)
+	# RB p.47: una Coordinatrice vale solo se occupa l'esagono Bersaglio.
+	# Designarla comunque renderebbe l'azione illegale invece di aiutarla.
+	var coordinating: TaskForce = decision.get("coordinating", null)
+	if coordinating != null and dec.target_hex != Vector2i.MAX \
+			and coordinating.trajectory.occupies(dec.target_hex):
+		dec.active_coordinating = coordinating
+		_line("BOT   %s coordina l'azione." % coordinating.display_name())
 	var res := engine.resolve(dec, state)
 	var label := String(engine.action(key).get("label", key))
 	if not bool(res["ok"]):

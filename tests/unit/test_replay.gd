@@ -51,11 +51,17 @@ func run() -> void:
 	test_south_america_is_closed_without_a_fueling_grant()
 
 
+## Il conto delle verifiche di ogni suite e' fisso (`EXPECTED` in
+## `tests/run_tests.gd`): un'asserzione dentro un `if` farebbe variare il
+## totale e trasformerebbe un test interrotto in un OK falso. Qui e in tutta la
+## suite ogni `check` viene quindi eseguito sempre, anche quando il caso
+## interessante non si e' verificato.
 func _run(scenario_id: String, seed_value: int) -> Dictionary:
 	var runner := SoloRunner.new()
 	_begin("replay %s" % scenario_id)
-	if not runner.load_scenario(scenario_id, seed_value):
-		check(false, "scenario non caricato: %s" % runner.load_error)
+	var loaded := runner.load_scenario(scenario_id, seed_value)
+	true_(loaded, "scenario caricato: %s" % runner.load_error)
+	if not loaded:
 		return {}
 	return runner.run()
 
@@ -128,7 +134,7 @@ func test_nothing_acts_after_scenario_end() -> void:
 		true_(end_at >= 0, "%s: la trascrizione deve contenere la fine scenario"
 			% String(pair[0]))
 		var after := 0
-		for i in range(end_at + 1, lines.size()):
+		for i in range(maxi(end_at, 0) + 1, lines.size()):
 			var line := String(lines[i])
 			if line.begins_with("--- Turno ") or line.begins_with("BOT - ") \
 					or line.begins_with("GIOCATORE (policy harness)"):
@@ -145,7 +151,12 @@ func test_completions_use_legal_ports() -> void:
 	var runner := SoloRunner.new()
 	true_(runner.load_scenario(BL1, BL1_SEED), "BL1 caricato")
 	var out := runner.run()
+	# Il numero di Completamenti dipende dai dadi, quindi il numero di
+	# verifiche NON puo' dipendere da loro: il runner pretende un conto fisso
+	# per suite, e una verifica che a volte non gira e' una verifica persa in
+	# silenzio. Si riassume tutto in una riga sola, con l'elenco dei colpevoli.
 	var checked := 0
+	var illegal: Array[String] = []
 	for tf in runner.state.task_forces:
 		if not tf.completed or tf.completed_port == "":
 			continue
@@ -158,8 +169,11 @@ func test_completions_use_legal_ports() -> void:
 		var allowed := control == "BOTH" \
 			or control == VictoryTracker.side_name(tf.side) \
 			or granted == tf.completed_port
-		true_(allowed, "%s ha Completato a %s, controllato da '%s'"
-			% [tf.display_name(), tf.completed_port, control])
+		if not allowed:
+			illegal.append("%s a %s (controllo '%s')"
+				% [tf.display_name(), tf.completed_port, control])
+	eq(illegal.size(), 0, "Completamenti in porti non consentiti: %s"
+		% ", ".join(illegal))
 	true_(checked > 0 or int(out.get("completions", 0)) == 0,
 		"se ci sono stati Completamenti, almeno uno va verificato")
 
@@ -336,9 +350,8 @@ func test_bl1_bad_weather_air_result_needs_a_cruiser() -> void:
 		TaskForce.Side.ROYAL_NAVY)
 	var chosen: TaskForce = with_ca.get("active", null)
 	check(chosen != null, "la procedura deve scegliere una TF")
-	if chosen != null:
-		eq(chosen.display_name(), british.display_name(),
-			"la TF scelta e' quella che ha il CA")
+	eq(chosen.display_name() if chosen != null else "", british.display_name(),
+		"la TF scelta e' quella che ha il CA")
 
 
 ## p.8: i risultati F e X invocano i Limiti di Carburante a tre e a due
@@ -397,9 +410,8 @@ func test_south_america_is_closed_without_a_fueling_grant() -> void:
 	var granted := Completion.port_options(tf, graph, control)
 	eq(granted.size(), 1,
 		"il risultato a. della Tabella del Rifornimento apre South America")
-	if granted.size() == 1:
-		eq(String(granted[0]["name"]), "South America",
-			"ed e' proprio South America")
+	eq(String(granted[0]["name"]) if granted.size() == 1 else "",
+		"South America", "ed e' proprio South America")
 	# Kiel resta lecito comunque: e' uno dei tre porti stampati.
 	var kiel := TaskForce.new(2, TaskForce.Side.KRIEGSMARINE)
 	kiel.trajectory.become_station(graph.port_hex("Kiel"))

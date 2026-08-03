@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **2650 verifiche, 18 suite, headless.**
+Tutti i test passano: **2663 verifiche, 18 suite, headless.**
 
 ---
 
@@ -205,6 +205,17 @@ Tutti i test passano: **2650 verifiche, 18 suite, headless.**
   - i risultati che fanno **cambiare** l'Iniziativa venivano trattati come una
     normale ricerca dell'Iniziativa: due meccaniche diverse, e il Conto si
     comporta in modo diverso.
+- **La procedura CONVOGLIO di BL1 non esisteva.** Il codice cadeva nel ripiego
+  generico: niente dado di rimando (1-2 'A', 3-5 'C', 6 'F'), niente nuova TF
+  con Convoglio e CL, niente PARI Africa / DISPARI Halifax, niente Incidente
+  Internazionale. Ora c'e' tutta, e con lei la rimozione delle navi britanniche
+  Danneggiate che i risultati C e Convoglio prescrivono - navi che le tabelle
+  degli Esiti contano fra le Danneggiate, non fra le affondate.
+- **La clausola "4 o piu' CA" della 'A'** (p.7): con quattro CA britannici in
+  gioco e nessun bersaglio aereo il risultato vale come 'A' *e* 'F' insieme,
+  con la TF francese Attiva e quella britannica Coordinatrice. La Coordinatrice
+  viene designata solo se occupa davvero l'esagono Bersaglio (RB p.47): fuori
+  da li' renderebbe illegale l'intera azione invece di aiutarla.
 - **Tre regole di BL1 allineate al fascicolo:** la 'A' con Meteo Cattivo
   diventa 'X' solo se una TF britannica ha un CA, altrimenti 'B' (p.7); i
   risultati F e X invocano i **Limiti di Carburante** a tre e a due Convogli
@@ -214,7 +225,7 @@ Tutti i test passano: **2650 verifiche, 18 suite, headless.**
   perde tutte le Task Force e i Rinforzi mentre restano tre marker Rendezvous,
   la condizione di fine stampata non puo' piu' avverarsi: un RV si rimuove solo
   con un Controllo Rifornimento, che richiede una Stazione tedesca. Il replay
-  si ferma e lo dice (`STALLO`, 6 semi su 40 provati); non inventa una fine.
+  si ferma e lo dice (`STALLO`, 9 semi su 40 provati); non inventa una fine.
 
 ### Cosa e' cambiato nella sessione precedente
 
