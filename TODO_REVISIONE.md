@@ -25,7 +25,7 @@ vecchie sezioni "Cosa manca" non devono riaprire lavori gia' completati.
 
 ## P0 - Integrita' del progetto
 
-- [ ] Mantenere sempre verdi i quattro comandi in `CLAUDE.md`.
+- [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
 - [ ] Non consentire che il totale scenda sotto 2702 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
@@ -38,9 +38,13 @@ vecchie sezioni "Cosa manca" non devono riaprire lavori gia' completati.
   Oggi la sequenza esiste in due posti: nel core (sincrona, testata) e nella
   vista (asincrona, con i dialoghi). Finche' restano separate, una correzione
   va applicata due volte, ed e' la prima cosa che divergera'.
-- [ ] Aggiungere uno smoke test GUI del flusso operativo: selezione TF,
-  dichiarazione Azione, scelta su mappa, Scorrere del Tempo, cambio
-  Iniziativa, azione bot e ritorno al giocatore.
+- [x] Smoke test GUI del ciclo solitario: `tools/smoke_solo_flow.gd` apre il
+  gioco vero, passa l'Iniziativa all'avversario immaginario, risponde alle
+  scelte del pannello e della mappa e pretende tiro della Tabella, mossa
+  annunciata, Registro cresciuto, Iniziativa tornata e tasti ancora vivi.
+  Verificato che fallisca davvero rompendo di proposito `_apply_solo_ai_result`.
+- [ ] Estenderlo al flusso a due giocatori: dichiarazione Azione del giocatore,
+  scelta su mappa, Scorrere del Tempo e Battaglia aperta da un risultato.
 
 ## P0 - Solitario completo
 

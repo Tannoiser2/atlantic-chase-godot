@@ -36,6 +36,8 @@ godot --headless --path . --script res://tests/run_tests.gd
 godot --path . --script res://tools/smoke_map_workspace.gd
 godot --path . --script res://tools/smoke_ui.gd
 godot --path . --script res://tools/smoke_ui.gd -- adv
+godot --path . --script res://tools/smoke_solo_flow.gd
+godot --path . --script res://tools/smoke_solo_flow.gd -- BL1
 ```
 
 Baseline corrente: **2702 verifiche, 18 suite** (era 2570 su 17 prima della
