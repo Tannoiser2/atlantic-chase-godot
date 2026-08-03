@@ -633,6 +633,11 @@ func _declare_action(key: String) -> void:
 			"Designa una Task Force di Supporto Aereo? Deve avere una "
 			+ "portaerei.", true)
 
+	# Gensoul agisce sulle designazioni, quindi PRIMA della risoluzione:
+	# l'Interruzione si tira sui segnalini Informazioni delle TF designate, e
+	# toglierne uno dopo non servirebbe a niente.
+	await _offer_gensoul(dec)
+
 	var res := engine.resolve(dec, state)
 	var label := String(engine.action(key).get("label", key))
 	if not res["ok"]:
@@ -1549,6 +1554,47 @@ func _do_solo() -> void:
 			_:
 				return
 		_refresh()
+
+
+## Gensoul (RB p.10): quando la sua Task Force e' designata Attiva, toglie un
+## segnalino Informazioni da una TF britannica o francese designata nell'Azione
+## corrente. Una volta per scenario, e la decisione e' del giocatore: qui si
+## limita a offrirla quando le condizioni stampate ci sono davvero.
+func _offer_gensoul(dec: ActionEngine.Declaration) -> void:
+	if not LeaderRules.gensoul_available(state, dec):
+		return
+	var targets := LeaderRules.gensoul_targets(dec)
+	var opts: Array = []
+	for tf in targets:
+		opts.append({"label": tf.display_name(),
+			"detail": "%d segnalini Informazioni" % tf.info_count()})
+	opts.append({"label": "Non usarlo ora", "detail": "resta per un'altra Azione"})
+	var i: int = await Choice.ask(self, "Gensoul",
+		LeaderRules.effect_text("Gensoul"), opts, false)
+	if i < 0 or i >= targets.size():
+		return
+	var chosen := targets[i]
+	var hexes: Array = []
+	for seg_v: Variant in chosen.trajectory.segments:
+		var seg: Dictionary = seg_v
+		if bool(seg["info"]):
+			hexes.append(seg["hex"])
+	var picked: Vector2i = hexes[0]
+	if hexes.size() > 1:
+		picked = await _pick_hex_on_map(hexes,
+			"Gensoul: clicca il segmento di %s da cui togliere il segnalino "
+				% chosen.display_name() + "Informazioni.")
+		if picked == Vector2i.MAX:
+			return
+	var applied := LeaderRules.gensoul_remove_info(state, chosen, picked)
+	if not bool(applied["ok"]):
+		_msg("Gensoul: %s" % String(applied["error"]))
+		return
+	for line_v: Variant in applied["log"]:
+		_msg(String(line_v))
+	log.record("Gensoul: Informazioni rimosse")
+	state.changed.emit()
+	_refresh()
 
 
 ## B-Dienst (BL1 p.5): il servizio di decrittazione tedesco. Il giocatore
@@ -2556,7 +2602,7 @@ func _do_pass() -> void:
 		var options: Array = [
 			{"label": "Passare con %s" % selected_tf.display_name(),
 				"detail": "Scorrere del Tempo solo per la TF selezionata"},
-			{"label": "Passare Tutti - %s" % pass_all_name,
+			{"label": "Passare Tutto - %s" % pass_all_name,
 				"detail": "Tutte le TF effettuano Scorrere del Tempo; restano %d utilizzi"
 					% LeaderRules.uses_left(state, pass_all_name)},
 		]
@@ -2571,9 +2617,9 @@ func _do_pass() -> void:
 			if not tf.trajectory.is_station():
 				await _do_time_lapse_for(tf, false)
 			else:
-				_msg("Passare Tutti: %s e' gia' una Stazione." % tf.display_name())
+				_msg("Passare Tutto: %s e' gia' una Stazione." % tf.display_name())
 		LeaderRules.spend(state, pass_all_name)
-		_msg("%s usa Passare Tutti; utilizzi rimasti: %d."
+		_msg("%s usa Passare Tutto; utilizzi rimasti: %d."
 			% [pass_all_name, LeaderRules.uses_left(state, pass_all_name)])
 	else:
 		if not selected_tf.trajectory.is_station():
@@ -3551,7 +3597,7 @@ func _build_help(root: Control) -> void:
 
 [b]Comandanti[/b]
 	  La scheda TF mostra effetto e utilizzi residui. Raeder e Pound offrono
-	  Passare Tutti quando dichiari Passare; gli altri effetti sono indicati
+	  Passare Tutto quando dichiari Passare; gli altri effetti sono indicati
 	  esplicitamente come automatizzati o ancora manuali.
 
 [b]In Battaglia[/b]

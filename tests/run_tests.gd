@@ -35,7 +35,7 @@ const EXPECTED := {
 	"res://tests/unit/test_result_tables.gd": 34,
 	"res://tests/unit/test_lingering.gd": 63,
 	"res://tests/unit/test_snafu.gd": 90,
-	"res://tests/unit/test_replay.gd": 103,
+	"res://tests/unit/test_replay.gd": 114,
 }
 
 const SUITES := [

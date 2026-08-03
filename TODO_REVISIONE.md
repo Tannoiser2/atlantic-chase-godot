@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Aggiornato dopo la chiusura di **R0** (3 agosto 2026). Baseline: **2722
+Aggiornato dopo la chiusura di **R0** (3 agosto 2026). Baseline: **2733
 verifiche su 18 suite**.
 
 Questo e' il backlog autorevole per continuare la revisione. `STATO.md`
@@ -26,7 +26,7 @@ vecchie sezioni "Cosa manca" non devono riaprire lavori gia' completati.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 2722 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 2733 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
@@ -102,8 +102,11 @@ Uno scenario puo' essere marcato completo solo quando:
 - [ ] **BL2 Contain and Destroy**: audit finale pagina per pagina. Home Fleet,
   Convogli, Acque Neutrali, Pound/Forbes, Identificazione e procedure
   A/C/Convoglio/E/T/X sono implementate; il replay arriva a una condizione di
-  fine stampata su tutti i 40 semi provati. Forbes e Gensoul hanno ancora
-  effetti manuali.
+  fine stampata su tutti i 40 semi provati. **Gensoul e' implementato**: quando
+  la sua TF e' designata Attiva puo' togliere un segnalino Informazioni da una
+  TF designata nell'Azione corrente, una volta per scenario, e l'offerta arriva
+  PRIMA della risoluzione perche' l'Interruzione si tira proprio su quei
+  segnalini. **Resta Forbes.**
 - [ ] **BL3 Raiders of the North Sea**: calibrare il reticolo della Mappa
   Inserto del Mare del Nord e applicare lo setup. Le tabelle sono trascritte;
   non fingere coordinate sulla Mappa Operazionale.
@@ -139,8 +142,20 @@ per questo riporta 82, non la somma dell'elenco.
   dopo averne trascritto posizione e condizioni.
 - [ ] Calibrare separatamente i reticoli degli inserti Mare del Nord e Mare di
   Norvegia. Le immagini oggi sono riferimenti visivi, non superfici giocabili.
-- [ ] Automatizzare gli effetti dei comandanti ancora marcati manuali,
-  iniziando da Forbes e Gensoul. Verificare il testo stampato prima del codice.
+- [x] Testo stampato di tutti gli 11 Comandanti trascritto da RB p.10 a 300 dpi
+  in `LeaderRules.EFFECTS`: la scheda TF mostra la condizione vera e non un
+  riassunto. Trovato un refuso nella traduzione italiana - la voce Forbes
+  ripete "la TF di Marschall" - dichiarato in `FORBES_TRANSLATION_NOTE` invece
+  di essere ricopiato nel codice. Corretto anche il nome dell'azione: il
+  regolamento stampa **Passare Tutto**, l'app diceva "Passare Tutti".
+- [ ] **Forbes e Marschall**: "dopo aver tirato uno o piu' dadi durante
+  un'Azione o Battaglia potete sostituire uno dei numeri con un 6". E' un
+  beneficio REATTIVO e per questo non e' ancora offerto: `ActionEngine.resolve`
+  tira e legge la tabella in un colpo solo, quindi va spezzato in tiro +
+  lettura (oppure ricalcolata la riga con `lookup`) e va aggiunta l'offerta fra
+  la risoluzione e l'applicazione dei risultati. La variante su Meteo e
+  Iniziativa tocca anche `Initiative`, e vincola la TF del Comandante a essere
+  designata nell'Azione successiva.
 - [ ] Completare la schermata di Debriefing per condizioni oggi elencate ma da
   spuntare a mano; non assegnare automaticamente dati non modellati.
 

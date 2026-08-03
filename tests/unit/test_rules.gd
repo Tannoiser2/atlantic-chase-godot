@@ -272,12 +272,12 @@ func test_rng_determinism() -> void:
 
 
 func test_raeder_pass_all_uses() -> void:
-	_begin("Raeder: due usi di Passare Tutti (RB p.10)")
+	_begin("Raeder: due usi di Passare Tutto (RB p.10)")
 	var st := GameState.new(graph, 1)
 	var tf := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
 	tf.leader = "Raeder"
 	st.add_task_force(tf)
-	true_(LeaderRules.effect_text("Raeder").contains("Passare Tutti"),
+	true_(LeaderRules.effect_text("Raeder").contains("Passare Tutto"),
 		"la scheda dichiara l'effetto stampato")
 	true_(LeaderRules.is_implemented("Raeder"), "l'effetto e' digitalizzato")
 	eq(LeaderRules.pass_all_commander(st, TaskForce.Side.KRIEGSMARINE), "Raeder",
@@ -289,4 +289,4 @@ func test_raeder_pass_all_uses() -> void:
 	eq(LeaderRules.uses_left(st, "Raeder"), 0, "utilizzi esauriti")
 	false_(LeaderRules.spend(st, "Raeder"), "non concede un terzo utilizzo")
 	eq(LeaderRules.pass_all_commander(st, TaskForce.Side.KRIEGSMARINE), "",
-		"Passare Tutti non e' piu' offerto")
+		"Passare Tutto non e' piu' offerto")

@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **2722 verifiche, 18 suite, headless.**
+Tutti i test passano: **2733 verifiche, 18 suite, headless.**
 
 ---
 
@@ -63,7 +63,7 @@ Tutti i test passano: **2722 verifiche, 18 suite, headless.**
   Non e' piu' un comando libero: pulsante e scorciatoia `T` sono stati rimossi,
   e la scelta compare soltanto quando un'Azione o un evento la innesca;
 - le schede TF spiegano l'effetto stampato dei Comandanti. Raeder e Pound
-  implementano Passare Tutti due volte per scenario, con utilizzi salvati;
+  implementano Passare Tutto due volte per scenario, con utilizzi salvati;
 - `(11,-7)` e `(11,-6)` sono stati esclusi dal grafo giocabile;
 - 24 dei 25 esagoni esterni indicati restano esclusi; `(11,-5)` e' stato
   riammesso perche' lo schieramento BL1 vi colloca un marker RV. Le annotazioni
@@ -228,6 +228,22 @@ Tutti i test passano: **2722 verifiche, 18 suite, headless.**
   come una ricerca quello che e' un passaggio; e una decisione senza effetto
   lasciava l'Iniziativa al bot senza accodare niente, cioe' fermava la partita
   in attesa di un giocatore che non doveva muovere.
+- **I Comandanti dicono la loro condizione stampata.** Gli undici testi sono
+  trascritti da RB p.10 letta a 300 dpi: la scheda TF mostra la regola vera e
+  non un riassunto, ed e' quella che decide se il beneficio si puo' usare
+  adesso. Nella voce **Forbes** la traduzione italiana ripete "la TF di
+  Marschall": le due voci sono identiche parola per parola e la clausola parla
+  della TF del Comandante che usa il beneficio - preso alla lettera, un
+  comandante britannico vincolerebbe una Task Force tedesca. Il refuso e'
+  dichiarato in `FORBES_TRANSLATION_NOTE`, non ricopiato nel codice. E il nome
+  dell'azione e' stato allineato allo stampato: **Passare Tutto**, non
+  "Passare Tutti".
+- **Gensoul e' implementato.** Quando la sua Task Force e' designata Attiva
+  toglie un segnalino Informazioni da una TF designata nell'Azione corrente,
+  una volta per scenario. L'offerta arriva PRIMA della risoluzione, e non e'
+  un dettaglio: l'Interruzione (RB p.22) si tira proprio sui segnalini delle
+  TF designate, quindi toglierne uno dopo non servirebbe a niente - ed e'
+  esattamente a quello che serve il beneficio.
 - **Il B-Dienst esiste.** Il servizio di decrittazione tedesco (p.5) attacca un
   segnalino Informazioni a un segmento di Traiettoria britannica, con
   l'Iniziativa tedesca e una volta sola per scenario. Sta nel menu Solitario:

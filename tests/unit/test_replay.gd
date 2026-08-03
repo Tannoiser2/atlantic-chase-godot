@@ -51,6 +51,7 @@ func run() -> void:
 	test_south_america_is_closed_without_a_fueling_grant()
 	test_sequence_rules_are_shared_by_both_cycles()
 	test_declaration_drops_a_coordinating_tf_out_of_position()
+	test_gensoul_removes_one_intel_from_a_designated_force()
 
 
 ## Il conto delle verifiche di ogni suite e' fisso (`EXPECTED` in
@@ -511,3 +512,74 @@ func test_declaration_drops_a_coordinating_tf_out_of_position() -> void:
 	st.add_task_force(far)
 	eq(engine.legality_error(bad, st), "",
 		"lasciando cadere la Coordinatrice l'azione resta dichiarabile")
+
+
+## Gensoul, RB p.10 (letta a 300 dpi): "Quando la sua Task Force e' designata
+## quale Task Force Attiva, si puo' rimuovere un segnalino Informazioni da
+## qualsiasi TF britannica o francese. Quella TF deve essere designata
+## nell'Azione corrente."
+func test_gensoul_removes_one_intel_from_a_designated_force() -> void:
+	_begin("Gensoul toglie un segnalino Informazioni")
+	var graph := MapGraph.load_default()
+	var st := GameState.new(graph, 4)
+	var active := TaskForce.new(1, TaskForce.Side.ROYAL_NAVY)
+	active.leader = "Gensoul"
+	active.trajectory.become_station(Vector2i(15, -3))
+	_extend_with_info(active, graph, st)
+	st.add_task_force(active)
+	var enemy := TaskForce.new(2, TaskForce.Side.KRIEGSMARINE)
+	enemy.trajectory.become_station(active.trajectory.end_hex(1))
+	st.add_task_force(enemy)
+
+	var dec := ActionEngine.Declaration.new()
+	dec.action_key = "NAVAL_SEARCH"
+	dec.active = active
+	dec.target = enemy
+	true_(LeaderRules.gensoul_available(st, dec),
+		"con la sua TF Attiva e un segnalino da togliere, il beneficio c'e'")
+	eq(LeaderRules.gensoul_targets(dec).size(), 1,
+		"la TF designata con Informazioni e' l'unico bersaglio")
+
+	var before := active.info_count()
+	true_(before > 0, "la TF Attiva ha almeno un segnalino Informazioni")
+	var applied := LeaderRules.gensoul_remove_info(st, active)
+	true_(bool(applied["ok"]), "il segnalino viene rimosso")
+	eq(active.info_count(), before - 1, "ne va via esattamente uno")
+	eq(LeaderRules.uses_left(st, "Gensoul"), 0,
+		"il beneficio vale una volta per scenario")
+	false_(LeaderRules.gensoul_available(st, dec),
+		"e dopo l'uso non viene piu' offerto")
+	var again := LeaderRules.gensoul_remove_info(st, active)
+	false_(bool(again["ok"]), "un secondo uso viene rifiutato")
+
+	# Una TF NON designata nell'Azione non e' un bersaglio, per quanto abbia
+	# Informazioni: e' la meta' della regola che si dimentica.
+	var st2 := GameState.new(graph, 4)
+	var lead := TaskForce.new(1, TaskForce.Side.ROYAL_NAVY)
+	lead.leader = "Gensoul"
+	lead.trajectory.become_station(Vector2i(15, -3))
+	st2.add_task_force(lead)
+	var other := TaskForce.new(3, TaskForce.Side.ROYAL_NAVY)
+	other.trajectory.become_station(Vector2i(13, -2))
+	_extend_with_info(other, graph, st2)
+	st2.add_task_force(other)
+	var dec2 := ActionEngine.Declaration.new()
+	dec2.action_key = "ENGAGE"
+	dec2.active = lead
+	dec2.target = TaskForce.new(4, TaskForce.Side.KRIEGSMARINE)
+	eq(LeaderRules.gensoul_targets(dec2).size(), 0,
+		"una TF non designata nell'Azione corrente non e' un bersaglio")
+	false_(LeaderRules.gensoul_available(st2, dec2),
+		"e senza bersagli il beneficio non viene offerto")
+	# Designandola come Coordinatrice diventa un bersaglio lecito.
+	dec2.active_coordinating = other
+	eq(LeaderRules.gensoul_targets(dec2).size(), 1,
+		"designata Coordinatrice, la stessa TF diventa un bersaglio")
+
+
+## Allunga la Traiettoria di un segmento e gli mette un segnalino Informazioni.
+func _extend_with_info(tf: TaskForce, graph: MapGraph, st: GameState) -> void:
+	var from := tf.trajectory.station_hex
+	for h in graph.adjacent_hexes(from):
+		if tf.trajectory.extend(h, 1, graph, st.port_hexes(), true, tf.side):
+			return

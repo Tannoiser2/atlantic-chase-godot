@@ -816,7 +816,7 @@ func test_bl2_complete_setup_and_neutral_waters() -> void:
 	true_(_trajectory_is_contiguous(africa), "Africa-Portsmouth e' continua")
 	true_(st.commanders.has("Pound"), "Pound e' disponibile senza essere assegnato")
 	true_(LeaderRules.has_commander(st, "Pound", TaskForce.Side.ROYAL_NAVY),
-		"Pound abilita Passare Tutti")
+		"Pound abilita Passare Tutto")
 	eq(String(sc.reinforcement_ports().get("RN Reinforcement A", "")),
 		"Scapa Flow", "Rodney e Valiant sono nella casella Scapa Flow")
 	eq(String(sc.reinforcement_ports().get("RN Reinforcement B", "")),
