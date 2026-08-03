@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **2286 verifiche, 17 suite, headless.**
+Tutti i test passano: **2311 verifiche, 17 suite, headless.**
 
 ---
 
@@ -12,7 +12,7 @@ Tutti i test passano: **2286 verifiche, 17 suite, headless.**
 | **M0** Fondamenta | ✅ **completo** | Progetto Godot 4.7, mappa in 15 tile, camera, pipeline asset, runner di test |
 | **M1a** Calibrazione reticolo | ✅ **completo** | Validato al 100% contro le pedine ufficiali |
 | **M1b** Estrazione dati | ✅ **completo** | 22 `.vsav` decodificati, 70 zone, terreno classificato |
-| **M1c** Grafo + editor | ✅ **completo** | 155 esagoni, 9 lati "not adjacent", Canale di Kiel; editor operativo |
+| **M1c** Grafo + editor | ✅ **completo** | 130 esagoni, 9 lati "not adjacent", Canale di Kiel; editor operativo |
 | **M2** Core regole | ✅ **completo** | Traiettoria, Tempo, Totale, Interruzione, undo, RNG — tutto testato |
 | **M3** Mappa interattiva | ✅ **completo** | Selezione, costruzione traiettoria, anteprima, undo, HUD, log |
 | **M4** Motore azioni | ✅ **completo** | Tutte e 4 le tabelle trascritte e verificate; danno alle navi |
@@ -25,6 +25,9 @@ Tutti i test passano: **2286 verifiche, 17 suite, headless.**
 
 ### Ultima revisione del solitario
 
+- 25 esagoni esterni all'area di gioco sono stati esclusi dopo la verifica
+  visiva della mappa; l'annotazione manuale sopravvive alla rigenerazione del
+  grafo ed e' protetta da un test per ogni coordinata;
 - le pedine Modificatori, VP e Conto Iniziativa seguono l'inclinazione delle
   rispettive colonne; i punteggi negativi avanzano della loro grandezza sulla
   traccia e conservano il segno nel badge, invece di restare fermi sullo zero;
@@ -89,10 +92,9 @@ Tutti i test passano: **2286 verifiche, 17 suite, headless.**
   nessun campione di terzi, nessuna licenza, seme fisso.
 - **Traiettorie**: corsie per non sovrapporsi, angoli curvi (Bezier col vertice
   come punto di controllo), linea piu' sottile, badge col nome.
-- **Due esagoni tolti** perche' cadevano sopra le tabelle stampate: (21,-11)
-  sulla Gunnery Table e (18,-7) sulla Weather Check. **Attenzione**: non basta
-  guardare quanto un esagono esce dalla cornice - (4,7), (4,8) e (18,-12)
-  escono per oltre il 70% e sono usati dagli scenari UFFICIALI.
+- **Esagoni non giocabili esclusi manualmente** quando la classificazione
+  automatica confondeva lo sfondo esterno o quello delle tabelle con il mare.
+  Le esclusioni autorevoli stanno in `core/data/map_annotations.json`.
 - **Pannello "ora tocca a"**, coi motivi per cui un'azione non e' dichiarabile
   raggruppati per motivo invece che elencati per azione.
 
@@ -267,7 +269,7 @@ numero uno del piano. È risolto:
 | passo centro-centro | 213.50 px |
 | rotazione | 44.28° |
 | origine | (1745.00, 1692.00) |
-| esagoni giocabili | 157 |
+| esagoni giocabili | 130 |
 
 Il reticolo è **ruotato di ~44°**: GMT ha inclinato la griglia per adattarla
 alla geografia, quindi le formule standard non si applicano.

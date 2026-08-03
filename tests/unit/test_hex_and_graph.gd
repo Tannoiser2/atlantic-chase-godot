@@ -22,6 +22,7 @@ func run() -> void:
 	test_geometry_constants()
 	test_blocked_edges()
 	test_real_not_adjacent_arrows()
+	test_manual_unplayable_hexes()
 	test_kiel_canal()
 	test_ports()
 
@@ -153,6 +154,21 @@ func test_real_not_adjacent_arrows() -> void:
 	eq(traj.extend_error(Vector2i(16, -4), 1, graph),
 		"passaggio negato dalla mappa ('not adjacent')",
 		"una Traiettoria non puo' attraversare l'Inghilterra")
+
+
+func test_manual_unplayable_hexes() -> void:
+	_begin("esagoni esclusi dopo la verifica della mappa")
+	var excluded := [
+		Vector2i(3, 5), Vector2i(4, -1), Vector2i(4, 0), Vector2i(4, 3),
+		Vector2i(4, 6), Vector2i(4, 7), Vector2i(4, 8), Vector2i(5, -2),
+		Vector2i(5, -1), Vector2i(5, 0), Vector2i(5, 1), Vector2i(5, 3),
+		Vector2i(5, 7), Vector2i(5, 8), Vector2i(6, -2), Vector2i(6, -1),
+		Vector2i(6, 0), Vector2i(6, 1), Vector2i(6, 2), Vector2i(8, -3),
+		Vector2i(9, -4), Vector2i(10, -6), Vector2i(10, -5), Vector2i(11, -5),
+		Vector2i(12, -7),
+	]
+	for h: Vector2i in excluded:
+		false_(graph.is_playable(h), "%s non e' giocabile" % str(h))
 
 
 func test_kiel_canal() -> void:

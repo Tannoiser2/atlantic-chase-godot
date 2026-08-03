@@ -25,10 +25,8 @@ def main():
     a = json.load(open(ANN))
     problems = []
 
-    # Esagoni tolti a mano perche' cadono sopra le TABELLE stampate sulla mappa.
-    # Il criterio automatico li teneva: hanno un po' di azzurro sotto, ma e' lo
-    # sfondo del pannello, non mare. Vedi il commento in map_annotations.json:
-    # NON basta guardare quanto un esagono esce dalla cornice.
+    # Esagoni esclusi dopo la verifica visiva della mappa. Il criterio automatico
+    # puo' confondere con mare lo sfondo azzurro esterno o quello dei pannelli.
     drop = set()
     for key in a.get("force_unplayable", {}):
         if key.startswith("_"):
@@ -42,7 +40,7 @@ def main():
             h["neighbors"] = [n for n in h["neighbors"]
                               if (n["q"], n["r"]) not in drop]
         g["hex_count"] = len(g["hexes"])
-        print("[annot] esagoni sopra le tabelle rimossi: %d (%d -> %d)"
+        print("[annot] esagoni non giocabili rimossi: %d (%d -> %d)"
               % (len(drop), before, len(g["hexes"])))
 
     play = {(h["q"], h["r"]) for h in g["hexes"]}

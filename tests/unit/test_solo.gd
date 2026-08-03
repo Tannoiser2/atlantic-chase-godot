@@ -348,13 +348,15 @@ func test_solo_ai_routes_around_information() -> void:
 	_begin("AI solitaria: rotta evitando Informazioni")
 	var st := GameState.new(graph, 1)
 	var tf := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
-	tf.trajectory.become_station(Vector2i(6, 0))
+	tf.trajectory.become_station(Vector2i(10, 0))
 	st.add_task_force(tf)
-	st.add_info_trigger(Vector2i(7, 0), "base aerea")
+	st.add_info_trigger(Vector2i(11, 0), "base aerea")
 
-	var plan := SoloAI.best_route(st, graph, tf, Vector2i(8, 0))
+	var plan := SoloAI.best_route(st, graph, tf, Vector2i(12, 0))
 	ne(plan, {}, "trova una rotta alternativa")
-	false_((plan["steps"] as Array).has(Vector2i(7, 0)),
+	if plan.is_empty():
+		return
+	false_((plan["steps"] as Array).has(Vector2i(11, 0)),
 		"non passa dall'esagono con Informazioni")
 	true_(bool(plan["avoids_info"]), "la rotta dichiara che evita Informazioni")
 
@@ -364,10 +366,10 @@ func test_solo_ai_executes_trajectory_code() -> void:
 	var st := GameState.new(graph, 1)
 	var km := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
 	km.unidentified = true
-	km.trajectory.become_station(Vector2i(6, 0))
+	km.trajectory.become_station(Vector2i(10, 0))
 	var rn := TaskForce.new(2, TaskForce.Side.ROYAL_NAVY)
 	rn.ships.append(ShipRoster.shared().make("Convoy x3"))
-	rn.trajectory.become_station(Vector2i(8, 0))
+	rn.trajectory.become_station(Vector2i(12, 0))
 	st.add_task_force(km)
 	st.add_task_force(rn)
 
@@ -382,10 +384,10 @@ func test_solo_trajectory_does_not_pass_initiative() -> void:
 	var st := GameState.new(graph, 1)
 	var bot := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
 	bot.unidentified = true
-	bot.trajectory.become_station(Vector2i(6, 0))
+	bot.trajectory.become_station(Vector2i(10, 0))
 	var enemy := TaskForce.new(2, TaskForce.Side.ROYAL_NAVY)
 	enemy.ships.append(ShipRoster.shared().make("Convoy x3"))
-	enemy.trajectory.become_station(Vector2i(9, 0))
+	enemy.trajectory.become_station(Vector2i(13, 0))
 	st.add_task_force(bot)
 	st.add_task_force(enemy)
 	var decision := SoloAI.execute_code("T", st, graph,
@@ -434,12 +436,12 @@ func test_solo_ai_declares_legal_attack() -> void:
 	var st := GameState.new(graph, 1)
 	var km := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
 	km.ships.append(ShipRoster.shared().make("Bismarck"))
-	km.trajectory.become_station(Vector2i(6, 0))
+	km.trajectory.become_station(Vector2i(10, 0))
 	var rn := TaskForce.new(2, TaskForce.Side.ROYAL_NAVY)
 	rn.ships.append(ShipRoster.shared().make("Convoy x3"))
-	rn.trajectory.become_station(Vector2i(8, 0))
-	rn.trajectory.extend(Vector2i(7, 0), 0, graph, {}, false, rn.side)
-	rn.trajectory.extend(Vector2i(6, 0), 0, graph, {}, false, rn.side)
+	rn.trajectory.become_station(Vector2i(12, 0))
+	rn.trajectory.extend(Vector2i(11, 0), 0, graph, {}, false, rn.side)
+	rn.trajectory.extend(Vector2i(10, 0), 0, graph, {}, false, rn.side)
 	st.add_task_force(km)
 	st.add_task_force(rn)
 
@@ -570,7 +572,7 @@ func test_solo_ai_x_suffix_prefers_ship_type() -> void:
 	st.scenario_name = "B2 La Battaglia dell'Atlantico"
 	var ca := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
 	ca.ships.append(ShipRoster.shared().make("Hipper"))
-	ca.trajectory.become_station(Vector2i(6, 0))
+	ca.trajectory.become_station(Vector2i(11, 0))
 	var bc := TaskForce.new(2, TaskForce.Side.KRIEGSMARINE)
 	bc.ships.append(ShipRoster.shared().make("Scharnhorst"))
 	bc.trajectory.become_station(Vector2i(10, 0))
@@ -593,7 +595,7 @@ func test_solo_ai_xu_prefers_unidentified() -> void:
 	st.scenario_name = "B4 Decisione sui Mari"
 	var known := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
 	known.ships.append(ShipRoster.shared().make("Bismarck"))
-	known.trajectory.become_station(Vector2i(6, 0))
+	known.trajectory.become_station(Vector2i(11, 0))
 	var unk := TaskForce.new(2, TaskForce.Side.KRIEGSMARINE)
 	unk.unidentified = true
 	unk.recompute_speed()
@@ -826,12 +828,12 @@ func test_solo_ai_bl1_aux_tables_apply() -> void:
 	var km2 := TaskForce.new(3, TaskForce.Side.KRIEGSMARINE)
 	km2.ships.append(ShipRoster.shared().make("Lutzow"))
 	km2.evasive = true
-	km2.trajectory.become_station(Vector2i(6, 0))
+	km2.trajectory.become_station(Vector2i(10, 0))
 	st2.add_task_force(km2)
-	st2.rendezvous_markers.append({"id": "rv-mech", "q": 6, "r": 0})
+	st2.rendezvous_markers.append({"id": "rv-mech", "q": 10, "r": 0})
 	var rn2 := TaskForce.new(4, TaskForce.Side.ROYAL_NAVY)
 	rn2.ships.append(ShipRoster.shared().make("Hood"))
-	rn2.trajectory.become_station(Vector2i(6, 0))
+	rn2.trajectory.become_station(Vector2i(10, 0))
 	st2.add_task_force(rn2)
 	var fuel_d := SoloAI.apply_table_result("fueling", {"code": "d"},
 		st2, graph, ActionEngine.load_default(), control, TaskForce.Side.ROYAL_NAVY, km2)
@@ -840,7 +842,7 @@ func test_solo_ai_bl1_aux_tables_apply() -> void:
 	true_((km2.solo_flags.get("bl1_actions_only", []) as Array).has("TRAJECTORY"),
 		"limita le azioni della TF")
 	eq(String(fuel_d.get("initiative", "")), "vie", "con britannici nell'esagono chiede VforI")
-	true_(st2.rendezvous_at(Vector2i(6, 0)).is_empty(), "Rifornimento d rimuove l'RV")
+	true_(st2.rendezvous_at(Vector2i(10, 0)).is_empty(), "Rifornimento d rimuove l'RV")
 
 
 func test_solo_battle_behavior() -> void:

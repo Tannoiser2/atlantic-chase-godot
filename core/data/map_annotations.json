@@ -1,5 +1,5 @@
 {
- "_purpose": "Dati della mappa che nessun algoritmo puo' ricavare: vanno letti a occhio dalla mappa stampata. Sono tenuti separati da map_graph.json (generato) cosi' sopravvivono a una rigenerazione del grafo. Applicati da tools/apply_annotations.py. -- force_unplayable toglie esagoni che il criterio automatico aveva tenuto ma che cadono sopra le TABELLE stampate sulla mappa, non sul mare. ATTENZIONE: non basta guardare quanto un esagono sta fuori dalla cornice. Tre esagoni con oltre il 70% fuori - (4,7), (4,8) e (18,-12) - sono usati dagli scenari UFFICIALI, quindi giocabili: al bordo le pedine stanno a cavallo della cornice. Il criterio valido e' un altro: l'esagono cade su una tabella?",
+ "_purpose": "Dati della mappa che nessun algoritmo puo' ricavare: vanno letti a occhio dalla mappa stampata. Sono tenuti separati da map_graph.json (generato) cosi' sopravvivono a una rigenerazione del grafo. Applicati da tools/apply_annotations.py. force_unplayable toglie gli esagoni verificati come esterni all'area di gioco o coperti dai pannelli stampati.",
  "force_playable": {
   "_rule": "Esagoni che il criterio automatico scarta come 'terra piena' ma che DEVONO essere giocabili, perche' contengono un porto: RB p.13 dice che un porto stampato appartiene al suo esagono, quindi una Stazione TF deve poterci stare per poi trasferirsi nella Casella.",
   "_note": "Il reticolo e' effettivamente stampato anche sulla terraferma (verificato a occhio sulla Francia): quegli esagoni esistono sulla mappa, semplicemente non sono navigabili se non hanno un porto.",
@@ -360,6 +360,31 @@
   ]
  },
  "force_unplayable": {
+  "3,5": "verificato sulla mappa come esterno all'area giocabile",
+  "4,-1": "verificato sulla mappa come esterno all'area giocabile",
+  "4,0": "verificato sulla mappa come esterno all'area giocabile",
+  "4,3": "verificato sulla mappa come esterno all'area giocabile",
+  "4,6": "verificato sulla mappa come esterno all'area giocabile",
+  "4,7": "verificato sulla mappa come esterno all'area giocabile",
+  "4,8": "verificato sulla mappa come esterno all'area giocabile",
+  "5,-2": "verificato sulla mappa come esterno all'area giocabile",
+  "5,-1": "verificato sulla mappa come esterno all'area giocabile",
+  "5,0": "verificato sulla mappa come esterno all'area giocabile",
+  "5,1": "verificato sulla mappa come esterno all'area giocabile",
+  "5,3": "verificato sulla mappa come esterno all'area giocabile",
+  "5,7": "verificato sulla mappa come esterno all'area giocabile",
+  "5,8": "verificato sulla mappa come esterno all'area giocabile",
+  "6,-2": "verificato sulla mappa come esterno all'area giocabile",
+  "6,-1": "verificato sulla mappa come esterno all'area giocabile",
+  "6,0": "verificato sulla mappa come esterno all'area giocabile",
+  "6,1": "verificato sulla mappa come esterno all'area giocabile",
+  "6,2": "verificato sulla mappa come esterno all'area giocabile",
+  "8,-3": "verificato sulla mappa come esterno all'area giocabile",
+  "9,-4": "verificato sulla mappa come esterno all'area giocabile",
+  "10,-6": "verificato sulla mappa come esterno all'area giocabile",
+  "10,-5": "verificato sulla mappa come esterno all'area giocabile",
+  "11,-5": "verificato sulla mappa come esterno all'area giocabile",
+  "12,-7": "verificato sulla mappa come esterno all'area giocabile",
   "21,-11": "interamente sopra la Gunnery Table stampata: 93% fuori dalla cornice di gioco, 27% di mare. Verificato a occhio sovrapponendo il reticolo alla mappa a risoluzione nativa.",
   "18,-7": "quasi tutto sopra la tabella Weather Check e sulla Svezia: 78% fuori dalla cornice, 26% di mare."
  }
