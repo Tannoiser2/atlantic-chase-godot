@@ -30,9 +30,10 @@ var id: String = ""
 var title: String = ""
 var note: String = ""
 
-## Righe: [{ "label", "min"/"max" opzionali, "cells": [String] }].
+## Righe: [{ "label", "min"/"max" opzionali, "roll_min", "cells": [String] }].
 ## `cells` ha una voce per valore del dado, da 1 a 6, oppure una sola voce se
-## la tabella non dipende dal dado.
+## la tabella non dipende dal dado. `roll_min` serve alle rare tabelle che
+## stampano una colonna 0 raggiungibile con un modificatore negativo.
 var rows: Array[Dictionary] = []
 
 ## Modificatori al tiro, con il perche' scritto: { "label", "value" }.
@@ -54,6 +55,7 @@ static func from_dict(d: Dictionary) -> SoloTable:
 			cells.append(String(c_v))
 		t.rows.append({"label": String(r.get("label", "")),
 			"min": int(r.get("min", -9999)), "max": int(r.get("max", 9999)),
+			"roll_min": int(r.get("roll_min", 1)),
 			"cells": cells})
 	for m_v: Variant in d.get("modifiers", []):
 		var m: Dictionary = m_v
@@ -87,10 +89,11 @@ func read(selector: int, roll: int) -> Dictionary:
 	if cells.is_empty():
 		return {"ok": false, "error": "riga vuota", "row": i,
 			"row_label": String(r["label"]), "column": 0, "code": "", "text": ""}
-	var col := clampi(roll, 1, cells.size()) - 1
+	var roll_min := int(r.get("roll_min", 1))
+	var col := clampi(roll, roll_min, roll_min + cells.size() - 1) - roll_min
 	var code := String(cells[col])
 	return {"ok": true, "error": "", "row": i, "row_label": String(r["label"]),
-		"column": col + 1, "code": code,
+		"column": col + roll_min, "code": code,
 		"text": String(legend.get(code, ""))}
 
 

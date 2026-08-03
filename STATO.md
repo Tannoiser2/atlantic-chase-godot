@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **2353 verifiche, 17 suite, headless.**
+Tutti i test passano: **2415 verifiche, 17 suite, headless.**
 
 ---
 
@@ -48,7 +48,8 @@ Tutti i test passano: **2353 verifiche, 17 suite, headless.**
 - il Registro conserva l'intera sessione, numera gli eventi, e' selezionabile
   e ha `Copia tutto`; anche il testo del pannello di stato e' selezionabile.
   Le procedure del bot sono raccolte per tiro e chiuse per impostazione
-  predefinita; `Dettagli BOT` le apre tutte per verifica e debug;
+  predefinita; ogni procedura ha il proprio comando `Mostra/Nascondi`, senza
+  aprire anche le altre. Gli eventi piu' recenti sono in alto;
 - al termine di ogni tiro automatico, il risultato effettivamente applicato
   dal bot resta in evidenza, in grassetto e colore distinto, sia nel Registro
   sia nel pannello di stato;
@@ -110,6 +111,16 @@ Tutti i test passano: **2353 verifiche, 17 suite, headless.**
 - il bot non trasforma piu' ogni Traiettoria in un Passare: Scorrere del Tempo,
   Sottrarre/Cercare l'Iniziativa e successiva azione seguono il flusso normale;
 - i passaggi Presto/Tardi di BL2, BL3, N1 e N2 sono automatici;
+- BL2 e' stato ricontrollato riga per riga contro
+  `AC_Solo_scenarios_2022.pdf`: la tabella Tardi conserva la colonna 0, il
+  modificatore OR vale una sola volta e le procedure A, C, Convoglio, E, T e X
+  hanno policy dedicate. Identificazione e Incidente Internazionale applicano
+  i propri risultati; le condizioni di fine a 2 Convogli o 4 navi sono
+  automatiche e persistono nel salvataggio;
+- BL2 fa scegliere sulla mappa la Stazione iniziale della Home Fleet, adiacente
+  a un porto controllato britannico eccetto Scapa Flow e Methil. Restano
+  dichiarati, senza coordinate inventate, la rotta Azzorre-Faroe, il confine
+  delle Acque Neutrali e la pedina Base Aerea di Trondheim;
 - riepilogo persistente nel pannello di stato e procedura espandibile nel log
   mostrano tabella, tiro, TF scelta, bersaglio, risultato e ragione della policy;
 - `tools/audit_solo.gd`: 93 caselle azione, 0 blocchi, 82 testi segnaposto e 2

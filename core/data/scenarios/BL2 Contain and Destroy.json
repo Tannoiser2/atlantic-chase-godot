@@ -20,10 +20,10 @@
    "speed": 2,
    "trajectory": {
     "segments": [],
-    "station_q": 15,
+    "station_q": 14,
     "station_r": -4,
     "station_contact": false,
-    "station_port": "Clyde"
+    "station_port": ""
    }
   },
   {
@@ -153,7 +153,7 @@
   "historical": "Settembre 1939. L'Ammiragliato tenta di chiudere la Kriegsmarine nel Mare del Nord mentre il traffico mercantile di entrambe le parti e' ancora esposto."
  },
  "setup_notes": [
-  "Meteo Buono; iniziativa britannica. Mappa operazionale. Nessuna TF tedesca iniziale. Rodney e Valiant nel Gruppo Rinforzi A a Scapa Flow; navi francesi e Gensoul nel Gruppo Rinforzi B. Stazione TF britannica adiacente a qualsiasi porto controllato dal britannico eccetto Scapa Flow e Methil; Convoglio Halifax-Clyde/Liverpool 11 segmenti; Convoglio Africa-Portsmouth 8 segmenti.",
+  "Meteo Buono; iniziativa britannica. Mappa operazionale. Nessuna TF tedesca iniziale. Rodney e Valiant nel Gruppo Rinforzi A a Scapa Flow; navi francesi e Gensoul nel Gruppo Rinforzi B. All'avvio il giocatore sceglie sulla mappa la Stazione della Home Fleet, adiacente a qualsiasi porto controllato dal britannico eccetto Scapa Flow e Methil; (14,-4), adiacente a Clyde, e' soltanto il ripiego legale se annulla. Convoglio Halifax-Clyde/Liverpool 11 segmenti; Convoglio Africa-Portsmouth 8 segmenti.",
   "Nessuna TF tedesca iniziale, come da fascicolo.",
   "La rotta Africa-Portsmouth da 8 segmenti resta da disegnare a mano: sul grafo principale calibrato non c'e una catena esatta di 8 segmenti fino a Portsmouth."
  ],

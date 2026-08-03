@@ -163,7 +163,7 @@ static func resolve(tf: TaskForce, port: Dictionary,
 		var s: Ship = s_v
 		var is_convoy := s.kind == Ship.Kind.CONVOY
 		if is_convoy and tracker != null:
-			tracker.count_convoy_completed()
+			tracker.count_convoy_completed(tf.side)
 		if tracker == null or not tracker.active():
 			continue
 		if is_convoy:

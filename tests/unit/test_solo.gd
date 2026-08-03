@@ -50,6 +50,12 @@ func run() -> void:
 	test_bl1_air_fallback_routes_then_engages()
 	test_bl1_completion_route_keeps_completion()
 	test_solo_ai_bl2_t_creates_unknown()
+	test_bl2_late_table_has_modified_zero_column()
+	test_bl2_trajectory_and_convoy_procedures()
+	test_bl2_air_strike_fallbacks_and_removals()
+	test_bl2_end_procedure()
+	test_bl2_identification_and_incident()
+	test_bl2_x_keeps_damaged_selection()
 	test_solo_ai_bl3_completion_port_by_phase()
 	test_solo_ai_bl1_x_creates_unknown_hunter()
 	test_solo_ai_bl1_blockade_and_french_action()
@@ -72,6 +78,24 @@ func _rng(forced: Array) -> DiceRNG:
 	var r := DiceRNG.new(1)
 	r.push_forced(forced)
 	return r
+
+
+func _tf_has_type(tf: TaskForce, type_code: String) -> bool:
+	if tf == null:
+		return false
+	for ship in tf.ships:
+		if ship.type_code == type_code and not ship.sunk:
+			return true
+	return false
+
+
+func _count_tf_type(tf: TaskForce, type_code: String) -> int:
+	var count := 0
+	if tf != null:
+		for ship in tf.ships:
+			if ship.type_code == type_code and not ship.sunk:
+				count += 1
+	return count
 
 
 func test_tables_load() -> void:
@@ -224,10 +248,10 @@ func test_phase_switch() -> void:
 	var r2 := o.act(_rng([1]), 0)
 	eq(String(r2["table"]), "actions_late", "ora si legge la Tardi")
 	# nella Tardi la riga e' il METEO, non i Completamenti
-	eq(String(r2["code"]), "E", "meteo buono, dado 1")
+	eq(String(r2["code"]), "A", "meteo buono, dado 1")
 	eq(String(o.act(_rng([1]), 1)["code"]), "E", "meteo cattivo, dado 1")
-	eq(String(o.act(_rng([3]), 0)["code"]), "A", "meteo buono, dado 3")
-	eq(String(o.act(_rng([3]), 1)["code"]), "T", "meteo cattivo, dado 3")
+	eq(String(o.act(_rng([3]), 0)["code"]), "X", "meteo buono, dado 3")
+	eq(String(o.act(_rng([3]), 1)["code"]), "X", "meteo cattivo, dado 3")
 
 
 func test_phase_sync() -> void:
@@ -282,11 +306,22 @@ func test_modifiers() -> void:
 	var con := o.act(_rng([3]), 0, [label])
 	eq(int(senza["roll"]), 3, "3 senza modificatore")
 	eq(int(con["roll"]), 2, "2 con il modificatore")
-	eq(String(senza["code"]), "A", "colonna 3")
+	eq(String(senza["code"]), "X", "colonna 3")
 	eq(String(con["code"]), "A", "colonna 2")
 	# e il registro mostra il conto
 	true_(SoloTable.describe(con).contains("-1"), "il conto e' scritto: "
 		+ SoloTable.describe(con).substr(0, 40))
+	var st := GameState.new(graph, 1)
+	st.scenario_name = "BL2 Contain and Destroy"
+	var damaged_tf := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
+	for name in ["Hipper", "Lutzow"]:
+		var ship := ShipRoster.shared().make(name)
+		ship.damaged = true
+		damaged_tf.ships.append(ship)
+	st.add_task_force(damaged_tf)
+	var inferred := SoloAI.automatic_modifiers(t, st, TaskForce.Side.KRIEGSMARINE)
+	eq((inferred["active"] as Array).size(), 1, "due navi rendono vera una sola condizione OR")
+	eq(t.modifier_total(inferred["active"]), -1, "il modificatore BL2 resta -1")
 
 
 func test_identify() -> void:
@@ -517,6 +552,195 @@ func test_solo_ai_bl2_t_creates_unknown() -> void:
 	eq(st.forces_of(TaskForce.Side.KRIEGSMARINE).size(), 1, "crea una TF tedesca")
 	true_(st.forces_of(TaskForce.Side.KRIEGSMARINE)[0].unidentified, "la TF e' ignota")
 	true_(st.forces_of(TaskForce.Side.KRIEGSMARINE)[0].length() > 0, "e traccia una rotta")
+
+
+func test_bl2_late_table_has_modified_zero_column() -> void:
+	_begin("BL2 Tardi: conserva la colonna zero stampata")
+	var t := SoloOpponent.load_for("BL2 Contain and Destroy").table("actions_late")
+	var good := ["E", "A", "A", "X", "X", "C", "C"]
+	var bad := ["E", "E", "T", "X", "X", "C", "C"]
+	for roll in 7:
+		eq(String(t.read(0, roll)["code"]), good[roll], "Buono, colonna %d" % roll)
+		eq(String(t.read(1, roll)["code"]), bad[roll], "Cattivo, colonna %d" % roll)
+
+
+func test_bl2_trajectory_and_convoy_procedures() -> void:
+	_begin("BL2: T nasce a Murmansk e Convoglio nasce a Narvik")
+	var st := GameState.new(graph, 1)
+	st.scenario_name = "BL2 Contain and Destroy"
+	st.rng.push_forced([4])
+	var t_result := SoloAI.execute_code("T", st, graph, ActionEngine.load_default(),
+		{}, TaskForce.Side.KRIEGSMARINE)
+	var unknown := t_result["active"] as TaskForce
+	ne(unknown, null, "T crea la TF selezionata")
+	true_(unknown.unidentified, "la TF di T e' non identificata")
+	true_(unknown.trajectory.occupies((graph.ports["Murmansk"] as Dictionary)["hex"]),
+		"la rotta parte da Murmansk")
+	eq(String((t_result["follow_up"] as Dictionary).get("kind", "")), "completion",
+		"dopo la rotta conserva il Completamento")
+
+	var st2 := GameState.new(graph, 2)
+	st2.scenario_name = "BL2 Contain and Destroy"
+	var convoy_result := SoloAI.execute_code("convoy", st2, graph,
+		ActionEngine.load_default(), {}, TaskForce.Side.KRIEGSMARINE)
+	var convoy := convoy_result["active"] as TaskForce
+	ne(convoy, null, "Convoglio crea la TF selezionata")
+	true_(_tf_has_type(convoy, "CONVOY"), "contiene il Convoglio tedesco")
+	true_(convoy.trajectory.occupies((graph.ports["Narvik"] as Dictionary)["hex"]),
+		"parte da Narvik")
+	eq(String((convoy_result["follow_up"] as Dictionary).get("port_name", "")),
+		"Kiel", "prosegue verso il Completamento a Kiel")
+
+
+func test_bl2_air_strike_fallbacks_and_removals() -> void:
+	_begin("BL2 A: rimuove le danneggiate e applica il tiro senza bersaglio")
+	var st := GameState.new(graph, 3)
+	st.scenario_name = "BL2 Contain and Destroy"
+	st.weather = TimeLapse.Weather.GOOD
+	st.rng.push_forced([1])
+	var damaged := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
+	var hipper := ShipRoster.shared().make("Hipper")
+	hipper.damaged = true
+	damaged.ships.append(hipper)
+	damaged.trajectory.become_station(Vector2i(10, 3))
+	st.add_task_force(damaged)
+	var result := SoloAI.execute_code("A", st, graph, ActionEngine.load_default(),
+		{}, TaskForce.Side.KRIEGSMARINE)
+	eq(st.task_force(1), null, "la TF svuotata viene rimossa")
+	eq(int(st.solo_counters.get("bl2_removed_ships", 0)), 1,
+		"la nave rimossa resta contabilizzata")
+	var created := result["active"] as TaskForce
+	true_(_tf_has_type(created, "CONVOY"), "con 1-2 crea il Convoglio in South America")
+	eq(String(result["turn_kind"]), "declared_gap",
+		"dichiara la rotta Azzorre-Faroe non calibrata")
+	true_(String((result["log"] as Array)[0]).contains("Azzorre-Faroe"),
+		"il limite e' spiegato nel risultato")
+
+
+func test_bl2_end_procedure() -> void:
+	_begin("BL2 E: attacco col BC e condizioni di fine")
+	var engine := ActionEngine.load_default()
+	var st := GameState.new(graph, 4)
+	st.scenario_name = "BL2 Contain and Destroy"
+	var british := TaskForce.new(1, TaskForce.Side.ROYAL_NAVY)
+	british.ships.append(ShipRoster.shared().make("Convoy x3"))
+	british.trajectory.become_station(Vector2i(10, 3))
+	st.add_task_force(british)
+	var hunt := SoloAI.execute_code("E", st, graph, engine, {},
+		TaskForce.Side.KRIEGSMARINE)
+	true_(_tf_has_type(hunt["active"], "BC"), "Meteo Buono crea un BC")
+	eq(int(st.solo_counters["bl2_e_results"]), 1, "conta il primo risultato E")
+	false_(st.solo_ended, "con un Convoglio britannico la caccia continua")
+	SoloAI.execute_code("E", st, graph, engine, {}, TaskForce.Side.KRIEGSMARINE)
+	eq(_count_tf_type(hunt["active"], "BC"), 2, "il secondo E aggiunge il secondo BC")
+	SoloAI.execute_code("E", st, graph, engine, {}, TaskForce.Side.KRIEGSMARINE)
+	eq(int(st.solo_counters["bl2_e_results"]), 3, "il terzo E viene ricordato")
+	eq(_count_tf_type(hunt["active"], "BC"), 1, "con due BC il terzo E ne rimuove uno")
+
+	var empty := GameState.new(graph, 5)
+	empty.scenario_name = "BL2 Contain and Destroy"
+	var ended := SoloAI.execute_code("E", empty, graph, engine, {},
+		TaskForce.Side.KRIEGSMARINE)
+	true_(bool(ended["end_scenario"]), "senza Convogli britannici termina")
+	true_(empty.solo_ended, "lo stato ricorda la fine")
+
+	var bad := GameState.new(graph, 6)
+	bad.scenario_name = "BL2 Contain and Destroy"
+	bad.weather = TimeLapse.Weather.BAD
+	var ge_convoy := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
+	ge_convoy.ships.append(ShipRoster.shared().make("Convoy x2"))
+	ge_convoy.trajectory.become_station(Vector2i(9, 3))
+	bad.add_task_force(ge_convoy)
+	SoloAI.execute_code("E", bad, graph, engine, {}, TaskForce.Side.KRIEGSMARINE)
+	true_(ge_convoy.completed, "col Cattivo il Convoglio tedesco completa automaticamente")
+	eq(bad.convoys_completed_for(TaskForce.Side.KRIEGSMARINE), 1,
+		"il Completamento e' attribuito alla parte tedesca")
+	eq(float(bad.vp[TaskForce.Side.ROYAL_NAVY]), -2.0, "applica i VP del Convoglio tedesco")
+	var restored := GameState.new(graph, 9)
+	restored.apply_dict(bad.to_dict())
+	true_(restored.solo_ended, "la fine BL2 sopravvive al salvataggio")
+	eq(restored.convoys_completed_for(TaskForce.Side.KRIEGSMARINE), 1,
+		"anche il conteggio per parte viene salvato")
+	eq(int(restored.solo_counters.get("bl2_e_results", 0)), 1,
+		"i contatori della procedura vengono salvati")
+	var limits := GameState.new(graph, 10)
+	limits.scenario_name = "BL2 Contain and Destroy"
+	limits.count_convoy_completed(TaskForce.Side.ROYAL_NAVY)
+	eq(limits.convoys_completed_for(TaskForce.Side.KRIEGSMARINE), 0,
+		"una parte senza arrivi non eredita il totale dell'altra parte")
+	limits.count_convoy_completed(TaskForce.Side.KRIEGSMARINE)
+	eq(limits.convoys_completed_for(TaskForce.Side.ROYAL_NAVY), 1,
+		"il conteggio per parte non eredita il totale dell'altra parte")
+	true_(SoloAI.enforce_scenario_end(limits),
+		"due Convogli complessivi terminano BL2 anche senza un risultato E")
+	true_(limits.solo_ended, "la condizione generale marca lo scenario concluso")
+	true_(limits.solo_end_reason.contains("Due Convogli"),
+		"la causa della fine resta leggibile")
+	var losses := GameState.new(graph, 11)
+	losses.scenario_name = "BL2 Contain and Destroy"
+	losses.casualties.append({"side": TaskForce.Side.KRIEGSMARINE,
+		"ships": ["uno", "due", "tre", "Convoglio"], "convoys": 1})
+	true_(SoloAI.enforce_scenario_end(losses), "quattro navi affondate terminano BL2")
+	true_(losses.solo_end_reason.contains("Quattro navi"),
+		"anche questa causa della fine resta leggibile")
+
+
+func test_bl2_identification_and_incident() -> void:
+	_begin("BL2: Identificazione e Incidente Internazionale applicati")
+	var st := GameState.new(graph, 7)
+	st.scenario_name = "BL2 Contain and Destroy"
+	var unknown := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
+	unknown.unidentified = true
+	unknown.solo_flags["bl2_bring_to_battle"] = true
+	unknown.trajectory.become_station(Vector2i(9, 3))
+	st.add_task_force(unknown)
+	var identified := SoloAI.apply_table_result("identify", {"code": "Convoglio"},
+		st, graph, ActionEngine.load_default(), {}, unknown.side, unknown)
+	true_(bool(identified["ok"]), "l'identificazione viene applicata")
+	false_(unknown.unidentified, "la composizione diventa nota")
+	true_(_tf_has_type(unknown, "PB"), "Convoglio in caccia diventa PB")
+	true_(_tf_has_type(unknown, "CA"), "e anche CA, come stampato")
+	var replacement := GameState.new(graph, 8)
+	replacement.scenario_name = "BL2 Contain and Destroy"
+	var pb_force := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
+	for name in ["Graf Spee", "Lutzow"]:
+		pb_force.ships.append(ShipRoster.shared().make(name))
+	replacement.add_task_force(pb_force)
+	var unknown_pb := TaskForce.new(2, TaskForce.Side.KRIEGSMARINE)
+	unknown_pb.unidentified = true
+	replacement.add_task_force(unknown_pb)
+	SoloAI.apply_table_result("identify", {"code": "PB"}, replacement, graph,
+		ActionEngine.load_default(), {}, unknown_pb.side, unknown_pb)
+	true_(_tf_has_type(unknown_pb, "BC"), "il terzo PB viene sostituito da un BC")
+	false_(_tf_has_type(unknown_pb, "PB"), "non aggiunge un PB oltre il limite")
+
+	var incident := SoloAI.apply_table_result("incident", {"code": "backlash"},
+		st, graph, ActionEngine.load_default(), {}, unknown.side)
+	true_(bool(incident["ok"]), "il Contraccolpo viene applicato")
+	eq(float(st.vp[TaskForce.Side.ROYAL_NAVY]), -2.0, "Contraccolpo: -2 VP")
+	var airbase := SoloAI.apply_table_result("incident", {"code": "airbase"},
+		st, graph, ActionEngine.load_default(), {}, unknown.side)
+	true_(String((airbase["log"] as Array)[0]).contains("non e' ancora modellata"),
+		"la Base Aerea mancante resta un buco dichiarato")
+
+
+func test_bl2_x_keeps_damaged_selection() -> void:
+	_begin("BL2 X: una TF danneggiata resta la scelta del risultato C")
+	var st := GameState.new(graph, 8)
+	st.scenario_name = "BL2 Contain and Destroy"
+	var hunter := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
+	var hipper := ShipRoster.shared().make("Hipper")
+	hipper.damaged = true
+	hunter.ships.append(hipper)
+	hunter.trajectory.become_station(Vector2i(9, 3))
+	st.add_task_force(hunter)
+	var result := SoloAI.execute_code("X", st, graph, ActionEngine.load_default(),
+		{}, hunter.side)
+	eq(result["active"], hunter, "C usa la stessa TF scelta da X")
+	eq(String((result["follow_up"] as Dictionary).get("kind", "")), "completion",
+		"la manda verso il Completamento")
+	eq(String((result["follow_up"] as Dictionary).get("port_name", "")), "Kiel",
+		"senza PB integra rientra a Kiel")
 
 
 func test_solo_ai_bl3_completion_port_by_phase() -> void:

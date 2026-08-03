@@ -56,7 +56,30 @@ func _process(_delta: float) -> bool:
 	if _frames == 18:
 		if _root._map_container.size.x <= _width_before:
 			return _finish(false, "chiudere il Registro non restituisce spazio alla mappa")
-		return _finish(true, "clic, zoom e Registro collassabile rispettano la mappa separata")
+		_root._toggle_log_panel()
+		_root._active_bot_trace = 101
+		_root._msg("dettaglio procedura vecchia")
+		_root._msg("BOT - azione vecchia")
+		_root._active_bot_trace = 102
+		_root._msg("dettaglio procedura nuova")
+		_root._msg("BOT - azione nuova")
+		_root._active_bot_trace = 0
+		_root._refresh()
+	if _frames == 22:
+		var log_text: String = _root._lbl_log.text
+		if log_text.find("azione nuova") > log_text.find("azione vecchia"):
+			return _finish(false, "il Registro non mostra prima la procedura piu' recente")
+		if log_text.contains("dettaglio procedura vecchia") \
+				or log_text.contains("dettaglio procedura nuova"):
+			return _finish(false, "le procedure BOT non partono collassate")
+		_root._on_log_meta_clicked("bot_trace:101")
+	if _frames == 26:
+		var expanded_text: String = _root._lbl_log.text
+		if not expanded_text.contains("dettaglio procedura vecchia"):
+			return _finish(false, "la singola procedura BOT non si espande")
+		if expanded_text.contains("dettaglio procedura nuova"):
+			return _finish(false, "espandere una procedura BOT apre anche le altre")
+		return _finish(true, "mappa separata e Registro inverso con procedure BOT indipendenti")
 	return false
 
 

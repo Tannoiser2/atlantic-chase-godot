@@ -107,10 +107,10 @@ func _process(_delta: float) -> bool:
 		_root_node._active_bot_trace = 1
 		_root_node._msg("Solitario - Tabella delle Azioni Britanniche")
 		_root_node._msg("  1d6 = 2 -> A; applicazione dei modificatori e priorita'")
-		_root_node._active_bot_trace = 0
 		_root_node._last_bot_summary = ("Risultato A: Attacco Furtivo con Forza francese "
 			+ "contro Lutzow. Esito: Perdere il Contatto.")
 		_root_node._msg("BOT - %s" % _root_node._last_bot_summary)
+		_root_node._active_bot_trace = 0
 		_root_node._refresh()
 	if _frames == 6 and _args.has("intel-demo"):
 		var tf: TaskForce = null

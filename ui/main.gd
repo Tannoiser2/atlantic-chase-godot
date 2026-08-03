@@ -66,7 +66,7 @@ var _message_bot_trace: Array[int] = []
 var _message_seq: int = 0
 var _bot_trace_serial: int = 0
 var _active_bot_trace: int = 0
-var _bot_details_expanded: bool = false
+var _expanded_bot_traces: Dictionary = {}
 var _last_bot_summary: String = ""
 var _battle_post_time_lapse: Array[TaskForce] = []
 var _hex_choice_active: bool = false
@@ -190,7 +190,7 @@ func _default_scenario_index() -> int:
 	return 0
 
 
-func _load_scenario_at(idx: int) -> void:
+func _load_scenario_at(idx: int, offer_setup_choices: bool = true) -> void:
 	if scenario_ids.is_empty():
 		_msg("nessuno scenario (esegui tools/import_scenarios.py)")
 		return
@@ -228,6 +228,53 @@ func _load_scenario_at(idx: int) -> void:
 	elif _solo_is_imaginary_turn():
 		call_deferred("_kick_solo_opponent_turn", "inizio scenario")
 	call_deferred("_kick_bl1_fueling_check")
+	if offer_setup_choices and scenario.id == "BL2 Contain and Destroy":
+		call_deferred("_choose_bl2_home_fleet_station")
+
+
+## BL2 lascia al giocatore la posizione iniziale della Home Fleet. La scelta
+## usa soltanto porti e adiacenze calibrati; il valore nel JSON e' un ripiego
+## legale per avvii headless, screenshot e annullamento.
+func _choose_bl2_home_fleet_station() -> void:
+	if scenario == null or scenario.id != "BL2 Contain and Destroy":
+		return
+	var home_fleet: TaskForce = null
+	for tf in state.task_forces:
+		if tf.display_name() == "Home Fleet":
+			home_fleet = tf
+			break
+	if home_fleet == null:
+		_msg("BL2: Home Fleet non trovata; scelta di schieramento non disponibile.")
+		return
+	var port_hexes := state.port_hexes()
+	var legal: Array[Vector2i] = []
+	for pname_v: Variant in graph.ports.keys():
+		var pname := String(pname_v)
+		if pname == "Scapa Flow" or pname == "Methil":
+			continue
+		var port: Dictionary = graph.ports[pname]
+		if Completion.control_of(port, scenario.port_control()) != "ROYAL_NAVY":
+			continue
+		for port_hex_v: Variant in port.get("hexes", []):
+			for h in graph.adjacent_hexes(port_hex_v as Vector2i):
+				if not port_hexes.has(h) and not legal.has(h):
+					legal.append(h)
+	legal.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+		return a.x < b.x or (a.x == b.x and a.y < b.y))
+	if legal.is_empty():
+		_msg("BL2: nessun esagono calibrato soddisfa lo schieramento della Home Fleet.")
+		return
+	var picked := await _pick_hex_on_map(legal,
+		"Schieramento BL2: scegli l'esagono della Home Fleet, adiacente a un "
+		+ "porto controllato britannico eccetto Scapa Flow e Methil. ESC mantiene "
+		+ "il ripiego legale presso Clyde.")
+	if picked == Vector2i.MAX:
+		return
+	home_fleet.trajectory.become_station(picked)
+	selected_tf = home_fleet
+	_msg("Schieramento BL2: Home Fleet piazzata in (%d,%d)." % [picked.x, picked.y])
+	_focus_selected()
+	_refresh()
 
 
 func _process(delta: float) -> void:
@@ -1298,7 +1345,7 @@ func _do_load() -> void:
 	if idx < 0:
 		_msg("Ricarica: lo scenario \"%s\" non esiste piu'." % String(doc["scenario"]))
 		return
-	_load_scenario_at(idx)
+	_load_scenario_at(idx, false)
 	state.apply_dict(doc["state"])
 	# Aggiorna anche i vecchi salvataggi creati quando i porti nemici non
 	# venivano ancora registrati come cause di Informazioni.
@@ -1386,13 +1433,16 @@ func _solo_phase_label() -> String:
 func _solo_selector_for(table_id: String) -> int:
 	if table_id == "actions_late":
 		return state.weather
-	return state.convoys_completed
+	var player := _solo_player_side()
+	return state.convoys_completed_for(player) if player >= 0 else state.convoys_completed
 
 
 func _solo_selector_label(table_id: String) -> String:
 	if table_id == "actions_late":
 		return "meteo %s" % ("cattivo" if state.weather == TimeLapse.Weather.BAD else "buono")
-	return "%d Completamenti riusciti" % state.convoys_completed
+	var player := _solo_player_side()
+	var count := state.convoys_completed_for(player) if player >= 0 else state.convoys_completed
+	return "%d Completamenti riusciti" % count
 
 
 func _solo_player_side() -> int:
@@ -1410,7 +1460,8 @@ func _solo_imaginary_side() -> int:
 
 func _solo_is_imaginary_turn() -> bool:
 	var imaginary := _solo_imaginary_side()
-	return solo != null and imaginary >= 0 and state.initiative == imaginary
+	return solo != null and not state.solo_ended and imaginary >= 0 \
+		and state.initiative == imaginary
 
 
 func _maybe_run_solo_opponent_turn(reason: String = "") -> void:
@@ -1481,9 +1532,9 @@ func _solo_roll_action(auto: bool = false) -> void:
 	log.record("Solitario: %s" % String(result.get("code", "")))
 	var bot_summary := await _apply_solo_ai_result(result)
 	if auto:
-		_active_bot_trace = 0
 		_last_bot_summary = bot_summary
 		_msg("BOT - %s" % bot_summary)
+		_active_bot_trace = 0
 	state.changed.emit()
 
 
@@ -2487,9 +2538,9 @@ var _tf_info: RichTextLabel
 var _tf_ships: HBoxContainer
 var _log_panel: PanelContainer
 var _log_toggle: Button
-var _bot_details_toggle: Button
 var _log_scroll: ScrollContainer
 var _log_expanded: bool = true
+var _log_rendered_message_seq: int = -1
 var _tf_card_signature: String = ""
 var _tf_panel_tf_id: int = -1
 var _tf_panel_manual: bool = false
@@ -2581,12 +2632,6 @@ func _build_hud() -> void:
 	_log_toggle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_log_toggle.pressed.connect(_toggle_log_panel)
 	log_header.add_child(_log_toggle)
-	_bot_details_toggle = Button.new()
-	_bot_details_toggle.text = "Dettagli BOT"
-	_bot_details_toggle.tooltip_text = "Mostra i calcoli e tutti i passaggi della procedura del bot"
-	_bot_details_toggle.focus_mode = Control.FOCUS_NONE
-	_bot_details_toggle.pressed.connect(_toggle_bot_details)
-	log_header.add_child(_bot_details_toggle)
 	var copy_log := Button.new()
 	copy_log.text = "Copia tutto"
 	copy_log.tooltip_text = "Copia l'intero registro negli appunti"
@@ -2603,6 +2648,7 @@ func _build_hud() -> void:
 	_lbl_log.selection_enabled = true
 	_lbl_log.context_menu_enabled = true
 	_lbl_log.mouse_filter = Control.MOUSE_FILTER_STOP
+	_lbl_log.meta_clicked.connect(_on_log_meta_clicked)
 	_log_scroll.add_child(_lbl_log)
 
 	# Pannello "ora tocca a": prende il posto del vecchio registro in basso.
@@ -2693,18 +2739,23 @@ func _toggle_log_panel() -> void:
 	_set_map_right_margin(MAP_RIGHT if _log_expanded else 54.0)
 
 
-func _toggle_bot_details() -> void:
-	_bot_details_expanded = not _bot_details_expanded
-	_bot_details_toggle.text = "Nascondi dettagli" if _bot_details_expanded else "Dettagli BOT"
-	_bot_details_toggle.tooltip_text = ("Nasconde i calcoli del bot e lascia i riepiloghi"
-		if _bot_details_expanded else
-		"Mostra i calcoli e tutti i passaggi della procedura del bot")
+func _on_log_meta_clicked(meta: Variant) -> void:
+	var value := String(meta)
+	if not value.begins_with("bot_trace:"):
+		return
+	var trace_id := int(value.trim_prefix("bot_trace:"))
+	if bool(_expanded_bot_traces.get(trace_id, false)):
+		_expanded_bot_traces.erase(trace_id)
+	else:
+		_expanded_bot_traces[trace_id] = true
 	_refresh()
 
 
 func _copy_full_log() -> void:
 	var lines: Array[String] = ["Mosse: %d" % log.applied_count() if log else ""]
-	lines.append_array(_messages)
+	var newest_first := _messages.duplicate()
+	newest_first.reverse()
+	lines.append_array(newest_first)
 	DisplayServer.clipboard_set("\n".join(lines))
 	_msg("Registro completo copiato negli appunti.")
 	_refresh()
@@ -2791,6 +2842,8 @@ func _solo_event_style() -> StyleBoxFlat:
 func _action_unavailable_reason(key: String) -> String:
 	if mode == Mode.EDITOR:
 		return "sei in modalita' editor del grafo"
+	if state.solo_ended:
+		return "lo scenario solitario e' terminato: apri Punteggio per il Debriefing"
 	if _solo_is_imaginary_turn():
 		return "e' il turno dell'avversario immaginario: l'app tira la Tabella Solitario"
 	if selected_tf == null:
@@ -2878,6 +2931,10 @@ func _refresh_now() -> void:
 	if solo != null:
 		status += "    Solitario: [b]%s[/b]" % _solo_phase_label()
 	out.append(status)
+	if state.solo_ended:
+		out.append("[bgcolor=#4a241f][color=#ffd0a8][b]  FINE SCENARIO  [/b][/color]  "
+			+ "[color=#ffffff][b]%s[/b] Apri Punteggio per il Debriefing.[/color][/bgcolor]"
+			% state.solo_end_reason)
 	if _last_bot_summary != "":
 		out.append("[bgcolor=#183541][color=#7ee5ff][b]  ULTIMA AZIONE DEL BOT  [/b][/color]  "
 			+ "[color=#ffffff][b]%s[/b][/color][/bgcolor]" % _last_bot_summary)
@@ -3348,41 +3405,77 @@ func _position_tf_panel() -> void:
 func _refresh() -> void:
 	if state == null:
 		return
+	if SoloAI.enforce_scenario_end(state):
+		_msg("Solitario BL2 - FINE SCENARIO: %s" % state.solo_end_reason)
 	_refresh_action_bar()
 	_refresh_tf_panel()
 	_refresh_now()
 
 	var lg: Array[String] = []
 	lg.append("[b]Mosse:[/b] %d    (F1 = comandi)" % log.applied_count() if log else "")
-	var trace_sizes := {}
-	for trace_id in _message_bot_trace:
-		if trace_id > 0:
-			trace_sizes[trace_id] = int(trace_sizes.get(trace_id, 0)) + 1
-	var hidden_traces := {}
+	var entries: Array[Dictionary] = []
+	var trace_entries := {}
 	for i in _messages.size():
 		var trace_id := _message_bot_trace[i] if i < _message_bot_trace.size() else 0
-		if trace_id > 0 and not _bot_details_expanded:
-			if not hidden_traces.has(trace_id):
-				hidden_traces[trace_id] = true
-				lg.append(("  [color=#91a4b3]Procedura BOT %02d nascosta (%d righe). "
-					+ "Premi [b]Dettagli BOT[/b] per aprirla.[/color]") \
-					% [trace_id, int(trace_sizes.get(trace_id, 0))])
-			continue
-		var line := _messages[i]
-		if line.contains("  BOT - "):
-			lg.append("  [color=#7ee5ff][b]%s[/b][/color]" % line)
+		if trace_id > 0:
+			if not trace_entries.has(trace_id):
+				var entry := {"index": i, "trace": trace_id, "lines": [] as Array[String]}
+				trace_entries[trace_id] = entry
+				entries.append(entry)
+			(trace_entries[trace_id]["lines"] as Array[String]).append(_messages[i])
+			trace_entries[trace_id]["index"] = i
 		else:
-			lg.append("  " + line)
+			entries.append({"index": i, "trace": 0,
+				"lines": [_messages[i]] as Array[String]})
+	entries.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return int(a["index"]) > int(b["index"]))
+	for entry in entries:
+		var trace_id := int(entry["trace"])
+		var lines: Array[String] = entry["lines"]
+		if trace_id <= 0:
+			lg.append(_format_log_line(lines[0]))
+			continue
+		var expanded := bool(_expanded_bot_traces.get(trace_id, false))
+		var summary := "Procedura conclusa; consulta i dettagli."
+		var details: Array[String] = []
+		for line in lines:
+			if line.contains("BOT - "):
+				summary = line.get_slice("BOT - ", 1)
+			else:
+				details.append(line)
+		var symbol := "Nascondi" if expanded else "Mostra"
+		lg.append(("[url=bot_trace:%d][color=#9fd4ee][b]%s procedura BOT %02d[/b]"
+			+ "[/color][/url]  [color=#718796](%d righe)[/color]") \
+			% [trace_id, symbol, trace_id, details.size()])
+		lg.append("[bgcolor=#173542][color=#7ee5ff][b]  AZIONE EFFETTIVA  [/b][/color]\n"
+			+ "[color=#ffffff][b]  %s  [/b][/color][/bgcolor]" % summary)
+		if expanded:
+			for line in details:
+				lg.append("  [color=#b9c7cf]%s[/color]" % line)
+		lg.append("")
 	if _lbl_log != null:
+		var old_scroll := _log_scroll.scroll_vertical if _log_scroll != null else 0
+		var has_new_messages := _log_rendered_message_seq != _message_seq
 		_lbl_log.text = "\n".join(lg)
-		call_deferred("_scroll_log_to_end")
+		_log_rendered_message_seq = _message_seq
+		if has_new_messages:
+			call_deferred("_set_log_scroll", 0)
+		else:
+			call_deferred("_set_log_scroll", old_scroll)
 
 
-func _scroll_log_to_end() -> void:
+func _format_log_line(line: String) -> String:
+	if line.contains("BOT - "):
+		return ("[bgcolor=#173542][color=#7ee5ff][b]  AZIONE EFFETTIVA  [/b][/color]\n"
+			+ "[color=#ffffff][b]  %s  [/b][/color][/bgcolor]" \
+			% line.get_slice("BOT - ", 1))
+	return "  " + line
+
+
+func _set_log_scroll(value: int) -> void:
 	if _log_scroll == null or not _log_expanded:
 		return
-	var bar := _log_scroll.get_v_scroll_bar()
-	_log_scroll.scroll_vertical = int(bar.max_value)
+	_log_scroll.scroll_vertical = value
 
 
 func _refresh_roster() -> void:

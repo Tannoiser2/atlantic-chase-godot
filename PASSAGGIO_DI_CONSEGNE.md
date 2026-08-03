@@ -12,10 +12,10 @@ Questo file dice **da dove ripartire e cosa non rifare**.
 
 Versione digitale di *Atlantic Chase* (GMT Games, 2020) in **Godot 4.7**,
 GDScript. Motore di regole puro e testabile headless, interfaccia sopra.
-**2353 verifiche su 17 suite, tutte verdi.** Repository `Tannoiser2/atlantic-chase-godot`, branch `master`.
+**2415 verifiche su 17 suite, tutte verdi.** Repository `Tannoiser2/atlantic-chase-godot`, branch `master`.
 
 ```bash
-godot --headless --path . --script res://tests/run_tests.gd   # 2353 verifiche
+godot --headless --path . --script res://tests/run_tests.gd   # 2415 verifiche
 godot --path . --script res://tools/smoke_ui.gd               # prova di fumo GUI
 sh tools/build_macos.sh                                       # app per macOS
 ```
@@ -413,18 +413,22 @@ perdite nello stato salvato. BL1 ha anche le procedure B (Blocco) e F (Forza
 francese) automatizzate.
 
 Fatto: motore delle tabelle (`SoloTable`, `SoloOpponent`), Task Force **non
-identificate**, e le tabelle di **BL1, BL2, BL3** trascritte per intero.
+identificate**, e le tabelle di **BL1, BL2, BL3** trascritte per intero. BL2 e'
+stato verificato di nuovo contro le pp. 9-11 della seconda edizione: colonna 0
+della tabella Tardi, procedure A/C/Convoglio/E/T/X, Identificazione, Incidente
+Internazionale e condizioni di fine sono applicate e coperte da test. Lo
+schieramento iniziale della Home Fleet si sceglie cliccando uno degli esagoni
+leciti evidenziati sulla mappa.
 
 Restano:
-- **le tabelle degli altri 12 scenari**: N1–N6 (pp. 17-40 del fascicolo solo),
-  B1–B4 (pp. 41-58), A1–A2 (pp. 59-68). Il formato è pronto e testato: si
-  aggiungono file in `core/data/solo/` e in `core/data/victory/`. Vedi
-  `core/data/solo/BL2 Contain and Destroy.json` come modello completo.
-- **gli schieramenti**: gli scenari solitari **non stanno nel modulo VASSAL**,
-  quindi non c'è nessun `.vsav` da cui ricavarli. Vanno letti dalle mappe
-  stampate nel fascicolo. Le posizioni sono date come nomi di porto e rotte di
-  convoglio ("Halifax to Clyde/Liverpool, 11 segments"), non come esagoni: i
-  porti si risolvono con `MapGraph.port_hex()`, le rotte le disegna il giocatore.
+- i file degli altri 12 scenari e i loro schieramenti sono presenti, ma
+  l'audit conta ancora **82 descrizioni di procedura segnaposto**: non vanno
+  confuse con policy complete finche' ogni ramo non e' stato confrontato col
+  fascicolo e coperto da test come BL2;
+- gli scenari solitari **non stanno nel modulo VASSAL**: ogni correzione di
+  schieramento deve continuare a venire dalla mappa stampata. Quando il
+  fascicolo fornisce soltanto nomi o lunghezze e la griglia non e' calibrata,
+  il limite va dichiarato nel JSON invece di inventare esagoni;
 - **BL3 non è giocabile**: usa la **Mappa Inserto del Mare del Nord**, un'altra
   mappa con un'altra griglia, che questo progetto non ha calibrato. Il file
   `core/data/solo/BL3 ....json` lo dichiara nel campo `_map`. Calibrarla
@@ -463,9 +467,10 @@ Restano:
   danneggiato è `Sheerb.png`. Già gestito in `ships_overrides.json`.
 - **Il dettaglio del bot non va perso, ma non deve dominare l'interfaccia.**
   `_message_bot_trace` associa ogni riga tecnica al tiro automatico che l'ha
-  prodotta. Il Registro la chiude per default e `Dettagli BOT` la riapre;
-  `_last_bot_summary` resta invece visibile nel pannello di stato. Non tornare
-  a mostrare l'intera procedura come flusso principale.
+  prodotta. Il Registro la chiude per default e ogni intestazione
+  `Mostra/Nascondi procedura BOT` apre soltanto quel tiro; le ultime mosse sono
+  in alto. `_last_bot_summary` resta invece visibile nel pannello di stato.
+  Non tornare a mostrare l'intera procedura come flusso principale.
 - **Lo Scorrere del Tempo umano si sceglie sulla mappa.**
   `_pick_time_lapse_option()` fa cliccare solo i segmenti terminali compatibili
   con le opzioni prodotte da `TimeLapse.removal_options()`. Non duplicare nella

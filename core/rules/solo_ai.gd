@@ -22,6 +22,15 @@ const UK_TYPE_POOLS := {
 	"DD": ["DD Squadron"],
 }
 
+const GE_TYPE_POOLS := {
+	"BC": ["Scharnhorst", "Gneisenau"],
+	"PB": ["Graf Spee", "Lutzow", "Scheer"],
+	"CA": ["Hipper", "Preugen"],
+	"AC": ["Orion", "Widder"],
+	"CL": ["Karlsruhe", "Koln", "Konigsberg", "Leipzig", "Nurnburg"],
+	"CONVOY": ["Convoy x2"],
+}
+
 
 static func execute_code(code: String, state: GameState, graph: MapGraph,
 		engine: ActionEngine, port_control: Dictionary, side: int) -> Dictionary:
@@ -66,6 +75,25 @@ static func execute_code(code: String, state: GameState, graph: MapGraph,
 	return out
 
 
+## Condizioni generali di fine di BL2, verificate dopo qualunque cambiamento
+## di stato. Gli esiti E aggiungono condizioni proprie, ma non sostituiscono
+## il limite stampato di due Convogli completati o quattro navi affondate.
+static func enforce_scenario_end(state: GameState) -> bool:
+	if state.solo_ended or not state.scenario_name.begins_with("BL2"):
+		return false
+	var reason := ""
+	if state.convoys_completed >= 2:
+		reason = "Due Convogli britannici e/o tedeschi hanno Completato."
+	elif state.sunk_count(TaskForce.Side.KRIEGSMARINE) \
+			+ state.sunk_count(TaskForce.Side.ROYAL_NAVY) >= 4:
+		reason = "Quattro navi, contando i Convogli distrutti, sono state affondate."
+	if reason == "":
+		return false
+	state.solo_ended = true
+	state.solo_end_reason = reason
+	return true
+
+
 ## Continua una sequenza stampata che richiede piu' azioni senza tirare di
 ## nuovo la Tabella. Ogni singola azione passa comunque dal normale flusso di
 ## Iniziativa nella UI prima che questa funzione venga richiamata.
@@ -95,6 +123,8 @@ static func apply_table_result(table_id: String, result: Dictionary,
 	if state.scenario_name.begins_with("BL1"):
 		return _bl1_table_result(table_id, result, state, graph, engine,
 			port_control, side, subject)
+	if state.scenario_name.begins_with("BL2"):
+		return _bl2_table_result(table_id, result, state, subject)
 	var out := _empty("Solitario AI: la tabella '%s' e' trascritta ma non ha ancora effetti automatici." % table_id)
 	out["pass_initiative"] = false
 	return out
@@ -148,6 +178,11 @@ static func automatic_modifiers(table: SoloTable, state: GameState,
 						count += 1
 		if lower.contains("due o piu' convogli distrutti"):
 			count = 1 if state.sunk_count(1 - imaginary_side, true) >= 2 else 0
+		# BL2 stampa una sola condizione OR: il -1 si applica una volta, non
+		# una volta per ciascuna nave che rende vera la condizione.
+		if state.scenario_name.begins_with("BL2") \
+				and table.id == "actions_late" and count > 0:
+			count = 1
 		if lower.contains("base aerea") or lower.contains("mine") \
 				or lower.contains("reazione aggressiva") \
 				or lower.contains("puo' essere intercettata"):
@@ -175,6 +210,56 @@ static func _bl1_table_result(table_id: String, result: Dictionary,
 		"fueling":
 			return _bl1_fueling(code, state, graph, engine, port_control, subject)
 	return _empty("Solitario AI BL1: tabella '%s' non applicabile automaticamente." % table_id)
+
+
+static func _bl2_table_result(table_id: String, result: Dictionary,
+		state: GameState, subject: TaskForce) -> Dictionary:
+	var code := String(result.get("code", ""))
+	match table_id:
+		"identify":
+			return _bl2_identify(state, subject, code)
+		"incident":
+			var out := _empty("")
+			out["ok"] = true
+			match code:
+				"backlash":
+					state.add_vp(TaskForce.Side.ROYAL_NAVY, -2.0,
+						"BL2 Contraccolpo Politico")
+					out["log"].append("Solitario AI BL2: Contraccolpo Politico, -2 VP britannici.")
+				"airbase":
+					out["log"].append("Solitario AI BL2: la tabella piazza una Base Aerea tedesca a Trondheim; la pedina Base Aerea non e' ancora modellata e l'effetto resta dichiarato.")
+				_:
+					out["log"].append("Solitario AI BL2: Incidente Internazionale senza effetto negativo.")
+			return out
+	return _empty("Solitario AI BL2: tabella '%s' non applicabile automaticamente." % table_id)
+
+
+static func _bl2_identify(state: GameState, tf: TaskForce, code: String) -> Dictionary:
+	if tf == null or not tf.unidentified:
+		return _empty("Solitario AI BL2: nessuna TF tedesca non identificata selezionata.")
+	var specs: Array[String] = []
+	if code == "Convoglio" and bool(tf.solo_flags.get("bl2_bring_to_battle", false)):
+		specs.assign(["PB", "CA"])
+	else:
+		specs.append("CONVOY" if code == "Convoglio" else code.to_upper())
+	var ships: Array[Ship] = []
+	var used := _ship_names_in_play(state)
+	for raw_spec in specs:
+		var spec := _bl2_identification_replacement(state, raw_spec)
+		var ship := _make_available_ship_from_pool(spec, GE_TYPE_POOLS, used)
+		if ship == null:
+			return _empty("Solitario AI BL2: nessuna nave tedesca disponibile per il tipo %s; composizione non inventata." % spec)
+		ships.append(ship)
+		used[ship.name] = true
+		_bl2_record_type(state, spec)
+	tf.ships = ships
+	tf.unidentified = false
+	tf.recompute_speed()
+	var out := _empty("Solitario AI BL2: %s identificata come %s."
+		% [tf.display_name(), ", ".join(_ship_names(ships))])
+	out["ok"] = true
+	out["active"] = tf
+	return out
 
 
 static func _identify_unidentified_tf(state: GameState, tf: TaskForce,
@@ -713,13 +798,31 @@ static func _bl2(code: String, state: GameState, graph: MapGraph,
 		engine: ActionEngine, port_control: Dictionary, side: int) -> Dictionary:
 	match code:
 		"A":
+			var removed_log := _bl2_remove_damaged_ships(state, side)
 			if state.weather == TimeLapse.Weather.BAD:
-				return _bl2("T", state, graph, engine, port_control, side)
+				var bad := _bl2("T", state, graph, engine, port_control, side)
+				bad["log"].append_array(removed_log)
+				return bad
 			var air := _best_legal_action(state, engine, side, "AIR_STRIKE")
 			if bool(air["ok"]):
 				air["log"].append("Solitario AI BL2: col meteo buono prova l'Attacco Aereo.")
+				air["log"].append_array(removed_log)
 				return air
-			return _bl2("X", state, graph, engine, port_control, side)
+			var no_target_roll := state.rng.d6("Solitario BL2 A senza bersaglio")
+			if no_target_roll <= 2:
+				var convoy := _create_force_at(state, graph, side, "South America",
+					["Convoy x2"], false)
+				var gap := _empty("Solitario AI BL2: A senza bersaglio, 1d6=%d: creato un Convoglio in South America. La rotta stampata Azzorre-Faroe non ha esagoni calibrati nel grafo; il bot non inventa la posizione e non tira di nuovo la Tabella." % no_target_roll)
+				gap["ok"] = true
+				gap["active"] = convoy
+				gap["turn_kind"] = "declared_gap"
+				gap["pass_initiative"] = true
+				gap["log"].append_array(removed_log)
+				return gap
+			var x := _bl2("X", state, graph, engine, port_control, side)
+			x["log"].append("Solitario AI BL2: A senza bersaglio, 1d6=%d: tratta come X." % no_target_roll)
+			x["log"].append_array(removed_log)
+			return x
 		"C":
 			var damaged := _first_damaged_force(state, side)
 			var tf := _shortest_force_with_convoy(state, side)
@@ -732,10 +835,17 @@ static func _bl2(code: String, state: GameState, graph: MapGraph,
 			var port_name := "South America" if _has_undamaged_type(tf, "PB") else "Kiel"
 			return _complete_or_route_to_port(state, graph, port_control, tf, port_name,
 				"Solitario AI BL2: Completamento secondo priorita' Convoglio/Danneggiata/corta")
+		"CONV":
+			var convoy_tf := _shortest_force_with_convoy(state, side)
+			if convoy_tf == null:
+				convoy_tf = _create_force_at(state, graph, side, "Narvik",
+					["Convoy x2"], false)
+			return _complete_or_route_to_port(state, graph, port_control, convoy_tf,
+				"Kiel", "Solitario AI BL2: risultato Convoglio verso Kiel")
 		"T":
 			var tf_t := _best_unidentified(state, side)
 			if tf_t == null:
-				tf_t = _create_unidentified_at(state, graph, side, "Narvik")
+				tf_t = _create_unidentified_at(state, graph, side, "Murmansk")
 			var roll := state.rng.d6("Solitario BL2 destinazione T")
 			if roll <= 3:
 				return _complete_or_route_to_port(state, graph, port_control, tf_t,
@@ -746,6 +856,8 @@ static func _bl2(code: String, state: GameState, graph: MapGraph,
 			var out := _empty("Solitario AI BL2: T porta alle Azzorre, ma l'esagono non e' calibrato nella mappa dati; passa senza inventare coordinate.")
 			out["pass_initiative"] = true
 			return out
+		"E":
+			return _bl2_end_action(state, graph, engine, port_control, side)
 		"X":
 			var tf_x := _shortest_force_with_type(state, side, "BC")
 			if tf_x == null:
@@ -754,17 +866,157 @@ static func _bl2(code: String, state: GameState, graph: MapGraph,
 				var r := state.rng.d6("Solitario BL2 nuova TF X")
 				tf_x = _create_unidentified_at(state, graph, side,
 					"Kiel" if r <= 4 else ("Narvik" if r == 5 else "South America"))
+				tf_x.solo_flags["bl2_bring_to_battle"] = true
 			if _has_damaged(tf_x):
-				return _bl2("C", state, graph, engine, port_control, side)
+				var damaged_port := "South America" if _has_undamaged_type(tf_x, "PB") else "Kiel"
+				return _complete_or_route_to_port(state, graph, port_control, tf_x,
+					damaged_port, "Solitario AI BL2: X danneggiata trattata come C con la stessa TF")
 			var convoy_target := _best_convoy_target(state, side, tf_x)
 			if convoy_target == null:
-				var no_convoy := _empty("Solitario AI BL2: X richiede un Convoglio britannico; nessuno in gioco, tratta come E/fine non automatizzata.")
-				no_convoy["pass_initiative"] = true
-				return no_convoy
+				return _bl2("E", state, graph, engine, port_control, side)
 			return _attack_or_route_selected(state, graph, engine, tf_x, convoy_target,
 				"Solitario AI BL2: X punta al Convoglio britannico")
 		_:
 			return _completion_or_route(state, graph, engine, port_control, side)
+
+
+static func _bl2_end_action(state: GameState, graph: MapGraph,
+		engine: ActionEngine, port_control: Dictionary, side: int) -> Dictionary:
+	var count := int(state.solo_counters.get("bl2_e_results", 0)) + 1
+	state.solo_counters["bl2_e_results"] = count
+	if state.weather == TimeLapse.Weather.BAD:
+		var german_convoy := _shortest_force_with_convoy(state, side)
+		if german_convoy != null:
+			_bl2_automatic_convoy_completion(state, german_convoy)
+			return _bl2_end(state, "Meteo Cattivo: un Convoglio tedesco Completa automaticamente.")
+		if state.sunk_count(TaskForce.Side.KRIEGSMARINE) \
+				+ state.sunk_count(TaskForce.Side.ROYAL_NAVY) >= 2:
+			return _bl2_end(state, "Meteo Cattivo: almeno due navi o Convogli sono stati distrutti.")
+	var target := _shortest_force_with_convoy(state, 1 - side)
+	if target == null:
+		return _bl2_end(state, "Non ci sono Convogli britannici in gioco.")
+	var bc_tf := _shortest_force_with_type(state, side, "BC")
+	if bc_tf == null:
+		bc_tf = _create_force_at(state, graph, side, "Wilhelmshaven",
+			["Scharnhorst"], false)
+		_bl2_record_type(state, "BC")
+	elif _count_type(bc_tf, "BC") < 2:
+		var used := _ship_names_in_play(state)
+		var second := _make_available_ship_from_pool("BC", GE_TYPE_POOLS, used)
+		if second != null:
+			bc_tf.ships.append(second)
+			bc_tf.recompute_speed()
+			_bl2_record_type(state, "BC")
+	else:
+		var remove_index := -1
+		for i in bc_tf.ships.size():
+			var ship: Ship = bc_tf.ships[i]
+			if ship.type_code == "BC" and ship.damaged:
+				remove_index = i
+				break
+		if remove_index < 0:
+			for i in bc_tf.ships.size():
+				if (bc_tf.ships[i] as Ship).type_code == "BC":
+					remove_index = i
+					break
+		if remove_index >= 0:
+			bc_tf.ships.remove_at(remove_index)
+			bc_tf.recompute_speed()
+	bc_tf.solo_flags["bl2_bring_to_battle"] = true
+	var action := _attack_or_route_selected(state, graph, engine, bc_tf, target,
+		"Solitario AI BL2: E porta il BC contro il Convoglio britannico piu' vicino")
+	action["log"].append("Solitario AI BL2: risultato E numero %d." % count)
+	return action
+
+
+static func _bl2_end(state: GameState, reason: String) -> Dictionary:
+	state.solo_ended = true
+	state.solo_end_reason = reason
+	var out := _empty("Solitario AI BL2 - FINE SCENARIO: %s Vai al Debriefing." % reason)
+	out["ok"] = true
+	out["turn_kind"] = "end"
+	out["end_scenario"] = true
+	return out
+
+
+static func _bl2_automatic_convoy_completion(state: GameState, tf: TaskForce) -> void:
+	var names: Array[String] = []
+	for ship in tf.ships:
+		names.append(ship.name)
+	tf.completed_ships = names
+	tf.ships.clear()
+	tf.completed = true
+	tf.completed_port = "automatico BL2-E"
+	state.count_convoy_completed(tf.side)
+	state.add_vp(TaskForce.Side.ROYAL_NAVY, -2.0,
+		"BL2 Convoglio tedesco Completato automaticamente")
+
+
+static func _bl2_remove_damaged_ships(state: GameState, side: int) -> Array[String]:
+	var lines: Array[String] = []
+	var removed := 0
+	for tf in state.forces_of(side).duplicate():
+		var keep: Array[Ship] = []
+		for ship in tf.ships:
+			if ship.damaged and not ship.sunk:
+				removed += 1
+				lines.append("Solitario AI BL2: rimossa %s Danneggiata da %s; conta come Danneggiata, non affondata, per i VP." % [ship.name, tf.display_name()])
+			else:
+				keep.append(ship)
+		tf.ships = keep
+		tf.recompute_speed()
+		if tf.ships.is_empty() and not tf.unidentified:
+			state.remove_task_force(tf)
+	state.solo_counters["bl2_removed_ships"] = \
+		int(state.solo_counters.get("bl2_removed_ships", 0)) + removed
+	return lines
+
+
+static func _bl2_identification_replacement(state: GameState, spec: String) -> String:
+	var out := spec
+	var threshold := 999
+	if spec == "AC":
+		threshold = 1
+	elif spec == "PB" or spec == "CA":
+		threshold = 2
+	if _bl2_type_history(state, spec) >= threshold:
+		out = "BC"
+	if out == "BC" and _bl2_type_history(state, "BC") >= 2:
+		out = "CL"
+	return out
+
+
+static func _bl2_type_history(state: GameState, type_code: String) -> int:
+	var current := 0
+	for tf in state.task_forces:
+		current += _count_type(tf, type_code)
+	return maxi(current, int(state.solo_counters.get("bl2_type_%s" % type_code, 0)))
+
+
+static func _bl2_record_type(state: GameState, type_code: String) -> void:
+	var key := "bl2_type_%s" % type_code
+	state.solo_counters[key] = int(state.solo_counters.get(key, 0)) + 1
+
+
+static func _count_type(tf: TaskForce, type_code: String) -> int:
+	var count := 0
+	if tf != null:
+		for ship in tf.ships:
+			if ship.type_code == type_code and not ship.sunk:
+				count += 1
+	return count
+
+
+static func _make_available_ship_from_pool(type_code: String, pools: Dictionary,
+		used: Dictionary) -> Ship:
+	for name_v: Variant in pools.get(type_code, []):
+		var name := String(name_v)
+		if used.has(name):
+			continue
+		var ship := ShipRoster.shared().make(name)
+		if ship != null:
+			return ship
+	return null
 
 
 static func _bl3(code: String, state: GameState, graph: MapGraph,

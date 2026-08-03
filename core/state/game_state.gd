@@ -62,6 +62,7 @@ var vp_once: Array[String] = []
 ## Da quel momento la partita cambia natura: non si caccia piu', si torna a
 ## casa.
 var convoys_completed: int = 0
+var convoys_completed_by_side: Dictionary = {}
 
 ## Si gioca col fascicolo delle Regole Avanzate di Battaglia?
 ##
@@ -90,6 +91,13 @@ var commander_uses: Dictionary = {}
 ## una TF eliminata sulla mappa conservava l'informazione, ma mentiva al
 ## giocatore. La storia delle perdite e' il posto corretto dove conservarla.
 var casualties: Array[Dictionary] = []
+
+## Contatori ed esito delle procedure solitarie specifiche di scenario. Sono
+## dati di gioco: per esempio BL2 distingue il primo, secondo e terzo risultato
+## E e ricorda i tipi gia' ottenuti dalla tabella di Identificazione.
+var solo_counters: Dictionary = {}
+var solo_ended: bool = false
+var solo_end_reason: String = ""
 
 
 func add_vp(side: int, amount: float, reason: String = "") -> void:
@@ -130,6 +138,23 @@ func vp_leader() -> int:
 	if is_equal_approx(a, b):
 		return -1
 	return TaskForce.Side.KRIEGSMARINE if a > b else TaskForce.Side.ROYAL_NAVY
+
+
+func convoys_completed_for(side: int) -> int:
+	var key := str(side)
+	# Nei vecchi salvataggi esiste solo il totale. Appena compare almeno un
+	# conteggio per parte, una chiave assente significa invece zero: usare il
+	# totale mescolerebbe i Completamenti britannici e tedeschi di BL2.
+	if convoys_completed_by_side.is_empty():
+		return convoys_completed
+	return int(convoys_completed_by_side.get(key, 0))
+
+
+func count_convoy_completed(side: int) -> void:
+	convoys_completed += 1
+	var key := str(side)
+	convoys_completed_by_side[key] = int(convoys_completed_by_side.get(key, 0)) + 1
+	changed.emit()
 
 
 func _init(p_graph: MapGraph = null, p_seed: int = 0) -> void:
@@ -368,12 +393,16 @@ func to_dict() -> Dictionary:
 		"vp_rn": vp_of(TaskForce.Side.ROYAL_NAVY),
 		"vp_once": vp_once.duplicate(),
 		"convoys_completed": convoys_completed,
+		"convoys_completed_by_side": convoys_completed_by_side.duplicate(),
 		"advanced_battle": advanced_battle,
 		"solo_phase": solo_phase,
 		"solo_phase_reason": solo_phase_reason,
 		"rendezvous_markers": rendezvous_markers.duplicate(true),
 		"commander_uses": commander_uses.duplicate(),
 		"casualties": casualties.duplicate(true),
+		"solo_counters": solo_counters.duplicate(true),
+		"solo_ended": solo_ended,
+		"solo_end_reason": solo_end_reason,
 		"rng": rng.to_dict(),
 	}
 
@@ -389,6 +418,8 @@ func apply_dict(d: Dictionary) -> void:
 	vp[TaskForce.Side.KRIEGSMARINE] = float(d.get("vp_km", 0.0))
 	vp[TaskForce.Side.ROYAL_NAVY] = float(d.get("vp_rn", 0.0))
 	convoys_completed = int(d.get("convoys_completed", 0))
+	convoys_completed_by_side = (d.get("convoys_completed_by_side", {}) \
+		as Dictionary).duplicate()
 	# le partite salvate prima che le Regole Avanzate esistessero sono
 	# tutte partite base: false e' il default giusto
 	advanced_battle = bool(d.get("advanced_battle", false))
@@ -406,6 +437,9 @@ func apply_dict(d: Dictionary) -> void:
 	for loss_v: Variant in d.get("casualties", []):
 		var loss: Dictionary = loss_v
 		casualties.append(loss.duplicate(true))
+	solo_counters = (d.get("solo_counters", {}) as Dictionary).duplicate(true)
+	solo_ended = bool(d.get("solo_ended", false))
+	solo_end_reason = String(d.get("solo_end_reason", ""))
 	vp_once.clear()
 	for k_v: Variant in d.get("vp_once", []):
 		vp_once.append(String(k_v))
