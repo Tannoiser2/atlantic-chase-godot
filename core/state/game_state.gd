@@ -259,6 +259,20 @@ func forces_in(h: Vector2i) -> Array[TaskForce]:
 	return out
 
 
+## Quanti marker Rendezvous sono ancora sul tabellone.
+##
+## `remove_rendezvous_at` non cancella la voce: la marca `active = false`, cosi'
+## il salvataggio conserva dov'era il marker rimosso. Contare
+## `rendezvous_markers.size()` da' quindi sempre il numero iniziale, ed e'
+## proprio il conto che serve alla condizione di fine di BL1 (p.5).
+func active_rendezvous_count() -> int:
+	var n := 0
+	for rv in rendezvous_markers:
+		if bool(rv.get("active", true)):
+			n += 1
+	return n
+
+
 func rendezvous_at(h: Vector2i) -> Dictionary:
 	for rv in rendezvous_markers:
 		if bool(rv.get("active", true)) and Vector2i(int(rv.get("q", 0)),

@@ -1535,19 +1535,18 @@ func _solo_phase_label() -> String:
 	return "Presto"
 
 
+## Quale riga della Tabella Azioni: e' una regola stampata e sta nel core
+## (`SoloOpponent.action_row_selector`), non qui. La vista si limita a chiedere.
 func _solo_selector_for(table_id: String) -> int:
-	if table_id == "actions_late":
-		return state.weather
-	var player := _solo_player_side()
-	return state.convoys_completed_for(player) if player >= 0 else state.convoys_completed
+	if solo == null:
+		return state.convoys_completed
+	return solo.action_row_selector(state, _solo_player_side(), table_id)
 
 
 func _solo_selector_label(table_id: String) -> String:
-	if table_id == "actions_late":
-		return "meteo %s" % ("cattivo" if state.weather == TimeLapse.Weather.BAD else "buono")
-	var player := _solo_player_side()
-	var count := state.convoys_completed_for(player) if player >= 0 else state.convoys_completed
-	return "%d Completamenti riusciti" % count
+	if solo == null:
+		return "%d Completamenti riusciti" % state.convoys_completed
+	return solo.action_row_selector_label(state, _solo_player_side(), table_id)
 
 
 func _solo_player_side() -> int:
@@ -1849,7 +1848,7 @@ func _queue_next_solo_action(reason: String) -> void:
 	# accodare il tiro successivo. La fine va applicata qui, prima del deferred:
 	# aspettare il refresh lascia partire un'intera azione oltre la fine.
 	if SoloAI.enforce_scenario_end(state):
-		_msg("Solitario BL2 - FINE SCENARIO: %s" % state.solo_end_reason)
+		_msg("Solitario - FINE SCENARIO: %s" % state.solo_end_reason)
 		return
 	if state.solo_ended:
 		return

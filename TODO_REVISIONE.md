@@ -1,6 +1,7 @@
 # TODO della revisione
 
-Aggiornato al commit `bf65a2b` del 3 agosto 2026.
+Aggiornato dopo la chiusura di **R0** (3 agosto 2026). Baseline: **2650
+verifiche su 18 suite**.
 
 Questo e' il backlog autorevole per continuare la revisione. `STATO.md`
 contiene anche una lunga cronologia: e' utile per capire le decisioni, ma le
@@ -15,8 +16,8 @@ vecchie sezioni "Cosa manca" non devono riaprire lavori gia' completati.
 | Battaglia base | completa | regressioni GUI e bot solo |
 | Battaglia avanzata | quasi completa | quattro scelte interattive e MS12 |
 | Salvataggio/undo | completo | includere ogni nuovo stato solo |
-| Solitario BL1 | giocabile, policy dedicate | replay completo e confronto pagina per pagina |
-| Solitario BL2 | giocabile, policy dedicate | replay completo; fine scenario appena corretta |
+| Solitario BL1 | giocabile, replay end-to-end verde | chiudere 4+CA, B-Dienst e Murmansk |
+| Solitario BL2 | giocabile, replay end-to-end verde | automatizzare Forbes e Gensoul |
 | Solitario BL3 | tabelle trascritte, non giocabile | calibrare Mappa Inserto Mare del Nord |
 | Altri 12 solitari | setup e testo presenti, automazione parziale | sostituire i segnaposto scenario per scenario |
 | GUI operativa | molto rielaborata | smoke test dei flussi mappa ancora insufficiente |
@@ -25,14 +26,21 @@ vecchie sezioni "Cosa manca" non devono riaprire lavori gia' completati.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i quattro comandi in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 2570 senza rimozione esplicita.
-- [ ] Estendere `tools/simulate_flow.gd` a replay deterministici completi di
-  BL1 e BL2, non soltanto a una singola estrazione dalla Tabella Azioni.
+- [ ] Non consentire che il totale scenda sotto 2650 senza rimozione esplicita.
+- [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
+  (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
+  `tests/unit/test_replay.gd` (80 verifiche). `tools/simulate_flow.gd` ne
+  stampa il riepilogo in coda.
+- [x] Verificare che nessuna callback differita continui dopo `solo_ended`:
+  `test_nothing_acts_after_scenario_end` legge la trascrizione e pretende zero
+  turni, tiri della Tabella e azioni dopo la riga `FINE SCENARIO`.
+- [ ] **Riscrivere il ciclo solitario di `ui/main.gd` sopra `SoloRunner`.**
+  Oggi la sequenza esiste in due posti: nel core (sincrona, testata) e nella
+  vista (asincrona, con i dialoghi). Finche' restano separate, una correzione
+  va applicata due volte, ed e' la prima cosa che divergera'.
 - [ ] Aggiungere uno smoke test GUI del flusso operativo: selezione TF,
   dichiarazione Azione, scelta su mappa, Scorrere del Tempo, cambio
   Iniziativa, azione bot e ritorno al giocatore.
-- [ ] Verificare che nessuna callback differita continui dopo `solo_ended`.
-  Il bug BL2 corretto in `bf65a2b` e' il caso di regressione iniziale.
 
 ## P0 - Solitario completo
 
@@ -58,12 +66,25 @@ Uno scenario puo' essere marcato completo solo quando:
 ### Scenari
 
 - [ ] **BL1 Raiders of the North Atlantic**: audit finale pagina per pagina.
-  Setup RV, Rifornimento, rotte, Raeder e policy B/F sono implementati; serve
-  un replay deterministico completo fino al Debriefing.
+  Il replay completo c'e' e arriva al Debriefing. Corretti in R0: la riga della
+  Tabella Azioni (conta i Convogli britannici Completati **e distrutti**, non i
+  Completamenti tedeschi), la condizione di fine di p.5, il ramo Meteo Cattivo
+  della 'A' (con CA -> 'X', senza CA -> 'B'), i Limiti di Carburante di F e X e
+  la chiusura di South America. **Restano**: la clausola "4 o piu' CA" della
+  'A' (che vale come 'A' *e* 'F' insieme, con la francese Attiva e la
+  britannica Coordinante), il B-Dienst (un segnalino Informazioni una volta per
+  scenario) e la Tabella Murmansk prima del Debriefing.
+- [ ] **BL1: la fine stampata non copre la posizione "nessuna TF tedesca con
+  piu' di due marker RV".** Un RV si rimuove solo con un Controllo
+  Rifornimento, che richiede una Stazione tedesca: perse tutte le navi e i
+  Rinforzi, la partita non puo' piu' finire. Il replay lo dichiara (`STALLO`,
+  6 semi su 40) invece di inventare una condizione. Va chiesto o cercato un
+  chiarimento GMT prima di scrivere una regola.
 - [ ] **BL2 Contain and Destroy**: audit finale pagina per pagina. Home Fleet,
   Convogli, Acque Neutrali, Pound/Forbes, Identificazione e procedure
-  A/C/Convoglio/E/T/X sono implementate. Verificare che dopo la fine nessuna
-  procedura resti accodata. Forbes e Gensoul hanno ancora effetti manuali.
+  A/C/Convoglio/E/T/X sono implementate; il replay arriva a una condizione di
+  fine stampata su tutti i 40 semi provati. Forbes e Gensoul hanno ancora
+  effetti manuali.
 - [ ] **BL3 Raiders of the North Sea**: calibrare il reticolo della Mappa
   Inserto del Mare del Nord e applicare lo setup. Le tabelle sono trascritte;
   non fingere coordinate sulla Mappa Operazionale.
@@ -160,7 +181,7 @@ per questo riporta 82, non la somma dell'elenco.
 
 | Milestone | Obiettivo | Criterio di uscita |
 |---|---|---|
-| R0 Baseline | harness e replay affidabili | test + smoke + replay BL1/BL2 ripetibili |
+| ~~R0 Baseline~~ | ~~harness e replay affidabili~~ | **fatta**: test + smoke + replay BL1/BL2 ripetibili |
 | R1 BL | chiudere BL1, BL2, BL3 | tre scenari end-to-end, inserto BL3 calibrato |
 | R2 Norvegia | chiudere N1-N6 | zero segnaposto N, Mine e Basi modellate e testate |
 | R3 Atlantico | chiudere B1-B4 | zero segnaposto B, replay per ogni scenario |
@@ -175,6 +196,8 @@ per questo riporta 82, non la somma dell'elenco.
 godot --headless --path . --script res://tests/run_tests.gd
 godot --headless --path . --script res://tools/audit_solo.gd
 godot --headless --path . --script res://tools/simulate_flow.gd
+godot --headless --path . --script res://tools/replay_solo.gd
+godot --headless --path . --script res://tools/replay_solo.gd -- BL1 42
 godot --path . --script res://tools/smoke_map_workspace.gd
 godot --path . --script res://tools/smoke_ui.gd
 godot --path . --script res://tools/smoke_ui.gd -- adv

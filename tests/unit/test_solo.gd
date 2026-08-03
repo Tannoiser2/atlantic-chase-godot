@@ -1197,8 +1197,11 @@ func test_fueling() -> void:
 		var sc := Scenario.load_by_id("BL1 Raiders of the North Atlantic")
 		eq(String(sc.port_control().get("Murmansk", "")), "KRIEGSMARINE",
 			"BL1 consente Murmansk ai tedeschi")
-		eq(String(sc.port_control().get("South America", "")), "KRIEGSMARINE",
-			"BL1 consente South America quando il Rifornimento lo ordina")
+		# p.5: gli unici porti tedeschi sono Kiel, Wilhelmshaven e Murmansk,
+		# "unless allowed by a Fueling Check". South America resta quindi
+		# chiuso, e lo apre solo il flag messo dal risultato a.
+		eq(String(sc.port_control().get("South America", "")), "NONE",
+			"BL1 tiene chiuso South America finche' il Rifornimento non lo apre")
 
 
 func test_bl1_fueling_trigger_conditions() -> void:

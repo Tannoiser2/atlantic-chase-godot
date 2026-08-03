@@ -107,10 +107,51 @@ func goes_late_after(event: String) -> bool:
 	return triggers.has(prefix) and (triggers[prefix] as Array).has(event)
 
 
+## Quale numero sceglie la RIGA della Tabella delle Azioni.
+##
+## Non e' la stessa quantita' in tutti gli scenari, ed e' una regola stampata,
+## non una comodita' dell'interfaccia: per questo sta qui e non nella GUI.
+##
+##   BL2 Presto  "Number of successful British Completion actions"
+##               (AC Solo scenarios 2022 p.10). Il britannico e' il GIOCATORE.
+##   BL1         "Number of successful British Convoy Completion actions and/or
+##               destroyed Convoys" (p.7). Qui il britannico e' l'avversario
+##               IMMAGINARIO, quindi contano i suoi Completamenti di Convoglio
+##               piu' i Convogli britannici distrutti dal giocatore tedesco.
+##   Tardi       la riga e' il meteo, non un conteggio.
+##
+## La versione precedente usava sempre i Completamenti del giocatore: in BL1
+## contava quelli tedeschi, cioe' quasi sempre zero, e la tabella restava
+## inchiodata alla prima riga per tutta la partita.
+func action_row_selector(state: GameState, player_side: int,
+		table_id: String = "") -> int:
+	var tid := table_id if table_id != "" else action_table_id()
+	if tid == "actions_late":
+		return state.weather
+	var imaginary := 1 - player_side
+	if scenario_id.begins_with("BL1"):
+		return state.convoys_completed_for(imaginary) \
+			+ state.sunk_count(imaginary, true)
+	return state.convoys_completed_for(player_side) if player_side >= 0 \
+		else state.convoys_completed
+
+
+## Etichetta leggibile del selettore, per il registro e il pannello di stato.
+func action_row_selector_label(state: GameState, player_side: int,
+		table_id: String = "") -> String:
+	var tid := table_id if table_id != "" else action_table_id()
+	if tid == "actions_late":
+		return "meteo %s" % ("cattivo" if state.weather == TimeLapse.Weather.BAD
+			else "buono")
+	var value := action_row_selector(state, player_side, tid)
+	if scenario_id.begins_with("BL1"):
+		return "%d Completamenti di Convoglio britannici e Convogli distrutti" % value
+	return "%d Completamenti riusciti" % value
+
+
 ## L'azione dell'avversario immaginario, letta sulla tabella giusta.
 ##
-## `selector` e' quello che sceglie la riga: nella tabella Presto e' il numero
-## di Completamenti riusciti dell'altra parte, nella Tardi e' il meteo.
+## `selector` e' quello che sceglie la riga: lo produce `action_row_selector`.
 ##
 ## Ritorna il risultato di SoloTable.roll_and_read piu' `table` e `phase`.
 func act(rng: DiceRNG, selector: int,

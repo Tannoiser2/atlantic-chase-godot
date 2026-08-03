@@ -75,23 +75,46 @@ static func execute_code(code: String, state: GameState, graph: MapGraph,
 	return out
 
 
-## Condizioni generali di fine di BL2, verificate dopo qualunque cambiamento
-## di stato. Gli esiti E aggiungono condizioni proprie, ma non sostituiscono
-## il limite stampato di due Convogli completati o quattro navi affondate.
+## Condizioni di fine stampate, verificate dopo qualunque cambiamento di stato.
+## I risultati delle Tabelle Azioni aggiungono condizioni proprie, ma non
+## sostituiscono quelle scritte nel riquadro "The End" di ciascuno scenario.
 static func enforce_scenario_end(state: GameState) -> bool:
-	if state.solo_ended or not state.scenario_name.begins_with("BL2"):
+	if state.solo_ended:
 		return false
 	var reason := ""
-	if state.convoys_completed >= 2:
-		reason = "Due Convogli britannici e/o tedeschi hanno Completato."
-	elif state.sunk_count(TaskForce.Side.KRIEGSMARINE) \
-			+ state.sunk_count(TaskForce.Side.ROYAL_NAVY) >= 4:
-		reason = "Quattro navi, contando i Convogli distrutti, sono state affondate."
+	if state.scenario_name.begins_with("BL1"):
+		reason = _bl1_end_reason(state)
+	elif state.scenario_name.begins_with("BL2"):
+		reason = _bl2_end_reason(state)
 	if reason == "":
 		return false
 	state.solo_ended = true
 	state.solo_end_reason = reason
 	return true
+
+
+## AC Solo scenarios 2022 p.5: "The scenario ends when there are two or fewer
+## Rendezvous markers remaining and the Germans have no Task Forces in play."
+## Le due condizioni valgono insieme, non in alternativa.
+static func _bl1_end_reason(state: GameState) -> String:
+	var remaining := state.active_rendezvous_count()
+	if remaining > 2:
+		return ""
+	if not state.forces_of(TaskForce.Side.KRIEGSMARINE).is_empty():
+		return ""
+	return ("Restano %d marker Rendezvous (due o meno) e il tedesco non ha "
+		+ "piu' Task Force in gioco.") % remaining
+
+
+## AC Solo scenarios 2022 p.9: due Convogli Completati (britannici e/o
+## tedeschi), oppure quattro navi affondate contando i Convogli distrutti.
+static func _bl2_end_reason(state: GameState) -> String:
+	if state.convoys_completed >= 2:
+		return "Due Convogli britannici e/o tedeschi hanno Completato."
+	if state.sunk_count(TaskForce.Side.KRIEGSMARINE) \
+			+ state.sunk_count(TaskForce.Side.ROYAL_NAVY) >= 4:
+		return "Quattro navi, contando i Convogli distrutti, sono state affondate."
+	return ""
 
 
 ## Continua una sequenza stampata che richiede piu' azioni senza tirare di
@@ -781,12 +804,55 @@ static func _b1(code: String, state: GameState, graph: MapGraph,
 				"Clyde", "Solitario AI B1: nuovo Convoglio verso Clyde/Liverpool")
 
 
+## Quanti Convogli britannici hanno Completato in BL1. E' il conto che regola
+## sia la riga della Tabella Azioni sia le due soglie dei Limiti di Carburante.
+static func bl1_british_convoy_completions(state: GameState) -> int:
+	return state.convoys_completed_for(TaskForce.Side.ROYAL_NAVY)
+
+
+## Limiti di Carburante (AC Solo scenarios 2022 p.8): li invoca la Tabella
+## delle Azioni Britanniche, con la riga "End?" dei risultati F e X. Da quel
+## momento le uniche azioni permesse al tedesco sono Completamento, Passare e
+## Traiettoria. Non e' la fine dello scenario: e' un cambio di regime.
+static func _bl1_fuel_limits(state: GameState, threshold: int,
+		out: Dictionary) -> void:
+	if bool(state.solo_counters.get("bl1_fuel_limits", false)):
+		return
+	if bl1_british_convoy_completions(state) < threshold:
+		return
+	state.solo_counters["bl1_fuel_limits"] = true
+	out["log"].append(("Fine? %d Convogli britannici hanno Completato: da ora "
+		+ "valgono i Limiti di Carburante. Il tedesco puo' solo Completamento, "
+		+ "Passare e Traiettoria.") % threshold)
+
+
+## Il fascicolo p.7 fa dipendere il ramo di Meteo Cattivo dalla presenza di un
+## CA britannico: con un CA in gioco e' una 'X' (e la TF con il CA e' quella
+## scelta), senza CA e' una 'B'. La versione precedente andava sempre su 'X',
+## e con nessun CA in gioco il Blocco non veniva mai creato.
+static func _bl1_has_british_ca(state: GameState, side: int) -> TaskForce:
+	for tf in state.forces_of(side):
+		if _has_type(tf, "CA"):
+			return tf
+	return null
+
+
 static func _bl1(code: String, state: GameState, graph: MapGraph,
 		engine: ActionEngine, port_control: Dictionary, side: int) -> Dictionary:
 	match code:
 		"A":
 			if state.weather == TimeLapse.Weather.BAD:
-				return _decisive_attack(state, graph, engine, side)
+				var with_ca := _bl1_has_british_ca(state, side)
+				if with_ca == null:
+					var blockade := _bl1("B", state, graph, engine, port_control, side)
+					blockade["log"].append("Solitario AI BL1: Meteo Cattivo senza "
+						+ "nessun CA britannico in gioco: la 'A' diventa una 'B'.")
+					return blockade
+				var decisive := _attack_or_route_selected(state, graph, engine,
+					with_ca, _best_enemy_target(state, side, with_ca),
+					"Solitario AI BL1: Meteo Cattivo, la 'A' diventa una 'X' con la TF che ha il CA")
+				_bl1_fuel_limits(state, 2, decisive)
+				return decisive
 			var air := _best_legal_action(state, engine, side, "AIR_STRIKE")
 			if bool(air["ok"]):
 				air["log"].append("Solitario AI BL1: col meteo buono prova l'Attacco Aereo.")
@@ -832,23 +898,34 @@ static func _bl1(code: String, state: GameState, graph: MapGraph,
 			out["roll_again"] = true
 			return out
 		"F":
+			# "End? If three British Convoys have successfully Completed, Fuel
+			# Limits are now in effect" (p.8): la verifica viene prima
+			# dell'azione, e vale anche se poi la procedura ripiega su 'C'.
+			var french_out := _empty("")
+			_bl1_fuel_limits(state, 3, french_out)
 			var french := _force_with_ship_name(state, side, "Dunkerque")
-			if french == null:
-				return _bl1("C", state, graph, engine, port_control, side)
-			var german := _best_enemy_target(state, side, french)
-			if german == null:
-				return _bl1("C", state, graph, engine, port_control, side)
-			return _attack_or_route_selected(state, graph, engine, french, german,
-				"Solitario AI BL1: Azione francese verso la TF tedesca piu' vicina a un Convoglio")
+			var german := _best_enemy_target(state, side, french) if french != null \
+				else null
+			var french_result := _bl1("C", state, graph, engine, port_control, side) \
+				if french == null or german == null \
+				else _attack_or_route_selected(state, graph, engine, french, german,
+					"Solitario AI BL1: Azione francese verso la TF tedesca piu' vicina a un Convoglio")
+			(french_result["log"] as Array).append_array(french_out["log"])
+			return french_result
 		"X":
+			var decisive_out := _empty("")
+			_bl1_fuel_limits(state, 2, decisive_out)
 			var bc := _shortest_force_with_type(state, side, "BC", true)
 			if bc == null:
 				bc = _best_unidentified(state, side)
 			if bc == null:
 				bc = _create_unidentified_at(state, graph, side,
 					_closer_port_to_enemy(graph, state, side, ["Scapa Flow", "Gibilterra"]))
-			return _attack_or_route_selected(state, graph, engine, bc,
-				_best_enemy_target(state, side, bc), "Solitario AI BL1: azione decisiva con BC/TF ignota")
+			var decisive_result := _attack_or_route_selected(state, graph, engine, bc,
+				_best_enemy_target(state, side, bc),
+				"Solitario AI BL1: azione decisiva con BC/TF ignota")
+			(decisive_result["log"] as Array).append_array(decisive_out["log"])
+			return decisive_result
 		_:
 			return _completion_or_route(state, graph, engine, port_control, side)
 

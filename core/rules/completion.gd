@@ -93,10 +93,16 @@ static func port_options(tf: TaskForce, graph: MapGraph,
 	var required_ports: Array[String] = []
 	for port_v: Variant in tf.solo_flags.get("completion_ports", []):
 		required_ports.append(String(port_v))
-	# Compatibilita' con i dati BL1 trascritti prima del vincolo generico.
-	var legacy_port := String(tf.solo_flags.get("bl1_completion_port", ""))
-	if required_ports.is_empty() and legacy_port != "":
-		required_ports.append(legacy_port)
+	# `bl1_completion_port` non e' una restrizione come le altre: e' il "Nuovo
+	# Obiettivo" del risultato a. della Tabella del Rifornimento (AC Solo
+	# scenarios 2022 p.6), che apre un porto altrimenti chiuso al tedesco -
+	# "Unless allowed by a Fueling Check ... the only ports that German TFs may
+	# attempt Completion are Kiel, Wilhelmshaven, and Murmansk" (p.5). Quindi
+	# scavalca il controllo del porto invece di restringerlo, ed e' l'unica
+	# eccezione: `completion_ports` resta un vincolo puro.
+	var granted_port := String(tf.solo_flags.get("bl1_completion_port", ""))
+	if required_ports.is_empty() and granted_port != "":
+		required_ports.append(granted_port)
 	for h in occupied_hexes(tf):
 		for pname_v: Variant in graph.ports_in(h):
 			var pname := String(pname_v)
@@ -105,7 +111,10 @@ static func port_options(tf: TaskForce, graph: MapGraph,
 			if seen.has(pname):
 				continue
 			var p: Dictionary = graph.ports.get(pname, {})
-			if p.is_empty() or not _side_can(control_of(p, port_control), tf.side):
+			if p.is_empty():
+				continue
+			if pname != granted_port \
+					and not _side_can(control_of(p, port_control), tf.side):
 				continue
 			seen.append(pname)
 			var nation := String(p.get("nation", ""))

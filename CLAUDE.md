@@ -38,15 +38,21 @@ godot --path . --script res://tools/smoke_ui.gd
 godot --path . --script res://tools/smoke_ui.gd -- adv
 ```
 
-Baseline al passaggio: **2570 verifiche, 17 suite**. Il totale non puo'
-scendere senza una rimozione intenzionale di test spiegata nel commit.
+Baseline corrente: **2650 verifiche, 18 suite** (era 2570 su 17 prima della
+suite `test_replay.gd`). Il totale non puo' scendere senza una rimozione
+intenzionale di test spiegata nel commit.
 
 Per il solitario eseguire anche:
 
 ```bash
 godot --headless --path . --script res://tools/audit_solo.gd
 godot --headless --path . --script res://tools/simulate_flow.gd
+godot --headless --path . --script res://tools/replay_solo.gd
 ```
+
+`replay_solo.gd` gioca BL1 e BL2 dall'inizio alla fine con `SoloRunner` e
+distingue tre esiti: `OK` (fine stampata), `STALLO` (lacuna dichiarata del
+fascicolo) e `FALLITO` (il ciclo non converge: un difetto).
 
 `audit_solo.gd` verde non significa completo: al passaggio stampa 93 caselle
 uniche, 82 procedure Azione segnaposto, 2 buchi dichiarati e 0 blocchi.
@@ -82,7 +88,16 @@ manualmente in `/Applications/Atlantic Chase.app`.
 
 ## Primo lavoro consigliato
 
-Partire da **R0 in `TODO_REVISIONE.md`**: consolidare BL1 e BL2 con replay
-deterministici end-to-end, poi affrontare uno scenario solitario alla volta.
+**R0 e' chiusa**: `core/rules/solo_runner.gd` gioca uno scenario solitario per
+intero senza GUI, `tools/replay_solo.gd` lo esegue con semi fissi e
+`tests/unit/test_replay.gd` verifica determinismo, terminazione, legalita' dei
+Completamenti e salvataggio/ricarica.
+
+Continuare da **R1**: audit pagina per pagina di BL1 e BL2, poi BL3.
 Non lavorare in parallelo su tutti i JSON: rende impossibile capire quale
 tabella abbia introdotto una regressione.
+
+Attenzione a una duplicazione nota: `ui/main.gd` implementa la stessa sequenza
+del ciclo solitario con le sue attese asincrone. Finche' non sara' riscritta
+sopra `SoloRunner` (voce aperta in `TODO_REVISIONE.md`), una modifica alla
+sequenza va fatta in tutti e due i posti.

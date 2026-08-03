@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **2570 verifiche, 17 suite, headless.**
+Tutti i test passano: **2650 verifiche, 18 suite, headless.**
 
 ---
 
@@ -21,7 +21,7 @@ Tutti i test passano: **2570 verifiche, 17 suite, headless.**
 | **M7** Regole complete | ✅ **completo** | Tutte e 9 le azioni, Convogli, finale di partita, salvataggio; tutti e 22 gli scenari hanno le condizioni di vittoria |
 | **M9** Battaglia decisa dal giocatore | ✅ **completo** | Bersagli scelti a mano, linee di fuoco con raggio e valore dei cannoni |
 | **M10** Regole Avanzate | 🟡 **quasi completo** | Attitudini, Fuoco a due colonne, Siluri, Tabelle dei Risultati, Effetti Duraturi, Disingaggio, Snafu e Battaglia Estesa sono collegati. Restano le scelte interattive di Plancia/Timone/Confusione e la divisione del fuoco |
-| **M8** Solitario | 🟡 **in corso** | 15 setup e tabelle presenti; bot attivo con Iniziativa, popup e audit. Restano 82 testi procedura segnaposto e Mine/Base Aerea di N2/N4 non modellate. |
+| **M8** Solitario | 🟡 **in corso** | 15 setup e tabelle presenti; bot attivo con Iniziativa, popup e audit. BL1 e BL2 hanno un replay end-to-end deterministico (`SoloRunner`). Restano 82 testi procedura segnaposto e Mine/Base Aerea di N2/N4 non modellate. |
 
 ### Ultima revisione del solitario
 
@@ -175,7 +175,48 @@ Tutti i test passano: **2570 verifiche, 17 suite, headless.**
   buchi dichiarati (Mine N2, Mine/Base Aerea N4).
 | **M11** Effetti di Battaglia | ✅ **completo** | Suoni sintetizzati, vampe, traccianti, schizzi, esplosioni, incendi, siluri, affondamenti |
 
-### Cosa e' cambiato nell'ultima sessione
+### Cosa e' cambiato nell'ultima sessione (milestone R0)
+
+- **Gli scenari solitari si giocano per intero senza interfaccia.**
+  `core/rules/solo_runner.gd` e' `RefCounted` puro e percorre il ciclo
+  completo: tiro della Tabella Azioni con modificatori automatici, decisione di
+  `SoloAI`, continuazioni prescritte, Scorrere del Tempo, Iniziativa,
+  Battaglia risolta da `SoloBattle` per entrambe le parti, Completamenti, fine
+  scenario e Debriefing. `tools/replay_solo.gd` lo esegue con semi fissi.
+  Il ciclo non introduce regole: mette in fila quelle che c'erano gia' e che
+  finora vivevano solo dentro `ui/main.gd`.
+- **La policy del giocatore simulato e' dichiarata come tale.** Il fascicolo
+  non dice come deve giocare l'essere umano: ogni riga che ne deriva e'
+  marcata `GIOCATORE (policy harness)` nella trascrizione. Segue comunque
+  l'obiettivo stampato - caccia i Convogli, non i corazzati - perche' la prima
+  versione perdeva l'incrociatore ausiliario al primo turno contro Dunkerque e
+  Strasbourg, e la partita non arrivava mai a meta'.
+- **Quattro difetti veri trovati dal replay:**
+  - la riga della Tabella Azioni Britanniche di BL1 contava i Completamenti
+    **tedeschi** invece dei Convogli britannici Completati e distrutti (p.7):
+    la tabella restava inchiodata alla prima riga per tutta la partita. La
+    regola e' passata nel core (`SoloOpponent.action_row_selector`), dove
+    doveva stare;
+  - BL1 non aveva nessuna condizione di fine automatica (p.5: due o meno
+    marker Rendezvous **e** nessuna TF tedesca in gioco);
+  - `remove_rendezvous_at` marca il marker `active = false` senza toglierlo
+    dall'elenco, quindi contare l'Array dava sempre tre. Ora c'e'
+    `GameState.active_rendezvous_count()`;
+  - i risultati che fanno **cambiare** l'Iniziativa venivano trattati come una
+    normale ricerca dell'Iniziativa: due meccaniche diverse, e il Conto si
+    comporta in modo diverso.
+- **Tre regole di BL1 allineate al fascicolo:** la 'A' con Meteo Cattivo
+  diventa 'X' solo se una TF britannica ha un CA, altrimenti 'B' (p.7); i
+  risultati F e X invocano i **Limiti di Carburante** a tre e a due Convogli
+  britannici Completati (p.8); South America e' chiuso al tedesco finche' il
+  risultato a. della Tabella del Rifornimento non lo apre (p.5-6).
+- **Una lacuna del fascicolo, dichiarata invece di tappata.** Se il tedesco
+  perde tutte le Task Force e i Rinforzi mentre restano tre marker Rendezvous,
+  la condizione di fine stampata non puo' piu' avverarsi: un RV si rimuove solo
+  con un Controllo Rifornimento, che richiede una Stazione tedesca. Il replay
+  si ferma e lo dice (`STALLO`, 6 semi su 40 provati); non inventa una fine.
+
+### Cosa e' cambiato nella sessione precedente
 
 - **Le Regole Avanzate si possono finalmente accendere.** Erano complete e
   verdi nei test, ma `BattleState.advanced` restava a `false` e nessuno lo
@@ -199,8 +240,6 @@ Tutti i test passano: **2570 verifiche, 17 suite, headless.**
   Le esclusioni autorevoli stanno in `core/data/map_annotations.json`.
 - **Pannello "ora tocca a"**, coi motivi per cui un'azione non e' dichiarabile
   raggruppati per motivo invece che elencati per azione.
-
-### Cosa e' cambiato nella sessione precedente
 
 #### (piu' vecchio)
 

@@ -12,7 +12,32 @@ func _init() -> void:
 	print("")
 	print("SIMULAZIONE FLUSSO - SOLITARIO")
 	_sim_solo()
+	print("")
+	print("REPLAY COMPLETI - BL1 e BL2")
+	_replays()
 	quit()
+
+
+## Riepilogo dei due replay end-to-end. La trascrizione per esteso la stampa
+## `tools/replay_solo.gd`; qui basta sapere che la partita arriva davvero a una
+## condizione di fine stampata, perche' e' la proprieta' che regge la
+## milestone R0.
+func _replays() -> void:
+	for pair_v: Variant in [["BL1 Raiders of the North Atlantic", 20260803],
+			["BL2 Contain and Destroy", 20260803]]:
+		var pair: Array = pair_v
+		var runner := SoloRunner.new()
+		if not runner.load_scenario(String(pair[0]), int(pair[1])):
+			print("  %s: non giocabile (%s)" % [String(pair[0]), runner.load_error])
+			continue
+		var out := runner.run()
+		var status := "fine stampata" if bool(out["ended"]) \
+			else ("lacuna dichiarata" if bool(out["declared_gap"])
+				else "NON TERMINATO")
+		print("  %-38s %d turni, %d Battaglie, %d Completamenti - %s: %s"
+			% [String(pair[0]), int(out["turns"]), int(out["battles"]),
+				int(out["completions"]), status,
+				String(out["reason"]) if bool(out["ended"]) else String(out["stopped"])])
 
 
 func _chain(tf: TaskForce, graph: MapGraph, n: int) -> void:

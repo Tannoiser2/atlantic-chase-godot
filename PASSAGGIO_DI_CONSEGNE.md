@@ -14,10 +14,10 @@ di lacune gia' chiuse. Questo file dice **da dove ripartire e cosa non rifare**.
 
 Versione digitale di *Atlantic Chase* (GMT Games, 2020) in **Godot 4.7**,
 GDScript. Motore di regole puro e testabile headless, interfaccia sopra.
-**2570 verifiche su 17 suite, tutte verdi.** Repository `Tannoiser2/atlantic-chase-godot`, branch `master`.
+**2650 verifiche su 18 suite, tutte verdi.** Repository `Tannoiser2/atlantic-chase-godot`, branch `master`.
 
 ```bash
-godot --headless --path . --script res://tests/run_tests.gd   # 2570 verifiche
+godot --headless --path . --script res://tests/run_tests.gd   # 2650 verifiche
 godot --path . --script res://tools/smoke_ui.gd               # prova di fumo GUI
 sh tools/build_macos.sh                                       # app per macOS
 ```
@@ -100,6 +100,21 @@ Informazioni. Il registro BL2 del 3 agosto ha trovato questo difetto: la stessa
 TF poteva tracciare due rotte consecutive e veniva annunciata come pronta a
 completare anche con 8 segmenti.
 
+### Un marker Rendezvous rimosso resta nell'elenco
+
+`GameState.remove_rendezvous_at()` non cancella la voce: le mette
+`active = false`, perche' il salvataggio deve ricordare dov'era il marker.
+Contare `rendezvous_markers.size()` da' quindi sempre il numero iniziale.
+La condizione di fine di BL1 dipende proprio da quel conto: usare
+`active_rendezvous_count()`.
+
+### Cambiare l'Iniziativa non e' Cercare l'Iniziativa
+
+Alcuni risultati (`initiative_changes` in `Results.apply`) fanno **passare**
+l'Iniziativa; altri fanno tirare per Cercarla. Sono meccaniche diverse e il
+Conto dell'Iniziativa si comporta in modo diverso. Confonderle e' un errore
+che non produce nessun messaggio: la partita continua e sembra sana.
+
 ### JSON non ha interi
 Lo stato del RNG è un `uint64`; salvato come numero diventa un float e perde i
 bit bassi. Ricaricare dava una partita *simile*, non la stessa. Va salvato come
@@ -173,7 +188,8 @@ core/                    logica pura, nessun Node
                          action_engine, results, completion, convoy,
                          endgame, reorganize, signal_action,
                          victory, victory_tracker,
-                         solo_table, solo_opponent
+                         solo_table, solo_opponent, solo_ai, solo_battle,
+                         solo_runner (ciclo solitario headless)
   battle/                battle_state, gunnery, torpedo, maneuver,
                          break_away, battle
   engine/                rng (con seme e tiri imposti), command_log (undo),
@@ -186,7 +202,7 @@ core/                    logica pura, nessun Node
 ui/                      splash, main (mappa+editor), hud, map_view,
                          battle_view
 tools/                   pipeline Python + strumenti Godot (vedi §8)
-tests/                   11 suite, runner headless
+tests/                   18 suite, runner headless
 ```
 
 ### Il reticolo esagonale
@@ -407,6 +423,32 @@ Due scelte da rispettare se ci metti mano:
   la salta *e* avanza. Un tasto che non risponde perche' c'e' un'animazione e'
   il modo piu' rapido di far odiare gli effetti.
 
+### 5.3.bis R0 CHIUSA: i replay end-to-end del solitario
+
+`core/rules/solo_runner.gd` (`RefCounted` puro) gioca uno scenario solitario
+dall'inizio alla fine senza GUI: Tabella Azioni, modificatori automatici,
+`SoloAI`, continuazioni prescritte, Scorrere del Tempo, Iniziativa, Battaglia
+(entrambe le parti guidate da `SoloBattle`), Completamenti, fine scenario,
+Debriefing. `tools/replay_solo.gd` lo esegue con semi fissi e distingue **OK**
+(fine stampata), **STALLO** (lacuna dichiarata del fascicolo) e **FALLITO**
+(il ciclo non converge). `tests/unit/test_replay.gd` pretende determinismo,
+terminazione, Completamenti in porti leciti, nessuna azione dopo `solo_ended`
+e salvataggio/ricarica identici.
+
+**Attenzione alla duplicazione.** `ui/main.gd` implementa la stessa sequenza
+con le sue attese asincrone e i suoi dialoghi. Finche' non sara' riscritta
+sopra `SoloRunner` (voce aperta in `TODO_REVISIONE.md`), ogni modifica alla
+sequenza va fatta in tutti e due i posti. E' un debito conosciuto, non una
+svista: fondere le due strade richiede di trasformare il ciclo in coroutine,
+e non e' un lavoro da fare di straforo dentro un'altra milestone.
+
+La policy del **giocatore simulato** non e' una regola GMT: il fascicolo non
+dice come deve giocare l'essere umano. Ogni riga che ne deriva e' marcata
+`GIOCATORE (policy harness)` nella trascrizione. Segue l'obiettivo stampato
+(caccia i Convogli, evita i duelli in perdita, rientra quando non resta niente
+da fare) perche' una policy che attacca il primo bersaglio disponibile perdeva
+la partita al primo turno e il replay non arrivava mai a meta'.
+
 ### 5.4 PRIORITA' CORRENTE: finire il modo solitario
 
 **Audit 2 agosto 2026:** `godot --headless --path . --script
@@ -532,6 +574,8 @@ tools/.venv/bin/python tools/write_victory.py       # le 9 tabelle VP
 tools/.venv/bin/python tools/make_art.py            # illustrazioni (ComfyUI)
 godot --path . --script res://tools/screenshot.gd -- out.png [0-3] "scen:<id>"
 godot --path . --script res://tools/smoke_ui.gd     # prova di fumo GUI
+godot --headless --path . --script res://tools/replay_solo.gd          # BL1+BL2
+godot --headless --path . --script res://tools/replay_solo.gd -- BL1 42 # un seme
 sh tools/build_macos.sh          # app macOS firmata e senza quarantena
 sh tools/serve_web.sh            # export web + server locale (iPad)
 ```
