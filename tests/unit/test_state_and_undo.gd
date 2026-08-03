@@ -81,10 +81,12 @@ func test_serialization_roundtrip() -> void:
 	st.round_number = 3
 	st.solo_phase = SoloOpponent.Phase.LATE
 	st.solo_phase_reason = "c'e' stata una Battaglia"
+	st.set_modifier_track(TaskForce.Side.ROYAL_NAVY, -2)
 	var tf := _tf(TaskForce.Side.KRIEGSMARINE, origin)
 	tf.name = "Bismarck TF"
 	tf.speed = TimeLapse.Speed.FAST
 	tf.solo_flags["bl1_completion_port"] = "South America"
+	tf.completed_ships = ["Prinz Eugen"]
 	var cur := origin
 	for i in 3:
 		for cand in graph.adjacent_hexes(cur):
@@ -106,6 +108,8 @@ func test_serialization_roundtrip() -> void:
 	eq(st2.round_number, 3, "round")
 	eq(st2.solo_phase, SoloOpponent.Phase.LATE, "fase solitario")
 	eq(st2.solo_phase_reason, "c'e' stata una Battaglia", "ragione della fase solitario")
+	eq(st2.modifier_track_side, TaskForce.Side.ROYAL_NAVY, "lato del tracciato Modificatori")
+	eq(st2.modifier_track_value, -2, "valore del tracciato Modificatori")
 	eq(st2.task_forces.size(), 1, "una TF")
 	eq(st2.task_forces[0].name, "Bismarck TF", "nome TF")
 	eq(st2.task_forces[0].speed, TimeLapse.Speed.FAST, "velocita'")
@@ -113,6 +117,8 @@ func test_serialization_roundtrip() -> void:
 	eq(st2.task_forces[0].info_count(), 1, "segnalini Informazioni")
 	eq(String(st2.task_forces[0].solo_flags.get("bl1_completion_port", "")),
 		"South America", "flag solitario conservato")
+	eq(st2.task_forces[0].completed_ships, ["Prinz Eugen"],
+		"registro delle navi uscite conservato")
 	true_(st2.info_triggers.has(origin), "inneschi Informazioni conservati")
 	eq(st2.rendezvous_markers.size(), 1, "marker RV conservato")
 	eq(String(st2.rendezvous_at(rv_hex).get("id", "")), "rv-a", "marker RV indicizzato per esagono")

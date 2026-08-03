@@ -139,8 +139,15 @@ static func _matches(ship: Ship, m: Dictionary,
 		return true
 	# --- filtri che vivono nel contesto, validi anche senza nave ---
 	var dest := String(context.get("destination", ""))
+	var destination_aliases: Array[String] = []
+	if dest != "":
+		destination_aliases.append(dest)
+	for alias_v: Variant in context.get("destination_aliases", []):
+		var alias := String(alias_v)
+		if alias != "" and not destination_aliases.has(alias):
+			destination_aliases.append(alias)
 	if m.has("destination"):
-		if dest != String(m["destination"]):
+		if not destination_aliases.has(String(m["destination"])):
 			return false
 	# `destinations` e' l'elenco delle mete che valgono: "3 punti a Murmansk o
 	# Archangel"; `exclude_destinations` e' la riga complementare, "2 punti in
@@ -148,7 +155,7 @@ static func _matches(ship: Ship, m: Dictionary,
 	if m.has("destinations"):
 		var okd := false
 		for d_v: Variant in m["destinations"]:
-			if dest == String(d_v):
+			if destination_aliases.has(String(d_v)):
 				okd = true
 		if not okd:
 			return false
@@ -156,7 +163,7 @@ static func _matches(ship: Ship, m: Dictionary,
 		if dest == "":
 			return false
 		for d_v: Variant in m["exclude_destinations"]:
-			if dest == String(d_v):
+			if destination_aliases.has(String(d_v)):
 				return false
 	if m.has("dispersed"):
 		if bool(m["dispersed"]) != bool(context.get("dispersed", false)):

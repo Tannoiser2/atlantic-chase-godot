@@ -445,6 +445,7 @@ func test_completion_scores() -> void:
 	eq(tf.ships.size(), 0, "e la Task Force lascia il gioco")
 	true_(tf.completed, "risulta Completata")
 	eq(tf.completed_port, "Brest", "nel porto in cui e' arrivata")
+	eq(tf.completed_ships, ["Bismarck"], "ricorda quali navi sono uscite")
 
 	# lo stesso Bismarck DANNEGGIATO vale 2 in Francia ma 3 in Germania:
 	# riportarlo a casa conciato vale piu' che perderlo
@@ -470,6 +471,21 @@ func test_completion_scores() -> void:
 	VictoryTracker.new(v6, st5).convoy_completed("Murmansk", true,
 		TaskForce.Side.ROYAL_NAVY)
 	eq(st5.vp_of(TaskForce.Side.ROYAL_NAVY), 2.0, "disperso: 2")
+
+	# BL1 nomina qualunque Convoglio britannico, non la destinazione: passare sia
+	# Portsmouth sia il suo alias Britain deve applicare la riga una volta sola.
+	var bl1 := Victory.from_scenario(Scenario.load_by_id("BL1 Raiders of the North Atlantic"))
+	var st6 := _state()
+	var convoy := Ship.new("Convoglio")
+	convoy.kind = Ship.Kind.CONVOY
+	var convoy_tf := _tf(TaskForce.Side.ROYAL_NAVY,
+		[convoy] as Array[Ship], graph.port_hex("Portsmouth"))
+	var port := {"name": "Portsmouth", "country": "Britain",
+		"hex": graph.port_hex("Portsmouth")}
+	Completion.resolve(convoy_tf, port, VictoryTracker.new(bl1, st6))
+	eq(st6.vp_of(TaskForce.Side.KRIEGSMARINE), -2.0,
+		"BL1: un Convoglio completato vale -2 una sola volta")
+	eq(st6.convoys_completed, 1, "BL1: un solo Convoglio arrivato")
 
 
 ## La catena intera: una Battaglia che affonda una nave deve segnare i punti.

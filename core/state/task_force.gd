@@ -34,6 +34,10 @@ var evasive: bool = false
 ## in gioco piu' avanti, e da li' devono ripartire.
 var completed: bool = false
 var completed_port: String = ""
+## Navi che hanno lasciato la mappa con un Completamento riuscito. `ships` viene
+## svuotato perche' quelle pedine non sono piu' in gioco, ma il registro e il
+## salvataggio devono poter spiegare che fine ha fatto la TF.
+var completed_ships: Array[String] = []
 
 ## Task Force NON IDENTIFICATA, solo nel modo solitario.
 ##
@@ -136,6 +140,7 @@ func to_dict() -> Dictionary:
 		"id": id, "side": side, "color": color, "slot": slot, "name": name,
 		"ships": sh, "speed": speed, "evasive": evasive, "leader": leader,
 		"completed": completed, "completed_port": completed_port,
+		"completed_ships": completed_ships.duplicate(),
 		"unidentified": unidentified,
 		"solo_flags": solo_flags.duplicate(true),
 		"trajectory": trajectory.to_dict(),
@@ -167,6 +172,8 @@ static func from_dict(d: Dictionary) -> TaskForce:
 	tf.evasive = bool(d.get("evasive", false))
 	tf.completed = bool(d.get("completed", false))
 	tf.completed_port = String(d.get("completed_port", ""))
+	for name_v: Variant in d.get("completed_ships", []):
+		tf.completed_ships.append(String(name_v))
 	tf.leader = String(d.get("leader", ""))
 	tf.solo_flags = (d.get("solo_flags", {}) as Dictionary).duplicate(true)
 	tf.trajectory = Trajectory.from_dict(d.get("trajectory", {}))

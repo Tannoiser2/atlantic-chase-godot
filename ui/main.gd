@@ -981,7 +981,11 @@ func _cycle_tf(step: int) -> void:
 		return
 	var pool := _controllable_forces(state.task_forces)
 	if pool.is_empty():
-		pool = state.task_forces
+		for tf in state.task_forces:
+			if not tf.completed:
+				pool.append(tf)
+	if pool.is_empty():
+		return
 	var i := pool.find(selected_tf)
 	i = wrapi(i + step, 0, pool.size())
 	selected_tf = pool[i]
@@ -1017,17 +1021,22 @@ func _select_first_initiative_force() -> void:
 	var pool := _controllable_forces(state.task_forces)
 	if selected_tf == null and not pool.is_empty():
 		selected_tf = pool[0]
-	if selected_tf == null and not state.task_forces.is_empty():
-		selected_tf = state.task_forces[0]
+	if selected_tf == null:
+		for tf in state.task_forces:
+			if not tf.completed:
+				selected_tf = tf
+				break
 	if traj_layer != null:
 		traj_layer.selected_tf_id = selected_tf.id if selected_tf != null else -1
 
 
 func _can_control_tf(tf: TaskForce) -> bool:
+	if tf == null or tf.completed:
+		return false
 	var player := _solo_player_side()
 	if player < 0:
 		return true
-	return tf != null and tf.side == player
+	return tf.side == player
 
 
 func _controllable_forces(forces: Array) -> Array[TaskForce]:
@@ -1260,6 +1269,7 @@ func _solo_roll_action(auto: bool = false) -> void:
 	else:
 		mods = await _solo_modifiers(t)
 	var result := solo.act(state.rng, _solo_selector_for(tid), mods)
+	state.set_modifier_track(_solo_imaginary_side(), int(result.get("modifier", 0)))
 	_msg("Solitario - %s (%s)" % [t.title, _solo_selector_label(tid)])
 	for line in SoloTable.describe(result).split("\n"):
 		_msg("  " + line)
@@ -1289,6 +1299,7 @@ func _apply_solo_ai_result(result: Dictionary) -> void:
 		for line_v2: Variant in comp.get("log", []):
 			_msg(String(line_v2))
 		log.record("Solitario AI: Completamento")
+		_show_completed_notice(decision["active"], comp, "BOT")
 		state.changed.emit()
 		_queue_next_solo_action("dopo il Completamento")
 	elif String(decision.get("action_key", "")) != "":
@@ -1345,6 +1356,14 @@ func _show_solo_event(result: Dictionary, decision: Dictionary) -> void:
 	_solo_event_panel.visible = false
 	if not _hex_choice_active:
 		board.set_highlight({})
+
+
+func _show_completed_notice(tf: TaskForce, result: Dictionary,
+		actor: String = "Giocatore") -> void:
+	var port := String((result.get("port", {}) as Dictionary).get("name", "porto"))
+	var ships: Array = result.get("ships", [])
+	_msg(("%s - %s ha Completato a %s: %s lascia la mappa e resta nel registro "
+		+ "delle TF uscite.") % [actor, tf.display_name(), port, ", ".join(ships)])
 
 
 func _resolve_solo_ai_action(decision: Dictionary) -> void:
@@ -1471,6 +1490,7 @@ func _solo_roll_any_table() -> void:
 		selector = int((t.rows[j] as Dictionary)["min"])
 	var mods := await _solo_modifiers(t)
 	var result := t.roll_and_read(state.rng, selector, mods)
+	state.set_modifier_track(_solo_imaginary_side(), int(result.get("modifier", 0)))
 	_msg("Solitario - %s" % (t.title if t.title != "" else keys[i]))
 	for line in SoloTable.describe(result).split("\n"):
 		_msg("  " + line)
@@ -1913,7 +1933,8 @@ func _do_completion() -> void:
 	for line_v: Variant in res["log"]:
 		_msg(String(line_v))
 	_msg("%d navi in porto a %s." % [ships, String(chosen["name"])])
-	_resync_selection()
+	_show_completed_notice(selected_tf, res)
+	_select_first_initiative_force()
 	_refresh()
 
 
@@ -2645,6 +2666,7 @@ func _refresh_roster() -> void:
 		_append_rendezvous_markers(out)
 		_append_roster_side(out, TaskForce.Side.KRIEGSMARINE, "Kriegsmarine")
 		_append_roster_side(out, TaskForce.Side.ROYAL_NAVY, "Royal Navy")
+		_append_completed_forces(out)
 	_append_reinforcements(out)
 	_lbl_roster.text = "\n".join(out)
 
@@ -2685,6 +2707,24 @@ func _tf_roster_contents(tf: TaskForce) -> String:
 	for sh in tf.ships:
 		names.append(sh.display())
 	return ", ".join(names)
+
+
+func _append_completed_forces(out: Array[String]) -> void:
+	var completed: Array[TaskForce] = []
+	for tf in state.task_forces:
+		if tf.completed:
+			completed.append(tf)
+	if completed.is_empty():
+		return
+	out.append("")
+	out.append("[b]TF uscite dal gioco (Completamento)[/b]")
+	for tf in completed:
+		var side := "KM" if tf.side == TaskForce.Side.KRIEGSMARINE else "RN"
+		var contents := ", ".join(tf.completed_ships) \
+			if not tf.completed_ships.is_empty() else "navi non registrate"
+		out.append("[color=#8fb7c9]*[/color] %s %s -> [b]%s[/b]" % [
+			side, tf.display_name(), tf.completed_port])
+		out.append("  %s" % contents)
 
 
 func _append_reinforcements(out: Array[String]) -> void:

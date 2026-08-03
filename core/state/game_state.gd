@@ -20,6 +20,12 @@ var initiative: int = TaskForce.Side.KRIEGSMARINE
 var initiative_count: int = 0
 var round_number: int = 1
 
+## Ultimo totale dei Modificatori Comuni mostrato sul tracciato stampato. Il
+## segno e il lato dicono quale dei due segnalini avanza: un valore negativo e'
+## un vantaggio equivalente per l'avversario.
+var modifier_track_value: int = 0
+var modifier_track_side: int = TaskForce.Side.KRIEGSMARINE
+
 ## Esagoni che innescano Informazioni quando ci si pone un segmento (RB p.21):
 ## porti nemici, basi aeree, Stazioni TF nemiche, forze Furtive.
 ## Chiave Vector2i -> Array[String] di motivi.
@@ -84,6 +90,12 @@ var casualties: Array[Dictionary] = []
 
 func add_vp(side: int, amount: float, reason: String = "") -> void:
 	vp[side] = float(vp.get(side, 0.0)) + amount
+	changed.emit()
+
+
+func set_modifier_track(side: int, value: int) -> void:
+	modifier_track_side = side
+	modifier_track_value = value
 	changed.emit()
 
 
@@ -309,6 +321,8 @@ func to_dict() -> Dictionary:
 		"weather": weather,
 		"initiative": initiative,
 		"initiative_count": initiative_count,
+		"modifier_track_value": modifier_track_value,
+		"modifier_track_side": modifier_track_side,
 		"round": round_number,
 		"task_forces": tfs,
 		"info_triggers": trig,
@@ -330,6 +344,8 @@ func apply_dict(d: Dictionary) -> void:
 	weather = int(d.get("weather", TimeLapse.Weather.GOOD))
 	initiative = int(d.get("initiative", 0))
 	initiative_count = int(d.get("initiative_count", 0))
+	modifier_track_value = int(d.get("modifier_track_value", 0))
+	modifier_track_side = int(d.get("modifier_track_side", initiative))
 	round_number = int(d.get("round", 1))
 	vp[TaskForce.Side.KRIEGSMARINE] = float(d.get("vp_km", 0.0))
 	vp[TaskForce.Side.ROYAL_NAVY] = float(d.get("vp_rn", 0.0))

@@ -258,12 +258,14 @@ func resolve(dec: Declaration, state: GameState) -> Dictionary:
 			out["ok"] = true
 			out["error"] = ""
 			out["results"] = [] as Array[String]
+			state.set_modifier_track(dec.active.side, int(out["modifier"]))
 			return out
 		out["modifier"] = int(out["modifier"]) + int(ir["modifier"])
 
 	# 5. tiro
 	if not is_table_driven(dec.action_key):
 		out["ok"] = true
+		state.set_modifier_track(dec.active.side, int(out["modifier"]))
 		return out
 	var dice := state.rng.d6x2("azione %s" % dec.action_key)
 	out["dice"] = dice
@@ -279,6 +281,7 @@ func resolve(dec: Declaration, state: GameState) -> Dictionary:
 	out["result_labels"] = labels
 	out["unverified"] = is_cell_unverified(dec.action_key, total, tt)
 	out["ok"] = true
+	state.set_modifier_track(dec.active.side, int(out["modifier"]))
 	return out
 
 

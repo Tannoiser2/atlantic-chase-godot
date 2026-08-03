@@ -27,6 +27,25 @@ const COLORS := {
 	"Red": Color(0.66, 0.15, 0.15),
 }
 
+const TRACK_MARKERS := {
+	"modifier_km": preload("res://assets/counters/markers_track_modifier.png"),
+	"modifier_rn": preload("res://assets/counters/markers_track_modifierb.png"),
+	"tally_km": preload("res://assets/counters/markers_track_tally_km.png"),
+	"tally_rn": preload("res://assets/counters/markers_track_tally_rn.png"),
+	"vp_km": preload("res://assets/counters/markers_track_vp.png"),
+	"vp_km_10": preload("res://assets/counters/markers_track_vp_10.png"),
+	"vp_rn": preload("res://assets/counters/markers_track_vprn.png"),
+	"vp_rn_10": preload("res://assets/counters/markers_track_vprn_10.png"),
+}
+
+## Centri delle caselle 0 e 9, letti sulla mappa a risoluzione nativa. Il
+## tracciato e' inclinato, quindi ogni colonna ha i propri estremi.
+const TRACK_ENDPOINTS := {
+	"modifier": [Vector2(2801, 2224), Vector2(2939, 1507)],
+	"vp": [Vector2(2899, 2240), Vector2(3024, 1525)],
+	"tally": [Vector2(2998, 2257), Vector2(3107, 1542)],
+}
+
 ## Spessore della linea, in frazione di inradius. Volutamente sottile: la mappa
 ## sotto deve restare leggibile, e con quattro o cinque Traiettorie in acqua
 ## delle strisce spesse diventano un groviglio.
@@ -73,6 +92,7 @@ func _draw() -> void:
 		if not tf.completed:
 			_draw_task_force(tf)
 	_draw_rendezvous_markers()
+	_draw_map_tracks()
 
 	if not preview_hexes.is_empty():
 		_draw_preview()
@@ -266,6 +286,64 @@ func _draw_rendezvous_markers() -> void:
 		draw_rect(rect, Color(0.02, 0.15, 0.20, 0.92), false, 4.0)
 		draw_rect(rect.grow(graph.inradius * 0.06), Color(1, 1, 1, 0.76), false, 2.0)
 		_draw_label(c, "RV", Color(0.02, 0.15, 0.20), 0.32)
+
+
+func _track_position(column: String, value: int) -> Vector2:
+	var ends: Array = TRACK_ENDPOINTS[column]
+	return (ends[0] as Vector2).lerp(ends[1] as Vector2,
+		float(clampi(value, 0, 9)) / 9.0)
+
+
+func _draw_track_counter(texture: Texture2D, column: String, value: int,
+		offset: Vector2 = Vector2.ZERO, exact_label: String = "") -> void:
+	var size := Vector2(texture.get_width(), texture.get_height())
+	var pos := _track_position(column, value) + offset
+	draw_texture_rect(texture, Rect2(pos - size * 0.5, size), false)
+	if exact_label != "":
+		_draw_badge(pos + Vector2(0, size.y * 0.72), exact_label,
+			Color(0.08, 0.09, 0.11), true)
+
+
+## I tre tracciati sono parte della plancia, non del HUD. Mostriamo entrambe le
+## parti anche a zero; un piccolo scostamento evita che due pedine si coprano.
+func _draw_map_tracks() -> void:
+	var km_mod := 0
+	var rn_mod := 0
+	if state.modifier_track_value >= 0:
+		if state.modifier_track_side == TaskForce.Side.KRIEGSMARINE:
+			km_mod = state.modifier_track_value
+		else:
+			rn_mod = state.modifier_track_value
+	else:
+		if state.modifier_track_side == TaskForce.Side.KRIEGSMARINE:
+			rn_mod = -state.modifier_track_value
+		else:
+			km_mod = -state.modifier_track_value
+	_draw_track_counter(TRACK_MARKERS["modifier_km"], "modifier", km_mod,
+		Vector2(-7, -5))
+	_draw_track_counter(TRACK_MARKERS["modifier_rn"], "modifier", rn_mod,
+		Vector2(7, 5))
+
+	var km_vp := int(floor(maxf(state.vp_of(TaskForce.Side.KRIEGSMARINE), 0.0)))
+	var rn_vp := int(floor(maxf(state.vp_of(TaskForce.Side.ROYAL_NAVY), 0.0)))
+	var km_vp_texture: Texture2D = TRACK_MARKERS["vp_km_10"] \
+		if km_vp >= 10 else TRACK_MARKERS["vp_km"]
+	var rn_vp_texture: Texture2D = TRACK_MARKERS["vp_rn_10"] \
+		if rn_vp >= 10 else TRACK_MARKERS["vp_rn"]
+	var km_exact := state.vp_text(TaskForce.Side.KRIEGSMARINE) \
+		if state.vp_of(TaskForce.Side.KRIEGSMARINE) < 0.0 or km_vp >= 20 else ""
+	var rn_exact := state.vp_text(TaskForce.Side.ROYAL_NAVY) \
+		if state.vp_of(TaskForce.Side.ROYAL_NAVY) < 0.0 or rn_vp >= 20 else ""
+	_draw_track_counter(km_vp_texture, "vp", km_vp % 10, Vector2(-7, -5), km_exact)
+	_draw_track_counter(rn_vp_texture, "vp", rn_vp % 10, Vector2(7, 5), rn_exact)
+
+	var inactive := 1 - state.initiative
+	var km_tally := state.initiative_count if inactive == TaskForce.Side.KRIEGSMARINE else 0
+	var rn_tally := state.initiative_count if inactive == TaskForce.Side.ROYAL_NAVY else 0
+	_draw_track_counter(TRACK_MARKERS["tally_km"], "tally", km_tally,
+		Vector2(-7, -5))
+	_draw_track_counter(TRACK_MARKERS["tally_rn"], "tally", rn_tally,
+		Vector2(7, 5))
 
 
 func _draw_end_cap(tip: Vector2, prev: Vector2, col: Color, w: float) -> void:

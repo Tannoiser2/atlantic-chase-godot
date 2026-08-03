@@ -72,11 +72,12 @@ func hits_on(ship: Ship, hits: int, owner_side: int,
 ## "Bergen"), a volte il paese ("France", "Norway", "Germany"). Chi chiama passa
 ## la chiave giusta per lo scenario in corso.
 func ship_completed(ship: Ship, destination: String,
-		owner_side: int) -> Array[String]:
+		owner_side: int, destination_aliases: Array[String] = []) -> Array[String]:
 	if not active():
 		return []
 	return victory.apply_event(state, Victory.Event.SHIP_COMPLETED, ship, "",
-		{"destination": destination, "owner": side_name(owner_side)})
+		{"destination": destination, "destination_aliases": destination_aliases,
+			"owner": side_name(owner_side)})
 
 
 ## Un Convoglio che ha eseguito il Completamento.
@@ -88,9 +89,10 @@ func count_convoy_completed() -> void:
 
 
 func convoy_completed(destination: String, dispersed: bool,
-		owner_side: int) -> Array[String]:
+		owner_side: int, destination_aliases: Array[String] = []) -> Array[String]:
 	if not active():
 		return []
 	return victory.apply_event(state, Victory.Event.CONVOY_COMPLETED, null,
-		"Convoglio", {"destination": destination, "dispersed": dispersed,
+		"Convoglio", {"destination": destination,
+			"destination_aliases": destination_aliases, "dispersed": dispersed,
 			"owner": side_name(owner_side)})

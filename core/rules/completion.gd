@@ -147,6 +147,9 @@ static func resolve(tf: TaskForce, port: Dictionary,
 	var lines: Array[String] = []
 	var pname := String(port.get("name", ""))
 	var country := String(port.get("country", ""))
+	var aliases: Array[String] = []
+	if country != "" and country != pname:
+		aliases.append(country)
 	lines.append("Completamento riuscito a %s: %s lascia il gioco."
 		% [pname, tf.name])
 
@@ -165,20 +168,15 @@ static func resolve(tf: TaskForce, port: Dictionary,
 			continue
 		if is_convoy:
 			lines.append_array(tracker.convoy_completed(pname,
-				s.dispersed, tf.side))
-			# la tabella puo' nominare il paese invece del porto
-			if country != pname:
-				lines.append_array(tracker.convoy_completed(country,
-					s.dispersed, tf.side))
+				s.dispersed, tf.side, aliases))
 		else:
-			lines.append_array(tracker.ship_completed(s, pname, tf.side))
-			if country != pname:
-				lines.append_array(tracker.ship_completed(s, country, tf.side))
+			lines.append_array(tracker.ship_completed(s, pname, tf.side, aliases))
 
 	var names: Array[String] = []
 	for s_v2: Variant in tf.ships:
 		names.append((s_v2 as Ship).name)
 	out["ships"] = names
+	tf.completed_ships = names.duplicate()
 
 	# rimozione: le navi vanno in porto, Stazione e segmenti tornano nella
 	# casella del Display Task Force. In uno scenario e' definitiva; in una

@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **2269 verifiche, 17 suite, headless.**
+Tutti i test passano: **2275 verifiche, 17 suite, headless.**
 
 ---
 
@@ -25,6 +25,13 @@ Tutti i test passano: **2269 verifiche, 17 suite, headless.**
 
 ### Ultima revisione del solitario
 
+- i segnalini originali KM/RN sono ora visibili sulle colonne Modificatori,
+  Punti Vittoria e Conto Iniziativa della plancia stampata; seguono lo stato e
+  sopravvivono al salvataggio;
+- le TF che Completano lasciano correttamente la mappa ma restano elencate nel
+  roster, con navi e porto di arrivo: non sembrano piu' sparite senza motivo;
+- BL1 non raddoppia piu' i VP quando una destinazione vale sia come porto sia
+  come paese: due Convogli britannici arrivati valgono -4, non -8;
 - le TF senza navi a galla spariscono dalla mappa; la cronologia perdite resta
   nel salvataggio per modificatori e Debriefing;
 - il bot non trasforma piu' ogni Traiettoria in un Passare: Scorrere del Tempo,
