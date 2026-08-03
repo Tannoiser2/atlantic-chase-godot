@@ -648,7 +648,7 @@ func _draw_ships_in(band: Rect2, is_active: bool, zone: int) -> void:
 	# con le Regole Avanzate ogni pedina si porta dietro la linguetta
 	# dell'attitudine sul fianco sinistro: senza spazio in piu' finirebbe sopra
 	# la pedina precedente
-	var gap: float = 32.0 if state.advanced else 14.0
+	var gap: float = 46.0 if state.advanced else 14.0
 	var widths: Array[float] = []
 	var texs: Array = []
 	for s in ships:
@@ -714,7 +714,7 @@ func _draw_ships_in(band: Rect2, is_active: bool, zone: int) -> void:
 ## vista - vuol dire chiedere al buio.
 func _draw_attitude_tab(r: Rect2, s: Ship, font: Font) -> void:
 	_draw_small_counter(ATTITUDE_COUNTERS[s.attitude],
-		r.position + Vector2(-33, r.size.y * 0.5 - 15), 30.0)
+		r.position + Vector2(-45, r.size.y * 0.5 - 21), 42.0)
 
 
 ## Gli Effetti Speciali, sotto la pedina.
@@ -1182,8 +1182,10 @@ func refresh() -> void:
 	if _header == null:
 		return
 	var lines: Array[String] = []
-	lines.append("[b]%s[/b] in %s   -   Round [b]%d[/b] di %d   -   fase [b]%s[/b]" % [
+	lines.append("[b]%s[/b] in %s   -   [color=#9edcf2]%s[/color]   -   Round [b]%d[/b] di %d   -   fase [b]%s[/b]" % [
 		BattleState.KIND_LABELS[state.kind], str(state.hex),
+		"Regole avanzate: Attitudini attive" if state.advanced \
+		else "Regole base: nessuna Attitudine",
 		state.round_number, state.last_round,
 		BattleState.PHASE_LABELS[state.phase]])
 	if selected != null:

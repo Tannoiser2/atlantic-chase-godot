@@ -78,7 +78,7 @@ var _bl1_fueling_running: bool = false
 const MAP_TOP := 100.0
 const MAP_LEFT := 310.0
 const MAP_RIGHT := 410.0
-const MAP_BOTTOM := 292.0
+const MAP_BOTTOM := 352.0
 var _map_container: SubViewportContainer = null
 var _map_viewport: SubViewport = null
 var _map_frame: Panel = null
@@ -2703,7 +2703,7 @@ var _lbl_log: RichTextLabel
 var _lbl_roster: RichTextLabel
 var _tf_panel: PanelContainer
 var _tf_info: RichTextLabel
-var _tf_ships: HBoxContainer
+var _tf_ships: HFlowContainer
 var _log_panel: PanelContainer
 var _log_toggle: Button
 var _log_scroll: ScrollContainer
@@ -2747,7 +2747,9 @@ func _build_hud() -> void:
 	# Scheda della sola TF selezionata. Viene inserita piu' sotto, a destra del
 	# pannello di stato, e sparisce quando si clicca sul mare.
 	_tf_panel = PanelContainer.new()
-	_tf_panel.custom_minimum_size = Vector2(430, 0)
+	_tf_panel.custom_minimum_size = Vector2(560, 0)
+	_tf_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_tf_panel.size_flags_stretch_ratio = 0.75
 	_tf_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	_tf_panel.add_theme_stylebox_override("panel", _panel_style())
 	_tf_panel.visible = false
@@ -2757,17 +2759,21 @@ func _build_hud() -> void:
 	_tf_info = RichTextLabel.new()
 	_tf_info.bbcode_enabled = true
 	_tf_info.fit_content = true
-	_tf_info.custom_minimum_size = Vector2(406, 0)
+	_tf_info.custom_minimum_size = Vector2(0, 0)
 	_tf_info.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	tf_col.add_child(_tf_info)
 	var ship_scroll := ScrollContainer.new()
-	ship_scroll.custom_minimum_size = Vector2(406, 72)
-	ship_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	ship_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	ship_scroll.custom_minimum_size = Vector2(0, 128)
+	ship_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	ship_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	ship_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	ship_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	ship_scroll.mouse_filter = Control.MOUSE_FILTER_STOP
 	tf_col.add_child(ship_scroll)
-	_tf_ships = HBoxContainer.new()
-	_tf_ships.add_theme_constant_override("separation", 7)
+	_tf_ships = HFlowContainer.new()
+	_tf_ships.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_tf_ships.add_theme_constant_override("h_separation", 7)
+	_tf_ships.add_theme_constant_override("v_separation", 7)
 	ship_scroll.add_child(_tf_ships)
 
 	# Il registro occupa una colonna richiudibile a destra. Il pulsante resta
@@ -2825,7 +2831,7 @@ func _build_hud() -> void:
 	bottom_row.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	bottom_row.offset_left = 12
 	bottom_row.offset_right = -12
-	bottom_row.offset_top = -280
+	bottom_row.offset_top = -340
 	bottom_row.offset_bottom = -12
 	bottom_row.add_theme_constant_override("separation", 8)
 	bottom_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -3493,13 +3499,6 @@ func _tf_card_text(tf: TaskForce) -> String:
 		t.info_count(), t.contact_count()])
 	if tf.evasive:
 		lines.append("[color=#9ee8ff][b]Manovre Evasive[/b] assegnate[/color]")
-	if tf.leader != "" and not tf.unidentified:
-		var uses := LeaderRules.uses_left(state, tf.leader)
-		lines.append("Comandante: [b]%s[/b] - %s" % [tf.leader,
-			LeaderRules.effect_text(tf.leader)])
-		lines.append("Utilizzi rimasti: [b]%d[/b]%s" % [uses,
-			"" if LeaderRules.is_implemented(tf.leader)
-			else "  [color=#ffd27f](effetto non ancora automatizzato)[/color]"])
 	if tf.unidentified:
 		lines.append("[color=#ffd27f]TF non identificata: composizione nascosta[/color]")
 	elif not _can_control_tf(tf) and solo != null:
@@ -3534,6 +3533,7 @@ func _refresh_tf_panel() -> void:
 		hidden.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		_tf_ships.add_child(hidden)
 		return
+	_add_leader_counter(selected_tf)
 	for ship in selected_tf.ships:
 		var path := ShipRoster.shared().counter_path(ship.name, ship.damaged)
 		if path == "" or not ResourceLoader.exists(path):
@@ -3550,6 +3550,42 @@ func _refresh_tf_panel() -> void:
 		counter.tooltip_text = ship.display()
 		counter.mouse_filter = Control.MOUSE_FILTER_PASS
 		_tf_ships.add_child(counter)
+
+
+const LEADER_COUNTERS := {
+	"Raeder": "res://assets/counters/leader_ge_raeder.png",
+	"Lutjens": "res://assets/counters/leader_ge_lutjens.png",
+	"Krancke": "res://assets/counters/leader_ge_krancke.png",
+	"Marschall": "res://assets/counters/leader_ge_marschall.png",
+	"Prien": "res://assets/counters/leader_ge_prien.png",
+	"Pound": "res://assets/counters/leader_uk_pound.png",
+	"Forbes": "res://assets/counters/leader_uk_forbes.png",
+	"Somerville": "res://assets/counters/leader_uk_somerville.png",
+	"Tovey": "res://assets/counters/leader_uk_tovey.png",
+	"Walker": "res://assets/counters/leader_uk_walker.png",
+	"Gensoul": "res://assets/counters/leader_fr_gensoul.png",
+}
+
+
+func _add_leader_counter(tf: TaskForce) -> void:
+	if tf.leader == "" or not LEADER_COUNTERS.has(tf.leader):
+		return
+	var path := String(LEADER_COUNTERS[tf.leader])
+	if not ResourceLoader.exists(path):
+		return
+	var uses := LeaderRules.uses_left(state, tf.leader)
+	var counter := TextureRect.new()
+	counter.name = "LeaderCounter"
+	counter.texture = load(path)
+	counter.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	counter.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	counter.custom_minimum_size = Vector2(74, 74)
+	counter.tooltip_text = "%s\n%s\nUtilizzi rimasti: %d%s" % [tf.leader,
+		LeaderRules.effect_text(tf.leader), uses,
+		"" if LeaderRules.is_implemented(tf.leader)
+		else "\nEffetto non ancora automatizzato"]
+	counter.mouse_filter = Control.MOUSE_FILTER_STOP
+	_tf_ships.add_child(counter)
 
 func _refresh() -> void:
 	if state == null:

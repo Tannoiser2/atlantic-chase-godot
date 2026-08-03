@@ -73,6 +73,17 @@ func _process(_delta: float) -> bool:
 			return _finish(false, "la composizione TF si sovrappone ancora alla mappa")
 		if tf_panel.get_global_rect().position.x < status_panel.get_global_rect().end.x:
 			return _finish(false, "la composizione TF non e' a destra dello stato")
+		if tf_panel.size.x < 540.0:
+			return _finish(false, "la composizione TF e' ancora troppo stretta")
+		if not _root._tf_ships is HFlowContainer:
+			return _finish(false, "le navi della TF non vanno su piu' righe")
+		if bottom_row.get_global_rect().end.y > root.size.y:
+			return _finish(false, "la fascia inferiore viene tagliata dal viewport")
+		if _target.leader != "":
+			var leader_counter: Control = _root._tf_ships.get_node_or_null(
+				"LeaderCounter") as Control
+			if leader_counter == null or String(leader_counter.tooltip_text) == "":
+				return _finish(false, "il comandante non ha pedina e flyover")
 		_width_before = _root._map_container.size.x
 		_length_before_t = _root.selected_tf.length()
 		var forbidden := InputEventKey.new()

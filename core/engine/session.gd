@@ -14,7 +14,10 @@ static var seed_value: int = 0
 ## tutta la partita. Vive qui e non in GameState solo per arrivare dalla
 ## schermata iniziale; GameState ne tiene la propria copia, che e' quella che
 ## finisce nel salvataggio.
-static var advanced_battle: bool = false
+## Le Battaglie avanzate sono l'esperienza completa e il valore predefinito.
+## La schermata iniziale permette comunque di disattivarle per giocare il
+## regolamento base.
+static var advanced_battle: bool = true
 
 
 static func start(p_scenario_id: String, p_seed: int = 0) -> void:
