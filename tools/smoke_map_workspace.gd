@@ -52,6 +52,16 @@ func _process(_delta: float) -> bool:
 			return _finish(false, "il clic nel SubViewport non seleziona la TF")
 		if _root.cam.zoom.x <= _zoom_before:
 			return _finish(false, "la rotella nel SubViewport non raggiunge la camera")
+		var tf_panel: Control = _root._tf_panel
+		var bottom_row: Control = tf_panel.get_parent()
+		var status_panel: Control = bottom_row.get_node("StatusPanel")
+		if bottom_row.name != "BottomWorkspace" or not tf_panel.visible:
+			return _finish(false, "la composizione TF non vive nella fascia inferiore")
+		if tf_panel.get_global_rect().position.y \
+				< _root._map_container.get_global_rect().end.y:
+			return _finish(false, "la composizione TF si sovrappone ancora alla mappa")
+		if tf_panel.get_global_rect().position.x < status_panel.get_global_rect().end.x:
+			return _finish(false, "la composizione TF non e' a destra dello stato")
 		_width_before = _root._map_container.size.x
 		_length_before_t = _root.selected_tf.length()
 		var forbidden := InputEventKey.new()
@@ -89,7 +99,7 @@ func _process(_delta: float) -> bool:
 			return _finish(false, "la singola procedura BOT non si espande")
 		if expanded_text.contains("dettaglio procedura nuova"):
 			return _finish(false, "espandere una procedura BOT apre anche le altre")
-		return _finish(true, "mappa separata, Scorrere non libero e Registro BOT indipendente")
+		return _finish(true, "mappa e composizione TF separate, Scorrere non libero e Registro BOT indipendente")
 	return false
 
 

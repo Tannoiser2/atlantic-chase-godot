@@ -321,7 +321,6 @@ func _choose_bl2_home_fleet_station(home_fleet: TaskForce = null) -> void:
 
 
 func _process(delta: float) -> void:
-	_position_tf_panel()
 	# tocco prolungato = clic destro
 	if _press_time > 0.0 and not _long_press_done:
 		_press_time += delta
@@ -2672,8 +2671,6 @@ var _log_expanded: bool = true
 var _log_rendered_message_seq: int = -1
 var _tf_card_signature: String = ""
 var _tf_panel_tf_id: int = -1
-var _tf_panel_manual: bool = false
-var _tf_panel_dragging: bool = false
 
 ## Pannello "ora tocca a": chi sta agendo, cosa aspetta il gioco, e cosa NON si
 ## puo' fare con il motivo accanto.
@@ -2707,18 +2704,13 @@ func _build_hud() -> void:
 	hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(hud)
 
-	# Scheda della sola TF selezionata. Segue la pedina sullo schermo e sparisce
-	# quando si clicca sul mare: la mappa non e' piu' incorniciata da due roster.
+	# Scheda della sola TF selezionata. Viene inserita piu' sotto, a destra del
+	# pannello di stato, e sparisce quando si clicca sul mare.
 	_tf_panel = PanelContainer.new()
-	_tf_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	_tf_panel.custom_minimum_size = Vector2(430, 0)
 	_tf_panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	_tf_panel.mouse_default_cursor_shape = Control.CURSOR_MOVE
-	_tf_panel.tooltip_text = "Trascina per spostare la scheda"
-	_tf_panel.gui_input.connect(_on_tf_panel_gui_input)
 	_tf_panel.add_theme_stylebox_override("panel", _panel_style())
 	_tf_panel.visible = false
-	hud.add_child(_tf_panel)
 	var tf_col := VBoxContainer.new()
 	tf_col.add_theme_constant_override("separation", 7)
 	_tf_panel.add_child(tf_col)
@@ -2788,15 +2780,24 @@ func _build_hud() -> void:
 	# bisognava passare il mouse su sei pulsanti, uno dopo l'altro. Qui si
 	# vedono insieme, RAGGRUPPATE PER MOTIVO: quasi sempre e' un motivo solo che
 	# ne blocca quattro, e detto cosi' si capisce cosa fare.
+	var bottom_row := HBoxContainer.new()
+	bottom_row.name = "BottomWorkspace"
+	bottom_row.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	bottom_row.offset_left = 12
+	bottom_row.offset_right = -12
+	bottom_row.offset_top = -280
+	bottom_row.offset_bottom = -12
+	bottom_row.add_theme_constant_override("separation", 8)
+	bottom_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hud.add_child(bottom_row)
+
 	var nowpanel := PanelContainer.new()
-	nowpanel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	nowpanel.offset_left = 12
-	nowpanel.offset_right = -12
-	nowpanel.offset_top = -280
-	nowpanel.offset_bottom = -12
+	nowpanel.name = "StatusPanel"
+	nowpanel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	nowpanel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	nowpanel.mouse_filter = Control.MOUSE_FILTER_STOP
 	nowpanel.add_theme_stylebox_override("panel", _panel_style())
-	hud.add_child(nowpanel)
+	bottom_row.add_child(nowpanel)
 	var now_col := VBoxContainer.new()
 	now_col.add_theme_constant_override("separation", 6)
 	nowpanel.add_child(now_col)
@@ -2832,6 +2833,10 @@ func _build_hud() -> void:
 	_status_choice_buttons.add_theme_constant_override("h_separation", 6)
 	_status_choice_buttons.add_theme_constant_override("v_separation", 4)
 	_status_choice_box.add_child(_status_choice_buttons)
+
+	_tf_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_tf_panel.name = "TaskForcePanel"
+	bottom_row.add_child(_tf_panel)
 
 	# Avviso non modale: porta l'occhio sull'esagono interessato e spiega la
 	# catena tabella -> scelta -> effetto senza fermare il turno del bot.
@@ -3431,11 +3436,9 @@ func _refresh_tf_panel() -> void:
 		_tf_panel.visible = false
 		_tf_card_signature = ""
 		_tf_panel_tf_id = -1
-		_tf_panel_manual = false
 		return
 	if _tf_panel_tf_id != selected_tf.id:
 		_tf_panel_tf_id = selected_tf.id
-		_tf_panel_manual = false
 	_tf_panel.visible = true
 	var signature := JSON.stringify(selected_tf.to_dict()) + ":%d" % active_end
 	if signature == _tf_card_signature:
@@ -3467,61 +3470,6 @@ func _refresh_tf_panel() -> void:
 		counter.tooltip_text = ship.display()
 		counter.mouse_filter = Control.MOUSE_FILTER_PASS
 		_tf_ships.add_child(counter)
-
-
-func _on_tf_panel_gui_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton:
-		var button := event as InputEventMouseButton
-		if button.button_index == MOUSE_BUTTON_LEFT:
-			_tf_panel_dragging = button.pressed
-			_tf_panel_manual = true
-			get_viewport().set_input_as_handled()
-	elif event is InputEventMouseMotion and _tf_panel_dragging:
-		var motion := event as InputEventMouseMotion
-		if not bool(motion.button_mask & MOUSE_BUTTON_MASK_LEFT):
-			_tf_panel_dragging = false
-			return
-		_tf_panel.position = _clamp_tf_panel_position(
-			_tf_panel.position + motion.relative)
-		get_viewport().set_input_as_handled()
-
-
-func _clamp_tf_panel_position(pos: Vector2) -> Vector2:
-	var vp := get_viewport_rect().size
-	var panel_size := Vector2(maxf(_tf_panel.size.x, 430.0),
-		maxf(_tf_panel.size.y, 170.0))
-	var right_limit := vp.x - (424.0 if _log_expanded else 68.0)
-	var bottom_limit := vp.y - MAP_BOTTOM
-	return Vector2(
-		clampf(pos.x, 12.0, maxf(12.0, right_limit - panel_size.x)),
-		clampf(pos.y, 108.0, maxf(108.0, bottom_limit - panel_size.y)))
-
-
-func _position_tf_panel() -> void:
-	if _tf_panel == null or not _tf_panel.visible or selected_tf == null:
-		return
-	if _tf_panel_manual:
-		_tf_panel.position = _clamp_tf_panel_position(_tf_panel.position)
-		return
-	var t := selected_tf.trajectory
-	var h := t.station_hex if t.is_station() else t.end_hex(0)
-	var screen: Vector2 = (cam.get_canvas_transform() * graph.center_of(h)) \
-		+ Vector2(1, MAP_TOP + 1)
-	var vp := get_viewport_rect().size
-	var panel_size := Vector2(maxf(_tf_panel.size.x, 430.0),
-		maxf(_tf_panel.size.y, 170.0))
-	var right_limit := vp.x - (424.0 if _log_expanded else 68.0)
-	var x := screen.x + 30.0
-	if x + panel_size.x > right_limit:
-		x = screen.x - panel_size.x - 30.0
-	x = clampf(x, 12.0, maxf(12.0, right_limit - panel_size.x))
-	var y := screen.y + 24.0
-	var bottom_limit := vp.y - MAP_BOTTOM
-	if y + panel_size.y > bottom_limit:
-		y = screen.y - panel_size.y - 24.0
-	y = clampf(y, 108.0, maxf(108.0, bottom_limit - panel_size.y))
-	_tf_panel.position = _clamp_tf_panel_position(Vector2(x, y))
-
 
 func _refresh() -> void:
 	if state == null:

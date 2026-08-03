@@ -96,9 +96,6 @@ func _process(_delta: float) -> bool:
 	if _frames == 12 and _args.has("evasive") and _root_node.selected_tf != null:
 		_root_node.selected_tf.evasive = true
 		_root_node.state.changed.emit()
-	if _frames == 7 and _args.has("drag-card"):
-		_root_node._tf_panel_manual = true
-		_root_node._tf_panel.position = Vector2(520, 180)
 	if _frames == 6 and _args.has("solo") and _root_node.solo != null:
 		_root_node._change_initiative_to(_root_node._solo_imaginary_side())
 		_root_node._solo_roll_action(true)

@@ -79,9 +79,10 @@ Tutti i test passano: **2476 verifiche, 17 suite, headless.**
   condizioni manuali; `Scenario (B)` mostra obiettivo, fine, setup, rinforzi e
   tabelle del bot. I segnaposto di BL1-BL3 sono stati sostituiti col testo
   trascritto dalla seconda edizione 2022;
-- la scheda flottante della TF si puo' trascinare e resta dove la mette il
-  giocatore; il segnalino Manovre Evasive usa la pedina GMT ed e' visibile
-  accanto alla TF, oltre che dichiarato nella scheda;
+- la scheda della TF selezionata occupa una colonna dedicata a destra dello
+  stato inferiore e non copre piu' la mappa; il segnalino Manovre Evasive usa
+  la pedina GMT ed e' visibile accanto alla TF, oltre che dichiarato nella
+  scheda;
 - la Coordinatrice viene proposta solo se occupa l'esagono Bersaglio (RB
   p.47), invece di elencare tutte le TF amiche;
 - Segnalazione e' disponibile solo se una Traiettoria nemica ha Informazioni;
@@ -96,8 +97,8 @@ Tutti i test passano: **2476 verifiche, 17 suite, headless.**
   Barra, mappa, Registro e stato occupano ora quattro regioni fisicamente
   separate: la mappa vive in un SubViewport centrale e non continua sotto i
   pannelli. Chiudendo il Registro, il suo spazio torna alla mappa;
-- selezionando una TF compare vicino alla pedina una scheda con stato e pedine
-  nave GMT reali; cliccando sul mare la scheda sparisce. Le TF del bot si
+- selezionando una TF compare nella fascia inferiore una scheda con stato e
+  pedine nave GMT reali; cliccando sul mare la scheda sparisce. Le TF del bot si
   possono ispezionare ma restano non comandabili;
 - in modalita' Editor ogni esagono giocabile mostra al centro le coordinate e
   quello scelto viene evidenziato;
