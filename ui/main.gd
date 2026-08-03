@@ -76,11 +76,13 @@ var _hex_choice_prompt: String = ""
 var _bl1_fueling_running: bool = false
 
 const MAP_TOP := 100.0
+const MAP_LEFT := 310.0
 const MAP_RIGHT := 410.0
 const MAP_BOTTOM := 292.0
 var _map_container: SubViewportContainer = null
 var _map_viewport: SubViewport = null
 var _map_frame: Panel = null
+var _inset_panel: PanelContainer = null
 
 
 func _build_map_viewport() -> void:
@@ -91,6 +93,7 @@ func _build_map_viewport() -> void:
 
 	_map_frame = Panel.new()
 	_map_frame.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_map_frame.offset_left = MAP_LEFT
 	_map_frame.offset_top = MAP_TOP
 	_map_frame.offset_right = -MAP_RIGHT
 	_map_frame.offset_bottom = -MAP_BOTTOM
@@ -104,7 +107,7 @@ func _build_map_viewport() -> void:
 
 	_map_container = SubViewportContainer.new()
 	_map_container.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_map_container.offset_left = 1
+	_map_container.offset_left = MAP_LEFT + 1
 	_map_container.offset_top = MAP_TOP + 1
 	_map_container.offset_right = -MAP_RIGHT - 1
 	_map_container.offset_bottom = -MAP_BOTTOM - 1
@@ -2859,8 +2862,48 @@ func _build_hud() -> void:
 	_solo_event_panel.add_child(_lbl_solo_event)
 
 	_build_action_bar(hud)
+	_build_inset_maps(hud)
 	_build_briefing(hud)
 	_build_help(hud)
+
+
+func _build_inset_maps(parent: Control) -> void:
+	_inset_panel = PanelContainer.new()
+	_inset_panel.name = "InsetMaps"
+	_inset_panel.set_anchors_preset(Control.PRESET_LEFT_WIDE)
+	_inset_panel.offset_left = 12
+	_inset_panel.offset_right = MAP_LEFT - 8
+	_inset_panel.offset_top = MAP_TOP
+	_inset_panel.offset_bottom = -MAP_BOTTOM
+	_inset_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	_inset_panel.add_theme_stylebox_override("panel", _panel_style())
+	parent.add_child(_inset_panel)
+
+	var tabs := TabContainer.new()
+	tabs.name = "InsetTabs"
+	tabs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	tabs.tooltip_text = ("Mappe inserto originali. Il reticolo non e' ancora "
+		+ "calibrato: per ora sono riferimenti visivi non interattivi.")
+	_inset_panel.add_child(tabs)
+	_add_inset_map(tabs, "Nord", "Mare del Nord",
+		"res://assets/boards/map_north_sea.jpg")
+	_add_inset_map(tabs, "Norvegia", "Mare di Norvegia",
+		"res://assets/boards/map_norwegian_sea.jpg")
+
+
+func _add_inset_map(tabs: TabContainer, tab_title: String, title: String,
+		path: String) -> void:
+	var image := TextureRect.new()
+	image.name = tab_title
+	image.texture = load(path)
+	image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	image.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	image.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	image.mouse_filter = Control.MOUSE_FILTER_PASS
+	image.tooltip_text = ("%s - riferimento visivo; reticolo non calibrato" % title)
+	tabs.add_child(image)
 
 
 func _toggle_log_panel() -> void:

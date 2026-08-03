@@ -94,9 +94,12 @@ Tutti i test passano: **2476 verifiche, 17 suite, headless.**
   essere trascritti dalla mappa prima di poterle offrire come fonte;
 - HUD della mappa ricostruita: nove azioni illuminate in alto, servizi nella
   seconda riga, guida operativa in basso e registro richiudibile a destra.
-  Barra, mappa, Registro e stato occupano ora quattro regioni fisicamente
-  separate: la mappa vive in un SubViewport centrale e non continua sotto i
-  pannelli. Chiudendo il Registro, il suo spazio torna alla mappa;
+  Barra, mappe inserto, mappa principale, Registro e stato occupano regioni
+  fisicamente separate: la mappa vive in un SubViewport centrale e non continua
+  sotto i pannelli. A sinistra, due schede mostrano le immagini originali del
+  Mare del Nord e del Mare di Norvegia come riferimenti visivi; i loro reticoli
+  restano dichiaratamente non calibrati. Chiudendo il Registro, il suo spazio
+  torna alla mappa;
 - selezionando una TF compare nella fascia inferiore una scheda con stato e
   pedine nave GMT reali; cliccando sul mare la scheda sparisce. Le TF del bot si
   possono ispezionare ma restano non comandabili;

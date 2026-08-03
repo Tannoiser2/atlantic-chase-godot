@@ -52,6 +52,17 @@ func _process(_delta: float) -> bool:
 			return _finish(false, "il clic nel SubViewport non seleziona la TF")
 		if _root.cam.zoom.x <= _zoom_before:
 			return _finish(false, "la rotella nel SubViewport non raggiunge la camera")
+		var inset_panel: Control = _root._inset_panel
+		if inset_panel == null:
+			return _finish(false, "la finestra delle mappe inserto non e' presente")
+		var inset_tabs: TabContainer = inset_panel.get_node("InsetTabs")
+		if inset_tabs.get_child_count() != 2:
+			return _finish(false, "le due mappe inserto non sono presenti")
+		for inset in inset_tabs.get_children():
+			if not inset is TextureRect or (inset as TextureRect).texture == null:
+				return _finish(false, "una mappa inserto non ha caricato la sua immagine")
+		if inset_panel.get_global_rect().end.x > _root._map_container.get_global_rect().position.x:
+			return _finish(false, "le mappe inserto si sovrappongono alla mappa principale")
 		var tf_panel: Control = _root._tf_panel
 		var bottom_row: Control = tf_panel.get_parent()
 		var status_panel: Control = bottom_row.get_node("StatusPanel")
@@ -99,7 +110,7 @@ func _process(_delta: float) -> bool:
 			return _finish(false, "la singola procedura BOT non si espande")
 		if expanded_text.contains("dettaglio procedura nuova"):
 			return _finish(false, "espandere una procedura BOT apre anche le altre")
-		return _finish(true, "mappa e composizione TF separate, Scorrere non libero e Registro BOT indipendente")
+		return _finish(true, "inserti, mappa e composizione TF separati; Scorrere non libero e Registro BOT indipendente")
 	return false
 
 
