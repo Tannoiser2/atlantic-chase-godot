@@ -164,7 +164,8 @@ func test_manual_unplayable_hexes() -> void:
 		Vector2i(5, -1), Vector2i(5, 0), Vector2i(5, 1), Vector2i(5, 3),
 		Vector2i(5, 7), Vector2i(5, 8), Vector2i(6, -2), Vector2i(6, -1),
 		Vector2i(6, 0), Vector2i(6, 1), Vector2i(6, 2), Vector2i(8, -3),
-		Vector2i(9, -4), Vector2i(10, -6), Vector2i(10, -5), Vector2i(12, -7),
+		Vector2i(9, -4), Vector2i(10, -6), Vector2i(10, -5), Vector2i(11, -7),
+		Vector2i(11, -6), Vector2i(12, -7),
 	]
 	for h: Vector2i in excluded:
 		false_(graph.is_playable(h), "%s non e' giocabile" % str(h))

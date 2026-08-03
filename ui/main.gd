@@ -15,6 +15,7 @@ enum Mode { PLAY, EDITOR }
 const SCENARIO_DIR := "res://core/data/scenarios/"
 
 signal _hex_choice_made(h: Vector2i)
+signal _status_choice_made(index: int)
 
 var graph: MapGraph
 var state: GameState
@@ -60,6 +61,7 @@ var vp_tracker: VictoryTracker = null
 var solo: SoloOpponent = null
 
 var _messages: Array[String] = []
+var _message_seq: int = 0
 var _battle_post_time_lapse: Array[TaskForce] = []
 var _hex_choice_active: bool = false
 var _hex_choice_options: Dictionary = {}
@@ -239,6 +241,14 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _on_key(k: InputEventKey) -> void:
+	if _status_choice_active:
+		if k.keycode == KEY_ESCAPE:
+			_complete_status_choice(-1)
+		elif k.keycode >= KEY_1 and k.keycode <= KEY_9:
+			var option := int(k.keycode - KEY_1)
+			if option < _status_choice_option_count:
+				_complete_status_choice(option)
+		return
 	if _hex_choice_active and k.keycode == KEY_ESCAPE:
 		_hex_choice_active = false
 		_hex_choice_options.clear()
@@ -2078,11 +2088,37 @@ func _do_completion() -> void:
 ## Scorrere del Tempo, poi l'Iniziativa passa all'avversario e il conteggio
 ## torna a zero. E' l'unica azione che si dichiara per cedere il turno.
 func _do_pass() -> void:
-	if not selected_tf.trajectory.is_station():
-		await _do_time_lapse(false)
+	var pass_all_name := LeaderRules.pass_all_commander(state, state.initiative)
+	var pass_all := false
+	if pass_all_name != "":
+		var options: Array = [
+			{"label": "Passare con %s" % selected_tf.display_name(),
+				"detail": "Scorrere del Tempo solo per la TF selezionata"},
+			{"label": "Passare Tutti - %s" % pass_all_name,
+				"detail": "Tutte le TF effettuano Scorrere del Tempo; restano %d utilizzi"
+					% LeaderRules.uses_left(state, pass_all_name)},
+		]
+		var choice: int = await Choice.ask(self, "Passare",
+			"Scegli nel pannello come usare l'azione.", options)
+		if choice < 0:
+			_msg("Passare annullato.")
+			return
+		pass_all = choice == 1
+	if pass_all:
+		for tf in state.forces_of(state.initiative):
+			if not tf.trajectory.is_station():
+				await _do_time_lapse_for(tf, false)
+			else:
+				_msg("Passare Tutti: %s e' gia' una Stazione." % tf.display_name())
+		LeaderRules.spend(state, pass_all_name)
+		_msg("%s usa Passare Tutti; utilizzi rimasti: %d."
+			% [pass_all_name, LeaderRules.uses_left(state, pass_all_name)])
 	else:
-		_msg("%s e' gia' una Stazione: nessuno Scorrere del Tempo."
-			% selected_tf.display_name())
+		if not selected_tf.trajectory.is_station():
+			await _do_time_lapse(false)
+		else:
+			_msg("%s e' gia' una Stazione: nessuno Scorrere del Tempo."
+				% selected_tf.display_name())
 	if _report_initiative(Initiative.pass_to_inactive(state)):
 		await _maybe_run_solo_opponent_turn("Passare")
 	_refresh()
@@ -2276,6 +2312,12 @@ var _tf_panel_dragging: bool = false
 ## Pannello "ora tocca a": chi sta agendo, cosa aspetta il gioco, e cosa NON si
 ## puo' fare con il motivo accanto.
 var _lbl_now: RichTextLabel
+var _status_choice_box: VBoxContainer
+var _status_choice_title: Label
+var _status_choice_detail: RichTextLabel
+var _status_choice_buttons: FlowContainer
+var _status_choice_active: bool = false
+var _status_choice_option_count: int = 0
 var _solo_event_panel: PanelContainer
 var _lbl_solo_event: RichTextLabel
 var _solo_event_serial: int = 0
@@ -2342,12 +2384,22 @@ func _build_hud() -> void:
 	hud.add_child(_log_panel)
 	var log_col := VBoxContainer.new()
 	_log_panel.add_child(log_col)
+	var log_header := HBoxContainer.new()
+	log_header.add_theme_constant_override("separation", 6)
+	log_col.add_child(log_header)
 	_log_toggle = Button.new()
 	_log_toggle.text = "Registro  >"
 	_log_toggle.tooltip_text = "Comprimi il registro degli eventi"
 	_log_toggle.focus_mode = Control.FOCUS_NONE
+	_log_toggle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_log_toggle.pressed.connect(_toggle_log_panel)
-	log_col.add_child(_log_toggle)
+	log_header.add_child(_log_toggle)
+	var copy_log := Button.new()
+	copy_log.text = "Copia tutto"
+	copy_log.tooltip_text = "Copia l'intero registro negli appunti"
+	copy_log.focus_mode = Control.FOCUS_NONE
+	copy_log.pressed.connect(_copy_full_log)
+	log_header.add_child(copy_log)
 	_log_scroll = ScrollContainer.new()
 	_log_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	log_col.add_child(_log_scroll)
@@ -2355,7 +2407,9 @@ func _build_hud() -> void:
 	_lbl_log.bbcode_enabled = true
 	_lbl_log.fit_content = true
 	_lbl_log.custom_minimum_size.x = 370
-	_lbl_log.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_lbl_log.selection_enabled = true
+	_lbl_log.context_menu_enabled = true
+	_lbl_log.mouse_filter = Control.MOUSE_FILTER_STOP
 	_log_scroll.add_child(_lbl_log)
 
 	# Pannello "ora tocca a": prende il posto del vecchio registro in basso.
@@ -2370,11 +2424,14 @@ func _build_hud() -> void:
 	nowpanel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	nowpanel.offset_left = 12
 	nowpanel.offset_right = -12
-	nowpanel.offset_top = -220
+	nowpanel.offset_top = -280
 	nowpanel.offset_bottom = -12
-	nowpanel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	nowpanel.mouse_filter = Control.MOUSE_FILTER_STOP
 	nowpanel.add_theme_stylebox_override("panel", _panel_style())
 	hud.add_child(nowpanel)
+	var now_col := VBoxContainer.new()
+	now_col.add_theme_constant_override("separation", 6)
+	nowpanel.add_child(now_col)
 	_lbl_now = RichTextLabel.new()
 	_lbl_now.bbcode_enabled = true
 	# un punto piu' piccolo del resto: e' un pannello di servizio, non deve
@@ -2383,8 +2440,30 @@ func _build_hud() -> void:
 	_lbl_now.add_theme_font_size_override("bold_font_size", 14)
 	_lbl_now.add_theme_font_size_override("italics_font_size", 14)
 	_lbl_now.scroll_active = true
-	_lbl_now.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	nowpanel.add_child(_lbl_now)
+	_lbl_now.selection_enabled = true
+	_lbl_now.context_menu_enabled = true
+	_lbl_now.mouse_filter = Control.MOUSE_FILTER_STOP
+	_lbl_now.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	now_col.add_child(_lbl_now)
+
+	_status_choice_box = VBoxContainer.new()
+	_status_choice_box.add_theme_constant_override("separation", 3)
+	_status_choice_box.visible = false
+	now_col.add_child(_status_choice_box)
+	_status_choice_title = Label.new()
+	_status_choice_title.add_theme_font_size_override("font_size", 15)
+	_status_choice_box.add_child(_status_choice_title)
+	_status_choice_detail = RichTextLabel.new()
+	_status_choice_detail.bbcode_enabled = true
+	_status_choice_detail.fit_content = true
+	_status_choice_detail.selection_enabled = true
+	_status_choice_detail.context_menu_enabled = true
+	_status_choice_detail.custom_minimum_size.y = 22
+	_status_choice_box.add_child(_status_choice_detail)
+	_status_choice_buttons = FlowContainer.new()
+	_status_choice_buttons.add_theme_constant_override("h_separation", 6)
+	_status_choice_buttons.add_theme_constant_override("v_separation", 4)
+	_status_choice_box.add_child(_status_choice_buttons)
 
 	# Avviso non modale: porta l'occhio sull'esagono interessato e spiega la
 	# catena tabella -> scelta -> effetto senza fermare il turno del bot.
@@ -2418,6 +2497,60 @@ func _toggle_log_panel() -> void:
 	_log_toggle.text = "Registro  >" if _log_expanded else "<"
 	_log_toggle.tooltip_text = "Comprimi il registro degli eventi" \
 		if _log_expanded else "Apri il registro degli eventi"
+
+
+func _copy_full_log() -> void:
+	var lines: Array[String] = ["Mosse: %d" % log.applied_count() if log else ""]
+	lines.append_array(_messages)
+	DisplayServer.clipboard_set("\n".join(lines))
+	_msg("Registro completo copiato negli appunti.")
+	_refresh()
+
+
+func _status_choose(title: String, description: String, options: Array,
+		allow_cancel: bool = true) -> int:
+	if options.is_empty() or _status_choice_box == null:
+		return -1
+	if _status_choice_active:
+		_msg("Completa prima la scelta gia' aperta nel pannello di stato.")
+		return -1
+	_status_choice_active = true
+	_status_choice_option_count = options.size()
+	_status_choice_title.text = title
+	_status_choice_detail.text = description
+	for child in _status_choice_buttons.get_children():
+		child.queue_free()
+	for i in options.size():
+		var option: Dictionary = options[i]
+		var button := Button.new()
+		button.text = String(option.get("label", "Opzione %d" % (i + 1)))
+		button.tooltip_text = String(option.get("detail", ""))
+		button.custom_minimum_size.y = 34
+		var index := i
+		button.pressed.connect(func() -> void: _complete_status_choice(index))
+		_status_choice_buttons.add_child(button)
+	if allow_cancel:
+		var cancel := Button.new()
+		cancel.text = "Annulla"
+		cancel.custom_minimum_size.y = 34
+		cancel.pressed.connect(func() -> void: _complete_status_choice(-1))
+		_status_choice_buttons.add_child(cancel)
+	_status_choice_box.visible = true
+	_refresh_now()
+	var chosen: int = await _status_choice_made
+	_status_choice_active = false
+	_status_choice_option_count = 0
+	_status_choice_box.visible = false
+	for child in _status_choice_buttons.get_children():
+		child.queue_free()
+	_refresh_now()
+	return chosen
+
+
+func _complete_status_choice(index: int) -> void:
+	if not _status_choice_active:
+		return
+	_status_choice_made.emit(index)
 
 
 func _solo_event_style() -> StyleBoxFlat:
@@ -2806,8 +2939,14 @@ func _build_help(root: Control) -> void:
   Ctrl+Z / Ctrl+Shift+Z   annulla / ripristina
 
 [b]Guida in tempo reale[/b]
-  Il pannello in basso a destra dice chi ha l'Iniziativa,
-  cosa puoi fare ora e perche' un'azione e' bloccata.
+	  Il pannello in basso dice chi ha l'Iniziativa, cosa puoi fare ora e
+	  perche' un'azione e' bloccata. Le scelte compaiono li' come pulsanti.
+	  Registro e pannello di stato consentono di selezionare e copiare il testo.
+
+[b]Comandanti[/b]
+	  La scheda TF mostra effetto e utilizzi residui. Raeder e Pound offrono
+	  Passare Tutti quando dichiari Passare; gli altri effetti sono indicati
+	  esplicitamente come automatizzati o ancora manuali.
 
 [b]In Battaglia[/b]
   SPAZIO                     risolve la fase corrente
@@ -2834,9 +2973,8 @@ func _toggle_help() -> void:
 
 
 func _msg(s: String) -> void:
-	_messages.append(s)
-	if _messages.size() > 8:
-		_messages.pop_front()
+	_message_seq += 1
+	_messages.append("%04d  %s" % [_message_seq, s])
 
 
 func _tf_card_text(tf: TaskForce) -> String:
@@ -2861,7 +2999,12 @@ func _tf_card_text(tf: TaskForce) -> String:
 	if tf.evasive:
 		lines.append("[color=#9ee8ff][b]Manovre Evasive[/b] assegnate[/color]")
 	if tf.leader != "" and not tf.unidentified:
-		lines.append("Comandante: [b]%s[/b]" % tf.leader)
+		var uses := LeaderRules.uses_left(state, tf.leader)
+		lines.append("Comandante: [b]%s[/b] - %s" % [tf.leader,
+			LeaderRules.effect_text(tf.leader)])
+		lines.append("Utilizzi rimasti: [b]%d[/b]%s" % [uses,
+			"" if LeaderRules.is_implemented(tf.leader)
+			else "  [color=#ffd27f](effetto non ancora automatizzato)[/color]"])
 	if tf.unidentified:
 		lines.append("[color=#ffd27f]TF non identificata: composizione nascosta[/color]")
 	elif not _can_control_tf(tf) and solo != null:
@@ -2982,6 +3125,14 @@ func _refresh() -> void:
 		lg.append("  " + m)
 	if _lbl_log != null:
 		_lbl_log.text = "\n".join(lg)
+		call_deferred("_scroll_log_to_end")
+
+
+func _scroll_log_to_end() -> void:
+	if _log_scroll == null or not _log_expanded:
+		return
+	var bar := _log_scroll.get_v_scroll_bar()
+	_log_scroll.scroll_vertical = int(bar.max_value)
 
 
 func _refresh_roster() -> void:

@@ -109,6 +109,13 @@ func _process(_delta: float) -> bool:
 				_root_node.state.rng.push_forced([6])
 				_root_node._kick_bl1_fueling_check()
 				break
+	if _frames == 6 and _args.has("pass-all"):
+		for tf in _root_node.state.task_forces:
+			if tf.leader == "Raeder":
+				_root_node.selected_tf = tf
+				_root_node.traj_layer.selected_tf_id = tf.id
+				_root_node._do_pass()
+				break
 	# "rounds:N": preme SPAZIO N volte per portare la Battaglia avanti invece di
 	# fotografarla allo schieramento. Le prime N-1 pressioni sono subito, l'ULTIMA
 	# arriva due fotogrammi prima dello scatto: e' l'unico modo di cogliere una

@@ -28,6 +28,7 @@ func run() -> void:
 	test_interruption_table()
 	test_interruption_results()
 	test_rng_determinism()
+	test_raeder_pass_all_uses()
 
 
 func _chain(n: int) -> Trajectory:
@@ -245,3 +246,24 @@ func test_rng_determinism() -> void:
 	eq(c.d6("prova"), 1, "consumati in ordine")
 	true_(c.log.size() >= 4, "tutti i tiri sono registrati")
 	eq(c.forced_remaining(), 0, "coda dei tiri imposti esaurita")
+
+
+func test_raeder_pass_all_uses() -> void:
+	_begin("Raeder: due usi di Passare Tutti (RB p.10)")
+	var st := GameState.new(graph, 1)
+	var tf := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
+	tf.leader = "Raeder"
+	st.add_task_force(tf)
+	true_(LeaderRules.effect_text("Raeder").contains("Passare Tutti"),
+		"la scheda dichiara l'effetto stampato")
+	true_(LeaderRules.is_implemented("Raeder"), "l'effetto e' digitalizzato")
+	eq(LeaderRules.pass_all_commander(st, TaskForce.Side.KRIEGSMARINE), "Raeder",
+		"Raeder e' disponibile al tedesco")
+	eq(LeaderRules.uses_left(st, "Raeder"), 2, "parte con due utilizzi")
+	true_(LeaderRules.spend(st, "Raeder"), "primo utilizzo")
+	eq(LeaderRules.uses_left(st, "Raeder"), 1, "ne resta uno")
+	true_(LeaderRules.spend(st, "Raeder"), "secondo utilizzo")
+	eq(LeaderRules.uses_left(st, "Raeder"), 0, "utilizzi esauriti")
+	false_(LeaderRules.spend(st, "Raeder"), "non concede un terzo utilizzo")
+	eq(LeaderRules.pass_all_commander(st, TaskForce.Side.KRIEGSMARINE), "",
+		"Passare Tutti non e' piu' offerto")

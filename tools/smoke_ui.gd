@@ -26,6 +26,8 @@ var _n := 0
 var _root: Node = null
 var _failures: Array[String] = []
 var _phases_seen: Array[String] = []
+var _closing_frames := 0
+var _exit_code := 0
 
 
 var _advanced := false
@@ -48,6 +50,12 @@ func _key(code: int) -> void:
 
 
 func _process(_delta: float) -> bool:
+	if _closing_frames > 0:
+		_closing_frames -= 1
+		if _closing_frames == 0:
+			quit(_exit_code)
+			return true
+		return false
 	_n += 1
 	if _n < 3:
 		return false
@@ -128,10 +136,13 @@ func _done() -> bool:
 	print("")
 	if _failures.is_empty():
 		print("PROVA DI FUMO INTERFACCIA: tutto risponde.")
-		quit(0)
+		_exit_code = 0
 	else:
 		print("PROVA DI FUMO INTERFACCIA: %d problemi" % _failures.size())
 		for f in _failures:
 			print("  - %s" % f)
-		quit(1)
-	return true
+		_exit_code = 1
+	_root.queue_free()
+	_root = null
+	_closing_frames = 3
+	return false

@@ -99,6 +99,7 @@ func test_serialization_roundtrip() -> void:
 	st.add_info_trigger(origin, "base aerea tedesca")
 	var rv_hex := graph.adjacent_hexes(origin)[1]
 	st.rendezvous_markers.append({"id": "rv-a", "q": rv_hex.x, "r": rv_hex.y})
+	st.commander_uses["Raeder"] = 1
 
 	var d := st.to_dict()
 	var st2 := GameState.new(graph, 0)
@@ -122,6 +123,7 @@ func test_serialization_roundtrip() -> void:
 	true_(st2.info_triggers.has(origin), "inneschi Informazioni conservati")
 	eq(st2.rendezvous_markers.size(), 1, "marker RV conservato")
 	eq(String(st2.rendezvous_at(rv_hex).get("id", "")), "rv-a", "marker RV indicizzato per esagono")
+	eq(int(st2.commander_uses.get("Raeder", 0)), 1, "utilizzi del Comandante conservati")
 	true_(st2.remove_rendezvous_at(rv_hex), "marker RV rimuovibile")
 	false_(bool(st2.rendezvous_at(rv_hex).get("active", false)), "marker RV non piu' attivo")
 

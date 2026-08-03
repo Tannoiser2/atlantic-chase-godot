@@ -17,6 +17,12 @@ static func ask(parent: Node, title: String, description: String,
 		options: Array, allow_cancel: bool = true) -> int:
 	if options.is_empty():
 		return -1
+	# La mappa dispone di un pannello di stato persistente: le decisioni durante
+	# il gioco devono restare nel contesto, non coprire la plancia con un modale.
+	# Le altre viste continuano a usare il dialogo generico.
+	if parent.has_method("_status_choose"):
+		return await parent.call("_status_choose", title, description,
+			options, allow_cancel)
 	var layer := CanvasLayer.new()
 	layer.layer = 40
 	parent.add_child(layer)

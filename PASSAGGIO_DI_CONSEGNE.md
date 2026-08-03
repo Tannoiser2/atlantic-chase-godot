@@ -12,10 +12,10 @@ Questo file dice **da dove ripartire e cosa non rifare**.
 
 Versione digitale di *Atlantic Chase* (GMT Games, 2020) in **Godot 4.7**,
 GDScript. Motore di regole puro e testabile headless, interfaccia sopra.
-**2321 verifiche su 17 suite, tutte verdi.** Repository `Tannoiser2/atlantic-chase-godot`, branch `master`.
+**2334 verifiche su 17 suite, tutte verdi.** Repository `Tannoiser2/atlantic-chase-godot`, branch `master`.
 
 ```bash
-godot --headless --path . --script res://tests/run_tests.gd   # 2321 verifiche
+godot --headless --path . --script res://tests/run_tests.gd   # 2334 verifiche
 godot --path . --script res://tools/smoke_ui.gd               # prova di fumo GUI
 sh tools/build_macos.sh                                       # app per macOS
 ```
@@ -143,7 +143,7 @@ rimpicciolisce (`tools/make_art.py`).
 ```
 core/                    logica pura, nessun Node
   map/hex.gd             coordinate assiali su reticolo RUOTATO (44.28°)
-  map/map_graph.gd       131 esagoni, lati negati, Canale di Kiel, 22 porti
+  map/map_graph.gd       129 esagoni, lati negati, Canale di Kiel, 22 porti
   state/                 trajectory, ship, ship_roster, task_force,
                          game_state (serializzabile), scenario
   rules/                 time_lapse, trajectory_total, interruption,
