@@ -9,9 +9,10 @@
  "info_triggers": [],
  "briefing": {
   "title": "BL3 Raiders of the North Sea",
-  "end": "Vedi il fascicolo solitario e il file core/data/solo corrispondente.",
+  "objective": "Colpisci duramente i Convogli britannici e, se possibile, affonda un incrociatore o una nave maggiore senza perdere alcuna nave tedesca nel Mare del Nord.",
+  "end": "Lo scenario termina quando la Germania non ha piu' Task Force in gioco, oppure quando due Convogli e/o TF non identificate hanno Completato o sono state distrutte.",
   "victory": "Modo solitario BL3: scenario non giocabile sulla mappa grande finche' non viene calibrato l'inserto; Debriefing trascritto come riferimento.",
-  "historical": "Scenario solitario trascritto dal fascicolo; schieramento non proveniente da VASSAL."
+  "historical": "Febbraio 1940. Raeder cerca il traffico britannico da e verso la Norvegia e tenta di attirare le navi nemiche sotto i cieli controllati dalla Luftwaffe."
  },
  "setup_notes": [
   "Mappa Inserto del Mare del Nord: griglia non calibrata in questo progetto. Le tabelle sono trascritte, ma lo schieramento non e' convertibile sulla Mappa Operazionale senza calibrare l'inserto."

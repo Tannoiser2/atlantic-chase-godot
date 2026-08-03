@@ -147,9 +147,10 @@
  "info_triggers": [],
  "briefing": {
   "title": "BL2 Contain and Destroy",
-  "end": "Vedi il fascicolo solitario e il file core/data/solo corrispondente.",
+  "objective": "Metti a segno Colpi sui Convogli tedeschi, proteggi quelli britannici, affonda i corsari tedeschi e non provocare un Incidente Internazionale.",
+  "end": "Lo scenario termina quando due Convogli britannici e/o tedeschi hanno Completato, oppure quando sono state affondate quattro navi; un Convoglio distrutto conta come nave. Puo' terminare anche per la Tabella delle Azioni Tedesche.",
   "victory": "Modo solitario BL2: il giocatore britannico calcola un solo punteggio e legge la Tabella dell'Esito.",
-  "historical": "Scenario solitario trascritto dal fascicolo; schieramento non proveniente da VASSAL."
+  "historical": "Settembre 1939. L'Ammiragliato tenta di chiudere la Kriegsmarine nel Mare del Nord mentre il traffico mercantile di entrambe le parti e' ancora esposto."
  },
  "setup_notes": [
   "Meteo Buono; iniziativa britannica. Mappa operazionale. Nessuna TF tedesca iniziale. Rodney e Valiant nel Gruppo Rinforzi A a Scapa Flow; navi francesi e Gensoul nel Gruppo Rinforzi B. Stazione TF britannica adiacente a qualsiasi porto controllato dal britannico eccetto Scapa Flow e Methil; Convoglio Halifax-Clyde/Liverpool 11 segmenti; Convoglio Africa-Portsmouth 8 segmenti.",

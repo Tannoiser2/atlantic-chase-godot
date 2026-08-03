@@ -128,6 +128,14 @@ func test_briefings() -> void:
 	true_(String(op5.briefing.get("victory", "")).contains("Bismarck"),
 		"la condizione di vittoria cita la Bismarck")
 
+	for solo_id in ["BL1 Raiders of the North Atlantic",
+			"BL2 Contain and Destroy", "BL3 Raiders of the North Sea"]:
+		var solo_brief := Scenario.load_by_id(solo_id).briefing_text()
+		false_(solo_brief.contains("Vedi il fascicolo"),
+			"%s mostra la vera condizione di fine, non un rinvio" % solo_id)
+	true_(Scenario.load_by_id("BL1 Raiders of the North Atlantic")
+		.briefing_text().contains("OBIETTIVO"), "BL1 mostra l'obiettivo")
+
 
 func test_victory_points() -> void:
 	_begin("Punti Vittoria")

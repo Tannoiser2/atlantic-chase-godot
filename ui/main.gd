@@ -245,6 +245,10 @@ func _on_key(k: InputEventKey) -> void:
 		_hex_choice_made.emit(Vector2i.MAX)
 		_refresh()
 		return
+	if k.keycode == KEY_ESCAPE and _briefing_panel != null \
+			and _briefing_panel.visible:
+		_briefing_panel.visible = false
+		return
 	match k.keycode:
 		KEY_Z:
 			if k.ctrl_pressed or k.meta_pressed:
@@ -308,7 +312,7 @@ func _on_key(k: InputEventKey) -> void:
 		KEY_O:
 			await _do_solo()
 		KEY_B:
-			_briefing_panel.visible = not _briefing_panel.visible
+			_toggle_briefing()
 		KEY_0:
 			# scorciatoia: apre una Battaglia fra la TF selezionata e la piu'
 			# vicina avversaria, senza passare da un'azione. Serve a provare la
@@ -1199,12 +1203,24 @@ func _show_outcome() -> void:
 	if victory == null:
 		return
 	_msg("--- ESITO ---")
-	for line in victory.describe(state).split("\n"):
+	var description := victory.describe(state)
+	for line in description.split("\n"):
 		_msg(line)
 	var late := Endgame.notice(state, scenario.rules() if scenario != null
 		else {}, graph, _port_control())
 	if late != "":
 		_msg(late)
+	var text := "[b]VALORI SULLA MAPPA[/b]\n"
+	text += "Modificatori: [b]%+d[/b] (%s)    Conto Iniziativa: [b]%d[/b]\n" % [
+		state.modifier_track_value,
+		Initiative.side_name(state.modifier_track_side), state.initiative_count]
+	text += "Punti: Kriegsmarine [b]%s[/b], Royal Navy [b]%s[/b]\n\n" % [
+		state.vp_text(TaskForce.Side.KRIEGSMARINE),
+		state.vp_text(TaskForce.Side.ROYAL_NAVY)]
+	text += "[b]PUNTEGGIO ED ESITO CORRENTE[/b]\n" + description
+	if late != "":
+		text += "\n\n[color=#ff9a3c][b]FINE PARTITA[/b]\n%s[/color]" % late
+	_show_info_panel("Punteggio ed Esito", text)
 
 
 # --------------------------------------------------------------- solitario --
@@ -2217,6 +2233,7 @@ var _lbl_solo_event: RichTextLabel
 var _solo_event_serial: int = 0
 var _help: PanelContainer
 var _briefing_panel: PanelContainer
+var _lbl_briefing_title: Label
 var _lbl_briefing: RichTextLabel
 var _bar: ActionBar
 var _battle_layer: CanvasLayer
@@ -2594,7 +2611,7 @@ func _build_action_bar(root: Control) -> void:
 		_resync_selection()
 		_refresh())
 	_bar.briefing_toggled.connect(func() -> void:
-		_briefing_panel.visible = not _briefing_panel.visible)
+		_toggle_briefing())
 	_bar.help_toggled.connect(_toggle_help)
 	_bar.scenario_step.connect(func(d: int) -> void:
 		_load_scenario_at(scenario_index + d))
@@ -2617,25 +2634,84 @@ func _toggle_editor() -> void:
 
 func _build_briefing(root: Control) -> void:
 	_briefing_panel = PanelContainer.new()
-	_briefing_panel.set_anchors_preset(Control.PRESET_CENTER_RIGHT)
-	_briefing_panel.position = Vector2(-560, -300)
+	_briefing_panel.set_anchor(SIDE_LEFT, 0.14)
+	_briefing_panel.set_anchor(SIDE_TOP, 0.13)
+	_briefing_panel.set_anchor(SIDE_RIGHT, 0.86)
+	_briefing_panel.set_anchor(SIDE_BOTTOM, 0.78)
+	_briefing_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	_briefing_panel.visible = false
 	_briefing_panel.add_theme_stylebox_override("panel", _panel_style())
 	root.add_child(_briefing_panel)
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 8)
+	_briefing_panel.add_child(col)
+	var header := HBoxContainer.new()
+	col.add_child(header)
+	_lbl_briefing_title = Label.new()
+	_lbl_briefing_title.text = "Scenario"
+	_lbl_briefing_title.add_theme_font_size_override("font_size", 19)
+	_lbl_briefing_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_child(_lbl_briefing_title)
+	var close := Button.new()
+	close.text = "X"
+	close.tooltip_text = "Chiudi"
+	close.custom_minimum_size = Vector2(36, 32)
+	close.focus_mode = Control.FOCUS_NONE
+	close.pressed.connect(func() -> void: _briefing_panel.visible = false)
+	header.add_child(close)
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	col.add_child(scroll)
 	_lbl_briefing = RichTextLabel.new()
 	_lbl_briefing.bbcode_enabled = true
-	_lbl_briefing.custom_minimum_size = Vector2(520, 600)
-	_briefing_panel.add_child(_lbl_briefing)
+	_lbl_briefing.fit_content = true
+	_lbl_briefing.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_lbl_briefing.mouse_filter = Control.MOUSE_FILTER_PASS
+	scroll.add_child(_lbl_briefing)
+
+
+func _show_info_panel(title: String, text: String) -> void:
+	_lbl_briefing_title.text = title
+	_lbl_briefing.text = text
+	_briefing_panel.visible = true
+
+
+func _toggle_briefing() -> void:
+	if _briefing_panel.visible and _lbl_briefing_title.text == "Scenario":
+		_briefing_panel.visible = false
+		return
+	_update_briefing()
+	_briefing_panel.visible = true
 
 
 func _update_briefing() -> void:
 	if _lbl_briefing == null or scenario == null:
 		return
 	var txt := scenario.briefing_text()
+	txt += "\n\n[b]SCHIERAMENTO[/b]\n%d Task Force, %d navi" % [
+		scenario.task_forces.size(), scenario.ship_count()]
+	if scenario.reinforcement_count() > 0:
+		txt += ", %d navi di rinforzo" % scenario.reinforcement_count()
+	for note_v: Variant in scenario.raw_setup_notes():
+		txt += "\n- " + String(note_v)
+	if solo != null:
+		var table_names: Array[String] = []
+		for table_v: Variant in solo.tables.values():
+			var table: SoloTable = table_v
+			table_names.append(table.title if table.title != "" else "Tabella senza titolo")
+		txt += "\n\n[b]AVVERSARIO IMMAGINARIO[/b]\nFase: [b]%s[/b]" % _solo_phase_label()
+		if not table_names.is_empty():
+			txt += "\nTabelle disponibili: " + ", ".join(table_names)
+	if victory != null and not victory.notes.is_empty():
+		txt += "\n\n[b]NOTE DI PUNTEGGIO[/b]"
+		for note_v: Variant in victory.notes:
+			txt += "\n- " + String(note_v)
 	if scenario.has_import_warnings():
 		txt += "\n\n[color=#ff9a3c][b]Avvisi di import[/b][/color]"
 		for w_v: Variant in scenario.import_warnings:
 			txt += "\n  " + String(w_v)
+	_lbl_briefing_title.text = "Scenario"
 	_lbl_briefing.text = txt
 
 

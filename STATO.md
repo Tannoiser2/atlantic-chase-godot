@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **2282 verifiche, 17 suite, headless.**
+Tutti i test passano: **2286 verifiche, 17 suite, headless.**
 
 ---
 
@@ -25,6 +25,13 @@ Tutti i test passano: **2282 verifiche, 17 suite, headless.**
 
 ### Ultima revisione del solitario
 
+- le pedine Modificatori, VP e Conto Iniziativa seguono l'inclinazione delle
+  rispettive colonne; i punteggi negativi avanzano della loro grandezza sulla
+  traccia e conservano il segno nel badge, invece di restare fermi sullo zero;
+- `Punteggio (V)` apre un pannello con valori correnti, riga di Esito e
+  condizioni manuali; `Scenario (B)` mostra obiettivo, fine, setup, rinforzi e
+  tabelle del bot. I segnaposto di BL1-BL3 sono stati sostituiti col testo
+  trascritto dalla seconda edizione 2022;
 - la scheda flottante della TF si puo' trascinare e resta dove la mette il
   giocatore; il segnalino Manovre Evasive usa la pedina GMT ed e' visibile
   accanto alla TF, oltre che dichiarato nella scheda;

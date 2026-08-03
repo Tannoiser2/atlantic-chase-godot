@@ -246,9 +246,10 @@
  "info_triggers": [],
  "briefing": {
   "title": "BL1 Raiders of the North Atlantic",
-  "end": "Vedi il fascicolo solitario e il file core/data/solo corrispondente.",
+  "objective": "Metti a segno Colpi sui Convogli britannici, senza perdere alcuna nave tedesca. Le navi possono Completare a Wilhelmshaven, Kiel o Murmansk; un Rendezvous puo' cambiare il loro obiettivo.",
+  "end": "Lo scenario termina quando restano due o meno marker Rendezvous e la Germania non ha piu' Task Force in gioco. Puo' terminare anche per un risultato della Tabella delle Azioni Britanniche.",
   "victory": "Modo solitario BL1: il giocatore tedesco calcola un solo punteggio e legge la Tabella dell'Esito.",
-  "historical": "Scenario solitario trascritto dal fascicolo; schieramento non proveniente da VASSAL."
+  "historical": "Settembre 1939. Raeder ordina ai corsari gia' oltre il Mare del Nord di superare il blocco in formazione e colpire il traffico mercantile britannico."
  },
  "setup_notes": [
   "Meteo Buono; iniziativa tedesca. Mappa operazionale. Schieramento dal fascicolo: corsari tedeschi e convogli britannici con rotte stampate.",

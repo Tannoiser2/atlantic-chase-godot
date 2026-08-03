@@ -81,6 +81,18 @@ func _process(_delta: float) -> bool:
 		_root_node._toggle_editor()
 	if _frames == 6 and _args.has("collapse-log"):
 		_root_node._toggle_log_panel()
+	if _frames == 6 and _args.has("tracks"):
+		_root_node.state.modifier_track_side = TaskForce.Side.KRIEGSMARINE
+		_root_node.state.modifier_track_value = 4
+		_root_node.state.vp[TaskForce.Side.KRIEGSMARINE] = -8.0
+		_root_node.state.vp[TaskForce.Side.ROYAL_NAVY] = 6.5
+		_root_node.state.initiative = TaskForce.Side.KRIEGSMARINE
+		_root_node.state.initiative_count = 3
+		_root_node.state.changed.emit()
+	if _frames == 8 and _args.has("outcome"):
+		_root_node._show_outcome()
+	if _frames == 8 and _args.has("briefing"):
+		_root_node._toggle_briefing()
 	if _frames == 12 and _args.has("evasive") and _root_node.selected_tf != null:
 		_root_node.selected_tf.evasive = true
 		_root_node.state.changed.emit()

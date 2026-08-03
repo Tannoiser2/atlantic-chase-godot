@@ -105,11 +105,13 @@ func _ready() -> void:
 	_redo_btn.pressed.connect(func() -> void: redo_requested.emit())
 
 	_sep(row2)
-	var out := _mk(row2, "Esito (V)")
-	out.tooltip_text = ("Punteggio, vincitore e le righe che il motore non "
-		+ "puo' valutare da solo: mine, basi aeree, regole opzionali.")
+	var out := _mk(row2, "Punteggio (V)")
+	out.tooltip_text = ("Apre il punteggio corrente, l'Esito raggiunto e le "
+		+ "condizioni che il motore non puo' valutare automaticamente.")
 	out.pressed.connect(func() -> void: outcome_requested.emit())
-	_mk(row2, "Briefing (B)").pressed.connect(func() -> void: briefing_toggled.emit())
+	var briefing := _mk(row2, "Scenario (B)")
+	briefing.tooltip_text = "Apre obiettivo, fine dello scenario, setup e tabelle disponibili"
+	briefing.pressed.connect(func() -> void: briefing_toggled.emit())
 	var prev := _mk(row2, "<")
 	prev.tooltip_text = "Scenario precedente"
 	prev.pressed.connect(func() -> void: scenario_step.emit(-1))

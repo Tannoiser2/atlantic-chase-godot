@@ -304,7 +304,13 @@ func _draw_track_counter(texture: Texture2D, column: String, value: int,
 		offset: Vector2 = Vector2.ZERO, exact_label: String = "") -> void:
 	var size := Vector2(texture.get_width(), texture.get_height())
 	var pos := _track_position(column, value) + offset
-	draw_texture_rect(texture, Rect2(pos - size * 0.5, size), false)
+	var ends: Array = TRACK_ENDPOINTS[column]
+	# Le caselle sono quasi verticali ma inclinate in modo diverso per ogni
+	# colonna. L'asse X della pedina deve seguire il bordo corto delle caselle.
+	var rotation := ((ends[1] as Vector2) - (ends[0] as Vector2)).angle() + PI / 2.0
+	draw_set_transform(pos, rotation)
+	draw_texture_rect(texture, Rect2(-size * 0.5, size), false)
+	draw_set_transform(Vector2.ZERO, 0.0)
 	if exact_label != "":
 		_draw_badge(pos + Vector2(0, size.y * 0.72), exact_label,
 			Color(0.08, 0.09, 0.11), true)
@@ -330,16 +336,23 @@ func _draw_map_tracks() -> void:
 	_draw_track_counter(TRACK_MARKERS["modifier_rn"], "modifier", rn_mod,
 		Vector2(7, 5))
 
-	var km_vp := int(floor(maxf(state.vp_of(TaskForce.Side.KRIEGSMARINE), 0.0)))
-	var rn_vp := int(floor(maxf(state.vp_of(TaskForce.Side.ROYAL_NAVY), 0.0)))
+	var km_score := state.vp_of(TaskForce.Side.KRIEGSMARINE)
+	var rn_score := state.vp_of(TaskForce.Side.ROYAL_NAVY)
+	# I Debriefing solitari possono scendere sotto zero. La traccia stampata
+	# non ha caselle negative: si usa la distanza dallo zero e il badge conserva
+	# il segno, invece di lasciare la pedina ferma sullo zero con un -8 minuscolo.
+	var km_vp := int(floor(absf(km_score)))
+	var rn_vp := int(floor(absf(rn_score)))
 	var km_vp_texture: Texture2D = TRACK_MARKERS["vp_km_10"] \
 		if km_vp >= 10 else TRACK_MARKERS["vp_km"]
 	var rn_vp_texture: Texture2D = TRACK_MARKERS["vp_rn_10"] \
 		if rn_vp >= 10 else TRACK_MARKERS["vp_rn"]
 	var km_exact := state.vp_text(TaskForce.Side.KRIEGSMARINE) \
-		if state.vp_of(TaskForce.Side.KRIEGSMARINE) < 0.0 or km_vp >= 20 else ""
+		if km_score < 0.0 or not is_equal_approx(absf(km_score), floor(absf(km_score))) \
+		or km_vp >= 20 else ""
 	var rn_exact := state.vp_text(TaskForce.Side.ROYAL_NAVY) \
-		if state.vp_of(TaskForce.Side.ROYAL_NAVY) < 0.0 or rn_vp >= 20 else ""
+		if rn_score < 0.0 or not is_equal_approx(absf(rn_score), floor(absf(rn_score))) \
+		or rn_vp >= 20 else ""
 	_draw_track_counter(km_vp_texture, "vp", km_vp % 10, Vector2(-7, -5), km_exact)
 	_draw_track_counter(rn_vp_texture, "vp", rn_vp % 10, Vector2(7, 5), rn_exact)
 

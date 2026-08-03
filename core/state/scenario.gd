@@ -279,7 +279,7 @@ func briefing_text() -> String:
 	parts.append("Iniziativa: [b]%s[/b]    Meteo iniziale: [b]%s[/b]" % [
 		"Kriegsmarine" if initiative == TaskForce.Side.KRIEGSMARINE else "Royal Navy",
 		"cattivo" if weather == TimeLapse.Weather.BAD else "buono"])
-	for key_v: Variant in [["end", "FINE DELLO SCENARIO"],
+	for key_v: Variant in [["objective", "OBIETTIVO"], ["end", "FINE DELLO SCENARIO"],
 			["victory", "VITTORIA"], ["historical", "ESITO STORICO"]]:
 		var pair: Array = key_v
 		var txt := String(briefing.get(pair[0], "")).strip_edges()
