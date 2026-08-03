@@ -3040,29 +3040,23 @@ func _refresh_now() -> void:
 				+ "del Tempo e passa l'Iniziativa. "
 				+ "F cambia il capo preparato.")
 
-	# le azioni, divise in due e i motivi raggruppati
-	var ok_names: Array[String] = []
+	# I pulsanti in alto mostrano gia' le azioni disponibili. Qui restano solo
+	# i motivi dei divieti, raggruppati per non ripetere la stessa spiegazione.
 	var by_reason: Dictionary = {}
 	for a in ActionBar.ACTIONS:
 		var key := String(a[0])
 		var label := String(a[1])
 		var why := _action_unavailable_reason(key)
-		if why == "":
-			ok_names.append("%s (%s)" % [label, String(a[2])])
-		else:
+		if why != "":
 			if not by_reason.has(why):
 				by_reason[why] = []
 			(by_reason[why] as Array).append(label)
 
-	out.append("")
-	if ok_names.is_empty():
-		out.append("[color=#ff9a3c][b]Nessuna azione dichiarabile.[/b][/color]")
-	else:
-		out.append("[b]Puoi dichiarare:[/b] [color=#a8e6a1]%s[/color]"
-			% ", ".join(ok_names))
-	for why_v: Variant in by_reason.keys():
-		out.append("[color=#c8b8a0]%s[/color] - [i]%s[/i]"
-			% [", ".join(by_reason[why_v] as Array), String(why_v)])
+	if not by_reason.is_empty():
+		out.append("")
+		for why_v: Variant in by_reason.keys():
+			out.append("[color=#c8b8a0]%s[/color] - [i]%s[/i]"
+				% [", ".join(by_reason[why_v] as Array), String(why_v)])
 
 	_lbl_now.text = "\n".join(out)
 
