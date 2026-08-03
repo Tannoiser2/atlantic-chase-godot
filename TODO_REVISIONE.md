@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Aggiornato dopo la chiusura di **R0** (3 agosto 2026). Baseline: **2806
+Aggiornato dopo la chiusura di **R0** (3 agosto 2026). Baseline: **2828
 verifiche su 18 suite**.
 
 Questo e' il backlog autorevole per continuare la revisione. `STATO.md`
@@ -26,7 +26,7 @@ vecchie sezioni "Cosa manca" non devono riaprire lavori gia' completati.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 2806 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 2828 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
@@ -151,7 +151,19 @@ Uno scenario puo' essere marcato completo solo quando:
   applicata automaticamente dopo la Traiettoria, e le sostituzioni stampate
   della tabella di Identificazione. Jan Mayen e le Azzorre non sono esagoni
   calibrati: la policy punta al porto calibrato piu' vicino e lo dichiara.
-- [ ] **B1 Operazione Berlino**: 22 procedure testuali.
+- [ ] **B1 Operazione Berlino**: celle e modificatori delle quattro tabelle -
+  Rifornimento, Azioni Britanniche, Identificazione, Verifica della Scorta -
+  coincidevano gia' col fascicolo; le 22 procedure sono ora trascritte. Nel
+  codice **mancava tutto il risultato 'E'**: non esisteva un ramo per lui e
+  finiva nel ripiego, che lo trattava come un Convoglio. E' l'unico modo in cui
+  il BRITANNICO toglie marker Rendezvous dalla mappa, e porta due condizioni di
+  fine stampate ("se non ce n'e' nessuno in gioco, lo scenario finisce");
+  mancava anche la fine della 'X' a tre Convogli britannici Completati.
+  **Restano**: la Tabella del Rifornimento di B1 non e' applicata (i suoi
+  risultati sono diversi da quelli di BL1 - il Nuovo Obiettivo manda a Narvik,
+  non in South America - e `apply_table_result` conosce solo BL1 e BL2); la
+  Verifica della Scorta; le basi aeree e la portata del supporto aereo, che
+  compaiono in quasi tutte le procedure.
 - [ ] **B2 La Battaglia dell'Atlantico**: 10 procedure testuali.
 - [ ] **B3 Operazione Reno**: 24 procedure testuali.
 - [ ] **B4 Decisione sui Mari**: 12 procedure testuali.

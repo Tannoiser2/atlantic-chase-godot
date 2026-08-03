@@ -84,6 +84,10 @@ func run() -> void:
 	test_solo_ai_n6_weather_redirects()
 	test_solo_ai_n6_passes_at_fifteen_segments()
 	test_n6_procedures_are_transcribed()
+	test_solo_ai_b1_end_result_removes_rendezvous()
+	test_solo_ai_b1_end_result_good_weather_branches()
+	test_solo_ai_b1_intercept_ends_after_three_convoys()
+	test_b1_procedures_are_transcribed()
 	test_fueling()
 	test_bl1_fueling_trigger_conditions()
 	test_solo_ai_bl1_aux_tables_apply()
@@ -1875,3 +1879,122 @@ func test_n6_procedures_are_transcribed() -> void:
 		"la 'T' dichiara la propria condizione di fine")
 	true_(String(actions.legend.get("X", "")).contains("LO SCENARIO FINISCE"),
 		"e anche la 'X'")
+
+
+## B1, AC Solo scenarios 2022 pp.41-44. Le celle e i modificatori coincidevano
+## gia' col fascicolo; mancavano le 22 procedure e, nel codice, tutto il
+## risultato 'E': non esisteva un ramo per lui, quindi finiva nel ripiego che
+## lo trattava come un Convoglio. E' l'unico modo in cui il BRITANNICO toglie
+## marker Rendezvous dalla mappa.
+func test_solo_ai_b1_end_result_removes_rendezvous() -> void:
+	_begin("AI solitaria B1: il risultato E toglie i marker Rendezvous")
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("B1 Operazione Berlino")
+	var st := GameState.new(graph, 3)
+	st.apply_dict(scenario.to_state_dict())
+	st.solo_end_conditions = scenario.end_conditions()
+	st.rendezvous_markers = [
+		{"q": 10, "r": 3, "active": true},
+		{"q": 9, "r": -2, "active": true},
+	] as Array[Dictionary]
+	st.weather = TimeLapse.Weather.BAD
+	var before := st.active_rendezvous_count()
+	var out := SoloAI.execute_code("E", st, graph, engine,
+		scenario.port_control(), TaskForce.Side.ROYAL_NAVY)
+	eq(st.active_rendezvous_count(), before - 1,
+		"col Meteo Cattivo la 'E' toglie un marker Rendezvous")
+	false_(st.solo_ended, "finche' ce ne sono, lo scenario continua")
+	true_(_solo_ai_log_contains(out, "Marker Rendezvous rimosso"),
+		"e il registro lo dice")
+
+	# Tolto l'ultimo, la 'E' successiva chiude lo scenario.
+	SoloAI.execute_code("E", st, graph, engine, scenario.port_control(),
+		TaskForce.Side.ROYAL_NAVY)
+	eq(st.active_rendezvous_count(), 0, "il secondo marker se ne va")
+	var over := SoloAI.execute_code("E", st, graph, engine,
+		scenario.port_control(), TaskForce.Side.ROYAL_NAVY)
+	true_(bool(over.get("end_scenario", false)),
+		"senza piu' marker la 'E' dichiara la fine")
+	true_(st.solo_ended, "e lo stato risulta concluso")
+	true_(st.solo_end_reason.contains("Rendezvous"),
+		"il motivo cita i marker: %s" % st.solo_end_reason)
+
+
+## p.43, Meteo Buono: 1 toglie un marker e fa ritirare la Tabella, 2-4 diventa
+## una 'X', 5-6 una 'A'.
+func test_solo_ai_b1_end_result_good_weather_branches() -> void:
+	_begin("AI solitaria B1: i tre rami della 'E' col Meteo Buono")
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("B1 Operazione Berlino")
+
+	var st := GameState.new(graph, 4)
+	st.apply_dict(scenario.to_state_dict())
+	st.rendezvous_markers = [{"q": 10, "r": 3, "active": true}] as Array[Dictionary]
+	st.weather = TimeLapse.Weather.GOOD
+	st.rng.push_forced([1])
+	var one := SoloAI.execute_code("E", st, graph, engine,
+		scenario.port_control(), TaskForce.Side.ROYAL_NAVY)
+	eq(st.active_rendezvous_count(), 0, "con 1 il marker se ne va")
+	true_(bool(one.get("roll_again", false)),
+		"e la Tabella si ritira subito, come stampato")
+
+	var st2 := GameState.new(graph, 5)
+	st2.apply_dict(scenario.to_state_dict())
+	st2.weather = TimeLapse.Weather.GOOD
+	st2.rng.push_forced([3])
+	var as_x := SoloAI.execute_code("E", st2, graph, engine,
+		scenario.port_control(), TaskForce.Side.ROYAL_NAVY)
+	true_(_solo_ai_log_contains(as_x, "trattato come una 'X'"),
+		"con 2-4 la 'E' diventa una 'X'")
+
+	var st3 := GameState.new(graph, 6)
+	st3.apply_dict(scenario.to_state_dict())
+	st3.weather = TimeLapse.Weather.GOOD
+	st3.rng.push_forced([6])
+	var as_a := SoloAI.execute_code("E", st3, graph, engine,
+		scenario.port_control(), TaskForce.Side.ROYAL_NAVY)
+	true_(_solo_ai_log_contains(as_a, "trattato come una 'A'"),
+		"con 5-6 la 'E' diventa una 'A'")
+
+
+## p.43: "End? If three British Convoys have successfully Completed, the
+## scenario ends." Il ramo 'X' non lo verificava.
+func test_solo_ai_b1_intercept_ends_after_three_convoys() -> void:
+	_begin("AI solitaria B1: tre Convogli britannici chiudono lo scenario")
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("B1 Operazione Berlino")
+	var st := GameState.new(graph, 7)
+	st.apply_dict(scenario.to_state_dict())
+	SoloAI.execute_code("X", st, graph, engine, scenario.port_control(),
+		TaskForce.Side.ROYAL_NAVY)
+	false_(st.solo_ended, "senza Completamenti la 'X' non chiude niente")
+	for i in 3:
+		st.count_convoy_completed(TaskForce.Side.ROYAL_NAVY)
+	var over := SoloAI.execute_code("X", st, graph, engine,
+		scenario.port_control(), TaskForce.Side.ROYAL_NAVY)
+	true_(bool(over.get("end_scenario", false)), "la 'X' dichiara la fine")
+	true_(st.solo_end_reason.contains("Convogli britannici"),
+		"il motivo cita i Convogli: %s" % st.solo_end_reason)
+
+
+func test_b1_procedures_are_transcribed() -> void:
+	_begin("B1: le 22 procedure sono trascritte")
+	var o := SoloOpponent.load_for("B1 Operazione Berlino")
+	var placeholders := 0
+	var total := 0
+	for tid in ["fueling", "british_actions", "identify", "escort"]:
+		var t: SoloTable = o.table(tid)
+		ne(t, null, "la tabella '%s' esiste" % tid)
+		for code_v: Variant in t.legend.keys():
+			total += 1
+			if String(t.legend[code_v]).contains("senza automatismi del motore"):
+				placeholders += 1
+	eq(total, 22, "le procedure trascritte sono ventidue")
+	eq(placeholders, 0, "e nessuna e' rimasta un segnaposto")
+	# Il risultato a. di B1 manda a NARVIK, non in South America come in BL1:
+	# le due Tabelle del Rifornimento si somigliano ma non coincidono.
+	var fueling: SoloTable = o.table("fueling")
+	true_(String(fueling.legend.get("a", "")).contains("NARVIK"),
+		"il Nuovo Obiettivo di B1 e' Narvik, non South America")
+	true_(String(o.table("british_actions").legend.get("E", "")).contains("LO SCENARIO FINISCE"),
+		"la 'E' dichiara la propria condizione di fine")

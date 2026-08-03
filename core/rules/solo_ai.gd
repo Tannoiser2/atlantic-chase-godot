@@ -1155,7 +1155,14 @@ static func _b1(code: String, state: GameState, graph: MapGraph,
 			return _complete_or_route_to_port(state, graph, port_control, convoy,
 				_b1_convoy_destination(graph, convoy),
 				"Solitario AI B1: Completamento Convoglio britannico")
+		"E":
+			return _b1_end_result(state, graph, engine, port_control, side)
 		"X":
+			# p.43: "End? If three British Convoys have successfully Completed,
+			# the scenario ends." Il ramo X non lo verificava.
+			if state.convoys_completed_for(TaskForce.Side.ROYAL_NAVY) >= 3:
+				return _b1_scenario_end(state,
+					"Tre Convogli britannici hanno Completato (p.43).")
 			_remove_damaged_ships(state, side)
 			var hunter_x := _nearest_heavy_without_convoy(state, side, _enemy_center(state, side))
 			if hunter_x == null:
@@ -1176,6 +1183,60 @@ static func _b1(code: String, state: GameState, graph: MapGraph,
 			var tf := _create_force_at(state, graph, side, port, ["Convoy x3"], false)
 			return _complete_or_route_to_port(state, graph, port_control, tf,
 				"Clyde", "Solitario AI B1: nuovo Convoglio verso Clyde/Liverpool")
+
+
+## Risultato E di B1 (AC Solo scenarios 2022 p.43). Non c'era: il codice non
+## aveva un ramo "E" e il risultato finiva nel ripiego, che lo trattava come un
+## Convoglio. E' l'unico modo in cui il BRITANNICO toglie marker Rendezvous
+## dalla mappa, quindi senza di lui la condizione di fine stampata - due o meno
+## marker e nessuna TF tedesca - dipendeva solo dai Controlli Rifornimento del
+## giocatore.
+static func _b1_end_result(state: GameState, graph: MapGraph,
+		engine: ActionEngine, port_control: Dictionary, side: int) -> Dictionary:
+	if state.weather == TimeLapse.Weather.BAD:
+		return _b1_remove_rendezvous(state,
+			"Solitario AI B1 - E, Meteo Cattivo: rimuove un marker Rendezvous.")
+	var roll := state.rng.d6("Solitario B1 risultato E col meteo buono")
+	if roll == 1:
+		var removed := _b1_remove_rendezvous(state,
+			"Solitario AI B1 - E, 1d6=1: rimuove un marker Rendezvous.")
+		if bool(removed.get("end_scenario", false)):
+			return removed
+		# "...then roll again on the British Action Table."
+		removed["roll_again"] = true
+		return removed
+	if roll <= 4:
+		var as_x := _b1("X", state, graph, engine, port_control, side)
+		as_x["log"].append("Solitario AI B1 - E, 1d6=%d: trattato come una 'X'." % roll)
+		return as_x
+	var as_a := _b1("A", state, graph, engine, port_control, side)
+	as_a["log"].append("Solitario AI B1 - E, 1d6=%d: trattato come una 'A'." % roll)
+	return as_a
+
+
+static func _b1_remove_rendezvous(state: GameState, note: String) -> Dictionary:
+	var freed := state.remove_any_rendezvous()
+	if freed == Vector2i.MAX:
+		# "If none in play, the scenario ends."
+		return _b1_scenario_end(state,
+			"Nessun marker Rendezvous da rimuovere sulla Mappa Operazionale (p.43).")
+	var out := _empty(note)
+	out["ok"] = true
+	out["turn_kind"] = "rendezvous"
+	out["target_hex"] = freed
+	out["log"].append("Marker Rendezvous rimosso da %s; ne restano %d."
+		% [str(freed), state.active_rendezvous_count()])
+	return out
+
+
+static func _b1_scenario_end(state: GameState, reason: String) -> Dictionary:
+	state.solo_ended = true
+	state.solo_end_reason = reason
+	var out := _empty("Solitario AI B1 - FINE SCENARIO: %s" % reason)
+	out["ok"] = true
+	out["turn_kind"] = "end"
+	out["end_scenario"] = true
+	return out
 
 
 ## Quanti Convogli britannici hanno Completato in BL1. E' il conto che regola

@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **2806 verifiche, 18 suite, headless.**
+Tutti i test passano: **2828 verifiche, 18 suite, headless.**
 
 ---
 
@@ -228,6 +228,16 @@ Tutti i test passano: **2806 verifiche, 18 suite, headless.**
   come una ricerca quello che e' un passaggio; e una decisione senza effetto
   lasciava l'Iniziativa al bot senza accodare niente, cioe' fermava la partita
   in attesa di un giocatore che non doveva muovere.
+- **A B1 mancava tutto il risultato 'E'.** Le celle e i modificatori delle sue
+  quattro tabelle coincidevano gia' col fascicolo e le 22 procedure erano
+  segnaposto, ma il difetto vero era nel codice: `_b1` non aveva un ramo per
+  la 'E', che finiva nel ripiego e veniva trattata come un Convoglio. La 'E' e'
+  pero' **l'unico modo in cui il britannico toglie marker Rendezvous dalla
+  mappa**, e la condizione di fine stampata di B1 chiede due o meno marker: la
+  partita dipendeva quindi solo dai Controlli Rifornimento del giocatore. La
+  'E' porta con se' due fini ("se non ce n'e' nessuno in gioco, lo scenario
+  finisce") e la 'X' una terza, a tre Convogli britannici Completati; nessuna
+  delle tre scattava.
 - **N6 non aveva nessuna policy propria.** Le sue quattro tabelle - Azioni
   Tedesche, Traiettoria Tedesca, T-Seconda Azione, Identificazione - e i
   modificatori coincidevano gia' col fascicolo, e le 25 procedure erano tutte

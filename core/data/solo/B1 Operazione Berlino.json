@@ -2,7 +2,7 @@
  "_scenario": "B1 Operazione Berlino",
  "_source": "Fascicolo Scenari in Solitario, seconda edizione INGLESE (AC_Solo_scenarios_2022.pdf), pp.41-44. Trascritta a mano da render/testo del PDF aggiornato.",
  "_role": "Il giocatore e' il TEDESCO; le tabelle rappresentano l'avversario BRITANNICO.",
- "_status": "Tabelle dello scenario verificate contro la seconda edizione inglese 2022. Dove un dato non e' calibrabile o manca, resta dichiarato invece di essere inventato.",
+ "_status": "Tabella del Rifornimento, Tabella delle Azioni Britanniche, Identificazione e Verifica della Scorta trascritte da AC_Solo_scenarios_2022 pp.41-44, lette sulle pagine renderizzate a risoluzione nativa. Le celle e i modificatori coincidevano gia'; erano le 22 procedure a mancare. Basi aeree e portata del supporto aereo restano non modellate.",
  "tables": [
   {
    "id": "fueling",
@@ -36,14 +36,15 @@
     }
    ],
    "legend": {
-    "a": "Procedura 'a' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore.",
-    "b": "Procedura 'b' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore.",
-    "c": "Procedura 'c' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore.",
-    "d": "Procedura 'd' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore.",
-    "e": "Procedura 'e' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore.",
-    "f": "Procedura 'f' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore.",
-    "g": "Procedura 'g' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore."
-   }
+    "a": "Rimuovi il marker RV. Rimuovi (ripara) un Colpo da una nave tedesca nella TF. -- NUOVO OBIETTIVO: dirigersi in Norvegia. Da qui in avanti l'unico porto tedesco in cui questa TF puo' tentare il Completamento e' NARVIK. La TF non puo' eseguire azioni Riorganizzare (Dividere o Unire) e non puo' effettuare un altro Controllo Rifornimento. -- TF britannica nell'esagono? Se c'e' una TF britannica NELL'esagono, viene avvistato un aereo: attacca un segnalino Contatto alla TF tedesca. Poi Incidente Internazionale.",
+    "b": "Rimuovi il marker RV. Rimuovi anche un segnalino Manovre Evasive dalla TF tedesca, se ne ha uno. -- NOTIZIA: l'Hipper puo' entrare in gioco senza penalita' di VP: se esegui un'azione Riorganizzare e porti l'Hipper in una nuova TF a Brest, non sarai penalizzato. -- TF britannica nell'esagono? Se c'e' una TF britannica NELL'esagono ed e' una Stazione, attacca un segnalino Contatto alla TF tedesca.",
+    "c": "Rimuovi il marker RV. Rimuovi (ripara) un Colpo da una nave tedesca nella TF.",
+    "d": "Rimuovi il marker RV. Rimuovi anche un segnalino Manovre Evasive dalla TF tedesca, se ne ha uno. -- NUOVO OBIETTIVO: le uniche azioni consentite a questa TF sono Traiettoria, Completamento e Passare. La TF puo' Completare soltanto a Wilhelmshaven, Kiel o Brest. Non puoi attaccarle un segnalino Manovre Evasive. -- TF britannica nell'esagono? Se c'e' una TF britannica NELL'esagono, va tentato Cercare l'Iniziativa.",
+    "e": "Rimuovi il marker RV. Con Meteo Buono rimuovi anche un segnalino Manovre Evasive dalla TF tedesca, se ne ha uno. -- TF britannica nell'esagono? Con Meteo Buono, se una TF britannica e' NELL'esagono o adiacente, attacca un segnalino Contatto alla TF tedesca.",
+    "f": "Rimuovi il marker RV. Nessun altro effetto.",
+    "g": "Sposta il marker RV in un esagono adiacente, a tua scelta. -- TF britannica nell'esagono? Se c'e' una TF britannica NELL'esagono con la tua TF, va tentato Cercare l'Iniziativa."
+   },
+   "note": "AC_Solo_scenarios_2022 p.42. Obbligatoria quando il tedesco ha l'Iniziativa e una sua Stazione occupa un esagono con un marker Rendezvous. Salvo diversa indicazione del risultato, il tedesco mantiene l'Iniziativa dopo il Controllo. Un Controllo Rifornimento non puo' avvenire durante lo Scorrere del Tempo di un Passare."
   },
   {
    "id": "british_actions",
@@ -96,12 +97,13 @@
     }
    ],
    "legend": {
-    "A": "Procedura 'A' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore.",
-    "C": "Procedura 'C' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore.",
-    "Conv": "Procedura 'Conv' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore.",
-    "E": "Procedura 'E' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore.",
-    "X": "Procedura 'X' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore."
-   }
+    "A": "ATTACCO AEREO. -- Meteo Cattivo: rimuovi tutte le navi britanniche Danneggiate; se cosi' una TF resta vuota, toglila. Poi tira un dado: con PARI trattalo come una 'X', con DISPARI come un 'Convoglio'. -- Meteo Buono: esegui un Attacco Aereo contro una TF tedesca a portata di una base aerea britannica o di una TF con CV, scegliendo il bersaglio che da' al britannico il modificatore di Supporto Aereo piu' favorevole. -- Nessun bersaglio? Col Meteo Buono e senza bersagli, scegli una TF con una CV. Se non ce n'e', tira un dado: con PARI scegli la TF con un CA piu' vicina a una TF tedesca (se non ce n'e', crea una TF a Scapa Flow con quattro CA); con DISPARI crea una nuova TF a Gibilterra con una BB lenta, due CA e una CV. La TF scelta agisce per portare in Battaglia la TF tedesca piu' VICINA. La TF britannica non entra in un esagono a portata del supporto aereo tedesco, ne' in un porto tedesco; se non c'e' alternativa, trattalo come un risultato 'Convoglio'. -- Scorrere del Tempo: rimuovi i segmenti piu' LONTANI dalla TF tedesca.",
+    "C": "AZIONE DI COMPLETAMENTO. Rimuovi le navi britanniche Danneggiate; se cosi' una TF resta vuota, toglila. -- Scelta: una TF britannica con un Convoglio; se ce n'e' piu' d'una, quella con la Traiettoria piu' CORTA. Se non c'e' nessun Convoglio in gioco, tira un dado: con PARI trattalo come un risultato 'Convoglio', con DISPARI come una 'A'. -- Azione: la TF scelta tenta il Completamento a Clyde/Liverpool o a Gibilterra, secondo la propria destinazione. Puo' dover fare prima un'azione Traiettoria, sulla rotta piu' DIRETTA evitando i segnalini Informazioni se possibile; non entrera' in un esagono a portata del supporto aereo tedesco. Se il Completamento e' impedito dai segnalini Informazioni o dalla lunghezza della Traiettoria, il britannico esegue invece un Passare: la TF scelta fa Scorrere del Tempo e rimuove un segnalino Informazioni se possibile. -- Scorrere del Tempo: rimuovi i segmenti piu' LONTANI dal porto di destinazione. -- Dopo un Completamento riuscito: Incidente Internazionale.",
+    "Conv": "CONVOGLIO. -- Completamento: se c'e' una TF britannica con un Convoglio in gioco, trattalo come una 'C'. Se non c'e' nessun Convoglio in gioco, tira un dado: con PARI crea una nuova TF a New York contenente un Convoglio, con DISPARI una nuova TF in Africa contenente un Convoglio. -- Azione: la nuova TF esegue un'azione Traiettoria verso Clyde/Liverpool, che e' il suo porto di destinazione, sulla rotta piu' DIRETTA evitando i segnalini Informazioni. -- Dopo l'azione Traiettoria: tira di nuovo sulla Tabella delle Azioni Britanniche.",
+    "E": "FINE? -- Meteo Cattivo: rimuovi un marker Rendezvous dalla Mappa Operazionale. SE NON CE N'E' NESSUNO IN GIOCO, LO SCENARIO FINISCE. -- Meteo Buono: tira un dado. Con 1, rimuovi un marker Rendezvous dalla Mappa Operazionale (SE NON CE N'E' NESSUNO IN GIOCO, LO SCENARIO FINISCE) e poi tira di nuovo sulla Tabella delle Azioni Britanniche. Con 2-4, trattalo come una 'X'. Con 5-6, trattalo come una 'A'.",
+    "X": "INTERCETTAZIONE. -- Fine? SE TRE CONVOGLI BRITANNICI HANNO COMPLETATO CON SUCCESSO, LO SCENARIO FINISCE. -- Scelta: rimuovi tutte le navi britanniche Danneggiate; se cosi' una TF resta vuota, toglila. Poi scegli una TF britannica con una BB o un BC; se ce n'e' piu' d'una, quella piu' VICINA a una TF tedesca. La TF non puo' avere un Convoglio. Se non ce n'e', scegli una TF non identificata; se non ce n'e' nemmeno una, creane una a Scapa Flow. -- Azione: la TF scelta agisce per portare in Battaglia la TF tedesca piu' VICINA, evitando porti e basi aeree tedesche e, salvo Meteo Cattivo, la portata del supporto aereo tedesco. Se non c'e' un bersaglio idoneo, trattalo come un risultato 'Convoglio'. -- Scorrere del Tempo: rimuovi i segmenti piu' LONTANI dall'esagono bersaglio."
+   },
+   "note": "AC_Solo_scenarios_2022 p.43. La riga si sceglie contando le azioni di Completamento britanniche riuscite che coinvolgono Convogli. Colonne stampate: 1, 2, 3, 4, 5, '6-7'. Se una TF tedesca si trova in un esagono con una base aerea britannica NON si tira il dado: il britannico esegue un Attacco Aereo contro quella TF, e col Meteo Cattivo si applica invece una 'X'."
   },
   {
    "id": "identify",
@@ -122,11 +124,11 @@
     }
    ],
    "legend": {
-    "BB/BC/CA": "Procedura 'BB/BC/CA' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore.",
-    "BC/CA/CA": "Procedura 'BC/CA/CA' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore.",
-    "BC/CA/CL": "Procedura 'BC/CA/CL' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore.",
-    "CL/CL/CL": "Procedura 'CL/CL/CL' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore.",
-    "CV/CA/CA": "Procedura 'CV/CA/CA' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore."
+    "BB/BC/CA": "La Task Force contiene una BB, un BC e un CA.",
+    "BC/CA/CA": "La Task Force contiene un BC e due CA.",
+    "BC/CA/CL": "La Task Force contiene un BC, un CA e un CL.",
+    "CV/CA/CA": "La Task Force contiene una CV e due CA.",
+    "CL/CL/CL": "La Task Force contiene tre CL."
    },
    "note": "Se risultato BB, scegliere Nelson o Rodney se non gia' in gioco."
   },
@@ -159,11 +161,11 @@
     }
    ],
    "legend": {
-    "aggiungi BB lenta": "Procedura 'aggiungi BB lenta' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore.",
-    "aggiungi CA": "Procedura 'aggiungi CA' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore.",
-    "aggiungi DD temporaneo": "Procedura 'aggiungi DD temporaneo' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore.",
-    "nessuna scorta; rimuovi tutto tranne Convoglio": "Procedura 'nessuna scorta; rimuovi tutto tranne Convoglio' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore.",
-    "rimuovi una BB se presente": "Procedura 'rimuovi una BB se presente' trascritta nel campo scenario_text di questo file; applicarla come testo del fascicolo, senza automatismi del motore."
+    "aggiungi BB lenta": "Alla scorta del Convoglio si aggiunge una BB lenta.",
+    "aggiungi CA": "Alla scorta del Convoglio si aggiunge un CA.",
+    "nessuna scorta; rimuovi tutto tranne Convoglio": "Il Convoglio non ha scorta: rimuovi dalla TF ogni nave tranne il Convoglio.",
+    "aggiungi DD temporaneo": "Alla scorta del Convoglio si aggiunge uno Squadrone DD temporaneo.",
+    "rimuovi una BB se presente": "Se nella TF c'e' una BB, rimuovila."
    }
   }
  ],

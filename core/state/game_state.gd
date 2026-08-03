@@ -288,6 +288,20 @@ func rendezvous_at(h: Vector2i) -> Dictionary:
 	return {}
 
 
+## Toglie un marker Rendezvous qualunque, senza dire quale esagono. Serve alle
+## procedure che li rimuovono "dalla Mappa Operazionale" senza indicarne uno -
+## per esempio il risultato E di B1 e B3. Ritorna l'esagono liberato, oppure
+## Vector2i.MAX se non ce n'era nessuno attivo.
+func remove_any_rendezvous() -> Vector2i:
+	for rv in rendezvous_markers:
+		if not bool(rv.get("active", true)):
+			continue
+		rv["active"] = false
+		changed.emit()
+		return Vector2i(int(rv.get("q", 0)), int(rv.get("r", 0)))
+	return Vector2i.MAX
+
+
 func remove_rendezvous_at(h: Vector2i) -> bool:
 	for rv in rendezvous_markers:
 		if bool(rv.get("active", true)) and Vector2i(int(rv.get("q", 0)),
