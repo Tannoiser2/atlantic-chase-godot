@@ -78,8 +78,10 @@ Tutti i test passano: **2342 verifiche, 17 suite, headless.**
   esplicitamente non modellate: posizione, parte e periodo di attivita' devono
   essere trascritti dalla mappa prima di poterle offrire come fonte;
 - HUD della mappa ricostruita: nove azioni illuminate in alto, servizi nella
-  seconda riga, guida operativa in basso, registro richiudibile a destra e
-  nessun roster fisso sopra la mappa;
+  seconda riga, guida operativa in basso e registro richiudibile a destra.
+  Barra, mappa, Registro e stato occupano ora quattro regioni fisicamente
+  separate: la mappa vive in un SubViewport centrale e non continua sotto i
+  pannelli. Chiudendo il Registro, il suo spazio torna alla mappa;
 - selezionando una TF compare vicino alla pedina una scheda con stato e pedine
   nave GMT reali; cliccando sul mare la scheda sparisce. Le TF del bot si
   possono ispezionare ma restano non comandabili;

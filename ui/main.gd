@@ -13,6 +13,7 @@ extends Node2D
 enum Mode { PLAY, EDITOR }
 
 const SCENARIO_DIR := "res://core/data/scenarios/"
+const MAP_INPUT_PROXY := preload("res://ui/map_view/map_input_proxy.gd")
 
 signal _hex_choice_made(h: Vector2i)
 signal _status_choice_made(index: int)
@@ -73,6 +74,67 @@ var _hex_choice_options: Dictionary = {}
 var _hex_choice_prompt: String = ""
 var _bl1_fueling_running: bool = false
 
+const MAP_TOP := 100.0
+const MAP_RIGHT := 410.0
+const MAP_BOTTOM := 292.0
+var _map_container: SubViewportContainer = null
+var _map_viewport: SubViewport = null
+var _map_frame: Panel = null
+
+
+func _build_map_viewport() -> void:
+	var layer := CanvasLayer.new()
+	layer.name = "MapSurface"
+	layer.layer = 0
+	add_child(layer)
+
+	_map_frame = Panel.new()
+	_map_frame.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_map_frame.offset_top = MAP_TOP
+	_map_frame.offset_right = -MAP_RIGHT
+	_map_frame.offset_bottom = -MAP_BOTTOM
+	_map_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var frame_style := StyleBoxFlat.new()
+	frame_style.bg_color = Color(0.015, 0.02, 0.025, 1.0)
+	frame_style.border_color = Color(0.32, 0.43, 0.50, 1.0)
+	frame_style.set_border_width_all(1)
+	_map_frame.add_theme_stylebox_override("panel", frame_style)
+	layer.add_child(_map_frame)
+
+	_map_container = SubViewportContainer.new()
+	_map_container.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_map_container.offset_left = 1
+	_map_container.offset_top = MAP_TOP + 1
+	_map_container.offset_right = -MAP_RIGHT - 1
+	_map_container.offset_bottom = -MAP_BOTTOM - 1
+	_map_container.stretch = true
+	_map_container.mouse_filter = Control.MOUSE_FILTER_STOP
+	layer.add_child(_map_container)
+
+	_map_viewport = SubViewport.new()
+	_map_viewport.name = "MapViewport"
+	_map_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	_map_viewport.handle_input_locally = true
+	_map_container.add_child(_map_viewport)
+	_resize_map_viewport()
+	get_viewport().size_changed.connect(_resize_map_viewport)
+
+
+func _resize_map_viewport() -> void:
+	# Con stretch attivo e' il Container ad assegnare automaticamente la
+	# dimensione al SubViewport. Alla camera resta soltanto da ricalcolare i
+	# limiti quando la finestra cambia forma.
+	if cam != null:
+		cam.call_deferred("_clamp_position")
+
+
+func _set_map_right_margin(margin: float) -> void:
+	if _map_frame == null or _map_container == null:
+		return
+	_map_frame.offset_right = -margin
+	_map_container.offset_right = -margin - 1
+	_resize_map_viewport()
+
 
 func _ready() -> void:
 	graph = MapGraph.load_default()
@@ -81,22 +143,28 @@ func _ready() -> void:
 	state = GameState.new(graph, 20240114)
 	engine = ActionEngine.load_default()
 
+	_build_map_viewport()
+
 	board = MapBoard.new()
 	board.name = "Board"
-	add_child(board)
+	_map_viewport.add_child(board)
 	board.setup(graph)
 
 	traj_layer = TrajectoryRenderer.new()
 	traj_layer.name = "Trajectories"
 	traj_layer.z_index = 10
-	add_child(traj_layer)
+	_map_viewport.add_child(traj_layer)
 	traj_layer.setup(graph, state)
 
 	cam = MapCamera.new()
 	cam.name = "Camera"
-	add_child(cam)
+	_map_viewport.add_child(cam)
 	cam.make_current()
 	cam.setup(Vector2(graph.map_size))
+
+	var input_proxy: Node = MAP_INPUT_PROXY.new()
+	input_proxy.receiver = self
+	_map_viewport.add_child(input_proxy)
 
 	_build_hud()
 
@@ -179,6 +247,17 @@ func _process(delta: float) -> void:
 # --------------------------------------------------------------------- input --
 
 func _unhandled_input(event: InputEvent) -> void:
+	# Il puntatore della mappa arriva dal suo SubViewport tramite
+	# MapInputProxy. Qui restano tastiera e scorciatoie del workspace principale.
+	if event is InputEventKey:
+		_handle_game_input(event)
+
+
+func _handle_map_input(event: InputEvent) -> void:
+	_handle_game_input(event)
+
+
+func _handle_game_input(event: InputEvent) -> void:
 	# Durante una Battaglia i tasti li gestisce la sua vista, e vanno passati
 	# PRIMA di tutto il resto: c'era un `return` secco qui sopra che tagliava
 	# fuori anche il blocco della tastiera piu' in basso, e la Battaglia
@@ -2417,6 +2496,7 @@ var _battle_view: BattleView
 func _build_hud() -> void:
 	var layer := CanvasLayer.new()
 	layer.name = "HUD"
+	layer.layer = 10
 	add_child(layer)
 
 	hud = Control.new()
@@ -2461,8 +2541,8 @@ func _build_hud() -> void:
 	_log_panel.set_anchors_preset(Control.PRESET_RIGHT_WIDE)
 	_log_panel.offset_left = -410
 	_log_panel.offset_right = -12
-	_log_panel.offset_top = 108
-	_log_panel.offset_bottom = -232
+	_log_panel.offset_top = MAP_TOP
+	_log_panel.offset_bottom = -MAP_BOTTOM
 	_log_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	_log_panel.add_theme_stylebox_override("panel", _panel_style())
 	hud.add_child(_log_panel)
@@ -2587,6 +2667,7 @@ func _toggle_log_panel() -> void:
 	_log_toggle.text = "Registro  >" if _log_expanded else "<"
 	_log_toggle.tooltip_text = "Comprimi il registro degli eventi" \
 		if _log_expanded else "Apri il registro degli eventi"
+	_set_map_right_margin(MAP_RIGHT if _log_expanded else 54.0)
 
 
 func _toggle_bot_details() -> void:
@@ -3209,7 +3290,7 @@ func _clamp_tf_panel_position(pos: Vector2) -> Vector2:
 	var panel_size := Vector2(maxf(_tf_panel.size.x, 430.0),
 		maxf(_tf_panel.size.y, 170.0))
 	var right_limit := vp.x - (424.0 if _log_expanded else 68.0)
-	var bottom_limit := vp.y - 232.0
+	var bottom_limit := vp.y - MAP_BOTTOM
 	return Vector2(
 		clampf(pos.x, 12.0, maxf(12.0, right_limit - panel_size.x)),
 		clampf(pos.y, 108.0, maxf(108.0, bottom_limit - panel_size.y)))
@@ -3223,7 +3304,8 @@ func _position_tf_panel() -> void:
 		return
 	var t := selected_tf.trajectory
 	var h := t.station_hex if t.is_station() else t.end_hex(0)
-	var screen: Vector2 = cam.get_canvas_transform() * graph.center_of(h)
+	var screen: Vector2 = (cam.get_canvas_transform() * graph.center_of(h)) \
+		+ Vector2(1, MAP_TOP + 1)
 	var vp := get_viewport_rect().size
 	var panel_size := Vector2(maxf(_tf_panel.size.x, 430.0),
 		maxf(_tf_panel.size.y, 170.0))
@@ -3233,7 +3315,7 @@ func _position_tf_panel() -> void:
 		x = screen.x - panel_size.x - 30.0
 	x = clampf(x, 12.0, maxf(12.0, right_limit - panel_size.x))
 	var y := screen.y + 24.0
-	var bottom_limit := vp.y - 232.0
+	var bottom_limit := vp.y - MAP_BOTTOM
 	if y + panel_size.y > bottom_limit:
 		y = screen.y - panel_size.y - 24.0
 	y = clampf(y, 108.0, maxf(108.0, bottom_limit - panel_size.y))

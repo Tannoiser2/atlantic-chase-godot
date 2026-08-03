@@ -462,6 +462,12 @@ Restano:
   porti, esagoni e controllo dalla mappa e dalle eccezioni dello scenario. Le
   basi aeree e le forze Furtive sono ancora un buco dichiarato, non vanno
   collocate a intuito. Una TF Completata non e' piu' una Stazione sulla mappa.
+- **La mappa e l'HUD non condividono piu' la stessa superficie.** La mappa vive
+  nel `SubViewport` costruito da `_build_map_viewport()`; barra azioni, Registro
+  e stato sono regioni esterne. `MapInputProxy` inoltra clic e movimento con
+  coordinate locali. Non riportare la mappa nel viewport principale: tornerebbe
+  a scorrere sotto i pannelli. Eseguire `tools/smoke_map_workspace.gd` dopo ogni
+  modifica a camera, layout o input.
 
 ---
 
