@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Aggiornato dopo la chiusura di **R0** (3 agosto 2026). Baseline: **2828
+Aggiornato dopo la chiusura di **R0** (3 agosto 2026). Baseline: **2848
 verifiche su 18 suite**.
 
 Questo e' il backlog autorevole per continuare la revisione. `STATO.md`
@@ -26,7 +26,7 @@ vecchie sezioni "Cosa manca" non devono riaprire lavori gia' completati.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 2828 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 2848 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
@@ -165,7 +165,17 @@ Uno scenario puo' essere marcato completo solo quando:
   Verifica della Scorta; le basi aeree e la portata del supporto aereo, che
   compaiono in quasi tutte le procedure.
 - [ ] **B2 La Battaglia dell'Atlantico**: 10 procedure testuali.
-- [ ] **B3 Operazione Reno**: 24 procedure testuali.
+- [ ] **B3 Operazione Reno**: 24 procedure ora trascritte. **Corretta una cella
+  sbagliata**: la colonna 3 della tabella di Identificazione stampa CV/CA/CA,
+  tre navi, e il dato ne aveva due - una TF non identificata entrava in
+  Battaglia con un incrociatore in meno. Come N6, B3 non aveva nessuna policy
+  propria: ora ce l'ha, con la condizione di fine stampata dentro la 'X'
+  (Bismarck affondata o Completata, oppure tre Convogli Completati), il dado
+  che sceglie il bersaglio tedesco (1-4 la TF con una BB, 5-6 la piu' vicina) e
+  i rimandi di meteo della 'A'. **Restano**: la Tabella del Rifornimento di B3
+  non e' applicata (ha otto risultati a-h, diversi da BL1 e da B1), la Tabella
+  di Scelta della X con i suoi risultati stellati e la TF Coordinatrice, i
+  limiti di classe della tabella di Identificazione, e le basi aeree.
 - [ ] **B4 Decisione sui Mari**: 12 procedure testuali.
 - [ ] **A1 Convogli PQ**: 3 procedure testuali; la forza U-Boat iniziale e'
   ancora una nota perche' manca una pedina nave operazionale verificata.

@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **2828 verifiche, 18 suite, headless.**
+Tutti i test passano: **2848 verifiche, 18 suite, headless.**
 
 ---
 
@@ -228,6 +228,14 @@ Tutti i test passano: **2828 verifiche, 18 suite, headless.**
   come una ricerca quello che e' un passaggio; e una decisione senza effetto
   lasciava l'Iniziativa al bot senza accodare niente, cioe' fermava la partita
   in attesa di un giocatore che non doveva muovere.
+- **B3 aveva una cella sbagliata nella tabella di Identificazione.** La colonna
+  3 stampa CV/CA/CA - tre navi - e il dato ne aveva due: una Task Force
+  britannica non identificata entrava in Battaglia con un incrociatore in meno.
+  E' il tipo di errore che il quarto principio esiste per prevenire, e si e'
+  visto solo rileggendo la pagina a 500 dpi. Come N6, B3 non aveva nessuna
+  policy propria: ora ce l'ha, con la condizione di fine stampata dentro la 'X'
+  (Bismarck affondata o Completata, oppure tre Convogli Completati), il dado
+  che sceglie il bersaglio tedesco e i rimandi di meteo della 'A'.
 - **A B1 mancava tutto il risultato 'E'.** Le celle e i modificatori delle sue
   quattro tabelle coincidevano gia' col fascicolo e le 22 procedure erano
   segnaposto, ma il difetto vero era nel codice: `_b1` non aveva un ramo per

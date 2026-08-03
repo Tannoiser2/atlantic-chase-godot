@@ -88,6 +88,9 @@ func run() -> void:
 	test_solo_ai_b1_end_result_good_weather_branches()
 	test_solo_ai_b1_intercept_ends_after_three_convoys()
 	test_b1_procedures_are_transcribed()
+	test_solo_ai_b3_intercept_end_conditions()
+	test_b3_identify_third_column_has_three_ships()
+	test_b3_procedures_are_transcribed()
 	test_fueling()
 	test_bl1_fueling_trigger_conditions()
 	test_solo_ai_bl1_aux_tables_apply()
@@ -1998,3 +2001,81 @@ func test_b1_procedures_are_transcribed() -> void:
 		"il Nuovo Obiettivo di B1 e' Narvik, non South America")
 	true_(String(o.table("british_actions").legend.get("E", "")).contains("LO SCENARIO FINISCE"),
 		"la 'E' dichiara la propria condizione di fine")
+
+
+## B3, AC Solo scenarios 2022 pp.49-53. Come N6, B3 non aveva nessuna policy
+## propria e cadeva nel ripiego generico, quindi la condizione di fine stampata
+## dentro il risultato 'X' non veniva mai verificata.
+func test_solo_ai_b3_intercept_end_conditions() -> void:
+	_begin("AI solitaria B3: le due fini del risultato X")
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("B3 Operazione Reno")
+	var st := GameState.new(graph, 3)
+	st.apply_dict(scenario.to_state_dict())
+	SoloAI.execute_code("X", st, graph, engine, scenario.port_control(),
+		TaskForce.Side.ROYAL_NAVY)
+	false_(st.solo_ended, "all'inizio la 'X' non chiude niente")
+
+	# Tre Convogli Completati.
+	for i in 3:
+		st.count_convoy_completed(TaskForce.Side.ROYAL_NAVY)
+	var by_convoys := SoloAI.execute_code("X", st, graph, engine,
+		scenario.port_control(), TaskForce.Side.ROYAL_NAVY)
+	true_(bool(by_convoys.get("end_scenario", false)),
+		"tre Convogli Completati chiudono lo scenario")
+	true_(st.solo_end_reason.contains("Convogli"),
+		"e il motivo li cita: %s" % st.solo_end_reason)
+
+	# La Bismarck affondata chiude lo scenario per l'altra via stampata.
+	var st2 := GameState.new(graph, 4)
+	st2.apply_dict(scenario.to_state_dict())
+	st2.casualties.append({"side": TaskForce.Side.KRIEGSMARINE,
+		"ships": ["Bismarck"], "convoys": 0})
+	var by_bismarck := SoloAI.execute_code("X", st2, graph, engine,
+		scenario.port_control(), TaskForce.Side.KRIEGSMARINE)
+	true_(bool(by_bismarck.get("end_scenario", false)),
+		"la Bismarck perduta chiude lo scenario")
+	true_(st2.solo_end_reason.contains("Bismarck"),
+		"e il motivo la nomina: %s" % st2.solo_end_reason)
+
+
+## La colonna 3 della tabella di Identificazione di B3 stampa CV/CA/CA, tre
+## navi. Il dato ne aveva due: una TF non identificata entrava in Battaglia con
+## un incrociatore in meno.
+func test_b3_identify_third_column_has_three_ships() -> void:
+	_begin("B3: la colonna 3 dell'Identificazione stampa tre navi")
+	var o := SoloOpponent.load_for("B3 Operazione Reno")
+	var t: SoloTable = o.table("identify")
+	ne(t, null, "la tabella di Identificazione esiste")
+	eq(String(t.read(0, 3)["code"]), "CV/CA/CA",
+		"con 3 la TF ha una CV e DUE CA, non una sola")
+	eq(String(t.read(0, 1)["code"]), "BB/CA/CA", "con 1 una BB e due CA")
+	eq(String(t.read(0, 4)["code"]), "CA/CA/CA", "con 4 tre CA")
+	eq(String(t.read(0, 5)["code"]), "CA/CA", "con 5 due CA")
+	eq(String(t.read(0, 6)["code"]), "CA", "con 6 un CA solo")
+	# Il fascicolo stampa i limiti di classe accanto alla tabella: vanno
+	# conservati nel dato, perche' cambiano il risultato quando si e' al limite.
+	true_(String(t.note).contains("3 BC, 7 BB, 10 CA, 6 CL, 3 CV"),
+		"i limiti massimi di classe restano nel dato")
+
+
+func test_b3_procedures_are_transcribed() -> void:
+	_begin("B3: le 24 procedure sono trascritte")
+	var o := SoloOpponent.load_for("B3 Operazione Reno")
+	var placeholders := 0
+	var total := 0
+	for tid in ["fueling", "british_actions", "identify", "x_choice"]:
+		var t: SoloTable = o.table(tid)
+		ne(t, null, "la tabella '%s' esiste" % tid)
+		for code_v: Variant in t.legend.keys():
+			total += 1
+			if String(t.legend[code_v]).contains("senza automatismi del motore"):
+				placeholders += 1
+	eq(total, 24, "le procedure trascritte sono ventiquattro")
+	eq(placeholders, 0, "e nessuna e' rimasta un segnaposto")
+	true_(String(o.table("british_actions").legend.get("X", "")).contains("LO SCENARIO FINISCE"),
+		"la 'X' dichiara la propria condizione di fine")
+	# B3 obbliga ad almeno un Controllo Rifornimento, cosa che BL1 e B1 non
+	# fanno: e' scritto in cima alla pagina della tabella.
+	true_(String(o.table("fueling").note).contains("almeno un Controllo"),
+		"la nota ricorda l'obbligo di almeno un Controllo Rifornimento")

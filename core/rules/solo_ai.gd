@@ -49,6 +49,8 @@ static func execute_code(code: String, state: GameState, graph: MapGraph,
 		return _n6(normalized, state, graph, engine, port_control, side)
 	if state.scenario_name.begins_with("B1"):
 		return _b1(normalized, state, graph, engine, port_control, side)
+	if state.scenario_name.begins_with("B3"):
+		return _b3(normalized, state, graph, engine, port_control, side)
 	if state.scenario_name.begins_with("A1"):
 		return _a1(normalized, state, graph, engine, port_control, side)
 	if state.scenario_name.begins_with("BL1"):
@@ -1183,6 +1185,136 @@ static func _b1(code: String, state: GameState, graph: MapGraph,
 			var tf := _create_force_at(state, graph, side, port, ["Convoy x3"], false)
 			return _complete_or_route_to_port(state, graph, port_control, tf,
 				"Clyde", "Solitario AI B1: nuovo Convoglio verso Clyde/Liverpool")
+
+
+## B3 Operazione Reno (AC Solo scenarios 2022 pp.49-53). Come N6, non aveva
+## nessuna policy propria e cadeva nel ripiego generico: la condizione di fine
+## che il fascicolo stampa dentro il risultato 'X' non veniva quindi mai
+## verificata. E' il "It may also end as a result of the British Action Table"
+## del riquadro The End.
+static func _b3(code: String, state: GameState, graph: MapGraph,
+		engine: ActionEngine, port_control: Dictionary, side: int) -> Dictionary:
+	match code:
+		"A":
+			_remove_damaged_ships(state, side)
+			if state.weather == TimeLapse.Weather.BAD:
+				var swing := state.rng.d6("Solitario B3 A col Meteo Cattivo")
+				var branch := "X" if swing % 2 == 0 else "CONV"
+				var bad := _b3(branch, state, graph, engine, port_control, side)
+				bad["log"].append("Solitario AI B3: Meteo Cattivo, 1d6=%d: la 'A' diventa una '%s'."
+					% [swing, branch])
+				return bad
+			var air := _best_legal_action(state, engine, side, "AIR_STRIKE")
+			if bool(air["ok"]):
+				air["log"].append("Solitario AI B3: Attacco Aereo britannico col Meteo Buono.")
+				return air
+			# p.52: senza bersaglio si va sulla 'X', ma NON con la Tabella di
+			# Scelta: si tira questo dado dedicato.
+			var pick := state.rng.d6("Solitario B3 A senza bersaglio")
+			var hunter: TaskForce = null
+			if pick <= 2:
+				hunter = _nearest_force_with_type(state, side, "CA", _enemy_center(state, side))
+			elif pick <= 4:
+				hunter = _nearest_force_with_type(state, side, "CV", _enemy_center(state, side))
+			else:
+				hunter = _best_unidentified(state, side)
+				if hunter == null:
+					hunter = _create_unidentified_at(state, graph, side, "St. John's")
+			if hunter == null:
+				hunter = _nearest_heavy_without_convoy(state, side, _enemy_center(state, side))
+			if hunter == null:
+				return _b3("X", state, graph, engine, port_control, side)
+			var no_target := _attack_or_route_selected(state, graph, engine, hunter,
+				_best_enemy_target(state, side, hunter),
+				"Solitario AI B3: nessun bersaglio aereo, 1d6=%d" % pick)
+			return no_target
+		"C":
+			var convoy := _shortest_force_with_convoy(state, side)
+			if convoy == null:
+				convoy = _first_damaged_force(state, side)
+			if convoy == null:
+				return _b3("CONV", state, graph, engine, port_control, side)
+			var port := _b1_convoy_destination(graph, convoy)
+			if not _has_convoy(convoy):
+				# "If a TF with a Damaged ship, the nearest British controlled
+				# port." `_nearest_friendly_port` ritorna il porto intero, non
+				# il solo nome.
+				var nearest := _nearest_friendly_port(graph, port_control, side,
+					_anchor_hex(convoy))
+				if not nearest.is_empty():
+					port = String(nearest.get("name", port))
+			return _complete_or_route_to_port(state, graph, port_control, convoy, port,
+				"Solitario AI B3: Completamento britannico verso %s" % port)
+		"X":
+			# "End? If the Bismarck is sunk or Completed, or three Convoys have
+			# successfully Completed, the scenario ends."
+			if _b3_bismarck_gone(state):
+				return _b3_scenario_end(state,
+					"La Bismarck e' affondata o ha Completato (p.53).")
+			if state.convoys_completed >= 3:
+				return _b3_scenario_end(state,
+					"Tre Convogli hanno Completato con successo (p.53).")
+			_remove_damaged_ships(state, side)
+			var hunter_x := _nearest_heavy_without_convoy(state, side,
+				_enemy_center(state, side))
+			if hunter_x == null:
+				hunter_x = _best_unidentified(state, side)
+			if hunter_x == null:
+				hunter_x = _create_unidentified_at(state, graph, side, "Scapa Flow")
+			# "Which German target? ... 1-4 = select the TF with a BB in it;
+			# 5-6 = select the nearest German TF."
+			var which := state.rng.d6("Solitario B3 quale bersaglio tedesco")
+			var target: TaskForce = null
+			if which <= 4:
+				target = _nearest_force_with_type(state, 1 - side, "BB",
+					_anchor_hex(hunter_x))
+			if target == null:
+				target = _best_enemy_target(state, side, hunter_x)
+			if target == null:
+				return _b3("CONV", state, graph, engine, port_control, side)
+			return _attack_or_route_selected(state, graph, engine, hunter_x, target,
+				"Solitario AI B3 - X: Intercettazione (1d6=%d)" % which)
+	# Risultato Convoglio.
+	var existing := _shortest_force_with_convoy(state, side)
+	if existing != null:
+		var swing2 := state.rng.d6("Solitario B3 Convoglio in gioco")
+		var branch2 := "X" if swing2 % 2 == 0 else "C"
+		var redirect := _b3(branch2, state, graph, engine, port_control, side)
+		redirect["log"].append("Solitario AI B3: c'e' gia' un Convoglio, 1d6=%d: diventa una '%s'."
+			% [swing2, branch2])
+		return redirect
+	var fresh := _create_force_at(state, graph, side, "New York", ["Convoy x3"], false)
+	var routed := _complete_or_route_to_port(state, graph, port_control, fresh,
+		"Clyde", "Solitario AI B3: nuovo Convoglio da New York verso Clyde/Liverpool")
+	routed["roll_again"] = true
+	routed["log"].append("Solitario AI B3: dopo la Traiettoria si ritira sulla Tabella delle Azioni.")
+	return routed
+
+
+## La Bismarck e' fuori gioco? Affondata, oppure entrata in porto con un
+## Completamento: il fascicolo mette le due cose sullo stesso piano.
+static func _b3_bismarck_gone(state: GameState) -> bool:
+	for tf in state.task_forces:
+		if tf.completed and tf.completed_ships.has("Bismarck"):
+			return true
+		for ship in tf.ships:
+			if ship.name == "Bismarck" and ship.sunk:
+				return true
+	for loss_v: Variant in state.casualties:
+		for name_v: Variant in (loss_v as Dictionary).get("ships", []):
+			if String(name_v).contains("Bismarck"):
+				return true
+	return false
+
+
+static func _b3_scenario_end(state: GameState, reason: String) -> Dictionary:
+	state.solo_ended = true
+	state.solo_end_reason = reason
+	var out := _empty("Solitario AI B3 - FINE SCENARIO: %s" % reason)
+	out["ok"] = true
+	out["turn_kind"] = "end"
+	out["end_scenario"] = true
+	return out
 
 
 ## Risultato E di B1 (AC Solo scenarios 2022 p.43). Non c'era: il codice non

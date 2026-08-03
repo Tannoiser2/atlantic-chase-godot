@@ -40,7 +40,7 @@ godot --path . --script res://tools/smoke_solo_flow.gd
 godot --path . --script res://tools/smoke_solo_flow.gd -- BL1
 ```
 
-Baseline corrente: **2828 verifiche, 18 suite** (era 2570 su 17 prima della
+Baseline corrente: **2848 verifiche, 18 suite** (era 2570 su 17 prima della
 suite `test_replay.gd`). Il totale non puo' scendere senza una rimozione
 intenzionale di test spiegata nel commit.
 
@@ -57,7 +57,7 @@ distingue tre esiti: `OK` (fine stampata), `STALLO` (lacuna dichiarata del
 fascicolo) e `FALLITO` (il ciclo non converge: un difetto).
 
 `audit_solo.gd` verde non significa completo: al passaggio stampa 93 caselle
-uniche, 67 procedure Azione segnaposto, 2 buchi dichiarati e 0 blocchi.
+uniche, 63 procedure Azione segnaposto, 2 buchi dichiarati e 0 blocchi.
 
 ## Metodo di revisione
 
