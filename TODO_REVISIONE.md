@@ -114,8 +114,28 @@ Uno scenario puo' essere marcato completo solo quando:
   sostituti - Narvik per Vestfjorden, Trondheim per Bud, Bergen per Andalsnes -
   cioe' su posizioni inventate. Ora lo dichiarano tutti e cinque e il replay si
   rifiuta di giocarli; lo schieramento trascritto resta in `unplaced_forces`,
-  pronto per quando l'inserto sara' calibrato. **Il lavoro vero e' uno solo:
-  calibrare i due reticoli inserto**, e sblocca cinque scenari insieme.
+  pronto per quando l'inserto sara' calibrato.
+  **I due reticoli sono ora MISURATI** (`tools/fit_inset_lattice.py`,
+  `core/data/map_insets.json`): fit sull'immagine stampata, con verifica
+  visiva e un `--check` che rifa' la misura e la confronta col dato salvato.
+  Il risultato e' che i due inserti condividono un solo reticolo, e quel
+  reticolo e' lo stesso della Mappa Operazionale: passo 213.9 px contro 213.5,
+  circumraggio 123.50 contro 123.26, direzione di base 44.25 gradi contro
+  44.28. GMT stampa gli inserti alla stessa scala esagonale della mappa grande,
+  e non c'era modo di saperlo senza misurarlo.
+  **Restano, e sono la parte che ancora blocca i cinque scenari**: la
+  nomenclatura degli esagoni, i porti costieri (Vestfjorden, Bud, Andalsnes,
+  Bergen, Methil, Utsira, Stavanger, Egersund, Kristiansand, Bodo, Namsos,
+  Harstad, Tromso), i lati **"not adjacent"** stampati lungo la costa, e le
+  caselle fuori mappa con le loro connessioni (Murmansk, Kiel, Scapa Flow,
+  Portsmouth, Denmark Strait, piu' le frecce verso Bear Island, Jan Mayen,
+  le Shetlands e il Mare di Norvegia). Serve poi un secondo `MapGraph` e il
+  disegno dell'inserto come superficie di gioco nella GUI.
+  **La verita' indipendente esiste**: le illustrazioni di schieramento del
+  fascicolo (BL3 a p.12, e le pagine corrispondenti di N1, N2, N3, N5) mostrano
+  i segmenti di Traiettoria iniziali disegnati SULL'INSERTO. Sono per l'inserto
+  quello che le 238 pedine del modulo VASSAL sono state per la mappa grande: un
+  campione contro cui validare, e va usato invece di posizioni scelte a mano.
 - [ ] **N1 Operazione Wilfred**: 30 procedure testuali nel JSON; completare
   Azioni, Identificazione, porti, reazioni e setup.
 - [ ] **N2 Operazione Weser (nord)**: 26 procedure testuali; modellare Mine o

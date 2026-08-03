@@ -1,0 +1,75 @@
+{
+ "generated_by": "tools/fit_inset_lattice.py",
+ "method": "Fit del reticolo sull'immagine stampata: ridge = luminosita' meno la sua sfocatura, maschera di solo mare aperto, ricerca esaustiva di circumraggio/orientamento/origine che massimizza la ridge media lungo i sei lati di ogni esagono, poi raffinamento locale. Non esistono pedine VASSAL per gli inserti: la verita' indipendente usata per la mappa grande qui non c'e', quindi la misura si valida sull'immagine.",
+ "finding": "I due inserti condividono un solo reticolo, ed e' lo stesso della Mappa Operazionale: passo 213.9 px contro 213.5, circumraggio 123.50 contro 123.26, direzione di base 44.25 gradi contro 44.28.",
+ "still_missing": "Il reticolo e' la geometria, non la mappa. Mancano la nomenclatura degli esagoni, i porti costieri, i lati 'not adjacent' stampati lungo la costa e le caselle fuori mappa. I cinque scenari restano dichiarati non giocabili finche' non ci sono anche quelli.",
+ "insets": {
+  "map_north_sea": {
+   "name": "Mappa Inserto del Mare del Nord",
+   "image": "assets/boards/map_north_sea.jpg",
+   "image_size": [
+    1020,
+    1320
+   ],
+   "scenarios": [
+    "BL3",
+    "N3"
+   ],
+   "lattice": {
+    "circumradius_px": 123.5,
+    "spacing_px": 213.9083,
+    "inradius_px": 106.9541,
+    "theta_deg": 14.25,
+    "basis_theta_deg": 44.25,
+    "origin_px": [
+     135.2954,
+     75.1688
+    ],
+    "basis_e1": [
+     153.2229,
+     149.2632
+    ],
+    "basis_e2": [
+     -52.6542,
+     207.3265
+    ]
+   },
+   "fit_score": 9.8959,
+   "fit_samples": 1907
+  },
+  "map_norwegian_sea": {
+   "name": "Mappa Inserto del Mare di Norvegia",
+   "image": "assets/boards/map_norwegian_sea.jpg",
+   "image_size": [
+    1020,
+    1320
+   ],
+   "scenarios": [
+    "N1",
+    "N2",
+    "N5"
+   ],
+   "lattice": {
+    "circumradius_px": 123.5,
+    "spacing_px": 213.9083,
+    "inradius_px": 106.9541,
+    "theta_deg": 14.25,
+    "basis_theta_deg": 44.25,
+    "origin_px": [
+     135.2954,
+     75.1688
+    ],
+    "basis_e1": [
+     153.2229,
+     149.2632
+    ],
+    "basis_e2": [
+     -52.6542,
+     207.3265
+    ]
+   },
+   "fit_score": 8.9021,
+   "fit_samples": 2092
+  }
+ }
+}

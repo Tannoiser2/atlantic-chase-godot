@@ -61,6 +61,17 @@ difetto). Al passaggio: dieci `OK` - tutti gli scenari sulla Mappa Operazionale
 `audit_solo.gd` verde non significa completo: al passaggio stampa 93 caselle
 uniche, 42 procedure Azione segnaposto, 2 buchi dichiarati e 0 blocchi.
 
+Per le mappe inserto:
+
+```bash
+tools/.venv/bin/python tools/fit_inset_lattice.py --check
+```
+
+Rifa' la misura del reticolo dei due inserti e la confronta con
+`core/data/map_insets.json`. Il reticolo e' misurato, ma i cinque scenari
+inserto restano dichiarati non giocabili: mancano nomenclatura degli esagoni,
+porti costieri, lati "not adjacent" e caselle fuori mappa.
+
 ## Metodo di revisione
 
 Per ogni regola o scenario:

@@ -341,8 +341,21 @@ Tutti i test passano: **2957 verifiche, 18 suite, headless.**
   chiude subito, come stampato.
 - **Tutti e dieci gli scenari sulla Mappa Operazionale chiudono ora su una
   condizione stampata**: BL1, BL2, N4, N6, B1, B2, B3, B4, A1, A2. I cinque che
-  restano fuori sono i cinque della mappa inserto, e li sblocca un lavoro solo:
-  calibrare i due reticoli.
+  restano fuori sono i cinque della mappa inserto.
+- **I reticoli dei due inserti sono misurati.** `tools/fit_inset_lattice.py`
+  isola le linee chiare degli esagoni (luminosita' meno la sua sfocatura), le
+  campiona in sola acqua aperta e cerca circumraggio, orientamento e origine
+  che massimizzano la risposta lungo i sei lati; l'overlay rosso cade sulle
+  linee stampate su tutta e due le mappe. Non c'e' nessun `.vsav` per gli
+  inserti, quindi la verita' indipendente usata per la mappa grande qui non
+  esiste e la misura si valida sull'immagine: `--check` la rifa' e la confronta
+  col dato salvato. Il risultato interessante e' che **i due inserti usano un
+  solo reticolo, e quel reticolo e' quello della Mappa Operazionale**: passo
+  213.9 px contro 213.5, circumraggio 123.50 contro 123.26, direzione di base
+  44.25 gradi contro 44.28. **Non basta a sbloccare i cinque scenari**: il
+  reticolo e' la geometria, non la mappa. Mancano nomenclatura degli esagoni,
+  porti costieri, lati "not adjacent" e caselle fuori mappa, e finche' mancano
+  i cinque scenari restano dichiarati non giocabili - come devono.
 - **I Comandanti dicono la loro condizione stampata.** Gli undici testi sono
   trascritti da RB p.10 letta a 300 dpi: la scheda TF mostra la regola vera e
   non un riassunto, ed e' quella che decide se il beneficio si puo' usare
