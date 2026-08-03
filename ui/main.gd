@@ -61,10 +61,16 @@ var vp_tracker: VictoryTracker = null
 var solo: SoloOpponent = null
 
 var _messages: Array[String] = []
+var _message_bot_trace: Array[int] = []
 var _message_seq: int = 0
+var _bot_trace_serial: int = 0
+var _active_bot_trace: int = 0
+var _bot_details_expanded: bool = false
+var _last_bot_summary: String = ""
 var _battle_post_time_lapse: Array[TaskForce] = []
 var _hex_choice_active: bool = false
 var _hex_choice_options: Dictionary = {}
+var _hex_choice_prompt: String = ""
 var _bl1_fueling_running: bool = false
 
 
@@ -252,6 +258,7 @@ func _on_key(k: InputEventKey) -> void:
 	if _hex_choice_active and k.keycode == KEY_ESCAPE:
 		_hex_choice_active = false
 		_hex_choice_options.clear()
+		_hex_choice_prompt = ""
 		board.set_highlight({})
 		_msg("Scelta esagono annullata.")
 		_hex_choice_made.emit(Vector2i.MAX)
@@ -871,6 +878,7 @@ func _on_left_click(h: Vector2i, shift: bool) -> void:
 			_hex_choice_options.clear()
 			board.set_highlight({})
 			_hex_choice_made.emit(h)
+			return
 		else:
 			_msg("Scegli uno degli esagoni evidenziati; ESC annulla.")
 		return
@@ -1359,6 +1367,8 @@ func _solo_roll_action(auto: bool = false) -> void:
 		_msg("Solitario: lo scenario non ha una Tabella delle Azioni.")
 		return
 	if auto:
+		_bot_trace_serial += 1
+		_active_bot_trace = _bot_trace_serial
 		_msg("Solitario: tiro automatico della Tabella delle Azioni. "
 			+ "L'AI applica la procedura senza aprire scelte manuali.")
 	var mods: Array = []
@@ -1377,36 +1387,44 @@ func _solo_roll_action(auto: bool = false) -> void:
 	for line in SoloTable.describe(result).split("\n"):
 		_msg("  " + line)
 	log.record("Solitario: %s" % String(result.get("code", "")))
-	await _apply_solo_ai_result(result)
+	var bot_summary := await _apply_solo_ai_result(result)
+	if auto:
+		_active_bot_trace = 0
+		_last_bot_summary = bot_summary
+		_msg("BOT - %s" % bot_summary)
 	state.changed.emit()
 
 
-func _apply_solo_ai_result(result: Dictionary) -> void:
+func _apply_solo_ai_result(result: Dictionary) -> String:
 	var imaginary := _solo_imaginary_side()
 	if imaginary < 0:
-		return
+		return "nessuna parte avversaria configurata."
 	if String(result.get("code", "")).to_upper() == "I":
 		_solo_maybe_go_late("result_i", "la Tabella Azioni ha dato I")
 	var decision := SoloAI.execute_code(String(result.get("code", "")),
 		state, graph, engine, _port_control(), imaginary)
 	for line_v: Variant in decision.get("log", []):
 		_msg(String(line_v))
-	_show_solo_event(result, decision)
+	var code := String(result.get("code", "?"))
+	var summary := "risultato %s; nessun effetto applicato." % code
 	if bool(decision.get("completion", false)):
 		if await _offer_steal_initiative("Completamento del bot"):
 			_msg("Solitario AI: Completamento impedito dal cambio d'Iniziativa.")
 			await _solo_time_lapse(decision.get("active", null),
 				decision.get("target_hex", Vector2i.MAX))
-			return
+			return "risultato %s: Completamento impedito; l'Iniziativa e' cambiata." % code
 		var comp := Completion.resolve(decision["active"], decision["completion_port"], vp_tracker)
 		for line_v2: Variant in comp.get("log", []):
 			_msg(String(line_v2))
 		log.record("Solitario AI: Completamento")
 		_show_completed_notice(decision["active"], comp, "BOT")
+		summary = "risultato %s: %s ha Completato a %s." % [code,
+			(decision["active"] as TaskForce).display_name(),
+			String((comp.get("port", {}) as Dictionary).get("name", "un porto"))]
 		state.changed.emit()
 		_queue_next_solo_action("dopo il Completamento")
 	elif String(decision.get("action_key", "")) != "":
-		await _resolve_solo_ai_action(decision)
+		summary = "risultato %s: %s" % [code, await _resolve_solo_ai_action(decision)]
 	elif bool(decision.get("ok", false)):
 		log.record("Solitario AI: %s" % String(decision.get("turn_kind", "effetto")))
 		state.changed.emit()
@@ -1417,10 +1435,15 @@ func _apply_solo_ai_result(result: Dictionary) -> void:
 				decision.get("target_hex", Vector2i.MAX))
 			if not await _offer_steal_initiative("Traiettoria del bot"):
 				_queue_next_solo_action("il bot mantiene l'Iniziativa")
+		var decision_log: Array = decision.get("log", [])
+		if not decision_log.is_empty():
+			summary = "risultato %s: %s" % [code, String(decision_log[-1])]
 	if bool(decision.get("pass_initiative", false)) and _solo_is_imaginary_turn():
 		var player := _solo_player_side()
 		if player >= 0:
 			_change_initiative_to(player)
+			summary += " L'Iniziativa passa al giocatore."
+	return summary
 
 
 func _show_solo_event(result: Dictionary, decision: Dictionary,
@@ -1470,12 +1493,12 @@ func _show_completed_notice(tf: TaskForce, result: Dictionary,
 		+ "delle TF uscite.") % [actor, tf.display_name(), port, ", ".join(ships)])
 
 
-func _resolve_solo_ai_action(decision: Dictionary) -> void:
+func _resolve_solo_ai_action(decision: Dictionary) -> String:
 	var key := String(decision.get("action_key", ""))
 	var active: TaskForce = decision.get("active", null)
 	var target: TaskForce = decision.get("target", null)
 	if key == "" or active == null or target == null:
-		return
+		return "azione incompleta: manca la TF attiva o il bersaglio."
 	var dec := ActionEngine.Declaration.new()
 	dec.action_key = key
 	dec.active = active
@@ -1486,7 +1509,7 @@ func _resolve_solo_ai_action(decision: Dictionary) -> void:
 	var label := String(engine.action(key).get("label", key))
 	if not res["ok"]:
 		_msg("Solitario AI - %s: %s" % [label, String(res["error"])])
-		return
+		return "%s non eseguito: %s" % [label, String(res["error"])]
 	_msg("Solitario AI - %s -> %s" % [label, engine.describe(res)])
 	if _action_canceled_by_interruption(res):
 		_msg("Solitario AI: azione annullata da Interruzione.")
@@ -1495,12 +1518,15 @@ func _resolve_solo_ai_action(decision: Dictionary) -> void:
 		await _handle_interruption_cancel(res, dec)
 		if _solo_is_imaginary_turn():
 			_queue_next_solo_action("dopo l'Interruzione")
-		return
+		return "%s di %s contro %s annullato da Interruzione." % [label,
+			active.display_name(), target.display_name()]
 	var pending_battle := Results.Battle.NONE
+	var applied_texts: Array[String] = []
 	for code_v: Variant in res["results"] as Array:
 		var code := String(code_v)
 		var applied := Results.apply(code, active, target, dec.target_hex, state)
 		_msg("    %s" % applied["text"])
+		applied_texts.append(String(applied["text"]))
 		if applied["battle"] != Results.Battle.NONE:
 			pending_battle = applied["battle"]
 	_report_eliminated_forces("Solitario AI - %s" % label)
@@ -1523,6 +1549,13 @@ func _resolve_solo_ai_action(decision: Dictionary) -> void:
 			var changed := _seek_initiative()
 			if not changed and _solo_is_imaginary_turn():
 				_queue_next_solo_action("il bot vince la ricerca dell'Iniziativa")
+	var outcome := "; ".join(applied_texts)
+	if pending_battle != Results.Battle.NONE:
+		outcome = "apre una Battaglia" if outcome == "" else outcome + "; apre una Battaglia"
+	if outcome == "":
+		outcome = engine.describe(res)
+	return "%s con %s contro %s. Esito: %s" % [label,
+		active.display_name(), target.display_name(), outcome]
 
 
 func _queue_next_solo_action(reason: String) -> void:
@@ -2143,25 +2176,10 @@ func _do_time_lapse(allow_bl1_fueling: bool = true) -> void:
 	# RB p.19-20: la scelta e' del proprietario della Traiettoria, e conta:
 	# invocare il Limite di Informazioni toglie un segnalino ma rimuove meno
 	# segmenti. La decide il giocatore, non il codice.
-	var chosen: Dictionary = opts[0]
-	if opts.size() > 1:
-		var options: Array = []
-		for o in opts:
-			var detail := "%d segmenti" % int(o["total"])
-			if o["uses_intel_limit"]:
-				detail += "  -  rimuove un segnalino INFORMAZIONI (Limite di Informazioni)"
-			options.append({"label": String(o["label"]), "detail": detail})
-		var desc := ("Velocita' [b]%s[/b], meteo [b]%s[/b]: lo Scorrere del Tempo "
-			+ "chiede di rimuovere [b]%d[/b] segmenti.\n"
-			+ "I segmenti si tolgono solo dai capi.") % [
-				TimeLapse.speed_label(selected_tf.speed),
-				"cattivo" if state.weather == 1 else "buono", amount]
-		var i: int = await Choice.ask(self, "Scorrere del Tempo - %s"
-			% selected_tf.display_name(), desc, options)
-		if i < 0:
-			_msg("Scorrere del Tempo annullato")
-			return
-		chosen = opts[i]
+	var chosen := await _pick_time_lapse_option(traj, opts, amount)
+	if chosen.is_empty():
+		_msg("Scorrere del Tempo annullato")
+		return
 
 	var freed := TimeLapse.apply(traj, chosen)
 	var note := ""
@@ -2188,20 +2206,77 @@ func _do_time_lapse(allow_bl1_fueling: bool = true) -> void:
 		await _maybe_run_bl1_fueling()
 
 
-func _pick_hex_on_map(hexes: Array, prompt: String) -> Vector2i:
+func _pick_time_lapse_option(traj: Trajectory, options: Array,
+		amount: int) -> Dictionary:
+	var candidates: Array = options.duplicate()
+	var front := 0
+	var back := 0
+	var selected_marks := {}
+	while not candidates.is_empty():
+		var exact: Dictionary = {}
+		var can_front := false
+		var can_back := false
+		for option_v: Variant in candidates:
+			var option: Dictionary = option_v
+			var ends: Array = option["ends"]
+			if int(ends[0]) == front and int(ends[1]) == back:
+				exact = option
+			can_front = can_front or int(ends[0]) > front
+			can_back = can_back or int(ends[1]) > back
+		if not exact.is_empty() and not can_front and not can_back:
+			return exact
+
+		var clickable: Array = []
+		var front_hex := Vector2i.MAX
+		var back_hex := Vector2i.MAX
+		if can_front:
+			front_hex = traj.segments[front]["hex"] as Vector2i
+			clickable.append(front_hex)
+		if can_back:
+			back_hex = traj.segments[traj.length() - 1 - back]["hex"] as Vector2i
+			if not clickable.has(back_hex):
+				clickable.append(back_hex)
+		var prompt := ("Scorrere del Tempo: selezionati %d segmenti. "
+			+ "Clicca un segmento terminale evidenziato; la scelta termina "
+			+ "automaticamente quando la rimozione e' completa (richiesti %d).") \
+			% [front + back, amount]
+		var picked := await _pick_hex_on_map(clickable, prompt, selected_marks)
+		if picked == Vector2i.MAX:
+			return {}
+		selected_marks[picked] = Color(1.0, 0.48, 0.16, 0.58)
+		if picked == front_hex:
+			front += 1
+		elif picked == back_hex:
+			back += 1
+		var remaining: Array = []
+		for option_v2: Variant in candidates:
+			var ends2: Array = (option_v2 as Dictionary)["ends"]
+			if int(ends2[0]) >= front and int(ends2[1]) >= back:
+				remaining.append(option_v2)
+		candidates = remaining
+	return {}
+
+
+func _pick_hex_on_map(hexes: Array, prompt: String,
+		extra_highlights: Dictionary = {}) -> Vector2i:
 	var highlights := {}
 	for h_v: Variant in hexes:
 		var h: Vector2i = h_v
 		highlights[h] = Color(0.2, 0.95, 0.45, 0.36)
 	_hex_choice_options = highlights.duplicate()
+	for h_v: Variant in extra_highlights:
+		highlights[h_v] = extra_highlights[h_v]
 	_hex_choice_active = true
+	_hex_choice_prompt = prompt
 	board.set_highlight(highlights)
 	_msg(prompt)
 	_refresh()
 	var picked: Vector2i = await _hex_choice_made
 	_hex_choice_active = false
 	_hex_choice_options.clear()
+	_hex_choice_prompt = ""
 	board.set_highlight({})
+	_refresh()
 	return picked
 
 
@@ -2302,6 +2377,7 @@ var _tf_info: RichTextLabel
 var _tf_ships: HBoxContainer
 var _log_panel: PanelContainer
 var _log_toggle: Button
+var _bot_details_toggle: Button
 var _log_scroll: ScrollContainer
 var _log_expanded: bool = true
 var _tf_card_signature: String = ""
@@ -2394,6 +2470,12 @@ func _build_hud() -> void:
 	_log_toggle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_log_toggle.pressed.connect(_toggle_log_panel)
 	log_header.add_child(_log_toggle)
+	_bot_details_toggle = Button.new()
+	_bot_details_toggle.text = "Dettagli BOT"
+	_bot_details_toggle.tooltip_text = "Mostra i calcoli e tutti i passaggi della procedura del bot"
+	_bot_details_toggle.focus_mode = Control.FOCUS_NONE
+	_bot_details_toggle.pressed.connect(_toggle_bot_details)
+	log_header.add_child(_bot_details_toggle)
 	var copy_log := Button.new()
 	copy_log.text = "Copia tutto"
 	copy_log.tooltip_text = "Copia l'intero registro negli appunti"
@@ -2499,6 +2581,15 @@ func _toggle_log_panel() -> void:
 		if _log_expanded else "Apri il registro degli eventi"
 
 
+func _toggle_bot_details() -> void:
+	_bot_details_expanded = not _bot_details_expanded
+	_bot_details_toggle.text = "Nascondi dettagli" if _bot_details_expanded else "Dettagli BOT"
+	_bot_details_toggle.tooltip_text = ("Nasconde i calcoli del bot e lascia i riepiloghi"
+		if _bot_details_expanded else
+		"Mostra i calcoli e tutti i passaggi della procedura del bot")
+	_refresh()
+
+
 func _copy_full_log() -> void:
 	var lines: Array[String] = ["Mosse: %d" % log.applied_count() if log else ""]
 	lines.append_array(_messages)
@@ -2525,14 +2616,16 @@ func _status_choose(title: String, description: String, options: Array,
 		var button := Button.new()
 		button.text = String(option.get("label", "Opzione %d" % (i + 1)))
 		button.tooltip_text = String(option.get("detail", ""))
-		button.custom_minimum_size.y = 34
+		button.custom_minimum_size = Vector2(150, 40)
+		_style_status_button(button, false)
 		var index := i
 		button.pressed.connect(func() -> void: _complete_status_choice(index))
 		_status_choice_buttons.add_child(button)
 	if allow_cancel:
 		var cancel := Button.new()
 		cancel.text = "Annulla"
-		cancel.custom_minimum_size.y = 34
+		cancel.custom_minimum_size = Vector2(110, 40)
+		_style_status_button(cancel, true)
 		cancel.pressed.connect(func() -> void: _complete_status_choice(-1))
 		_status_choice_buttons.add_child(cancel)
 	_status_choice_box.visible = true
@@ -2551,6 +2644,25 @@ func _complete_status_choice(index: int) -> void:
 	if not _status_choice_active:
 		return
 	_status_choice_made.emit(index)
+
+
+func _style_status_button(button: Button, secondary: bool) -> void:
+	var colors := [Color("253746"), Color("31546b"), Color("1b2934")]
+	if secondary:
+		colors = [Color("292f35"), Color("3b4650"), Color("20262b")]
+	for i in 3:
+		var style := StyleBoxFlat.new()
+		style.bg_color = colors[i]
+		style.border_color = Color("78a8c4") if not secondary else Color("697783")
+		style.set_border_width_all(1)
+		style.set_corner_radius_all(7)
+		style.content_margin_left = 14
+		style.content_margin_right = 14
+		style.content_margin_top = 8
+		style.content_margin_bottom = 8
+		button.add_theme_stylebox_override(["normal", "hover", "pressed"][i], style)
+	button.add_theme_color_override("font_color", Color("f3f6f8"))
+	button.add_theme_color_override("font_hover_color", Color.WHITE)
 
 
 func _solo_event_style() -> StyleBoxFlat:
@@ -2654,6 +2766,12 @@ func _refresh_now() -> void:
 	if solo != null:
 		status += "    Solitario: [b]%s[/b]" % _solo_phase_label()
 	out.append(status)
+	if _last_bot_summary != "":
+		out.append("[bgcolor=#183541][color=#7ee5ff][b]  ULTIMA AZIONE DEL BOT  [/b][/color]  "
+			+ "[color=#ffffff][b]%s[/b][/color][/bgcolor]" % _last_bot_summary)
+	if _hex_choice_active and _hex_choice_prompt != "":
+		out.append("[bgcolor=#203c2d][color=#9af0b7][b]  SCELTA SULLA MAPPA  [/b][/color]  "
+			+ "[color=#ffffff]%s[/color][/bgcolor]" % _hex_choice_prompt)
 	var late := Endgame.notice(state, scenario.rules() if scenario != null
 		else {}, graph, _port_control())
 	if late != "":
@@ -2919,7 +3037,7 @@ func _build_help(root: Control) -> void:
   5 / Traiettoria                             arma il tracciamento della rotta
   [b]trascina dalla TF sugli esagoni[/b]             disegna la rotta armata in un gesto solo
   clic su un esagono adiacente                estende di un esagono, solo dopo 5
-  T / Scorrere del Tempo                      rimuove segmenti; non passa l'Iniziativa
+  T / Scorrere del Tempo                      clicca sulla mappa i capi da rimuovere
   Tab / Shift+Tab                             TF successiva / precedente
   F                                           cambia capo attivo (testa/coda)
   ESC                                         annulla l'azione Traiettoria armata
@@ -2941,6 +3059,7 @@ func _build_help(root: Control) -> void:
 [b]Guida in tempo reale[/b]
 	  Il pannello in basso dice chi ha l'Iniziativa, cosa puoi fare ora e
 	  perche' un'azione e' bloccata. Le scelte compaiono li' come pulsanti.
+	  Il risultato del bot resta evidenziato; Dettagli BOT apre i suoi calcoli.
 	  Registro e pannello di stato consentono di selezionare e copiare il testo.
 
 [b]Comandanti[/b]
@@ -2958,7 +3077,7 @@ func _build_help(root: Control) -> void:
 [b]Touch (iPad)[/b]
   due dita             sposta la mappa e zooma (pinch)
   un dito              seleziona; dopo 5 disegna la Traiettoria
-  tocco prolungato     in gioco ricorda di usare T per Scorrere del Tempo
+  T, poi tocco         sceglie i segmenti terminali dello Scorrere del Tempo
 
 [b]Scenario e vista[/b]
   [ e ]        scenario precedente / successivo
@@ -2975,6 +3094,7 @@ func _toggle_help() -> void:
 func _msg(s: String) -> void:
 	_message_seq += 1
 	_messages.append("%04d  %s" % [_message_seq, s])
+	_message_bot_trace.append(_active_bot_trace)
 
 
 func _tf_card_text(tf: TaskForce) -> String:
@@ -3121,8 +3241,25 @@ func _refresh() -> void:
 
 	var lg: Array[String] = []
 	lg.append("[b]Mosse:[/b] %d    (F1 = comandi)" % log.applied_count() if log else "")
-	for m in _messages:
-		lg.append("  " + m)
+	var trace_sizes := {}
+	for trace_id in _message_bot_trace:
+		if trace_id > 0:
+			trace_sizes[trace_id] = int(trace_sizes.get(trace_id, 0)) + 1
+	var hidden_traces := {}
+	for i in _messages.size():
+		var trace_id := _message_bot_trace[i] if i < _message_bot_trace.size() else 0
+		if trace_id > 0 and not _bot_details_expanded:
+			if not hidden_traces.has(trace_id):
+				hidden_traces[trace_id] = true
+				lg.append(("  [color=#91a4b3]Procedura BOT %02d nascosta (%d righe). "
+					+ "Premi [b]Dettagli BOT[/b] per aprirla.[/color]") \
+					% [trace_id, int(trace_sizes.get(trace_id, 0))])
+			continue
+		var line := _messages[i]
+		if line.contains("  BOT - "):
+			lg.append("  [color=#7ee5ff][b]%s[/b][/color]" % line)
+		else:
+			lg.append("  " + line)
 	if _lbl_log != null:
 		_lbl_log.text = "\n".join(lg)
 		call_deferred("_scroll_log_to_end")

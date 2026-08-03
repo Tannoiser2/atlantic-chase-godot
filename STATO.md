@@ -26,10 +26,19 @@ Tutti i test passano: **2334 verifiche, 17 suite, headless.**
 ### Ultima revisione del solitario
 
 - il Registro conserva l'intera sessione, numera gli eventi, e' selezionabile
-  e ha `Copia tutto`; anche il testo del pannello di stato e' selezionabile;
+  e ha `Copia tutto`; anche il testo del pannello di stato e' selezionabile.
+  Le procedure del bot sono raccolte per tiro e chiuse per impostazione
+  predefinita; `Dettagli BOT` le apre tutte per verifica e debug;
+- al termine di ogni tiro automatico, il risultato effettivamente applicato
+  dal bot resta in evidenza, in grassetto e colore distinto, sia nel Registro
+  sia nel pannello di stato;
 - le scelte operative non aprono piu' il grande dialogo centrale: Coordinatrice,
   Supporto Aereo, Sottrarre l'Iniziativa, Manovre Evasive e le altre opzioni
-  della mappa appaiono come pulsanti nel pannello di stato in basso;
+  della mappa appaiono come pulsanti rialzati e stondati nel pannello di stato;
+- lo Scorrere del Tempo del giocatore non presenta piu' combinazioni testuali:
+  evidenzia sulla mappa i capi legalmente rimovibili e li fa cliccare uno alla
+  volta. Quantita', Informazioni e Limite di Informazioni restano governati dal
+  core; il bot continua a scegliere deterministicamente secondo la tabella;
 - le schede TF spiegano l'effetto stampato dei Comandanti. Raeder e Pound
   implementano Passare Tutti due volte per scenario, con utilizzi salvati;
 - `(11,-7)` e `(11,-6)` sono stati esclusi dal grafo giocabile;
@@ -79,8 +88,8 @@ Tutti i test passano: **2334 verifiche, 17 suite, headless.**
 - il bot non trasforma piu' ogni Traiettoria in un Passare: Scorrere del Tempo,
   Sottrarre/Cercare l'Iniziativa e successiva azione seguono il flusso normale;
 - i passaggi Presto/Tardi di BL2, BL3, N1 e N2 sono automatici;
-- popup non modale, esagono evidenziato e log mostrano tabella, tiro, TF scelta,
-  bersaglio e ragione della policy;
+- riepilogo persistente nel pannello di stato e procedura espandibile nel log
+  mostrano tabella, tiro, TF scelta, bersaglio, risultato e ragione della policy;
 - `tools/audit_solo.gd`: 93 caselle azione, 0 blocchi, 82 testi segnaposto e 2
   buchi dichiarati (Mine N2, Mine/Base Aerea N4).
 | **M11** Effetti di Battaglia | ✅ **completo** | Suoni sintetizzati, vampe, traccianti, schizzi, esplosioni, incendi, siluri, affondamenti |

@@ -101,7 +101,17 @@ func _process(_delta: float) -> bool:
 		_root_node._tf_panel.position = Vector2(520, 180)
 	if _frames == 6 and _args.has("solo") and _root_node.solo != null:
 		_root_node._change_initiative_to(_root_node._solo_imaginary_side())
-		_root_node._kick_solo_opponent_turn("prova visiva")
+		_root_node._solo_roll_action(true)
+	if _frames == 6 and _args.has("bot-demo"):
+		_root_node._bot_trace_serial = 1
+		_root_node._active_bot_trace = 1
+		_root_node._msg("Solitario - Tabella delle Azioni Britanniche")
+		_root_node._msg("  1d6 = 2 -> A; applicazione dei modificatori e priorita'")
+		_root_node._active_bot_trace = 0
+		_root_node._last_bot_summary = ("Risultato A: Attacco Furtivo con Forza francese "
+			+ "contro Lutzow. Esito: Perdere il Contatto.")
+		_root_node._msg("BOT - %s" % _root_node._last_bot_summary)
+		_root_node._refresh()
 	if _frames == 6 and _args.has("fueling") and _root_node.solo != null:
 		for tf in _root_node.state.task_forces:
 			if tf.ships.any(func(ship: Ship) -> bool: return ship.name == "Lutzow"):

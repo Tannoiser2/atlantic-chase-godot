@@ -448,6 +448,15 @@ Restano:
   rotta ricostruita taglia dove non dovrebbe. Meglio l'avviso che il silenzio.
 - **`Scheerb.png` è un doppione.** Refuso del modulo VASSAL: il vero lato
   danneggiato è `Sheerb.png`. Già gestito in `ships_overrides.json`.
+- **Il dettaglio del bot non va perso, ma non deve dominare l'interfaccia.**
+  `_message_bot_trace` associa ogni riga tecnica al tiro automatico che l'ha
+  prodotta. Il Registro la chiude per default e `Dettagli BOT` la riapre;
+  `_last_bot_summary` resta invece visibile nel pannello di stato. Non tornare
+  a mostrare l'intera procedura come flusso principale.
+- **Lo Scorrere del Tempo umano si sceglie sulla mappa.**
+  `_pick_time_lapse_option()` fa cliccare solo i segmenti terminali compatibili
+  con le opzioni prodotte da `TimeLapse.removal_options()`. Non duplicare nella
+  UI le regole su quantita' e Limite di Informazioni: il core resta l'autorita'.
 
 ---
 
