@@ -79,6 +79,11 @@ func run() -> void:
 	test_solo_ai_n4_convoy_becomes_r4_after_r4()
 	test_solo_ai_n4_x_ends_the_scenario_without_a_target()
 	test_n4_norwegian_reaction_table_is_transcribed()
+	test_solo_ai_n6_trajectory_ends_after_two_norwegian_convoys()
+	test_solo_ai_n6_intercept_ends_after_three_german_losses()
+	test_solo_ai_n6_weather_redirects()
+	test_solo_ai_n6_passes_at_fifteen_segments()
+	test_n6_procedures_are_transcribed()
 	test_fueling()
 	test_bl1_fueling_trigger_conditions()
 	test_solo_ai_bl1_aux_tables_apply()
@@ -1721,3 +1726,152 @@ func test_n4_norwegian_reaction_table_is_transcribed() -> void:
 	for code in ["nessuno", "un_colpo", "due_colpi", "annullato", "base_aerea"]:
 		ne(String(t.legend.get(code, "")), "",
 			"la procedura '%s' e' trascritta" % code)
+
+
+## N6, AC Solo scenarios 2022 pp.36-38. Le quattro tabelle e i modificatori
+## coincidevano gia' col fascicolo; erano le 25 procedure a essere segnaposto,
+## e N6 non aveva nessuna policy propria: cadeva nel ripiego generico, quindi
+## le due condizioni di fine stampate DENTRO i risultati non si verificavano
+## mai. Sono il "It may also end by the German Action Table" del riquadro
+## The End.
+func test_solo_ai_n6_trajectory_ends_after_two_norwegian_convoys() -> void:
+	_begin("AI solitaria N6: due Convogli tedeschi in Norvegia chiudono lo scenario")
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("N6 Il Dilemma delle Operazioni")
+	var st := GameState.new(graph, 3)
+	st.apply_dict(scenario.to_state_dict())
+	var running := SoloAI.execute_code("T", st, graph, engine,
+		scenario.port_control(), TaskForce.Side.KRIEGSMARINE)
+	false_(st.solo_ended, "senza Completamenti norvegesi la 'T' non chiude niente")
+	false_(bool(running.get("end_scenario", false)), "e non lo dichiara")
+
+	# Due Convogli tedeschi Completati in porti norvegesi.
+	for port in ["Bergen", "Trondheim"]:
+		var done := TaskForce.new(0, TaskForce.Side.KRIEGSMARINE)
+		done.completed = true
+		done.completed_port = port
+		done.completed_ships = ["Convoy x2"] as Array[String]
+		st.add_task_force(done)
+	var over := SoloAI.execute_code("T", st, graph, engine,
+		scenario.port_control(), TaskForce.Side.KRIEGSMARINE)
+	true_(bool(over.get("end_scenario", false)), "la 'T' dichiara la fine")
+	true_(st.solo_ended, "e lo stato risulta concluso")
+	true_(st.solo_end_reason.contains("Norvegia"),
+		"il motivo cita i Convogli in Norvegia: %s" % st.solo_end_reason)
+
+
+func test_solo_ai_n6_intercept_ends_after_three_german_losses() -> void:
+	_begin("AI solitaria N6: tre navi tedesche perse chiudono lo scenario")
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("N6 Il Dilemma delle Operazioni")
+	var st := GameState.new(graph, 4)
+	st.apply_dict(scenario.to_state_dict())
+	SoloAI.execute_code("X", st, graph, engine, scenario.port_control(),
+		TaskForce.Side.KRIEGSMARINE)
+	false_(st.solo_ended, "senza perdite la 'X' non chiude niente")
+	st.casualties.append({"side": TaskForce.Side.KRIEGSMARINE,
+		"ships": ["uno", "due", "tre"], "convoys": 1})
+	var over := SoloAI.execute_code("X", st, graph, engine,
+		scenario.port_control(), TaskForce.Side.KRIEGSMARINE)
+	true_(bool(over.get("end_scenario", false)), "la 'X' dichiara la fine")
+	true_(st.solo_ended, "e lo stato risulta concluso")
+	true_(st.solo_end_reason.contains("affondate"),
+		"il motivo cita le navi perse: %s" % st.solo_end_reason)
+
+
+## p.37: col Meteo Cattivo la 'A' diventa una 'X'; senza TF tedesche la 'C'
+## diventa una 'A', ma col Meteo Cattivo crea invece una TF a Wilhelmshaven con
+## un Convoglio e la scorta tirata sul dado (1-2 CA, 3-4 CL, 5-6 due CL).
+func test_solo_ai_n6_weather_redirects() -> void:
+	_begin("AI solitaria N6: i rimandi che dipendono dal meteo")
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("N6 Il Dilemma delle Operazioni")
+	var st := GameState.new(graph, 5)
+	st.apply_dict(scenario.to_state_dict())
+	st.weather = TimeLapse.Weather.BAD
+	var as_x := SoloAI.execute_code("A", st, graph, engine,
+		scenario.port_control(), TaskForce.Side.KRIEGSMARINE)
+	true_(_solo_ai_log_contains(as_x, "la 'A' diventa una 'X'"),
+		"col Meteo Cattivo la 'A' diventa una 'X'")
+
+	# 'C' senza TF tedesche, Meteo Cattivo: nasce la TF di Wilhelmshaven.
+	var st2 := GameState.new(graph, 6)
+	st2.apply_dict(scenario.to_state_dict())
+	st2.weather = TimeLapse.Weather.BAD
+	for tf in st2.forces_of(TaskForce.Side.KRIEGSMARINE):
+		st2.remove_task_force(tf)
+	st2.rng.push_forced([5, 3])   # 5-6 = due CL; poi il porto del Convoglio
+	SoloAI.execute_code("C", st2, graph, engine, scenario.port_control(),
+		TaskForce.Side.KRIEGSMARINE)
+	var germans := st2.forces_of(TaskForce.Side.KRIEGSMARINE)
+	eq(germans.size(), 1, "nasce una sola TF tedesca")
+	true_(SoloAI._has_convoy(germans[0]) if germans.size() == 1 else false,
+		"con dentro il Convoglio previsto")
+	eq(_count_tf_type(germans[0] if germans.size() == 1 else null, "CL"), 2,
+		"e col 5 sul dado la scorta e' di due CL")
+
+	# 'C' senza TF tedesche ma con Meteo Buono: diventa una 'A'.
+	var st3 := GameState.new(graph, 7)
+	st3.apply_dict(scenario.to_state_dict())
+	st3.weather = TimeLapse.Weather.GOOD
+	for tf in st3.forces_of(TaskForce.Side.KRIEGSMARINE):
+		st3.remove_task_force(tf)
+	var as_a := SoloAI.execute_code("C", st3, graph, engine,
+		scenario.port_control(), TaskForce.Side.KRIEGSMARINE)
+	true_(_solo_ai_log_contains(as_a, "la 'C' diventa una 'A'"),
+		"col Meteo Buono e senza TF la 'C' diventa una 'A'")
+
+
+## p.38: "15 Segments already? If the selected TF already has 15 segments, the
+## Germans Pass instead."
+func test_solo_ai_n6_passes_at_fifteen_segments() -> void:
+	_begin("AI solitaria N6: con 15 segmenti il tedesco Passa")
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("N6 Il Dilemma delle Operazioni")
+	var st := GameState.new(graph, 8)
+	st.apply_dict(scenario.to_state_dict())
+	var tf := TaskForce.new(0, TaskForce.Side.KRIEGSMARINE)
+	tf.ships.append(ShipRoster.shared().make("Scharnhorst"))
+	tf.trajectory.become_station(Vector2i(17, -5))
+	st.add_task_force(tf)
+	var cur := Vector2i(17, -5)
+	while tf.length() < 15:
+		var grew := false
+		for h in graph.adjacent_hexes(cur):
+			if tf.trajectory.extend(h, 1, graph, st.port_hexes(), false, tf.side):
+				cur = h
+				grew = true
+				break
+		if not grew:
+			break
+	eq(tf.length(), 15, "la Traiettoria di prova arriva a 15 segmenti")
+	var out := SoloAI.execute_code("T", st, graph, engine,
+		scenario.port_control(), TaskForce.Side.KRIEGSMARINE)
+	eq(String(out.get("turn_kind", "")), "pass", "con 15 segmenti si Passa")
+	true_(_solo_ai_log_contains(out, "15 segmenti"),
+		"e il registro dice perche'")
+
+
+## Le 25 procedure di N6 erano segnaposto: rimandavano a un dump grezzo invece
+## di riportare il testo del fascicolo.
+func test_n6_procedures_are_transcribed() -> void:
+	_begin("N6: le 25 procedure sono trascritte")
+	var o := SoloOpponent.load_for("N6 Il Dilemma delle Operazioni")
+	var placeholders := 0
+	var total := 0
+	for tid in ["actions", "trajectory", "t_second_action", "identify"]:
+		var t: SoloTable = o.table(tid)
+		ne(t, null, "la tabella '%s' esiste" % tid)
+		for code_v: Variant in t.legend.keys():
+			total += 1
+			if String(t.legend[code_v]).contains("senza automatismi del motore"):
+				placeholders += 1
+	eq(total, 25, "le procedure trascritte sono venticinque")
+	eq(placeholders, 0, "e nessuna e' rimasta un segnaposto")
+	# Le due condizioni di fine stampate dentro i risultati devono restare
+	# leggibili nel testo: sono il "It may also end by the German Action Table".
+	var actions: SoloTable = o.table("actions")
+	true_(String(actions.legend.get("T", "")).contains("LO SCENARIO FINISCE"),
+		"la 'T' dichiara la propria condizione di fine")
+	true_(String(actions.legend.get("X", "")).contains("LO SCENARIO FINISCE"),
+		"e anche la 'X'")

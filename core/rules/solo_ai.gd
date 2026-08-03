@@ -45,6 +45,8 @@ static func execute_code(code: String, state: GameState, graph: MapGraph,
 		return _n3(normalized, state, graph, engine, port_control, side)
 	if state.scenario_name.begins_with("N4"):
 		return _n4(normalized, state, graph, engine, port_control, side)
+	if state.scenario_name.begins_with("N6"):
+		return _n6(normalized, state, graph, engine, port_control, side)
 	if state.scenario_name.begins_with("B1"):
 		return _b1(normalized, state, graph, engine, port_control, side)
 	if state.scenario_name.begins_with("A1"):
@@ -886,6 +888,199 @@ static func _n4_british_completed_at(state: GameState, port_name: String) -> boo
 				and tf.completed_port == port_name:
 			return true
 	return false
+
+
+## N6 (AC Solo scenarios 2022 pp.36-38). Il giocatore e' britannico; le tabelle
+## muovono il tedesco, che NON parte con nessuna Task Force in gioco.
+##
+## Due risultati portano dentro la propria condizione di fine, ed e' il "It may
+## also end by the German Action Table" del riquadro The End: la 'T' finisce lo
+## scenario se due Convogli tedeschi hanno Completato in Norvegia, la 'X' se
+## tre o piu' navi tedesche sono state affondate o distrutte. Prima N6 non
+## aveva nessuna policy propria e cadeva nel ripiego generico, quindi nessuna
+## delle due veniva mai verificata.
+static func _n6(code: String, state: GameState, graph: MapGraph,
+		engine: ActionEngine, port_control: Dictionary, side: int) -> Dictionary:
+	match code:
+		"A":
+			# p.37: col Meteo Cattivo la 'A' diventa una 'X'. Il ramo di Meteo
+			# Buono chiede le Basi Aeree tedesche, che non sono modellate.
+			if state.weather == TimeLapse.Weather.BAD:
+				var as_x := _n6("X", state, graph, engine, port_control, side)
+				as_x["log"].append("Solitario AI N6: Meteo Cattivo, la 'A' diventa una 'X'.")
+				return as_x
+			var air := _best_legal_action(state, engine, side, "AIR_STRIKE")
+			if bool(air["ok"]):
+				air["log"].append("Solitario AI N6: Attacco Aereo tedesco.")
+				return air
+			return _marker_not_modeled("Solitario AI N6 - A: segnalino Base Aerea tedesca a Bergen o Trondheim")
+		"C":
+			return _n6_completion(state, graph, engine, port_control, side)
+		"T":
+			return _n6_trajectory(state, graph, engine, port_control, side)
+		"X":
+			return _n6_intercept(state, graph, engine, port_control, side)
+	return _air_or_attack(state, graph, engine, side)
+
+
+## Quanti Convogli tedeschi hanno Completato in un porto norvegese. E' il conto
+## che chiude lo scenario sulla 'T' e che sceglie la riga della Tabella Azioni.
+static func _n6_german_convoys_completed_in_norway(state: GameState) -> int:
+	var norwegian := ["Bergen", "Trondheim", "Narvik"]
+	var n := 0
+	for tf in state.task_forces:
+		if tf.side != TaskForce.Side.KRIEGSMARINE or not tf.completed:
+			continue
+		if not norwegian.has(tf.completed_port):
+			continue
+		for ship_name_v: Variant in tf.completed_ships:
+			if String(ship_name_v).contains("Convoy"):
+				n += 1
+				break
+	return n
+
+
+static func _n6_end(state: GameState, reason: String) -> Dictionary:
+	state.solo_ended = true
+	state.solo_end_reason = reason
+	var out := _empty("Solitario AI N6 - FINE SCENARIO: %s" % reason)
+	out["ok"] = true
+	out["turn_kind"] = "end"
+	out["end_scenario"] = true
+	return out
+
+
+static func _n6_completion(state: GameState, graph: MapGraph,
+		engine: ActionEngine, port_control: Dictionary, side: int) -> Dictionary:
+	var tf := _shortest_force_with_convoy(state, side)
+	if tf == null:
+		tf = _longest_force(state, side)
+	if tf == null:
+		# p.37: senza TF tedesche la 'C' diventa una 'A'; col Meteo Cattivo si
+		# crea invece una TF a Wilhelmshaven con un Convoglio e una scorta
+		# tirata sul dado.
+		if state.weather != TimeLapse.Weather.BAD:
+			var as_a := _n6("A", state, graph, engine, port_control, side)
+			as_a["log"].append("Solitario AI N6: nessuna TF tedesca, la 'C' diventa una 'A'.")
+			return as_a
+		var escort_roll := state.rng.d6("Solitario N6 scorta del nuovo Convoglio")
+		var used := _ship_names_in_play(state)
+		var ships: Array[String] = ["Convoy x2"]
+		var wanted := 1
+		var type_code := "CA"
+		if escort_roll >= 5:
+			type_code = "CL"
+			wanted = 2
+		elif escort_roll >= 3:
+			type_code = "CL"
+		for i in wanted:
+			var escort := _make_available_ship_from_pool(type_code, GE_TYPE_POOLS, used)
+			if escort != null:
+				ships.append(escort.name)
+				used[escort.name] = true
+		tf = _create_force_at(state, graph, side, "Wilhelmshaven", ships, false)
+		if tf == null:
+			return _empty("Solitario AI N6: Wilhelmshaven non e' nel grafo calibrato.")
+	var port := "Wilhelmshaven"
+	if _has_convoy(tf):
+		port = _n6_convoy_destination(state)
+	elif tf.unidentified:
+		port = _nearest_named_port(graph, _anchor_hex(tf),
+			["South America", "Murmansk"])
+	return _complete_or_route_to_port(state, graph, port_control, tf, port,
+		"Solitario AI N6: Completamento tedesco verso %s" % port)
+
+
+## Riga "Convoglio" della Tabella della Traiettoria Tedesca (p.37): il porto di
+## destinazione di un Convoglio tedesco si tira, non si sceglie.
+static func _n6_convoy_destination(state: GameState) -> String:
+	var roll := state.rng.d6("Solitario N6 porto del Convoglio")
+	if roll <= 2:
+		return "Bergen"
+	if roll == 3:
+		return "Trondheim"
+	if roll <= 5:
+		return "Trondheim"
+	return "Narvik"
+
+
+static func _n6_trajectory(state: GameState, graph: MapGraph,
+		engine: ActionEngine, port_control: Dictionary, side: int) -> Dictionary:
+	if _n6_german_convoys_completed_in_norway(state) >= 2:
+		return _n6_end(state, "Due Convogli tedeschi hanno Completato in Norvegia (p.37).")
+	var removed := _remove_damaged_ships_of_side(state, side, "N6", "n6_removed_ships")
+	var tf := _longest_force(state, side)
+	if tf == null:
+		tf = _create_unidentified_at(state, graph, side, "Wilhelmshaven")
+	# p.38: con 15 segmenti gia' tracciati il tedesco Passa invece di estendere.
+	if tf.length() >= 15:
+		var passed := _empty("Solitario AI N6 - T: %s ha gia' 15 segmenti; il tedesco Passa."
+			% tf.display_name())
+		passed["ok"] = true
+		passed["active"] = tf
+		passed["turn_kind"] = "pass"
+		passed["pass_initiative"] = true
+		passed["time_lapse_before_pass"] = true
+		(passed["log"] as Array).append_array(removed)
+		return passed
+	var goal := _n6_trajectory_goal(state, graph, tf, side)
+	var route := _route_toward_hex(state, graph, tf, goal,
+		"Solitario AI N6 - T: rotta tedesca")
+	(route["log"] as Array).append_array(removed)
+	return route
+
+
+## Tabella della Traiettoria Tedesca (p.37): la destinazione si tira, e la riga
+## dipende dalla lunghezza attuale della Traiettoria - salvo che la TF abbia un
+## Convoglio, e allora si usa sempre la riga "Convoglio".
+static func _n6_trajectory_goal(state: GameState, graph: MapGraph,
+		tf: TaskForce, side: int) -> Vector2i:
+	var roll := state.rng.d6("Solitario N6 Traiettoria tedesca")
+	if _has_convoy(tf):
+		return _port_hex(graph, _n6_convoy_destination_for_roll(roll))
+	if tf.length() >= 8:
+		if roll <= 2:
+			return _port_hex(graph, "Gibilterra")   # le Azzorre non sono calibrate
+		if roll <= 4:
+			return _port_hex(graph, "South America")
+		var convoy := _best_convoy_target(state, side, tf)
+		return _anchor_hex(convoy) if convoy != null else _enemy_center(state, side)
+	if roll <= 2:
+		return _port_hex(graph, "Narvik")
+	if roll <= 4:
+		return _port_hex(graph, "Murmansk")         # Jan Mayen non e' calibrata
+	if roll == 5:
+		return _port_hex(graph, "Gibilterra")
+	return _enemy_center(state, side)
+
+
+static func _n6_convoy_destination_for_roll(roll: int) -> String:
+	if roll <= 2:
+		return "Bergen"
+	if roll <= 5:
+		return "Trondheim"
+	return "Narvik"
+
+
+static func _n6_intercept(state: GameState, graph: MapGraph,
+		engine: ActionEngine, port_control: Dictionary, side: int) -> Dictionary:
+	if state.sunk_count(TaskForce.Side.KRIEGSMARINE) >= 3:
+		return _n6_end(state,
+			"Tre o piu' navi tedesche affondate o distrutte, Convogli compresi (p.38).")
+	var tf := _best_non_convoy(state, side)
+	if tf != null and _has_damaged(tf):
+		tf = null
+	if tf == null:
+		tf = _create_unidentified_at(state, graph, side, "Kiel")
+	var target := _best_convoy_target(state, side, tf)
+	if target == null:
+		target = _best_enemy_target(state, side, tf)
+	if target == null:
+		var as_a := _n6("A", state, graph, engine, port_control, side)
+		as_a["log"].append("Solitario AI N6: nessuna TF britannica bersagliabile, la 'X' diventa una 'A'.")
+		return as_a
+	return _attack_or_route_selected(state, graph, engine, tf, target,
+		"Solitario AI N6 - X: Intercettazione")
 
 
 static func _a1(code: String, state: GameState, graph: MapGraph,

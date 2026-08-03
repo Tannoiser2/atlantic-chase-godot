@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Aggiornato dopo la chiusura di **R0** (3 agosto 2026). Baseline: **2781
+Aggiornato dopo la chiusura di **R0** (3 agosto 2026). Baseline: **2806
 verifiche su 18 suite**.
 
 Questo e' il backlog autorevole per continuare la revisione. `STATO.md`
@@ -26,7 +26,7 @@ vecchie sezioni "Cosa manca" non devono riaprire lavori gia' completati.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 2781 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 2806 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
@@ -137,7 +137,20 @@ Uno scenario puo' essere marcato completo solo quando:
   during an Engage action".
 - [ ] **N5 Meglio Tardi che Mai**: 11 procedure testuali, incluse Reazioni
   norvegesi e modificatori di completamento.
-- [ ] **N6 Il Dilemma delle Operazioni**: 25 procedure testuali.
+- [ ] **N6 Il Dilemma delle Operazioni**: le quattro tabelle - Azioni Tedesche,
+  Traiettoria Tedesca, T-Seconda Azione, Identificazione - e i modificatori
+  coincidevano gia' col fascicolo; le 25 procedure sono ora trascritte. N6 non
+  aveva **nessuna policy propria** e cadeva nel ripiego generico, quindi le due
+  condizioni di fine stampate DENTRO i risultati non venivano mai verificate:
+  la 'T' finisce lo scenario con due Convogli tedeschi Completati in Norvegia,
+  la 'X' con tre o piu' navi tedesche perse. Sono il "It may also end by the
+  German Action Table" del riquadro The End. Implementati anche i rimandi di
+  meteo, il Passare a 15 segmenti e i tiri di destinazione della Traiettoria.
+  **Restano**: le Basi Aeree tedesche (risultato 'A' col Meteo Buono e clausola
+  finale della 'C'), l'Invasione della Norvegia, la tabella T-Seconda Azione
+  applicata automaticamente dopo la Traiettoria, e le sostituzioni stampate
+  della tabella di Identificazione. Jan Mayen e le Azzorre non sono esagoni
+  calibrati: la policy punta al porto calibrato piu' vicino e lo dichiara.
 - [ ] **B1 Operazione Berlino**: 22 procedure testuali.
 - [ ] **B2 La Battaglia dell'Atlantico**: 10 procedure testuali.
 - [ ] **B3 Operazione Reno**: 24 procedure testuali.

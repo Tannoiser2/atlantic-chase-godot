@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **2781 verifiche, 18 suite, headless.**
+Tutti i test passano: **2806 verifiche, 18 suite, headless.**
 
 ---
 
@@ -228,6 +228,20 @@ Tutti i test passano: **2781 verifiche, 18 suite, headless.**
   come una ricerca quello che e' un passaggio; e una decisione senza effetto
   lasciava l'Iniziativa al bot senza accodare niente, cioe' fermava la partita
   in attesa di un giocatore che non doveva muovere.
+- **N6 non aveva nessuna policy propria.** Le sue quattro tabelle - Azioni
+  Tedesche, Traiettoria Tedesca, T-Seconda Azione, Identificazione - e i
+  modificatori coincidevano gia' col fascicolo, e le 25 procedure erano tutte
+  segnaposto. Ma il difetto peggiore era nel codice: N6 cadeva nel ripiego
+  generico, quindi le **due condizioni di fine stampate dentro i risultati**
+  non venivano mai verificate. Sono il "It may also end by the German Action
+  Table" del riquadro The End: la 'T' chiude lo scenario quando due Convogli
+  tedeschi hanno Completato in Norvegia, la 'X' quando tre o piu' navi tedesche
+  sono state perse. Adesso ci sono, insieme ai rimandi di meteo (col Meteo
+  Cattivo la 'A' diventa 'X'; senza TF tedesche la 'C' diventa 'A', ma col
+  Meteo Cattivo crea una TF a Wilhelmshaven con la scorta tirata sul dado), al
+  Passare obbligato a 15 segmenti e ai tiri di destinazione della Traiettoria.
+  Jan Mayen e le Azzorre non sono esagoni calibrati: la policy punta al porto
+  calibrato piu' vicino e lo dichiara invece di inventare coordinate.
 - **N4 e' il primo dei dodici a essere ripreso in mano.** La sua Tabella delle
   Azioni e i modificatori coincidevano gia' col fascicolo; mancava tutto il
   resto. Le sei procedure erano segnaposto che rimandavano a un dump grezzo e
