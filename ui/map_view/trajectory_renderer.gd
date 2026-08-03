@@ -39,6 +39,10 @@ const TRACK_MARKERS := {
 }
 
 const EVASIVE_MARKER := preload("res://assets/counters/markers_evasive.png")
+const INTEL_MARKERS := {
+	TaskForce.Side.KRIEGSMARINE: preload("res://assets/counters/intel_ge.png"),
+	TaskForce.Side.ROYAL_NAVY: preload("res://assets/counters/intel_uk.png"),
+}
 
 ## Centri delle caselle 0 e 9, letti sulla mappa a risoluzione nativa. Il
 ## tracciato e' inclinato, quindi ogni colonna ha i propri estremi.
@@ -259,7 +263,7 @@ func _draw_task_force(tf: TaskForce) -> void:
 		var c: Vector2 = pts[i] if i < pts.size() \
 			else graph.center_of(seg["hex"] as Vector2i)
 		if seg["info"]:
-			_draw_info_marker(c, col)
+			_draw_info_marker(c, tf.side)
 		if seg["contact"]:
 			_draw_contact_marker(c)
 
@@ -417,14 +421,16 @@ func _draw_badge(pos: Vector2, text: String, col: Color,
 		HORIZONTAL_ALIGNMENT_LEFT, -1, size, fg)
 
 
-func _draw_info_marker(c: Vector2, col: Color) -> void:
-	# quadrato bianco bordato: e' il segnalino piu' importante del gioco,
-	# deve staccare dal fondo azzurro della mappa
-	var s := graph.inradius * 0.26
-	var r := Rect2(c - Vector2(s, s), Vector2(s * 2, s * 2))
-	draw_rect(r, Color(1, 1, 1, 0.95), true)
-	draw_rect(r, Color(0.05, 0.05, 0.05, 0.9), false, 3.0)
-	_draw_label(c, "I", Color(0.05, 0.05, 0.05), 0.34)
+func _draw_info_marker(c: Vector2, side: int) -> void:
+	# Usa la pedina originale: il vecchio quadratino con una sola "I" diventava
+	# quasi indistinguibile dalla linea quando si osservava l'intera plancia.
+	var texture: Texture2D = INTEL_MARKERS.get(side, INTEL_MARKERS[
+		TaskForce.Side.ROYAL_NAVY])
+	var marker_size := graph.inradius * 0.72
+	var rect := Rect2(c - Vector2.ONE * marker_size * 0.5,
+		Vector2.ONE * marker_size)
+	draw_rect(rect.grow(graph.inradius * 0.035), Color(1, 1, 1, 0.82), true)
+	draw_texture_rect(texture, rect, false)
 
 
 func _draw_contact_marker(c: Vector2) -> void:

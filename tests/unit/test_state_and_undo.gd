@@ -19,6 +19,7 @@ func run() -> void:
 	test_add_and_find()
 	test_info_trigger_enemy_station()
 	test_info_trigger_enemy_ports()
+	test_extension_places_info_marker()
 	test_info_trigger_not_by_enemy_segment()
 	test_serialization_roundtrip()
 	test_undo_redo()
@@ -91,6 +92,21 @@ func test_info_trigger_enemy_ports() -> void:
 	neutral.configure_port_info_triggers({"Portsmouth": "NONE"})
 	false_(neutral.triggers_info(portsmouth, TaskForce.Side.KRIEGSMARINE),
 		"un porto neutrale non causa Informazioni")
+
+
+func test_extension_places_info_marker() -> void:
+	_begin("Informazioni: dalla causa al segmento della Traiettoria")
+	var st := GameState.new(graph, 7)
+	st.configure_port_info_triggers()
+	var portsmouth := graph.port_hex("Portsmouth")
+	var start := graph.adjacent_hexes(portsmouth)[0]
+	var tf := st.add_task_force(_tf(TaskForce.Side.KRIEGSMARINE, start))
+	var triggered := st.triggers_info(portsmouth, tf.side)
+	true_(triggered, "l'estensione GUI riconosce il porto nemico")
+	true_(tf.trajectory.extend(portsmouth, 1, graph, st.port_hexes(), triggered,
+		tf.side), "il segmento viene aggiunto con la normale chiamata della GUI")
+	true_(tf.trajectory.end_has_info(1), "il nuovo segmento conserva il segnalino")
+	eq(tf.info_count(), 1, "la Task Force espone Informazioni: 1")
 
 
 func test_info_trigger_not_by_enemy_segment() -> void:

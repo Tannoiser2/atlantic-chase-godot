@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **2476 verifiche, 17 suite, headless.**
+Tutti i test passano: **2480 verifiche, 17 suite, headless.**
 
 ---
 
@@ -87,7 +87,9 @@ Tutti i test passano: **2476 verifiche, 17 suite, headless.**
   p.47), invece di elencare tutte le TF amiche;
 - Segnalazione e' disponibile solo se una Traiettoria nemica ha Informazioni;
   la guida chiarisce che l'azione sostituisce quel segnalino con la Stazione
-  bersaglio e non crea un marcatore "Signal" separato (RB p.39);
+  bersaglio e non crea un marcatore "Signal" separato (RB p.39). I segmenti
+  con Informazioni mostrano ora le pedine GMT `Intel_GE`/`Intel_UK`, invece del
+  vecchio quadratino procedurale quasi invisibile a mappa intera;
 - Attacco Aereo fa scegliere la TF con CV integra, il Punto di Lancio sulla
   mappa e l'esagono Bersaglio entro raggio 2 (RB p.27). Le basi aeree restano
   esplicitamente non modellate: posizione, parte e periodo di attivita' devono
