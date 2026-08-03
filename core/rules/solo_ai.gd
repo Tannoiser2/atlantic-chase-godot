@@ -153,6 +153,68 @@ static func apply_table_result(table_id: String, result: Dictionary,
 	return out
 
 
+## B-Dienst (BL1 p.5): "When the Germans have Initiative, you may attach an
+## Intel marker to a British Trajectory segment. You may do this at any time,
+## but only once during the scenario."
+##
+## E' una facolta' del GIOCATORE, non una procedura del bot: qui c'e' solo la
+## regola - chi puo' usarla, su cosa, e una volta sola - mentre la scelta del
+## segmento resta a chi gioca. Il servizio di decrittazione tedesco leggeva il
+## traffico radio britannico: nel gioco diventa un segnalino Informazioni
+## piazzato dove si vuole.
+static func bl1_bdienst_available(state: GameState) -> bool:
+	return state.scenario_name.begins_with("BL1") \
+		and state.initiative == TaskForce.Side.KRIEGSMARINE \
+		and not bool(state.solo_counters.get("bl1_bdienst_used", false))
+
+
+## Le Traiettorie britanniche su cui il B-Dienst puo' agire adesso: solo
+## Traiettorie (non Stazioni) e solo segmenti che non hanno gia' Informazioni.
+static func bl1_bdienst_targets(state: GameState) -> Array[TaskForce]:
+	var out: Array[TaskForce] = []
+	if not bl1_bdienst_available(state):
+		return out
+	for tf in state.forces_of(TaskForce.Side.ROYAL_NAVY):
+		if tf.trajectory.is_station():
+			continue
+		for i in tf.trajectory.segments.size():
+			if not bool((tf.trajectory.segments[i] as Dictionary)["info"]):
+				out.append(tf)
+				break
+	return out
+
+
+## Applica il B-Dienst a un segmento. Ritorna { ok, error, log }.
+static func bl1_bdienst_apply(state: GameState, tf: TaskForce,
+		h: Vector2i) -> Dictionary:
+	var out := _empty("")
+	if not bl1_bdienst_available(state):
+		out["log"].append("B-Dienst: non disponibile (serve l'Iniziativa tedesca, e si usa una volta sola).")
+		return out
+	if tf == null or tf.side != TaskForce.Side.ROYAL_NAVY \
+			or tf.trajectory.is_station():
+		out["log"].append("B-Dienst: il bersaglio deve essere una Traiettoria britannica.")
+		return out
+	for i in tf.trajectory.segments.size():
+		var seg: Dictionary = tf.trajectory.segments[i]
+		if seg["hex"] != h:
+			continue
+		if bool(seg["info"]):
+			out["log"].append("B-Dienst: quel segmento ha gia' un segnalino Informazioni.")
+			return out
+		tf.trajectory.set_info(i, true)
+		state.solo_counters["bl1_bdienst_used"] = true
+		out["ok"] = true
+		out["active"] = tf
+		out["target_hex"] = h
+		out["turn_kind"] = "bdienst"
+		out["log"].append(("B-Dienst: segnalino Informazioni sul segmento %s di %s. "
+			+ "Si usa una volta sola per scenario.") % [str(h), tf.display_name()])
+		return out
+	out["log"].append("B-Dienst: %s non ha un segmento in %s." % [tf.display_name(), str(h)])
+	return out
+
+
 ## BL1 p.8: "Before Debriefing, if a German TF Completed in Murmansk, roll a
 ## die and apply the result". Il tiro va fatto una volta sola, alla fine, e
 ## finora non lo faceva nessuno: la tabella c'era ma restava da leggere a mano.

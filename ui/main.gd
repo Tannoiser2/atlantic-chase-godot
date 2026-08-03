@@ -1527,6 +1527,7 @@ func _do_solo() -> void:
 				"detail": "Rifornimento, Murmansk, Incidente Internazionale, ecc."},
 			{"label": "Crea TF non identificata in porto",
 				"detail": "strumento manuale per le procedure del fascicolo"},
+			{"label": "B-Dienst", "detail": _bl1_bdienst_detail()},
 			{"label": "Chiudi", "detail": ""},
 		]
 		var i: int = await Choice.ask(self, "Solitario - %s" % scenario.title,
@@ -1543,8 +1544,58 @@ func _do_solo() -> void:
 				await _solo_roll_any_table()
 			4:
 				await _solo_create_unidentified_tf()
+			5:
+				await _do_bl1_bdienst()
 			_:
 				return
+		_refresh()
+
+
+## B-Dienst (BL1 p.5): il servizio di decrittazione tedesco. Il giocatore
+## attacca un segnalino Informazioni a un segmento di Traiettoria britannica,
+## quando ha l'Iniziativa, una volta sola per scenario. La regola sta nel core;
+## qui c'e' solo la scelta del segmento, che e' sua.
+func _bl1_bdienst_detail() -> String:
+	if scenario == null or not scenario.id.begins_with("BL1"):
+		return "solo in BL1"
+	if bool(state.solo_counters.get("bl1_bdienst_used", false)):
+		return "gia' usato: vale una volta sola per scenario"
+	if state.initiative != TaskForce.Side.KRIEGSMARINE:
+		return "serve l'Iniziativa tedesca"
+	return "un segnalino Informazioni su una Traiettoria britannica"
+
+
+func _do_bl1_bdienst() -> void:
+	if not SoloAI.bl1_bdienst_available(state):
+		_msg("B-Dienst: disponibile solo in BL1, con l'Iniziativa tedesca e "
+			+ "una volta sola per scenario.")
+		return
+	var candidates := SoloAI.bl1_bdienst_targets(state)
+	if candidates.is_empty():
+		_msg("B-Dienst: nessuna Traiettoria britannica ha un segmento libero "
+			+ "da segnalini Informazioni.")
+		return
+	var tf := await _pick_tf(candidates, "B-Dienst - quale Traiettoria?",
+		"Solo Traiettorie britanniche con almeno un segmento senza Informazioni.",
+		true)
+	if tf == null:
+		return
+	var free_hexes: Array = []
+	for seg_v: Variant in tf.trajectory.segments:
+		var seg: Dictionary = seg_v
+		if not bool(seg["info"]):
+			free_hexes.append(seg["hex"])
+	var picked := await _pick_hex_on_map(free_hexes,
+		"B-Dienst: scegli il segmento di %s su cui mettere il segnalino "
+			% tf.display_name() + "Informazioni. ESC annulla.")
+	if picked == Vector2i.MAX:
+		return
+	var applied := SoloAI.bl1_bdienst_apply(state, tf, picked)
+	for line_v: Variant in applied.get("log", []):
+		_msg(String(line_v))
+	if bool(applied.get("ok", false)):
+		log.record("BL1: B-Dienst")
+		state.changed.emit()
 		_refresh()
 
 

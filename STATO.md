@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **2692 verifiche, 18 suite, headless.**
+Tutti i test passano: **2702 verifiche, 18 suite, headless.**
 
 ---
 
@@ -211,6 +211,11 @@ Tutti i test passano: **2692 verifiche, 18 suite, headless.**
   Internazionale. Ora c'e' tutta, e con lei la rimozione delle navi britanniche
   Danneggiate che i risultati C e Convoglio prescrivono - navi che le tabelle
   degli Esiti contano fra le Danneggiate, non fra le affondate.
+- **Il B-Dienst esiste.** Il servizio di decrittazione tedesco (p.5) attacca un
+  segnalino Informazioni a un segmento di Traiettoria britannica, con
+  l'Iniziativa tedesca e una volta sola per scenario. Sta nel menu Solitario:
+  la regola e' nel core, la scelta del segmento resta al giocatore, com'e'
+  giusto - non e' una procedura del bot, e' una facolta' sua.
 - **La Tabella Murmansk era trascritta scalata di una colonna.** Il fascicolo
   (p.8) dice `0 o meno` = confisca, `1-2` = incidente, `3-6` = salvi; la
   trascrizione faceva confiscare le navi con un **1**, cioe' nel caso comune

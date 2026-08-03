@@ -63,6 +63,7 @@ func run() -> void:
 	test_bl3_declares_inset_setup_gaps()
 	test_solo_ai_bl1_x_creates_unknown_hunter()
 	test_solo_ai_bl1_blockade_and_french_action()
+	test_solo_ai_bl1_bdienst()
 	test_solo_ai_bl1_murmansk_before_debriefing()
 	test_solo_ai_bl1_convoy_procedure()
 	test_solo_ai_bl1_four_cruisers_add_the_french_action()
@@ -962,6 +963,49 @@ func test_solo_ai_bl1_blockade_and_french_action() -> void:
 ## p.8: "Before Debriefing, if a German TF Completed in Murmansk, roll a die
 ## and apply the result." Il tiro non lo faceva nessuno: la tabella c'era ma
 ## restava da leggere a mano, e i VP del Debriefing uscivano incompleti.
+## B-Dienst (p.5): "When the Germans have Initiative, you may attach an Intel
+## marker to a British Trajectory segment ... only once during the scenario."
+func test_solo_ai_bl1_bdienst() -> void:
+	_begin("AI solitaria BL1: B-Dienst")
+	var st := GameState.new(graph, 9)
+	st.scenario_name = "BL1 Raiders of the North Atlantic"
+	st.initiative = TaskForce.Side.ROYAL_NAVY
+	false_(SoloAI.bl1_bdienst_available(st),
+		"senza Iniziativa tedesca il B-Dienst non e' disponibile")
+	st.initiative = TaskForce.Side.KRIEGSMARINE
+	true_(SoloAI.bl1_bdienst_available(st), "con l'Iniziativa tedesca lo e'")
+
+	var station := TaskForce.new(1, TaskForce.Side.ROYAL_NAVY)
+	station.ships.append(ShipRoster.shared().make("Hood"))
+	station.trajectory.become_station(Vector2i(15, -3))
+	st.add_task_force(station)
+	eq(SoloAI.bl1_bdienst_targets(st).size(), 0,
+		"una Stazione non e' una Traiettoria: non e' un bersaglio")
+
+	var moving := TaskForce.new(2, TaskForce.Side.ROYAL_NAVY)
+	moving.ships.append(ShipRoster.shared().make("Norfolk"))
+	moving.trajectory.become_station(Vector2i(14, -3))
+	for h in graph.adjacent_hexes(Vector2i(14, -3)):
+		if moving.trajectory.extend(h, 1, graph):
+			break
+	eq(SoloAI.bl1_bdienst_targets(st).size(), 0,
+		"la TF non e' ancora nello stato: non compare fra i bersagli")
+	st.add_task_force(moving)
+	eq(SoloAI.bl1_bdienst_targets(st).size(), 1,
+		"una Traiettoria britannica senza Informazioni e' un bersaglio")
+
+	var target_hex: Vector2i = (moving.trajectory.segments[0] as Dictionary)["hex"]
+	var applied := SoloAI.bl1_bdienst_apply(st, moving, target_hex)
+	true_(bool(applied.get("ok", false)), "il segnalino viene attaccato")
+	eq(moving.info_count(), 1, "la Traiettoria ha ora un segnalino Informazioni")
+	false_(moving.can_complete(),
+		"e con Informazioni la TF non puo' piu' Completare (RB p.21)")
+	false_(SoloAI.bl1_bdienst_available(st),
+		"il B-Dienst vale una volta sola per scenario")
+	var again := SoloAI.bl1_bdienst_apply(st, moving, target_hex)
+	false_(bool(again.get("ok", false)), "un secondo uso viene rifiutato")
+
+
 func test_solo_ai_bl1_murmansk_before_debriefing() -> void:
 	_begin("AI solitaria BL1: Murmansk prima del Debriefing")
 	var opponent := SoloOpponent.load_for("BL1 Raiders of the North Atlantic")
