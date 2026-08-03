@@ -155,6 +155,41 @@ func test_target_legality() -> void:
 	true_(eng.legality_error(air, st).contains("Meteo Buone"),
 		"Attacco Aereo richiede meteo buono")
 
+	st.weather = TimeLapse.Weather.GOOD
+	true_(eng.legality_error(air, st).contains("Punto di Lancio"),
+		"Attacco Aereo richiede di designare il Punto di Lancio")
+	air.launch_hex = origin
+	air.target_hex = origin
+	eq(eng.legality_error(air, st), "",
+		"CV integra, Lancio e bersaglio entro due esagoni sono legali")
+	air.launch_hex = graph.adjacent_hexes(origin)[0]
+	true_(eng.legality_error(air, st).contains("esagono della TF"),
+		"il Lancio deve partire dalla Traiettoria della CV")
+	air.launch_hex = origin
+	var far := origin
+	for h_v: Variant in graph.all_hexes():
+		if Hex.distance(origin, h_v) > 2:
+			far = h_v
+			break
+	b.trajectory.become_station(far)
+	air.target_hex = far
+	true_(eng.legality_error(air, st).contains("oltre il raggio"),
+		"il bersaglio oltre due esagoni e' rifiutato")
+
+	b.trajectory.become_station(origin)
+	var coordinating := st.add_task_force(_tf(TaskForce.Side.KRIEGSMARINE, 0))
+	coordinating.trajectory.become_station(graph.adjacent_hexes(origin)[0])
+	engage.target_hex = origin
+	engage.active_coordinating = coordinating
+	true_(eng.legality_error(engage, st).contains("Coordinatrice"),
+		"la Coordinatrice fuori dall'esagono bersaglio e' rifiutata")
+	coordinating.trajectory.become_station(origin)
+	eq(eng.legality_error(engage, st), "",
+		"la Coordinatrice nell'esagono bersaglio e' legale")
+	cv.damaged = true
+	true_(eng.legality_error(air, st).contains("CV non danneggiata"),
+		"una CV danneggiata non puo' essere fonte dell'Attacco Aereo")
+
 
 func test_resolution_pipeline() -> void:
 	_begin("pipeline completa")

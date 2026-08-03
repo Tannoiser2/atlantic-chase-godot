@@ -149,6 +149,38 @@ static func _has_usable_cv(tf: TaskForce) -> bool:
 	return false
 
 
+## Esagoni dai quali una TF puo' lanciare un Attacco Aereo (RB p.27).
+## Le basi aeree non sono ancora nello stato di gioco: qui sono comprese solo
+## le TF con una CV integra, senza fingere che un innesco Informazioni sia una
+## base utilizzabile.
+static func air_launch_hexes(tf: TaskForce) -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	if not _has_usable_cv(tf):
+		return out
+	if tf.trajectory.is_station():
+		out.append(tf.trajectory.station_hex)
+	else:
+		out.assign(tf.trajectory.hexes())
+	return out
+
+
+## Esagoni della TF bersaglio entro il raggio di due esagoni (RB p.27).
+static func air_target_hexes(launch_hex: Vector2i,
+		target: TaskForce) -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	if launch_hex == Vector2i.MAX or target == null:
+		return out
+	var occupied: Array[Vector2i] = []
+	if target.trajectory.is_station():
+		occupied.append(target.trajectory.station_hex)
+	else:
+		occupied.assign(target.trajectory.hexes())
+	for h in occupied:
+		if Hex.distance(launch_hex, h) <= 2:
+			out.append(h)
+	return out
+
+
 # ------------------------------------------------------------- dichiarazione --
 
 class Declaration extends RefCounted:
@@ -159,6 +191,7 @@ class Declaration extends RefCounted:
 	var target: TaskForce = null
 	var target_coordinating: TaskForce = null
 	var target_air_support: TaskForce = null
+	var launch_hex: Vector2i = Vector2i.MAX
 	var target_hex: Vector2i = Vector2i.MAX
 	var modifier: int = 0          ## modificatori comuni gia' sommati
 
@@ -206,8 +239,26 @@ func legality_error(dec: Declaration, state: GameState) -> String:
 			return "Ricerca Navale richiede un segmento bersaglio nello stesso esagono della TF Attiva"
 	if bool(a.get("requires_good_weather", false)) and state.weather != TimeLapse.Weather.GOOD:
 		return "%s richiede Condizioni Meteo Buone" % String(a.get("label", dec.action_key))
-	if dec.action_key == "AIR_STRIKE" and not _has_usable_cv(dec.active):
-		return "Attacco Aereo richiede una TF Attiva con CV non danneggiata o una base aerea non modellata"
+	if dec.action_key == "AIR_STRIKE":
+		if not _has_usable_cv(dec.active):
+			return ("Attacco Aereo richiede una TF Attiva con CV non danneggiata; "
+				+ "le basi aeree non sono ancora modellate")
+		if dec.target == null:
+			return "Attacco Aereo richiede una Task Force Bersaglio"
+		if dec.launch_hex == Vector2i.MAX:
+			return "Attacco Aereo richiede di scegliere il Punto di Lancio"
+		if not dec.active.trajectory.occupies(dec.launch_hex):
+			return "il Punto di Lancio deve essere un esagono della TF con la CV"
+		if dec.target_hex == Vector2i.MAX:
+			return "Attacco Aereo richiede di scegliere l'esagono Bersaglio"
+		if not dec.target.trajectory.occupies(dec.target_hex):
+			return "l'esagono Bersaglio non appartiene alla TF bersaglio"
+		if Hex.distance(dec.launch_hex, dec.target_hex) > 2:
+			return "il bersaglio dell'Attacco Aereo e' oltre il raggio di due esagoni"
+	for coordinating in [dec.active_coordinating, dec.target_coordinating]:
+		if coordinating != null and (dec.target_hex == Vector2i.MAX \
+				or not coordinating.trajectory.occupies(dec.target_hex)):
+			return "la TF Coordinatrice deve occupare l'esagono Bersaglio"
 	if dec.action_key == "COMPLETION" and not dec.active.can_complete():
 		return "una TF con segnalino Informazioni non puo' effettuare il Completamento"
 	# una Task Force con un Convoglio ha le mani legate: niente Attacco Aereo,

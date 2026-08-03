@@ -49,6 +49,13 @@ const ACTIONS := [
 	["SIGNAL", "Segnali", "9", false],
 ]
 
+const AVAILABLE_TOOLTIPS := {
+	"SIGNAL": ("Sostituisce un segnalino Informazioni su una Traiettoria "
+		+ "nemica con la sua Stazione; non piazza un nuovo segnalino Signal."),
+	"AIR_STRIKE": ("Scegli una TF con CV integra, il Punto di Lancio e un "
+		+ "esagono bersaglio entro due esagoni."),
+}
+
 
 ## L'azione ha bisogno di una Task Force avversaria in gioco?
 static func needs_enemy(key: String) -> bool:
@@ -187,7 +194,8 @@ func update_state(reasons: Dictionary, can_undo: bool, can_redo: bool,
 		var b: Button = _act_buttons[key_v]
 		var why := String(reasons.get(key_v, ""))
 		b.disabled = why != ""
-		b.tooltip_text = why if why != "" else "Dichiara l'azione con la TF selezionata"
+		b.tooltip_text = why if why != "" else String(AVAILABLE_TOOLTIPS.get(key_v,
+			"Dichiara l'azione con la TF selezionata"))
 		b.add_theme_stylebox_override("normal", _action_style(why == ""))
 		b.add_theme_stylebox_override("hover", _action_style(why == "", true))
 		b.add_theme_stylebox_override("pressed", _action_style(why == "", true))

@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **2275 verifiche, 17 suite, headless.**
+Tutti i test passano: **2282 verifiche, 17 suite, headless.**
 
 ---
 
@@ -25,6 +25,18 @@ Tutti i test passano: **2275 verifiche, 17 suite, headless.**
 
 ### Ultima revisione del solitario
 
+- la scheda flottante della TF si puo' trascinare e resta dove la mette il
+  giocatore; il segnalino Manovre Evasive usa la pedina GMT ed e' visibile
+  accanto alla TF, oltre che dichiarato nella scheda;
+- la Coordinatrice viene proposta solo se occupa l'esagono Bersaglio (RB
+  p.47), invece di elencare tutte le TF amiche;
+- Segnalazione e' disponibile solo se una Traiettoria nemica ha Informazioni;
+  la guida chiarisce che l'azione sostituisce quel segnalino con la Stazione
+  bersaglio e non crea un marcatore "Signal" separato (RB p.39);
+- Attacco Aereo fa scegliere la TF con CV integra, il Punto di Lancio sulla
+  mappa e l'esagono Bersaglio entro raggio 2 (RB p.27). Le basi aeree restano
+  esplicitamente non modellate: posizione, parte e periodo di attivita' devono
+  essere trascritti dalla mappa prima di poterle offrire come fonte;
 - HUD della mappa ricostruita: nove azioni illuminate in alto, servizi nella
   seconda riga, guida operativa in basso, registro richiudibile a destra e
   nessun roster fisso sopra la mappa;

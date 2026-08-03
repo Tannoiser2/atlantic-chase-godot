@@ -362,10 +362,30 @@ func _declare_action(key: String) -> void:
 				+ "un capo. ESC annulla senza tracciare altro.")
 			return
 
-	var enemies := _eligible_targets_for_action(key, selected_tf)
+	var active := selected_tf
+	var launch_hex := Vector2i.MAX
+	if key == "AIR_STRIKE":
+		var sources := _air_sources(active.side)
+		active = await _pick_tf(sources, "Attacco Aereo - fonte",
+			"Scegli la Task Force con la portaerei integra che lancia l'attacco. "
+			+ "Le basi aeree non sono ancora modellate.", false)
+		if active == null:
+			return
+		selected_tf = active
+		traj_layer.selected_tf_id = active.id
+		var launches := ActionEngine.air_launch_hexes(active)
+		launch_hex = launches[0]
+		if launches.size() > 1:
+			launch_hex = await _pick_hex_on_map(launches,
+				"Punto di Lancio: clicca un esagono evidenziato della TF con la CV.")
+			if launch_hex == Vector2i.MAX:
+				_msg("Attacco Aereo annullato: nessun Punto di Lancio scelto.")
+				return
+
+	var enemies := _eligible_targets_for_action(key, active, launch_hex)
 	if enemies.is_empty():
 		_msg("%s: %s" % [String(engine.action(key).get("label", key)),
-			_enemy_action_unavailable_reason(key, selected_tf)])
+			_enemy_action_unavailable_reason(key, active)])
 		return
 	var target := await _pick_tf(enemies, "Task Force Bersaglio",
 		"Contro chi dichiari l'azione?", false)
@@ -374,28 +394,43 @@ func _declare_action(key: String) -> void:
 
 	var dec := ActionEngine.Declaration.new()
 	dec.action_key = key
-	dec.active = selected_tf
+	dec.active = active
 	dec.target = target
-	var t := target.trajectory
-	dec.target_hex = t.station_hex if t.is_station() else t.end_hex(0)
+	dec.launch_hex = launch_hex
+	var target_hexes := _target_hexes_for_action(key, active, target, launch_hex)
+	if target_hexes.is_empty():
+		_msg("%s: nessun esagono bersaglio legale." % String(
+			engine.action(key).get("label", key)))
+		return
+	dec.target_hex = target_hexes[0]
+	if target_hexes.size() > 1:
+		dec.target_hex = await _pick_hex_on_map(target_hexes,
+			"Esagono Bersaglio: clicca uno degli esagoni evidenziati.")
+		if dec.target_hex == Vector2i.MAX:
+			_msg("%s annullata: nessun esagono Bersaglio scelto." % String(
+				engine.action(key).get("label", key)))
+			return
 
-	# Coordinatrice: una propria TF diversa dall'Attiva
+	# RB p.47: la Coordinatrice deve occupare l'esagono Bersaglio.
 	var own: Array[TaskForce] = []
-	for tf in state.forces_of(selected_tf.side):
-		if tf != selected_tf:
+	for tf in state.forces_of(active.side):
+		if tf != active and tf.trajectory.occupies(dec.target_hex):
 			own.append(tf)
 	if not own.is_empty():
 		dec.active_coordinating = await _pick_tf(own, "TF Coordinatrice",
 			"Designa una Task Force Coordinatrice? La sua lunghezza puo' "
 			+ "sostituire quella della TF Attiva nel Totale Traiettoria.", true)
 
-	# Supporto Aereo: serve una portaerei a bordo
+	# Nell'Attacco Aereo la fonte e' gia' il Supporto Aereo (RB p.27).
 	var carriers: Array[TaskForce] = []
-	for tf in own:
-		for sh in tf.ships:
-			if sh.type_code == "CV" and not sh.sunk:
-				carriers.append(tf)
-				break
+	if key != "AIR_STRIKE":
+		for tf in state.forces_of(active.side):
+			if tf == active or ActionEngine.air_launch_hexes(tf).is_empty():
+				continue
+			for h in ActionEngine.air_launch_hexes(tf):
+				if Hex.distance(h, dec.target_hex) <= 2:
+					carriers.append(tf)
+					break
 	if not carriers.is_empty():
 		dec.active_air_support = await _pick_tf(carriers, "TF Supporto Aereo",
 			"Designa una Task Force di Supporto Aereo? Deve avere una "
@@ -410,7 +445,7 @@ func _declare_action(key: String) -> void:
 	if _action_canceled_by_interruption(res):
 		await _handle_interruption_cancel(res, dec)
 		log.record("%s annullata da Interruzione (%s)"
-			% [label, selected_tf.display_name()])
+			% [label, active.display_name()])
 		state.changed.emit()
 		_refresh()
 		return
@@ -419,7 +454,7 @@ func _declare_action(key: String) -> void:
 	var initiative_changed := false
 	for code_v: Variant in res["results"] as Array:
 		var code := String(code_v)
-		var applied := Results.apply(code, selected_tf, target,
+		var applied := Results.apply(code, active, target,
 			dec.target_hex, state, _ship_chooser, _designated_active_info_count(dec))
 		_msg("    %s" % applied["text"])
 		if bool(applied.get("initiative_changes", false)):
@@ -478,15 +513,48 @@ func _pick_tf(candidates: Array[TaskForce], title: String, desc: String,
 	return candidates[i]
 
 
-func _eligible_targets_for_action(key: String, active: TaskForce) -> Array[TaskForce]:
+func _target_hexes_for_action(key: String, active: TaskForce, target: TaskForce,
+		launch_hex: Vector2i = Vector2i.MAX) -> Array[Vector2i]:
+	if key == "AIR_STRIKE":
+		return ActionEngine.air_target_hexes(launch_hex, target)
+	var out: Array[Vector2i] = []
+	if key == "ENGAGE" or key == "NAVAL_SEARCH":
+		var occupied := [target.trajectory.station_hex] \
+			if target.trajectory.is_station() else target.trajectory.hexes()
+		for h_v: Variant in occupied:
+			var h: Vector2i = h_v
+			if active.trajectory.occupies(h):
+				out.append(h)
+		return out
+	var t := target.trajectory
+	out.append(t.station_hex if t.is_station() else t.end_hex(0))
+	return out
+
+
+func _air_sources(side: int) -> Array[TaskForce]:
+	var out: Array[TaskForce] = []
+	for tf in state.forces_of(side):
+		if Convoy.action_refusal(tf, "AIR_STRIKE") == "" \
+				and not ActionEngine.air_launch_hexes(tf).is_empty():
+			out.append(tf)
+	return out
+
+
+func _eligible_targets_for_action(key: String, active: TaskForce,
+		launch_hex: Vector2i = Vector2i.MAX) -> Array[TaskForce]:
 	var out: Array[TaskForce] = []
 	if active == null:
 		return out
 	for tf in state.forces_of(1 - active.side):
+		var target_hexes := _target_hexes_for_action(key, active, tf, launch_hex)
+		if target_hexes.is_empty():
+			continue
 		var dec := ActionEngine.Declaration.new()
 		dec.action_key = key
 		dec.active = active
 		dec.target = tf
+		dec.launch_hex = launch_hex
+		dec.target_hex = target_hexes[0]
 		if engine.legality_error(dec, state) == "":
 			out.append(tf)
 	return out
@@ -1381,6 +1449,7 @@ func _resolve_solo_ai_action(decision: Dictionary) -> void:
 	dec.action_key = key
 	dec.active = active
 	dec.target = target
+	dec.launch_hex = decision.get("launch_hex", Vector2i.MAX)
 	dec.target_hex = decision.get("target_hex", Vector2i.MAX)
 	var res := engine.resolve(dec, state)
 	var label := String(engine.action(key).get("label", key))
@@ -2136,6 +2205,9 @@ var _log_toggle: Button
 var _log_scroll: ScrollContainer
 var _log_expanded: bool = true
 var _tf_card_signature: String = ""
+var _tf_panel_tf_id: int = -1
+var _tf_panel_manual: bool = false
+var _tf_panel_dragging: bool = false
 
 ## Pannello "ora tocca a": chi sta agendo, cosa aspetta il gioco, e cosa NON si
 ## puo' fare con il motivo accanto.
@@ -2166,7 +2238,10 @@ func _build_hud() -> void:
 	_tf_panel = PanelContainer.new()
 	_tf_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	_tf_panel.custom_minimum_size = Vector2(430, 0)
-	_tf_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_tf_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	_tf_panel.mouse_default_cursor_shape = Control.CURSOR_MOVE
+	_tf_panel.tooltip_text = "Trascina per spostare la scheda"
+	_tf_panel.gui_input.connect(_on_tf_panel_gui_input)
 	_tf_panel.add_theme_stylebox_override("panel", _panel_style())
 	_tf_panel.visible = false
 	hud.add_child(_tf_panel)
@@ -2315,6 +2390,25 @@ func _action_unavailable_reason(key: String) -> String:
 	if not engine.is_verified(key):
 		return String(engine.action(key).get("verified_note",
 			"tabella non ancora trascritta"))
+	var late := Endgame.action_refusal(state, scenario.rules() if scenario != null
+		else {}, selected_tf.side, key)
+	if late != "":
+		return late
+	if key == "SIGNAL" and SignalAction.candidates(state, selected_tf.side).is_empty():
+		return ("nessuna Traiettoria avversaria ha un segnalino Informazioni; "
+			+ "Segnalazione sostituisce quel segnalino con la Stazione bersaglio")
+	if key == "AIR_STRIKE":
+		if state.weather != TimeLapse.Weather.GOOD:
+			return "Attacco Aereo richiede Condizioni Meteo Buone"
+		var sources := _air_sources(selected_tf.side)
+		if sources.is_empty():
+			return ("nessuna TF di questa parte ha una CV integra; le basi aeree "
+				+ "non sono ancora modellate")
+		for source in sources:
+			for launch in ActionEngine.air_launch_hexes(source):
+				if not _eligible_targets_for_action(key, source, launch).is_empty():
+					return ""
+		return "nessuna TF nemica e' entro due esagoni da una CV integra"
 	if ActionBar.needs_enemy(key) and _eligible_targets_for_action(key, selected_tf).is_empty():
 		return _enemy_action_unavailable_reason(key, selected_tf)
 	var dec := ActionEngine.Declaration.new()
@@ -2328,10 +2422,6 @@ func _action_unavailable_reason(key: String) -> String:
 	# tabella: porto amico raggiunto, non piu' di 6 segmenti (RB p.29)
 	if key == "COMPLETION":
 		return Completion.refusal(selected_tf, graph, _port_control())
-	var late := Endgame.action_refusal(state, scenario.rules() if scenario != null
-		else {}, selected_tf.side, key)
-	if late != "":
-		return late
 	return ""
 
 
@@ -2644,6 +2734,8 @@ func _tf_card_text(tf: TaskForce) -> String:
 			"testa" if active_end == 0 else "coda"])
 	lines.append("Informazioni: [b]%d[/b]    Contatto: [b]%d[/b]" % [
 		t.info_count(), t.contact_count()])
+	if tf.evasive:
+		lines.append("[color=#9ee8ff][b]Manovre Evasive[/b] assegnate[/color]")
 	if tf.leader != "" and not tf.unidentified:
 		lines.append("Comandante: [b]%s[/b]" % tf.leader)
 	if tf.unidentified:
@@ -2661,7 +2753,12 @@ func _refresh_tf_panel() -> void:
 	if mode == Mode.EDITOR or selected_tf == null or selected_tf.completed:
 		_tf_panel.visible = false
 		_tf_card_signature = ""
+		_tf_panel_tf_id = -1
+		_tf_panel_manual = false
 		return
+	if _tf_panel_tf_id != selected_tf.id:
+		_tf_panel_tf_id = selected_tf.id
+		_tf_panel_manual = false
 	_tf_panel.visible = true
 	var signature := JSON.stringify(selected_tf.to_dict()) + ":%d" % active_end
 	if signature == _tf_card_signature:
@@ -2695,8 +2792,39 @@ func _refresh_tf_panel() -> void:
 		_tf_ships.add_child(counter)
 
 
+func _on_tf_panel_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton:
+		var button := event as InputEventMouseButton
+		if button.button_index == MOUSE_BUTTON_LEFT:
+			_tf_panel_dragging = button.pressed
+			_tf_panel_manual = true
+			get_viewport().set_input_as_handled()
+	elif event is InputEventMouseMotion and _tf_panel_dragging:
+		var motion := event as InputEventMouseMotion
+		if not bool(motion.button_mask & MOUSE_BUTTON_MASK_LEFT):
+			_tf_panel_dragging = false
+			return
+		_tf_panel.position = _clamp_tf_panel_position(
+			_tf_panel.position + motion.relative)
+		get_viewport().set_input_as_handled()
+
+
+func _clamp_tf_panel_position(pos: Vector2) -> Vector2:
+	var vp := get_viewport_rect().size
+	var panel_size := Vector2(maxf(_tf_panel.size.x, 430.0),
+		maxf(_tf_panel.size.y, 170.0))
+	var right_limit := vp.x - (424.0 if _log_expanded else 68.0)
+	var bottom_limit := vp.y - 232.0
+	return Vector2(
+		clampf(pos.x, 12.0, maxf(12.0, right_limit - panel_size.x)),
+		clampf(pos.y, 108.0, maxf(108.0, bottom_limit - panel_size.y)))
+
+
 func _position_tf_panel() -> void:
 	if _tf_panel == null or not _tf_panel.visible or selected_tf == null:
+		return
+	if _tf_panel_manual:
+		_tf_panel.position = _clamp_tf_panel_position(_tf_panel.position)
 		return
 	var t := selected_tf.trajectory
 	var h := t.station_hex if t.is_station() else t.end_hex(0)
@@ -2714,7 +2842,7 @@ func _position_tf_panel() -> void:
 	if y + panel_size.y > bottom_limit:
 		y = screen.y - panel_size.y - 24.0
 	y = clampf(y, 108.0, maxf(108.0, bottom_limit - panel_size.y))
-	_tf_panel.position = Vector2(x, y)
+	_tf_panel.position = _clamp_tf_panel_position(Vector2(x, y))
 
 
 func _refresh() -> void:

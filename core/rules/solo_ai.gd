@@ -769,6 +769,7 @@ static func _empty(note: String = "") -> Dictionary:
 		"action_key": "",
 		"active": null,
 		"target": null,
+		"launch_hex": Vector2i.MAX,
 		"target_hex": Vector2i.MAX,
 		"completion": false,
 		"completion_port": {},
@@ -1056,24 +1057,35 @@ static func _best_legal_action(state: GameState, engine: ActionEngine,
 	var best_score := -INF
 	for active in state.forces_of(side):
 		for target in state.forces_of(1 - side):
-			var dec := ActionEngine.Declaration.new()
-			dec.action_key = key
-			dec.active = active
-			dec.target = target
-			dec.target_hex = _shared_hex(active, target)
-			if dec.target_hex == Vector2i.MAX:
-				dec.target_hex = _anchor_hex(target)
-			if engine.legality_error(dec, state) != "":
-				continue
-			var score := _target_score(target) - float(active.info_count()) * 4.0
-			if score > best_score:
-				best_score = score
-				best["ok"] = true
-				best["action_key"] = key
-				best["active"] = active
-				best["target"] = target
-				best["target_hex"] = dec.target_hex
-				best["pass_initiative"] = false
+			var launches: Array[Vector2i] = [Vector2i.MAX] as Array[Vector2i]
+			if key == "AIR_STRIKE":
+				launches = ActionEngine.air_launch_hexes(active)
+			for launch in launches:
+				var targets: Array[Vector2i] = []
+				if key == "AIR_STRIKE":
+					targets = ActionEngine.air_target_hexes(launch, target)
+				else:
+					var at := _shared_hex(active, target)
+					targets.append(at if at != Vector2i.MAX else _anchor_hex(target))
+				for target_hex in targets:
+					var dec := ActionEngine.Declaration.new()
+					dec.action_key = key
+					dec.active = active
+					dec.target = target
+					dec.launch_hex = launch
+					dec.target_hex = target_hex
+					if engine.legality_error(dec, state) != "":
+						continue
+					var score := _target_score(target) - float(active.info_count()) * 4.0
+					if score > best_score:
+						best_score = score
+						best["ok"] = true
+						best["action_key"] = key
+						best["active"] = active
+						best["target"] = target
+						best["launch_hex"] = launch
+						best["target_hex"] = target_hex
+						best["pass_initiative"] = false
 	if not bool(best["ok"]):
 		best["log"].append("Solitario AI: %s non ha bersagli legali." % key)
 	return best

@@ -38,6 +38,8 @@ const TRACK_MARKERS := {
 	"vp_rn_10": preload("res://assets/counters/markers_track_vprn_10.png"),
 }
 
+const EVASIVE_MARKER := preload("res://assets/counters/markers_evasive.png")
+
 ## Centri delle caselle 0 e 9, letti sulla mappa a risoluzione nativa. Il
 ## tracciato e' inclinato, quindi ogni colonna ha i propri estremi.
 const TRACK_ENDPOINTS := {
@@ -222,6 +224,8 @@ func _draw_task_force(tf: TaskForce) -> void:
 			station_pos += Vector2(graph.inradius * 0.44,
 				-graph.inradius * 0.24) * float(station_lane)
 		_draw_station(station_pos, col, is_sel, tf)
+		if tf.evasive:
+			_draw_evasive_marker(station_pos + Vector2(graph.inradius * 0.62, 0))
 		return
 
 	# linea attraverso i centri degli esagoni dei segmenti, scostata sulla
@@ -269,6 +273,8 @@ func _draw_task_force(tf: TaskForce) -> void:
 		if is_sel:
 			_draw_label(pts[pts.size() - 1] + Vector2(0, -graph.inradius * 0.75),
 				"%d seg" % traj.length(), col)
+	if tf.evasive and not pts.is_empty():
+		_draw_evasive_marker(pts[0] + Vector2(0, graph.inradius * 0.58))
 
 
 func _draw_rendezvous_markers() -> void:
@@ -411,6 +417,12 @@ func _draw_info_marker(c: Vector2, col: Color) -> void:
 func _draw_contact_marker(c: Vector2) -> void:
 	var r := graph.inradius * 0.20
 	draw_arc(c, r * 1.9, 0, TAU, 24, Color(1.0, 0.45, 0.0, 0.95), 4.0, true)
+
+
+func _draw_evasive_marker(c: Vector2) -> void:
+	var side := graph.inradius * 0.50
+	draw_texture_rect(EVASIVE_MARKER,
+		Rect2(c - Vector2(side, side) * 0.5, Vector2(side, side)), false)
 
 
 func _draw_label(pos: Vector2, text: String, col: Color, scale_f: float = 0.30) -> void:
