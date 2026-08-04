@@ -138,9 +138,24 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
   secondo giro il mondo era diverso e la partita imboccava un'altra strada. La
   fotografia usa `to_dict`/`apply_dict`, la stessa strada del salvataggio, che
   il progetto verifica da sempre.
-  **Resta solo il collegamento della GUI**: `ui/main.gd` deve guidare
-  `step()`/`answer()` invece di riscrivere la sequenza. Il ciclo e' pronto, la
-  duplicazione non lo e' ancora.
+  **CORREZIONE, e vale piu' del resto della voce.** I quattro passi sono stati
+  fatti sulla META' SBAGLIATA. La macchina a passi guida `_player_turn()`, cioe'
+  la policy del giocatore SIMULATO - e la GUI quella non la usa, perche' li' il
+  giocatore e' un essere umano che preme i bottoni.
+  La duplicazione vera e' sul LATO BOT, e il codice lo dichiarava da sempre:
+  `solo_runner.gd` ha tre commenti "Mirror headless di `ui/main.gd::...`" sopra
+  `_bot_turn`, `_apply_bot_result` e `_apply_bot_decision`, che rispecchiano
+  `_solo_roll_action`, `_apply_solo_ai_result` e `_apply_solo_ai_decision`.
+  Quelle tre coppie sono le righe scritte due volte.
+  **Cosa resta buono dei quattro passi**: la cucitura `ask_choice`, il
+  rispondente iniettabile e soprattutto il MECCANISMO della ripresa - fotografia
+  dello stato, tiri ricordati, registro troncato - che serve identico al lato
+  bot, dove le domande sono i modificatori da spuntare e le scelte di esagono.
+  Non e' lavoro buttato, e' lavoro fatto prima sull'altro lato.
+  **Cosa serve davvero**: portare `step()`/`answer()` sul turno del BOT e far
+  guidare quello a `ui/main.gd`. Le domande del bot pero' non sono tutte scelte
+  singole - i modificatori sono una spunta multipla - quindi la cucitura va
+  allargata prima di riusarla.
   **Non e' un lavoro da una sessione**, ed e' sul file piu' rischioso del
   progetto: e' quello che oggi si gioca davvero.
 - **Battaglia avanzata**: quattro scelte interattive e il mini-scenario MS12.
