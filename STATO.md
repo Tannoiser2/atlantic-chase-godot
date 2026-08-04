@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **3255 verifiche, 20 suite, headless.**
+Tutti i test passano: **3292 verifiche, 20 suite, headless.**
 
 ---
 
@@ -171,11 +171,46 @@ Tutti i test passano: **3255 verifiche, 20 suite, headless.**
   Mappa Operazionale sbagliata;
 - riepilogo persistente nel pannello di stato e procedura espandibile nel log
   mostrano tabella, tiro, TF scelta, bersaglio, risultato e ragione della policy;
-- `tools/audit_solo.gd`: 93 caselle azione, 0 blocchi, 36 testi segnaposto
+- `tools/audit_solo.gd`: 93 caselle azione, 0 blocchi, 32 testi segnaposto
   nelle Tabelle Azioni e 2 buchi dichiarati (Mine N2, Mine/Base Aerea N4).
 | **M11** Effetti di Battaglia | ✅ **completo** | Suoni sintetizzati, vampe, traccianti, schizzi, esplosioni, incendi, siluri, affondamenti |
 
-### Cosa e' cambiato nell'ultima sessione (procedure N3)
+### Cosa e' cambiato nell'ultima sessione (procedure N3 e N5)
+
+- **I marcatori Base Aerea esistono.** `core/rules/air_base.gd` e
+  `GameState.placed_air_bases`. Quattro procedure stampate li mettono e li
+  tolgono - BL2 p.11, N4 p.30, N5 p.33, N6 p.37 - e finora tutte e quattro
+  dichiaravano la lacuna e passavano, perche' la pedina non esisteva da nessuna
+  parte nello stato. Adesso c'e' il dato: si salva, occupa un esagono e - come
+  qualunque base aerea nemica, RB p.21 - vi innesca Informazioni. Quello che
+  NON c'e' e' la Base Aerea come FONTE di un Attacco Aereo (RB p.27):
+  `ActionEngine` pretende una TF Attiva con una CV integra e non sa partire da
+  un esagono, e le procedure che ne avrebbero bisogno lo dichiarano.
+- **Gli sbarchi in Norvegia lasciano una traccia.** Il Completamento in Norvegia
+  non scriveva `completed_port`, perche' la Task Force del giocatore resta in
+  gioco: quello storico semplicemente non esisteva. Serve al -1 del dado del
+  Convoglio di N5 (p.33) e ai modificatori della Reazione Norvegese, ed era una
+  lacuna dichiarata nel TODO. Ora sta in `Norway.landings_of`, dentro
+  `solo_counters`, quindi nel salvataggio.
+- **Le dieci procedure di N5 sono trascritte e implementate.** N5 non aveva
+  nessuna policy propria e cadeva nel ripiego generico in fondo a
+  `execute_code`: la 'A' non piazzava nessuna Base Aerea, la 'Conv' non tirava
+  il dado del porto norvegese (0-3 Trondheim, 4-6 Narvik, col -1 stampato), e la
+  fine dentro la 'X' - "se l'unico bersaglio e' una Stazione a Scapa Flow,
+  l'azione e' annullata e lo scenario finisce" - non scattava mai.
+- **Un'altra cella sbagliata, come quella di B3.** La riga '1', colonna 4, della
+  tabella di Identificazione di N5 stampa CL/CL, cioe' DUE incrociatori
+  leggeri, e il dato ne aveva uno solo: una TF tedesca non identificata entrava
+  in Battaglia con un incrociatore in meno. Si vede solo rileggendo la pagina.
+- **`MapGraph.place_hex()` conosce anche le caselle fuori mappa.** Sugli
+  inserti Scapa Flow, Kiel, Murmansk e il Denmark Strait non sono porti: sono
+  bande stampate ai bordi. Il fascicolo pero' li nomina come qualunque porto -
+  "Complete in Scapa Flow", "segments nearest to Kiel" - e senza questa lettura
+  tre clausole di N5 non erano scrivibili. Quando la banda tocca piu' di un
+  esagono si prende quello che tocca DI PIU', usando la percentuale gia'
+  misurata nel dato.
+
+### Cosa e' cambiato nella sessione prima (procedure N3)
 
 - **L'Attacco Furtivo lo esegue la forza Furtiva, non una Task Force.** Il
   difetto stava scritto in un registro BL2 e nessuno lo aveva letto: "Attacco

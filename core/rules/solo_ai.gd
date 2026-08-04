@@ -45,6 +45,8 @@ static func execute_code(code: String, state: GameState, graph: MapGraph,
 		return _n3(normalized, state, graph, engine, port_control, side)
 	if state.scenario_name.begins_with("N4"):
 		return _n4(normalized, state, graph, engine, port_control, side)
+	if state.scenario_name.begins_with("N5"):
+		return _n5(normalized, state, graph, engine, port_control, side)
 	if state.scenario_name.begins_with("N6"):
 		return _n6(normalized, state, graph, engine, port_control, side)
 	if state.scenario_name.begins_with("B1"):
@@ -1362,6 +1364,353 @@ static func _n4_british_completed_at(state: GameState, port_name: String) -> boo
 				and tf.completed_port == port_name:
 			return true
 	return false
+
+
+## N5 Meglio Tardi che Mai, Tabella di Azione Tedesca di p.33 letta sulla
+## pagina renderizzata. Il giocatore e' il BRITANNICO; queste sono le procedure
+## dell'avversario immaginario tedesco, che non parte con nessuna TF in gioco.
+##
+## Prima N5 non aveva nessuna policy propria: cadeva nel ripiego generico in
+## fondo a `execute_code`, quindi la 'A' non piazzava nessuna Base Aerea, la
+## 'Conv' non tirava per il porto norvegese, e soprattutto la fine stampata
+## DENTRO la 'X' non veniva mai verificata.
+static func _n5(code: String, state: GameState, graph: MapGraph,
+		engine: ActionEngine, port_control: Dictionary, side: int) -> Dictionary:
+	match code:
+		"A":
+			return _n5_air_strike(state, graph, engine, port_control, side)
+		"C":
+			return _n5_completion(state, graph, port_control, side)
+		"CONV":
+			return _n5_convoy(state, graph, port_control, side)
+		"X":
+			return _n5_bring_on_battle(state, graph, engine, side)
+	return _air_or_attack(state, graph, engine, side)
+
+
+## 'A' - ATTACCO AEREO (p.33).
+##
+## Col Meteo Cattivo e' tutta posa di marcatori, e N5 comincia col Meteo
+## Cattivo. Col Meteo Buono arriva al passo Bersaglio, e li' serve una cosa che
+## il motore non ha: una Base Aerea che LANCI un Attacco Aereo (RB p.27).
+## Quella resta dichiarata.
+static func _n5_air_strike(state: GameState, graph: MapGraph,
+		engine: ActionEngine, port_control: Dictionary, side: int) -> Dictionary:
+	var out := _empty("")
+	var british := 1 - side
+	if state.weather == TimeLapse.Weather.BAD:
+		# "Place a German Airbase marker in Trondheim. If one is already there,
+		# place one in Narvik. If a German airbase is already in Narvik, place a
+		# Contact marker on one British TF in Air Strike range."
+		var placed := false
+		for place in ["Trondheim", "Narvik"]:
+			var h := graph.place_hex(place)
+			if h == Vector2i.MAX:
+				(out["log"] as Array).append(
+					"Solitario AI N5 - A: %s non e' un luogo di questa mappa." % place)
+				continue
+			if AirBase.at(state, h, side):
+				continue
+			# "However, if a British Airbase marker is in the placement hex,
+			# remove the British marker and do not place a German marker there."
+			if AirBase.at(state, h, british):
+				AirBase.remove_at(state, h, british)
+				(out["log"] as Array).append(("Solitario AI N5 - A: a %s c'era un "
+					+ "marcatore Base Aerea britannico: si toglie quello e non se ne "
+					+ "piazza uno tedesco.") % place)
+				placed = true
+				break
+			AirBase.place(state, side, h,
+				"Base Aerea tedesca posata dal risultato A di N5 (p.33)")
+			(out["log"] as Array).append(
+				"Solitario AI N5 - A: marcatore Base Aerea tedesca a %s %s."
+				% [place, str(h)])
+			placed = true
+			break
+		if not placed:
+			# Trondheim e Narvik hanno gia' una base tedesca: si passa al Contatto.
+			var touched := _n5_contact_in_air_range(state, graph, side, out)
+			if not touched:
+				(out["log"] as Array).append("Solitario AI N5 - A: basi aeree gia' a "
+					+ "Trondheim e Narvik, e nessuna TF britannica a portata: nessun "
+					+ "segnalino Contatto da attaccare.")
+		_n5_international_incident(state, out)
+		out["ok"] = true
+		out["pass_initiative"] = true
+		state.changed.emit()
+		return out
+	# METEO BUONO
+	if AirBase.count_of(state, side) == 0:
+		var trondheim := graph.place_hex("Trondheim")
+		if trondheim != Vector2i.MAX:
+			AirBase.place(state, side, trondheim,
+				"Base Aerea tedesca posata dal risultato A di N5 col Meteo Buono (p.33)")
+			(out["log"] as Array).append("Solitario AI N5 - A: col Meteo Buono e "
+				+ "nessuna base sulla mappa, ne entra una a Trondheim.")
+		_n5_international_incident(state, out)
+		out["ok"] = true
+		out["pass_initiative"] = true
+		state.changed.emit()
+		return out
+	# "Target: Select a British TF in range of a German air base... If none in
+	# range, treat this as an 'X' result instead."
+	var target := AirBase.target_in_range(state, side, british)
+	if target == null:
+		var as_x := _n5_bring_on_battle(state, graph, engine, side)
+		(as_x["log"] as Array).push_front("Solitario AI N5 - A: nessuna TF "
+			+ "britannica a portata di una base aerea tedesca, quindi il risultato "
+			+ "vale come 'X'.")
+		return as_x
+	# Qui il fascicolo farebbe partire l'Attacco Aereo DALLA BASE AEREA, e il
+	# motore non sa farlo: `ActionEngine` pretende una TF Attiva con una CV
+	# integra, e non parte da un esagono. Si dichiara invece di inventarlo.
+	(out["log"] as Array).append(("Solitario AI N5 - A: la procedura manda un "
+		+ "Attacco Aereo dalla base aerea tedesca contro %s, ma una Base Aerea "
+		+ "come FONTE di un Attacco Aereo (RB p.27) non e' ancora modellata: "
+		+ "l'azione resta dichiarata e il tedesco Passa.") % target.display_name())
+	out["ok"] = true
+	out["pass_initiative"] = true
+	return out
+
+
+## "place a Contact marker on one British TF in Air Strike range" (p.33).
+static func _n5_contact_in_air_range(state: GameState, graph: MapGraph,
+		side: int, out: Dictionary) -> bool:
+	var target := AirBase.target_in_range(state, side, 1 - side)
+	if target == null:
+		return false
+	var h := _anchor_hex(target)
+	for m in AirBase.of_side(state, side):
+		var base_hex := AirBase.hex_of(m)
+		var hexes := target.trajectory.hexes()
+		if target.trajectory.is_station():
+			hexes = [target.trajectory.station_hex] as Array[Vector2i]
+		for th in hexes:
+			if Hex.distance(base_hex, th) <= AirBase.STRIKE_RANGE:
+				h = th
+				break
+	target.trajectory.set_contact_at(h, true)
+	(out["log"] as Array).append(
+		"Solitario AI N5 - A: segnalino Contatto su %s in %s, a portata di una "
+		% [target.display_name(), str(h)] + "base aerea tedesca.")
+	return true
+
+
+## 'C' - AZIONE DI COMPLETAMENTO (p.33).
+static func _n5_completion(state: GameState, graph: MapGraph,
+		port_control: Dictionary, side: int) -> Dictionary:
+	var tf := _shortest_force_with_convoy(state, side)
+	var why := "una TF tedesca con un Convoglio"
+	if tf == null:
+		tf = _first_damaged_force(state, side)
+		why = "nessun Convoglio: una TF con una nave Danneggiata"
+	if tf == null:
+		tf = _longest_force(state, side)
+		why = "nessuna Danneggiata: la Traiettoria tedesca piu' lunga"
+	if tf == null:
+		# "If no German TFs are in play, treat as a 'Convoy' result instead."
+		var as_convoy := _n5_convoy(state, graph, port_control, side)
+		(as_convoy["log"] as Array).push_front("Solitario AI N5 - C: nessuna TF "
+			+ "tedesca in gioco, quindi il risultato vale come 'Convoglio'.")
+		return as_convoy
+	var port := "Kiel"
+	if _has_convoy(tf):
+		# "it attempts to complete in Narvik... However, if a British Convoy
+		# already performed a successful Completion action in Narvik, the German
+		# Convoy attempts to complete in Trondheim instead."
+		port = "Trondheim" if _n5_british_convoy_completed_at(state, side, "Narvik") \
+			else "Narvik"
+	var out := _complete_or_route_to_port(state, graph, port_control, tf, port,
+		"Solitario AI N5 - C (%s): Completamento a %s" % [why, port])
+	out["time_lapse_goal"] = graph.place_hex(port)
+	if bool(out.get("completion", false)):
+		_n5_international_incident(state, out)
+	return out
+
+
+## 'Convoglio' (p.33). Il porto lo sceglie un dado, non la geografia.
+static func _n5_convoy(state: GameState, graph: MapGraph,
+		port_control: Dictionary, side: int) -> Dictionary:
+	var out := _empty("")
+	var tf := _shortest_force_with_convoy(state, side)
+	if tf == null:
+		# "create a new TF in Kiel with a Convoy and a DD Squadron... If a DD
+		# Squadron is already in play, place only the Convoy in the TF."
+		var ships: Array[String] = ["Convoy x3"]
+		if not _n5_has_dd_squadron(state, side):
+			ships.append("DD Squadron")
+		else:
+			(out["log"] as Array).append("Solitario AI N5 - Convoglio: uno Squadrone "
+				+ "DD e' gia' in gioco, quindi la nuova TF porta solo il Convoglio.")
+		tf = _create_force_at(state, graph, side, "Kiel", ships, false)
+		(out["log"] as Array).append(
+			"Solitario AI N5 - Convoglio: nuova TF tedesca a Kiel.")
+	if tf == null:
+		out["log"].append("Solitario AI N5 - Convoglio: nessuna TF creabile; Passare.")
+		out["pass_initiative"] = true
+		return out
+	# "To determine which port, roll a die: 0-3 Trondheim, 4-6 Narvik.
+	# Modifier: -1 if British performed a successful Completion action in or
+	# adjacent to Trondheim."
+	var roll := state.rng.d6("Solitario N5 porto del Convoglio")
+	var modifier := 0
+	if _n5_british_completed_in_or_next_to(state, graph, side, "Trondheim"):
+		modifier = -1
+	var total := roll + modifier
+	var port := "Trondheim" if total <= 3 else "Narvik"
+	(out["log"] as Array).append(("Solitario AI N5 - Convoglio: 1d6=%d%s -> %d, "
+		+ "quindi il porto e' %s.") % [roll,
+		"" if modifier == 0 else " %+d (Completamento britannico a Trondheim o "
+			% modifier + "adiacente)", total, port])
+	var done := _complete_or_route_to_port(state, graph, port_control, tf, port,
+		"Solitario AI N5 - Convoglio verso %s" % port)
+	done["log"] = (out["log"] as Array) + (done["log"] as Array)
+	done["time_lapse_goal"] = graph.place_hex(port)
+	if bool(done.get("completion", false)):
+		_n5_international_incident(state, done)
+	return done
+
+
+## 'X' - PORTARE IN BATTAGLIA (p.33). Porta dentro una fine stampata: se
+## l'unico bersaglio e' una Stazione a Scapa Flow, l'azione e' annullata e lo
+## scenario finisce.
+static func _n5_bring_on_battle(state: GameState, graph: MapGraph,
+		engine: ActionEngine, side: int) -> Dictionary:
+	var out := _empty("")
+	_remove_damaged_ships(state, side)
+	for loss in state.remove_eliminated_forces("Solitario AI N5 - X"):
+		(out["log"] as Array).append("Solitario AI N5 - X: %s resta senza navi e "
+			% String(loss.get("tf_name", "Task Force")) + "lascia la mappa.")
+	var tf := _best_non_convoy(state, side)
+	if tf == null:
+		tf = _create_unidentified_at(state, graph, side, "Kiel")
+		(out["log"] as Array).append("Solitario AI N5 - X: nessuna TF tedesca senza "
+			+ "Convoglio, quindi ne entra una NON IDENTIFICATA a Kiel.")
+	if tf == null:
+		out["log"].append("Solitario AI N5 - X: nessuna TF disponibile; Passare.")
+		out["pass_initiative"] = true
+		return out
+	# "If the selected TF has a BC or PB in it, roll a die: if EVEN, it performs
+	# a Trajectory action to the nearest Denmark Strait port hex... Then, a
+	# Completion action."
+	if _has_type(tf, "BC") or _has_type(tf, "PB"):
+		var roll := state.rng.d6("Solitario N5 X con BC o PB")
+		if roll % 2 == 0:
+			var goal := _denmark_strait_reference(graph)
+			var route := _complete_or_route_to_port(state, graph, {}, tf,
+				"Denmark Strait",
+				"Solitario AI N5 - X: 1d6=%d PARI, rotta verso il Denmark Strait" % roll)
+			if not bool(route.get("ok", false)) and goal != Vector2i.MAX:
+				route = _route_toward_hex(state, graph, tf, goal,
+					"Solitario AI N5 - X: 1d6=%d PARI, rotta verso il Denmark Strait"
+						% roll)
+				if bool(route.get("ok", false)):
+					route["follow_up"] = {"kind": "completion",
+						"port_name": "Denmark Strait",
+						"note": "Solitario AI N5 - X: Completamento nel Denmark Strait"}
+			route["log"] = (out["log"] as Array) + (route["log"] as Array)
+			route["time_lapse_goal"] = graph.place_hex("Kiel")
+			route["time_lapse_prefer_near"] = true
+			return route
+		(out["log"] as Array).append("Solitario AI N5 - X: 1d6=%d DISPARI, quindi "
+			% roll + "si prosegue col Portare in Battaglia.")
+	# "the selected TF performs actions designed to bring on a Battle targeting
+	# the nearest British TF with a Convoy. If none in play, it targets the
+	# nearest TF."
+	var target := _best_convoy_target(state, side, tf)
+	if target == null:
+		target = _nearest_enemy_to_hex(state, side, _anchor_hex(tf))
+	if target == null:
+		out["log"].append("Solitario AI N5 - X: nessuna TF britannica da prendere "
+			+ "di mira; il tedesco Passa.")
+		out["pass_initiative"] = true
+		return out
+	# "If the only target is a Station in Scapa Flow (or has but one segment and
+	# it is in Scapa Flow), this action is cancelled and the scenario ends."
+	if _n5_only_target_is_scapa(state, graph, side):
+		state.solo_ended = true
+		state.solo_end_reason = ("L'unico bersaglio britannico e' una Stazione a "
+			+ "Scapa Flow: l'azione 'X' e' annullata e lo scenario finisce (p.33).")
+		var over := _empty("Solitario AI N5 - X: LO SCENARIO FINISCE. "
+			+ state.solo_end_reason)
+		(over["log"] as Array).append_array(out["log"] as Array)
+		over["ok"] = true
+		over["turn_kind"] = "end"
+		over["end_scenario"] = true
+		return over
+	var decision := _attack_or_route_selected(state, graph, engine, tf, target,
+		"Solitario AI N5 - X: Portare in Battaglia")
+	decision["log"] = (out["log"] as Array) + (decision["log"] as Array)
+	# "Time Lapse: Remove segments nearest to Kiel."
+	decision["time_lapse_goal"] = graph.place_hex("Kiel")
+	decision["time_lapse_prefer_near"] = true
+	return decision
+
+
+## Ogni bersaglio britannico e' una Stazione a Scapa Flow, oppure una
+## Traiettoria di un solo segmento a Scapa Flow? (p.33)
+static func _n5_only_target_is_scapa(state: GameState, graph: MapGraph,
+		side: int) -> bool:
+	var scapa := graph.place_hex("Scapa Flow")
+	if scapa == Vector2i.MAX:
+		return false
+	var any := false
+	for tf in state.forces_of(1 - side):
+		if tf.completed:
+			continue
+		any = true
+		var t := tf.trajectory
+		if t.is_station() and t.station_hex == scapa:
+			continue
+		if not t.is_station() and t.length() == 1 and t.occupies(scapa):
+			continue
+		return false
+	return any
+
+
+static func _n5_has_dd_squadron(state: GameState, side: int) -> bool:
+	for tf in state.forces_of(side):
+		for s in tf.ships:
+			if s.kind == Ship.Kind.DD_SQUADRON and not s.sunk:
+				return true
+	return false
+
+
+## Un Convoglio britannico ha gia' Completato in quel porto? (p.33)
+static func _n5_british_convoy_completed_at(state: GameState, side: int,
+		port_name: String) -> bool:
+	var british := 1 - side
+	for tf in state.task_forces:
+		if tf.side != british or not tf.completed:
+			continue
+		if String(tf.completed_port) != port_name:
+			continue
+		for name_v: Variant in tf.completed_ships:
+			if String(name_v).begins_with("Convoy"):
+				return true
+	return false
+
+
+## Il britannico ha Completato NEL porto o in un esagono ADIACENTE? E' il
+## modificatore -1 del dado del Convoglio, e la clausola "adiacente" viene dal
+## riquadro di p.32 che permette lo sbarco accanto a Narvik e Trondheim.
+static func _n5_british_completed_in_or_next_to(state: GameState,
+		graph: MapGraph, side: int, port_name: String) -> bool:
+	if _n5_british_convoy_completed_at(state, side, port_name):
+		return true
+	# Uno sbarco in Norvegia non scrive `completed_port`, perche' la Task Force
+	# del giocatore resta in gioco: la traccia sta in `Norway.landings_of`.
+	return Norway.landed_in_or_next_to(state, 1 - side, graph.place_hex(port_name))
+
+
+## Il riquadro verde 'IC': Incidente Internazionale. In N5 il fascicolo non gli
+## assegna nessun effetto stampato - non e' un modificatore della Tabella delle
+## Azioni ne' un termine dell'Esito di p.34 - quindi si conta e si dichiara.
+static func _n5_international_incident(state: GameState, out: Dictionary) -> void:
+	var n := int(state.solo_counters.get("n5_international_incidents", 0)) + 1
+	state.solo_counters["n5_international_incidents"] = n
+	(out["log"] as Array).append(("Incidente Internazionale numero %d. In N5 il "
+		+ "fascicolo non gli assegna nessun effetto stampato.") % n)
 
 
 ## N6 (AC Solo scenarios 2022 pp.36-38). Il giocatore e' britannico; le tabelle

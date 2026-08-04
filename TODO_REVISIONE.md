@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Baseline: **3255 verifiche su 20 suite**, tutte verdi. Replay solitario:
+Baseline: **3292 verifiche su 20 suite**, tutte verdi. Replay solitario:
 **quindici `OK`** su quindici scenari, nessuno saltato.
 
 Questo e' il backlog autorevole. `STATO.md` contiene anche una lunga cronologia:
@@ -30,7 +30,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 | Battaglia avanzata | 🟡 | mancano quattro scelte interattive e MS12 |
 | Salvataggio, undo, ricarica | 🟢 | ogni stato persistente ha il suo test |
 | **15 scenari solitari** | 🟡 | **tutti giocabili e tutti chiudono su una fine stampata**; restano procedure segnaposto |
-| Tabelle Azione solitarie | 🟡 | 36 procedure ancora segnaposto su 93 caselle (N3 chiuso) |
+| Tabelle Azione solitarie | 🟡 | 32 procedure ancora segnaposto su 93 caselle (N3 e N5 chiusi) |
 | Forze Furtive (Mine, Sub, U-Boat) | 🟡 | nucleo di regole e posa Mine fatti; manca l'azione che le innesca |
 | Basi aeree | 🟡 | dato completo sugli inserti; nessuna sulla mappa grande, e non giocano |
 | Comandanti | 🟡 | testi trascritti; Forbes e Marschall non automatizzati |
@@ -63,8 +63,8 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 
 ## Che cosa e' DA RIFINIRE 🟡
 
-- **36 procedure delle Tabelle Azione sono segnaposto** su 93 caselle uniche
-  (erano 42; N3 e' chiuso). E' il numero che dice quanto manca al solitario
+- **32 procedure delle Tabelle Azione sono segnaposto** su 93 caselle uniche
+  (erano 42; N3 e N5 sono chiusi, e restano N1 e N2). E' il numero che dice quanto manca al solitario
   "vero": lo scenario gira, ma in quelle caselle il bot applica una policy
   generica invece della procedura stampata. `audit_solo.gd` le elenca.
 - **Forze Furtive**: il Completamento in Norvegia c'e' (`core/rules/norway.gd`)
@@ -196,7 +196,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 3255 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 3292 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
@@ -259,7 +259,7 @@ davvero la procedura del fascicolo invece di una policy generica.
 | N2 Operazione Weser (nord) | Inserto Norvegia | 🟡 | Reazione Norvegese; Completamenti in Norvegia |
 | N3 Operazione Weser (sud) | Inserto Nord | 🟢 | undici procedure trascritte e implementate; resta la Reazione Norvegese |
 | N4 Operazione Weser (nord & sud) | Operazionale | 🟡 | Mine, basi aeree, "Urgenza" |
-| N5 Meglio Tardi che Mai | Inserto Norvegia | 🟡 | Punti Rinforzo; due CA "any"; organizzazione TF di ripiego |
+| N5 Meglio Tardi che Mai | Inserto Norvegia | 🟡 | dieci procedure trascritte e implementate; restano Punti Rinforzo, due CA "any", Base Aerea come fonte di Attacco Aereo |
 | N6 Il Dilemma delle Operazioni | Operazionale | 🟡 | procedure segnaposto |
 | B1 Operazione Berlino | Operazionale | 🟡 | procedure segnaposto |
 | B2 La Battaglia dell'Atlantico | Operazionale | 🟡 | -3 VP dei rinforzi |
@@ -541,8 +541,33 @@ davvero la procedura del fascicolo invece di una policy generica.
   regola "Urgency", per cui il britannico tenta SEMPRE di Sottrarre e non
   prende mai Manovre Evasive; e "the British use Forbes' leader benefit only
   during an Engage action".
-- [ ] **N5 Meglio Tardi che Mai**: 11 procedure testuali, incluse Reazioni
-  norvegesi e modificatori di completamento.
+- [x] **N5 Meglio Tardi che Mai**: le dieci procedure sono trascritte dalle
+  pagine renderizzate (pp.32-35) **e implementate**. N5 non aveva nessuna policy
+  propria: cadeva nel ripiego generico in fondo a `execute_code`, quindi la 'A'
+  non piazzava nessuna Base Aerea, la 'Conv' non tirava il dado del porto
+  norvegese, e la fine stampata DENTRO la 'X' - "se l'unico bersaglio e' una
+  Stazione a Scapa Flow, l'azione e' annullata e lo scenario finisce" - non
+  scattava mai.
+  **I marcatori Base Aerea esistono** (`core/rules/air_base.gd`,
+  `GameState.placed_air_bases`): li mettono e li tolgono quattro procedure
+  stampate - BL2 p.11, N4 p.30, N5 p.33, N6 p.37 - e finora tutte e quattro
+  dichiaravano la lacuna perche' la pedina non esisteva da nessuna parte. Il
+  marcatore si salva e, come qualunque base aerea nemica (RB p.21), innesca
+  Informazioni nel suo esagono.
+  **Gli sbarchi in Norvegia lasciano una traccia** (`Norway.landings_of`): il
+  Completamento in Norvegia non scrive `completed_port`, perche' la Task Force
+  del giocatore resta in gioco, quindi lo storico non esisteva. Serviva al -1
+  del dado del Convoglio di N5, ed era una lacuna dichiarata.
+  **Corretta una cella sbagliata**: la riga '1', colonna 4, della tabella di
+  Identificazione stampa `CL/CL` - DUE incrociatori leggeri - e il dato ne aveva
+  uno solo. Stessa classe di difetto della colonna 3 di B3.
+  **RESTA DICHIARATO** un refuso: la 'A' dice "roll again on the British Action
+  Table", ma in N5 il giocatore E' il britannico e l'unica Tabella stampata e'
+  quella tedesca.
+  **Restano**: una Base Aerea come FONTE di un Attacco Aereo (RB p.27) - il
+  motore pretende una TF con una CV integra e non sa partire da un esagono, e il
+  passo Bersaglio della 'A' col Meteo Buono lo dichiara -, i Punti Rinforzo e i
+  due CA 'any'.
 - [ ] **N6 Il Dilemma delle Operazioni**: le quattro tabelle - Azioni Tedesche,
   Traiettoria Tedesca, T-Seconda Azione, Identificazione - e i modificatori
   coincidevano gia' col fascicolo; le 25 procedure sono ora trascritte. N6 non
@@ -742,6 +767,12 @@ reticoli.
   calcoli tecnici.
 - [ ] Verificare layout a 1280x720, 1600x900, 1920x1080 e viewport stretto;
   nessun pannello o pedina deve essere tagliato.
+  **HA GIA' UNA MISURA, e oggi fa fallire `smoke_map_workspace.gd`**:
+  `project.godot` chiede 1600x1000, ma se lo schermo concede meno - qui un
+  rettangolo utilizzabile di 1920x980 - Godot riduce la finestra a 1600x947 e la
+  fascia inferiore sfora di circa 53 px. **Non e' una regressione**: si riproduce
+  identico al commit 4aa1ee6, cioe' prima del lavoro sulle procedure solitarie.
+  Il layout della fascia inferiore assume di ricevere l'altezza richiesta.
 - [ ] Verificare che i marker GMT siano uno per traccia dove previsto e che
   seguano valore, lato, inclinazione e salvataggio.
 - [ ] Migliorare il Debriefing con lista delle condizioni manuali e totale,

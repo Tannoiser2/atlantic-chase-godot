@@ -101,6 +101,15 @@ func run() -> void:
 	test_n3_bring_on_battle_measures_from_the_submarine()
 	test_n3_trajectory_to_bergen_has_a_second_step()
 	test_n3_convoy_is_replaced_by_a_cruiser_before_battle()
+	test_n5_procedures_are_transcribed()
+	test_n5_identify_fourth_column_has_two_light_cruisers()
+	test_n5_air_strike_places_air_base_markers()
+	test_n5_air_strike_removes_a_british_marker_instead()
+	test_n5_convoy_rolls_for_its_norwegian_port()
+	test_n5_bring_on_battle_ends_on_scapa_flow_only()
+	test_n5_bring_on_battle_time_lapse_is_nearest_to_kiel()
+	test_norway_landings_survive_a_save()
+	test_placed_air_bases_survive_a_save()
 	test_b2_reinforcement_groups_match_the_printed_display()
 	test_b2_replay_reaches_three_convoys()
 	test_b2_procedures_are_transcribed()
@@ -2668,3 +2677,235 @@ func test_n3_convoy_is_replaced_by_a_cruiser_before_battle() -> void:
 		"dopo il passo 2 il Convoglio non c'e' piu'")
 	true_(tf.ships.any(func(s: Ship) -> bool: return s.type_code == "CA"),
 		"e al suo posto c'e' un CA, come stampato")
+
+
+# ------------------------------------------------------------------------ N5 --
+#
+# N5 Meglio Tardi che Mai, fascicolo pp.32-35 lette sulle pagine renderizzate.
+# Il giocatore e' il BRITANNICO; la Tabella e' quella tedesca. Prima N5 non
+# aveva nessuna policy propria e cadeva nel ripiego generico in fondo a
+# `execute_code`: la 'A' non piazzava nessuna Base Aerea, la 'Conv' non tirava
+# per il porto norvegese, e la fine stampata dentro la 'X' non scattava mai.
+
+
+func _n5_state(seed: int) -> GameState:
+	var scenario := Scenario.load_by_id("N5 Meglio Tardi che Mai")
+	var g := MapGraph.load_inset("map_norwegian_sea")
+	var st := GameState.new(g, seed)
+	st.apply_dict(scenario.to_state_dict())
+	st.solo_end_conditions = scenario.end_conditions()
+	return st
+
+
+func test_n5_procedures_are_transcribed() -> void:
+	_begin("N5: le dieci procedure sono trascritte")
+	var o := SoloOpponent.load_for("N5 Meglio Tardi che Mai")
+	var placeholders := 0
+	var total := 0
+	for tid in ["actions", "identify"]:
+		var t: SoloTable = o.table(tid)
+		ne(t, null, "la tabella '%s' esiste" % tid)
+		for code_v: Variant in t.legend.keys():
+			total += 1
+			if String(t.legend[code_v]).contains("senza automatismi del motore"):
+				placeholders += 1
+	eq(placeholders, 0, "nessuna e' rimasta un segnaposto")
+	eq(total, 10, "sono dieci voci: quattro azioni e sei composizioni")
+	var actions: SoloTable = o.table("actions")
+	true_(String(actions.legend.get("X", "")).contains("LO SCENARIO FINISCE"),
+		"la 'X' dichiara la propria condizione di fine")
+	true_(String(actions.legend.get("A", "")).contains("REFUSO DEL FASCICOLO"),
+		"e il refuso della 'A' - 'roll again on the British Action Table' in uno "
+		+ "scenario che non ne ha una - resta dichiarato")
+
+
+## p.34, riga '1', colonna 4: la pagina stampa CL/CL, cioe' DUE incrociatori
+## leggeri. Il dato ne aveva uno solo, quindi una TF tedesca non identificata
+## entrava in Battaglia con un incrociatore in meno. Stessa classe di difetto
+## della colonna 3 di B3.
+func test_n5_identify_fourth_column_has_two_light_cruisers() -> void:
+	_begin("N5: la colonna 4 della riga '1' stampa due CL, non uno")
+	var o := SoloOpponent.load_for("N5 Meglio Tardi che Mai")
+	var t: SoloTable = o.table("identify")
+	eq(String((t.rows[1]["cells"] as Array)[3]), "CL/CL",
+		"riga '1 Completamento', colonna 4: CL/CL")
+	eq(String((t.rows[2]["cells"] as Array)[3]), "CL/CL",
+		"e la riga '2+' la stampa uguale")
+	true_(t.legend.has("CL/CL"), "la composizione corrispondente e' trascritta")
+	false_(t.legend.has("CL"), "e il vecchio 'CL' singolo non c'e' piu'")
+
+
+## 'A' col Meteo Cattivo (p.33): "Place a German Airbase marker in Trondheim.
+## If one is already there, place one in Narvik."
+func test_n5_air_strike_places_air_base_markers() -> void:
+	_begin("N5 A: col Meteo Cattivo si posano i marcatori Base Aerea")
+	var st := _n5_state(31)
+	var g := st.graph
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("N5 Meglio Tardi che Mai")
+	var ge := TaskForce.Side.KRIEGSMARINE
+	st.weather = TimeLapse.Weather.BAD
+	eq(AirBase.count_of(st, ge), 0, "si parte senza marcatori piazzati")
+
+	SoloAI.execute_code("A", st, g, engine, scenario.port_control(), ge)
+	true_(AirBase.at(st, g.place_hex("Trondheim"), ge),
+		"il primo marcatore va a Trondheim")
+	eq(AirBase.count_of(st, ge), 1, "ed e' uno solo")
+
+	SoloAI.execute_code("A", st, g, engine, scenario.port_control(), ge)
+	true_(AirBase.at(st, g.place_hex("Narvik"), ge),
+		"il secondo va a Narvik, perche' Trondheim e' occupata")
+	eq(AirBase.count_of(st, ge), 2, "e adesso sono due")
+
+	# RB p.21: una Base Aerea nemica innesca Informazioni nel suo esagono.
+	true_(st.triggers_info(g.place_hex("Trondheim"), TaskForce.Side.ROYAL_NAVY),
+		"un marcatore nemico innesca Informazioni, come i porti nemici")
+	true_(st.info_reasons(g.place_hex("Trondheim"),
+		TaskForce.Side.ROYAL_NAVY).any(func(x: String) -> bool:
+			return x.contains("Base Aerea")),
+		"e il motivo lo dice")
+
+
+## "However, if a British Airbase marker is in the placement hex, remove the
+## British marker and do not place a German marker there." (p.33)
+func test_n5_air_strike_removes_a_british_marker_instead() -> void:
+	_begin("N5 A: su un marcatore britannico si toglie quello, non se ne posa uno")
+	var st := _n5_state(32)
+	var g := st.graph
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("N5 Meglio Tardi che Mai")
+	var ge := TaskForce.Side.KRIEGSMARINE
+	var uk := TaskForce.Side.ROYAL_NAVY
+	st.weather = TimeLapse.Weather.BAD
+	AirBase.place(st, uk, g.place_hex("Trondheim"), "marcatore britannico di prova")
+
+	SoloAI.execute_code("A", st, g, engine, scenario.port_control(), ge)
+	false_(AirBase.at(st, g.place_hex("Trondheim"), uk),
+		"il marcatore britannico e' stato tolto")
+	false_(AirBase.at(st, g.place_hex("Trondheim"), ge),
+		"e al suo posto NON e' entrato uno tedesco")
+
+
+## 'Convoglio' (p.33): il porto lo sceglie un dado, con un modificatore che
+## dipende dai Completamenti britannici gia' avvenuti.
+func test_n5_convoy_rolls_for_its_norwegian_port() -> void:
+	_begin("N5 Convoglio: 0-3 Trondheim, 4-6 Narvik, con il -1 stampato")
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("N5 Meglio Tardi che Mai")
+	var ge := TaskForce.Side.KRIEGSMARINE
+
+	var st := _n5_state(33)
+	st.rng.push_forced([5])
+	var narvik := SoloAI.execute_code("CONV", st, st.graph, engine,
+		scenario.port_control(), ge)
+	true_(_solo_ai_log_contains(narvik, "il porto e' Narvik"),
+		"un 5 senza modificatori manda a Narvik")
+
+	var st2 := _n5_state(34)
+	st2.rng.push_forced([3])
+	var trondheim := SoloAI.execute_code("CONV", st2, st2.graph, engine,
+		scenario.port_control(), ge)
+	true_(_solo_ai_log_contains(trondheim, "il porto e' Trondheim"),
+		"un 3 manda a Trondheim")
+
+	# Col -1 stampato, un 4 scende a 3 e cambia porto. Lo sbarco britannico
+	# accanto a Trondheim e' la traccia che il motore ora conserva.
+	var st3 := _n5_state(35)
+	st3.solo_counters["norway_landings"] = [{
+		"side": TaskForce.Side.ROYAL_NAVY,
+		"q": st3.graph.place_hex("Trondheim").x,
+		"r": st3.graph.place_hex("Trondheim").y,
+	}]
+	st3.rng.push_forced([4])
+	var shifted := SoloAI.execute_code("CONV", st3, st3.graph, engine,
+		scenario.port_control(), ge)
+	true_(_solo_ai_log_contains(shifted, "-1"),
+		"il modificatore stampato e' applicato")
+	true_(_solo_ai_log_contains(shifted, "il porto e' Trondheim"),
+		"e un 4 diventa 3, cioe' Trondheim")
+
+
+## "If the only target is a Station in Scapa Flow... this action is cancelled
+## and the scenario ends." (p.33) E' una fine stampata DENTRO la Tabella.
+func test_n5_bring_on_battle_ends_on_scapa_flow_only() -> void:
+	_begin("N5 X: col solo bersaglio a Scapa Flow lo scenario finisce")
+	var st := _n5_state(36)
+	var g := st.graph
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("N5 Meglio Tardi che Mai")
+	var ge := TaskForce.Side.KRIEGSMARINE
+	var scapa := g.place_hex("Scapa Flow")
+
+	# Tutte le TF britanniche diventano Stazioni a Scapa Flow, che e' anche la
+	# posizione di partenza stampata ("all TFs start in Scapa Flow").
+	for tf in st.forces_of(TaskForce.Side.ROYAL_NAVY):
+		tf.trajectory.become_station(scapa)
+	var over := SoloAI.execute_code("X", st, g, engine, scenario.port_control(), ge)
+	true_(bool(over.get("end_scenario", false)), "la 'X' dichiara la fine")
+	true_(st.solo_ended, "e lo stato risulta concluso")
+	true_(st.solo_end_reason.contains("Scapa Flow"),
+		"col motivo stampato: %s" % st.solo_end_reason)
+
+
+## Lo Scorrere del Tempo della 'X' e' "nearest to Kiel", non "farthest": e' la
+## frase al contrario, ed e' il caso che prima non esisteva.
+func test_n5_bring_on_battle_time_lapse_is_nearest_to_kiel() -> void:
+	_begin("N5 X: lo Scorrere del Tempo toglie i segmenti piu' VICINI a Kiel")
+	var st := _n5_state(37)
+	var g := st.graph
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("N5 Meglio Tardi che Mai")
+	var ge := TaskForce.Side.KRIEGSMARINE
+	# N5 schiera TUTTE le TF britanniche a Scapa Flow ("all TFs start in Scapa
+	# Flow"), e li' la 'X' finisce lo scenario per regola stampata. Per arrivare
+	# al Portare in Battaglia serve una TF uscita dal porto, che e' anche la
+	# situazione in cui quella clausola non si applica.
+	var runner := st.forces_of(TaskForce.Side.ROYAL_NAVY)[0]
+	runner.trajectory.become_station(g.place_hex("Trondheim"))
+	# Un dado DISPARI evita il ramo del Denmark Strait e va al Portare in
+	# Battaglia, che e' quello con lo Scorrere del Tempo prescritto.
+	st.rng.push_forced([3])
+	var out := SoloAI.execute_code("X", st, g, engine, scenario.port_control(), ge)
+	false_(st.solo_ended,
+		"con una TF britannica fuori da Scapa Flow lo scenario non finisce")
+	eq(out.get("time_lapse_goal", Vector2i.MAX), g.place_hex("Kiel"),
+		"l'obiettivo dello Scorrere del Tempo e' Kiel")
+	true_(bool(out.get("time_lapse_prefer_near", false)),
+		"e si tolgono i segmenti piu' VICINI, non i piu' lontani")
+
+
+## Gli sbarchi in Norvegia lasciano una traccia, e la traccia sopravvive al
+## salvataggio: piu' di una procedura stampata guarda indietro.
+func test_norway_landings_survive_a_save() -> void:
+	_begin("gli sbarchi in Norvegia restano nel salvataggio")
+	var st := _n5_state(38)
+	var uk := TaskForce.Side.ROYAL_NAVY
+	var trondheim := st.graph.place_hex("Trondheim")
+	eq(Norway.landings_of(st, uk).size(), 0, "si parte senza sbarchi")
+	st.solo_counters["norway_landings"] = [
+		{"side": uk, "q": trondheim.x, "r": trondheim.y}]
+	true_(Norway.landed_in_or_next_to(st, uk, trondheim),
+		"lo sbarco e' registrato nel suo esagono")
+	true_(Norway.landed_in_or_next_to(st, uk,
+		st.graph.adjacent_hexes(trondheim)[0]),
+		"e vale anche per un esagono adiacente, come dice p.32")
+
+	var reloaded := GameState.new(st.graph, 1)
+	reloaded.apply_dict(st.to_dict())
+	eq(Norway.landings_of(reloaded, uk).size(), 1,
+		"e sopravvive a salvataggio e ricarica")
+
+
+## I marcatori Base Aerea sono stato persistente come ogni altra pedina.
+func test_placed_air_bases_survive_a_save() -> void:
+	_begin("i marcatori Base Aerea entrano nel salvataggio")
+	var st := _n5_state(39)
+	var ge := TaskForce.Side.KRIEGSMARINE
+	var h := st.graph.place_hex("Narvik")
+	AirBase.place(st, ge, h, "prova")
+	eq(AirBase.count_of(st, ge), 1, "il marcatore c'e'")
+	var reloaded := GameState.new(st.graph, 1)
+	reloaded.apply_dict(st.to_dict())
+	true_(AirBase.at(reloaded, h, ge), "e c'e' ancora dopo la ricarica")
+	true_(AirBase.remove_at(reloaded, h, ge), "si toglie")
+	eq(AirBase.count_of(reloaded, ge), 0, "e non ne resta nessuno")

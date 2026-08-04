@@ -285,7 +285,7 @@ func port_hex(name: String) -> Vector2i:
 
 
 ## L'esagono di un luogo STAMPATO col suo nome: prima i porti, poi i Punti di
-## Interesse.
+## Interesse, infine le caselle fuori mappa.
 ##
 ## Serve perche' il fascicolo nomina anche i secondi. Fascicolo p.16: un Punto
 ## di Interesse "has no effect on game play, except to orient the player" - ma
@@ -302,7 +302,25 @@ func place_hex(name: String) -> Vector2i:
 	for poi in points_of_interest:
 		if String(poi.get("name", "")) == name:
 			return Vector2i(int(poi.get("q", 0)), int(poi.get("r", 0)))
-	return Vector2i.MAX
+	# Le caselle fuori mappa hanno un nome e una BANDA che tocca uno o piu'
+	# esagoni: sugli inserti Scapa Flow, Kiel, Murmansk e il Denmark Strait sono
+	# stampati cosi', e il fascicolo li nomina come qualunque porto - N5 p.33
+	# manda a Completare "in the nearest Denmark Strait port hex" e fa togliere
+	# "segments nearest to Kiel". Quando la banda ne tocca piu' d'uno si prende
+	# quello che tocca DI PIU', che e' la percentuale gia' misurata nel dato:
+	# e' una scelta dichiarata, non un esagono inventato.
+	var best := Vector2i.MAX
+	var best_contact := -1.0
+	for box in off_map_boxes:
+		if String(box.get("name", "")) != name:
+			continue
+		for h_v: Variant in box.get("hexes", []):
+			var h: Dictionary = h_v
+			var contact := float(h.get("contact", 0.0))
+			if contact > best_contact:
+				best_contact = contact
+				best = Vector2i(int(h["q"]), int(h["r"]))
+	return best
 
 
 ## Tutti i porti che stanno in un esagono (piu' porti possono condividerlo:

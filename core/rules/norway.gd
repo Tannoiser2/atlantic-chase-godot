@@ -132,8 +132,48 @@ static func complete(state: GameState, graph: MapGraph, tf: TaskForce,
 				+ "del Tempo.") % [where, tf.display_name()])
 		(out["log"] as Array[String]).append(
 			"Va controllata la Reazione Norvegese.")
+	_record_landing(state, tf.side, h)
 	state.changed.emit()
 	return out
+
+
+## Dove e' avvenuto uno sbarco, e di chi.
+##
+## Serve perche' piu' di una procedura stampata guarda INDIETRO: il dado del
+## Convoglio di N5 (p.33) ha "-1 if British performed a successful Completion
+## action in or adjacent to Trondheim", e i modificatori della Reazione
+## Norvegese di p.34 contano i Completamenti precedenti. Il Completamento in
+## Norvegia non lascia altra traccia - la Task Force del giocatore resta in
+## gioco e `completed_port` non viene scritto - quindi senza questo elenco
+## quello storico non esisteva, ed era una lacuna dichiarata nel TODO.
+##
+## Sta in `solo_counters` perche' e' gia' dentro il salvataggio: una partita
+## ripresa deve applicare gli stessi modificatori.
+static func _record_landing(state: GameState, side: int, h: Vector2i) -> void:
+	var landings: Array = state.solo_counters.get("norway_landings", [])
+	landings.append({"side": side, "q": h.x, "r": h.y})
+	state.solo_counters["norway_landings"] = landings
+
+
+## Gli sbarchi gia' avvenuti, per parte.
+static func landings_of(state: GameState, side: int) -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	for entry_v: Variant in state.solo_counters.get("norway_landings", []):
+		var entry: Dictionary = entry_v
+		if int(entry.get("side", -1)) == side:
+			out.append(Vector2i(int(entry.get("q", 0)), int(entry.get("r", 0))))
+	return out
+
+
+## Una parte ha gia' sbarcato in quell'esagono o in uno adiacente?
+static func landed_in_or_next_to(state: GameState, side: int,
+		h: Vector2i) -> bool:
+	if h == Vector2i.MAX:
+		return false
+	for landed in landings_of(state, side):
+		if Hex.distance(landed, h) <= 1:
+			return true
+	return false
 
 
 ## N5, p.32: "the British are allowed to perform a Completion action in a hex

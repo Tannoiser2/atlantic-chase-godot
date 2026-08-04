@@ -88,6 +88,17 @@ var rendezvous_markers: Array[Dictionary] = []
 ## stato persistente.
 var stealth_forces: Array[Dictionary] = []
 
+## I marcatori Base Aerea PIAZZATI IN PARTITA, ognuno { "side", "q", "r",
+## "note" }. Sono cosa diversa dalle basi aeree STAMPATE sulla mappa, che
+## stanno in `MapGraph.air_bases` e non si spostano.
+##
+## Quattro procedure solitarie li mettono e li tolgono - BL2 p.11, N4 p.30,
+## N5 p.33, N6 p.37 - e finora tutte e quattro dichiaravano la lacuna e
+## passavano, perche' la pedina non esisteva da nessuna parte. Qui c'e' il
+## dato; il fatto che una Base Aerea possa anche essere la FONTE di un Attacco
+## Aereo (RB p.27) resta invece non modellato, e le procedure lo dichiarano.
+var placed_air_bases: Array[Dictionary] = []
+
 ## Quante volte e' stato speso ciascun Comandante. Raeder e Pound hanno due
 ## utilizzi, gli altri uno (RB p.10); il dato deve sopravvivere al salvataggio.
 var commander_uses: Dictionary = {}
@@ -359,6 +370,12 @@ func triggers_info(h: Vector2i, mover_side: int) -> bool:
 		if int(sf.get("side", -1)) != mover_side \
 				and Vector2i(int(sf.get("q", 0)), int(sf.get("r", 0))) == h:
 			return true
+	# E una Base Aerea nemica piazzata in partita: RB p.21 la elenca insieme ai
+	# porti nemici, e una base messa da una procedura vale quanto una stampata.
+	for ab in placed_air_bases:
+		if int(ab.get("side", -1)) != mover_side \
+				and Vector2i(int(ab.get("q", 0)), int(ab.get("r", 0))) == h:
+			return true
 	return false
 
 
@@ -378,6 +395,14 @@ func info_reasons(h: Vector2i, mover_side: int) -> Array[String]:
 				and tf.trajectory.is_station() and tf.trajectory.station_port == "" \
 				and tf.trajectory.station_hex == h:
 			out.append("Stazione TF nemica (%s)" % tf.display_name())
+	for sf in stealth_forces:
+		if int(sf.get("side", -1)) != mover_side \
+				and Vector2i(int(sf.get("q", 0)), int(sf.get("r", 0))) == h:
+			out.append("forza Furtiva nemica")
+	for ab in placed_air_bases:
+		if int(ab.get("side", -1)) != mover_side \
+				and Vector2i(int(ab.get("q", 0)), int(ab.get("r", 0))) == h:
+			out.append("Base Aerea nemica")
 	return out
 
 
@@ -454,6 +479,7 @@ func to_dict() -> Dictionary:
 		"solo_phase_reason": solo_phase_reason,
 		"rendezvous_markers": rendezvous_markers.duplicate(true),
 		"stealth_forces": stealth_forces.duplicate(true),
+		"placed_air_bases": placed_air_bases.duplicate(true),
 		"commander_uses": commander_uses.duplicate(),
 		"commanders": commanders.duplicate(),
 		"casualties": casualties.duplicate(true),
@@ -488,6 +514,10 @@ func apply_dict(d: Dictionary) -> void:
 	for rv_v: Variant in d.get("rendezvous_markers", []):
 		var rv: Dictionary = rv_v
 		rendezvous_markers.append(rv.duplicate(true))
+	placed_air_bases.clear()
+	for ab_v: Variant in d.get("placed_air_bases", []):
+		var ab: Dictionary = ab_v
+		placed_air_bases.append(ab.duplicate(true))
 	stealth_forces.clear()
 	for sf_v: Variant in d.get("stealth_forces", []):
 		var sf: Dictionary = sf_v
