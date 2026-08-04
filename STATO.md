@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **3292 verifiche, 20 suite, headless.**
+Tutti i test passano: **3329 verifiche, 20 suite, headless.**
 
 ---
 
@@ -171,11 +171,36 @@ Tutti i test passano: **3292 verifiche, 20 suite, headless.**
   Mappa Operazionale sbagliata;
 - riepilogo persistente nel pannello di stato e procedura espandibile nel log
   mostrano tabella, tiro, TF scelta, bersaglio, risultato e ragione della policy;
-- `tools/audit_solo.gd`: 93 caselle azione, 0 blocchi, 32 testi segnaposto
-  nelle Tabelle Azioni e 2 buchi dichiarati (Mine N2, Mine/Base Aerea N4).
+- `tools/audit_solo.gd`: 93 caselle azione, 0 blocchi, 14 testi segnaposto
+  nelle Tabelle Azioni (tutti in N1) e 1 buco dichiarato (Mine/Base Aerea N4).
 | **M11** Effetti di Battaglia | ✅ **completo** | Suoni sintetizzati, vampe, traccianti, schizzi, esplosioni, incendi, siluri, affondamenti |
 
-### Cosa e' cambiato nell'ultima sessione (procedure N3 e N5)
+### Cosa e' cambiato nell'ultima sessione (procedure N2, N3 e N5)
+
+- **N2 aveva la tabella di Identificazione scalata di una colonna.** Le colonne
+  stampate a p.23 sono `1 | 2 | 3-4 | 5 | 6`, e la trascrizione le aveva lette
+  come sei colonne distinte: da un 4 in poi tutto slittava, e con un 4 la riga
+  Iniziale dava DD/Convoglio invece di CL/Convoglio. E' esattamente il difetto
+  della Tabella Murmansk di BL1, e si vede solo rimettendo l'occhio sulla
+  pagina.
+- **E un modificatore che non le appartiene.** La pagina stampa "Modifiers
+  (Late table only)"; il dato ne aveva uno anche sulla tabella Iniziale - un -1
+  per nave britannica Danneggiata o affondata - che spostava tutti i tiri
+  Iniziali di N2.
+- **'AA' e 'Bd' puntavano ai porti sbagliati.** Andavano a Bergen e Trondheim,
+  cioe' ai porti della Mappa Operazionale usati come sostituti quando l'inserto
+  non era calibrato, invece che ad Andalsnes e Bud. E li' c'era il seguito del
+  problema: Andalsnes e Bud non sono porti ma Punti di Interesse, quindi il loro
+  Completamento e' quello IN NORVEGIA di p.16, che vuole un Convoglio o uno
+  Squadrone DD a bordo. Senza quel ramo la procedura dichiarava "porto non
+  calibrato" e passava: non completava mai.
+- **Le due sotto-tabelle stampate dentro i risultati non c'erano.** La Nuova TF
+  Britannica del risultato 'X' e l'esagono delle Mine del risultato 'mine' sono
+  tabelle a dado stampate dentro il testo della procedura, e nel dato mancavano
+  del tutto. Adesso ci sono, e le Mine vengono posate davvero - rispettando il
+  "this is not Recon" della pagina: nessun segnalino Informazioni.
+
+### Cosa e' cambiato nella sessione prima (procedure N3 e N5)
 
 - **I marcatori Base Aerea esistono.** `core/rules/air_base.gd` e
   `GameState.placed_air_bases`. Quattro procedure stampate li mettono e li

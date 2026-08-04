@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Baseline: **3292 verifiche su 20 suite**, tutte verdi. Replay solitario:
+Baseline: **3329 verifiche su 20 suite**, tutte verdi. Replay solitario:
 **quindici `OK`** su quindici scenari, nessuno saltato.
 
 Questo e' il backlog autorevole. `STATO.md` contiene anche una lunga cronologia:
@@ -30,7 +30,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 | Battaglia avanzata | 🟡 | mancano quattro scelte interattive e MS12 |
 | Salvataggio, undo, ricarica | 🟢 | ogni stato persistente ha il suo test |
 | **15 scenari solitari** | 🟡 | **tutti giocabili e tutti chiudono su una fine stampata**; restano procedure segnaposto |
-| Tabelle Azione solitarie | 🟡 | 32 procedure ancora segnaposto su 93 caselle (N3 e N5 chiusi) |
+| Tabelle Azione solitarie | 🟡 | 14 procedure ancora segnaposto su 93 caselle: resta solo N1 |
 | Forze Furtive (Mine, Sub, U-Boat) | 🟡 | nucleo di regole e posa Mine fatti; manca l'azione che le innesca |
 | Basi aeree | 🟡 | dato completo sugli inserti; nessuna sulla mappa grande, e non giocano |
 | Comandanti | 🟡 | testi trascritti; Forbes e Marschall non automatizzati |
@@ -63,8 +63,8 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 
 ## Che cosa e' DA RIFINIRE 🟡
 
-- **32 procedure delle Tabelle Azione sono segnaposto** su 93 caselle uniche
-  (erano 42; N3 e N5 sono chiusi, e restano N1 e N2). E' il numero che dice quanto manca al solitario
+- **14 procedure delle Tabelle Azione sono segnaposto** su 93 caselle uniche
+  (erano 42; N2, N3 e N5 sono chiusi, e resta soltanto **N1**). E' il numero che dice quanto manca al solitario
   "vero": lo scenario gira, ma in quelle caselle il bot applica una policy
   generica invece della procedura stampata. `audit_solo.gd` le elenca.
 - **Forze Furtive**: il Completamento in Norvegia c'e' (`core/rules/norway.gd`)
@@ -196,7 +196,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 3292 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 3329 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
@@ -256,7 +256,7 @@ davvero la procedura del fascicolo invece di una policy generica.
 | BL2 Contain and Destroy | Operazionale | 🟡 | Forbes non automatizzato |
 | BL3 Raiders of the North Sea | Inserto Nord | 🟡 | Sommergibile schierato ma non giocabile; Limiti di Classe |
 | N1 Operazione Wilfred | Inserto Norvegia | 🟡 | le Mine sono l'OBIETTIVO: manca il Completamento in Norvegia |
-| N2 Operazione Weser (nord) | Inserto Norvegia | 🟡 | Reazione Norvegese; Completamenti in Norvegia |
+| N2 Operazione Weser (nord) | Inserto Norvegia | 🟢 | nove procedure e Identificazione trascritte e implementate; resta la Reazione Norvegese |
 | N3 Operazione Weser (sud) | Inserto Nord | 🟢 | undici procedure trascritte e implementate; resta la Reazione Norvegese |
 | N4 Operazione Weser (nord & sud) | Operazionale | 🟡 | Mine, basi aeree, "Urgenza" |
 | N5 Meglio Tardi che Mai | Inserto Norvegia | 🟡 | dieci procedure trascritte e implementate; restano Punti Rinforzo, due CA "any", Base Aerea come fonte di Attacco Aereo |
@@ -497,8 +497,28 @@ davvero la procedura del fascicolo invece di una policy generica.
   campione contro cui validare, e va usato invece di posizioni scelte a mano.
 - [ ] **N1 Operazione Wilfred**: 30 procedure testuali nel JSON; completare
   Azioni, Identificazione, porti, reazioni e setup.
-- [ ] **N2 Operazione Weser (nord)**: 26 procedure testuali; modellare Mine o
-  mantenere il buco esplicito finche' dati e pedine non sono verificati.
+- [x] **N2 Operazione Weser (nord)**: le procedure sono trascritte dalle pagine
+  renderizzate (pp.21-24) **e implementate**, comprese le due sotto-tabelle
+  stampate DENTRO i risultati che nel dato non c'erano affatto - Nuova TF
+  Britannica e l'esagono delle Mine. Tre difetti veri:
+  la tabella di **Identificazione era scalata di una colonna** - le colonne
+  stampate sono `1 | 2 | 3-4 | 5 | 6` e la trascrizione le aveva lette come sei
+  colonne distinte, quindi da un 4 in poi tutto slittava: con un 4 la riga
+  Iniziale dava DD/Convoglio invece di CL/Convoglio. E' lo stesso difetto della
+  Tabella Murmansk di BL1;
+  la **tabella Iniziale aveva un modificatore che non le appartiene** - la
+  pagina stampa "Modifiers (Late table only)" e il dato ne aveva uno, un -1 per
+  nave britannica Danneggiata o affondata, che spostava tutti i tiri Iniziali;
+  **'AA' e 'Bd' puntavano a Bergen e Trondheim**, cioe' ai porti della Mappa
+  Operazionale usati come sostituti quando l'inserto non era calibrato, e non ad
+  **Andalsnes** e **Bud**. Andalsnes e Bud non sono porti ma Punti di Interesse,
+  quindi il loro Completamento e' quello IN NORVEGIA di p.16, che vuole un
+  Convoglio o uno Squadrone DD a bordo: senza quel ramo la procedura dichiarava
+  "porto non calibrato" e passava, cioe' non completava mai.
+  **Le Mine sono posate davvero** (`Stealth.place`, con l'esagono tirato sul
+  dado stampato), e la procedura rispetta il "this is not Recon": non assegna
+  segnalini Informazioni. **Resta** la Reazione Norvegese di p.24, la cui
+  tabella e' trascritta ma il cui tiro non e' ancora nel ciclo di N2.
 - [x] **N3 Operazione Weser (sud)**: le undici procedure sono trascritte dalle
   pagine renderizzate (pp.25-27) **e implementate**, non piu' approssimate. Le
   sei della Tabella di Azione Britannica girano tutte attorno al Sommergibile

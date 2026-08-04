@@ -110,6 +110,14 @@ func run() -> void:
 	test_n5_bring_on_battle_time_lapse_is_nearest_to_kiel()
 	test_norway_landings_survive_a_save()
 	test_placed_air_bases_survive_a_save()
+	test_n2_procedures_are_transcribed()
+	test_n2_early_table_has_no_modifiers()
+	test_n2_identify_columns_are_not_shifted()
+	test_n2_port_actions_use_the_inset_places()
+	test_n2_mines_roll_their_hex_and_are_not_recon()
+	test_n2_r4_becomes_x_the_second_time()
+	test_n2_trondheim_falls_back_to_x_and_n()
+	test_n2_new_british_tf_uses_only_slow_battleships()
 	test_b2_reinforcement_groups_match_the_printed_display()
 	test_b2_replay_reaches_three_convoys()
 	test_b2_procedures_are_transcribed()
@@ -2909,3 +2917,209 @@ func test_placed_air_bases_survive_a_save() -> void:
 	true_(AirBase.at(reloaded, h, ge), "e c'e' ancora dopo la ricarica")
 	true_(AirBase.remove_at(reloaded, h, ge), "si toglie")
 	eq(AirBase.count_of(reloaded, ge), 0, "e non ne resta nessuno")
+
+
+# ------------------------------------------------------------------------ N2 --
+#
+# N2 Operazione Weser (nord), fascicolo pp.21-24 lette sulle pagine
+# renderizzate. Il giocatore e' il TEDESCO. N2 e' il gemello di N3 sull'altro
+# inserto, e le sue procedure erano tutte approssimate: 'AA' e 'Bd' puntavano a
+# Bergen e Trondheim, cioe' ai porti della Mappa Operazionale usati come
+# sostituti quando l'inserto non era calibrato, non ad Andalsnes e Bud.
+
+
+func _n2_state(seed: int) -> GameState:
+	var scenario := Scenario.load_by_id("N2 Operazione Weser (nord)")
+	var g := MapGraph.load_inset("map_norwegian_sea")
+	var st := GameState.new(g, seed)
+	st.apply_dict(scenario.to_state_dict())
+	st.solo_end_conditions = scenario.end_conditions()
+	return st
+
+
+func test_n2_procedures_are_transcribed() -> void:
+	_begin("N2: le procedure sono trascritte")
+	var o := SoloOpponent.load_for("N2 Operazione Weser (nord)")
+	var placeholders := 0
+	for tid in ["actions_early", "actions_late", "identify", "new_british_tf",
+			"mine_hex"]:
+		var t: SoloTable = o.table(tid)
+		ne(t, null, "la tabella '%s' esiste" % tid)
+		for code_v: Variant in t.legend.keys():
+			if String(t.legend[code_v]).contains("senza automatismi del motore"):
+				placeholders += 1
+	eq(placeholders, 0, "nessuna e' rimasta un segnaposto")
+	# Le due sotto-tabelle stampate DENTRO i risultati non c'erano affatto.
+	var newtf: SoloTable = o.table("new_british_tf")
+	eq((newtf.rows[0]["cells"] as Array).size(), 6,
+		"la tabella Nuova TF Britannica copre tutte e sei le facce")
+	var mines: SoloTable = o.table("mine_hex")
+	eq(String((mines.rows[0]["cells"] as Array)[0]), "Bud",
+		"e la tabella dell'esagono delle Mine parte da Bud")
+
+
+## p.22: "Modifiers (Late table only)". La tabella Iniziale non ne ha nessuno,
+## e il dato ne aveva uno che spostava TUTTI i tiri Iniziali.
+func test_n2_early_table_has_no_modifiers() -> void:
+	_begin("N2: la tabella Iniziale non ha modificatori")
+	var o := SoloOpponent.load_for("N2 Operazione Weser (nord)")
+	eq((o.table("actions_early").modifiers as Array).size(), 0,
+		"la Iniziale non ne ha, come stampa la pagina")
+	eq((o.table("actions_late").modifiers as Array).size(), 4,
+		"i quattro modificatori valgono solo per la Seguente")
+
+
+## p.23: le colonne sono 1 | 2 | 3-4 | 5 | 6, e la trascrizione le aveva lette
+## come sei colonne distinte, cioe' scalate di una da un 4 in poi. E' lo stesso
+## difetto della Tabella Murmansk di BL1.
+func test_n2_identify_columns_are_not_shifted() -> void:
+	_begin("N2: la tabella di Identificazione non e' piu' scalata di una colonna")
+	var o := SoloOpponent.load_for("N2 Operazione Weser (nord)")
+	var t: SoloTable = o.table("identify")
+	var early: Array = t.rows[0]["cells"]
+	var late: Array = t.rows[1]["cells"]
+	eq(String(early[2]), "CL/Convoglio", "con un 3 la riga Iniziale da' CL/Convoglio")
+	eq(String(early[3]), "CL/Convoglio",
+		"e con un 4 pure, perche' la colonna stampata e' '3-4'")
+	eq(String(early[4]), "DD/Convoglio", "il DD/Convoglio sta nella colonna 5")
+	eq(String(early[5]), "Convoglio", "e il Convoglio solo nella 6")
+	eq(String(late[3]), "CA/CA",
+		"nella riga Seguente un 4 da' due CA, non uno")
+
+
+## 'AA', 'Bd' e 'N' (pp.22-23): il porto e' quello dell'inserto, non il
+## sostituto della Mappa Operazionale.
+func test_n2_port_actions_use_the_inset_places() -> void:
+	_begin("N2: AA va ad Andalsnes e Bd a Bud, non a Bergen e Trondheim")
+	var st := _n2_state(41)
+	var g := st.graph
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("N2 Operazione Weser (nord)")
+	var uk := TaskForce.Side.ROYAL_NAVY
+	ne(g.place_hex("Andalsnes"), Vector2i.MAX,
+		"Andalsnes e' un luogo dell'inserto del Mare di Norvegia")
+	ne(g.place_hex("Bud"), Vector2i.MAX, "e anche Bud")
+
+	var aa := SoloAI.execute_code("AA", st, g, engine, scenario.port_control(), uk)
+	true_(_solo_ai_log_contains(aa, "Andalsnes"),
+		"la procedura AA nomina Andalsnes")
+	false_(_solo_ai_log_contains(aa, "Bergen"),
+		"e non nomina piu' Bergen, che era il porto sostituto")
+	eq(aa.get("time_lapse_goal", Vector2i.MAX), g.place_hex("Andalsnes"),
+		"lo Scorrere del Tempo guarda Andalsnes")
+
+	var st2 := _n2_state(42)
+	var bd := SoloAI.execute_code("Bd", st2, st2.graph, engine,
+		scenario.port_control(), uk)
+	true_(_solo_ai_log_contains(bd, "Bud"), "la procedura Bd nomina Bud")
+
+
+## 'mine' (p.22): l'esagono lo sceglie un dado, e la posa NON e' una
+## Ricognizione - non si attaccano segnalini Informazioni.
+func test_n2_mines_roll_their_hex_and_are_not_recon() -> void:
+	_begin("N2 mine: l'esagono si tira, e la posa non assegna Informazioni")
+	var st := _n2_state(43)
+	var g := st.graph
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("N2 Operazione Weser (nord)")
+	var uk := TaskForce.Side.ROYAL_NAVY
+	var german_info_before := 0
+	for tf in st.forces_of(TaskForce.Side.KRIEGSMARINE):
+		german_info_before += tf.info_count()
+
+	st.rng.push_forced([1])
+	var out := SoloAI.execute_code("mine", st, g, engine,
+		scenario.port_control(), uk)
+	true_(_solo_ai_log_contains(out, "l'esagono e' Bud"),
+		"con un 1 le Mine vanno a Bud")
+	var mines := 0
+	for f in Stealth.forces_of(st, uk):
+		if int(f.get("kind", -1)) == Stealth.Kind.MINES:
+			mines += 1
+	eq(mines, 1, "e la forza Furtiva Mine c'e' davvero")
+	var german_info_after := 0
+	for tf in st.forces_of(TaskForce.Side.KRIEGSMARINE):
+		german_info_after += tf.info_count()
+	eq(german_info_after, german_info_before,
+		"ma nessun segnalino Informazioni e' stato assegnato: non e' Ricognizione")
+
+	# Posata due volte nello stesso esagono, la seconda attacca un Contatto.
+	st.rng.push_forced([1])
+	SoloAI.execute_code("mine", st, g, engine, scenario.port_control(), uk)
+	var contacts := 0
+	for tf in st.forces_of(TaskForce.Side.KRIEGSMARINE):
+		contacts += tf.trajectory.contact_count()
+	true_(contacts > 0,
+		"con le Mine gia' li', il risultato attacca un segnalino Contatto")
+
+
+## 'R4' (p.23): la seconda volta diventa una 'X'.
+func test_n2_r4_becomes_x_the_second_time() -> void:
+	_begin("N2 R4: la seconda uscita vale come una 'X'")
+	var st := _n2_state(44)
+	var g := st.graph
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("N2 Operazione Weser (nord)")
+	var uk := TaskForce.Side.ROYAL_NAVY
+
+	var first := SoloAI.execute_code("R4", st, g, engine, scenario.port_control(), uk)
+	true_(_solo_ai_log_contains(first, "due nuove TF britanniche"),
+		"la prima volta entrano TF1 e TF2")
+	eq(int(st.solo_counters.get("n2_r4_results", 0)), 1, "e il conto sale")
+
+	var second := SoloAI.execute_code("R4", st, g, engine, scenario.port_control(), uk)
+	true_(_solo_ai_log_contains(second, "vale come una 'X'"),
+		"la seconda volta il rimando stampato e' applicato")
+
+
+## 'T' (p.23): senza Convoglio ne' TF non identificata la procedura rimanda a
+## una 'X'; senza nessuna TF britannica rimanda a una 'N'.
+func test_n2_trondheim_falls_back_to_x_and_n() -> void:
+	_begin("N2 T: i due rimandi stampati sono applicati davvero")
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("N2 Operazione Weser (nord)")
+	var uk := TaskForce.Side.ROYAL_NAVY
+
+	var st := _n2_state(45)
+	# Una sola TF britannica, senza Convoglio e identificata: si va alla 'X'.
+	var only := TaskForce.new(90, uk)
+	only.ships.append(ShipRoster.shared().make("Sheffield"))
+	only.trajectory.become_station(st.graph.place_hex("Trondheim"))
+	st.add_task_force(only)
+	var as_x := SoloAI.execute_code("T", st, st.graph, engine,
+		scenario.port_control(), uk)
+	true_(_solo_ai_log_contains(as_x, "si applica un risultato 'X'"),
+		"senza Convoglio ne' incognita si applica una 'X'")
+
+	# Nessuna TF britannica: si va alla 'N'.
+	var st2 := _n2_state(46)
+	for tf in st2.forces_of(uk):
+		st2.remove_task_force(tf)
+	var as_n := SoloAI.execute_code("T", st2, st2.graph, engine,
+		scenario.port_control(), uk)
+	true_(_solo_ai_log_contains(as_n, "si applica un risultato 'N'"),
+		"senza nessuna TF britannica si applica una 'N'")
+
+
+## 'X' (p.23): la nuova TF si tira sulla tabella stampata, e una BB deve essere
+## LENTA - mai la Nelson ne' la Rodney.
+func test_n2_new_british_tf_uses_only_slow_battleships() -> void:
+	_begin("N2 X: la nuova TF non prende mai Nelson ne' Rodney")
+	var st := _n2_state(47)
+	var g := st.graph
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("N2 Operazione Weser (nord)")
+	var uk := TaskForce.Side.ROYAL_NAVY
+	# Nessuna TF britannica con una BB: la 'X' ne crea una nuova.
+	for tf in st.forces_of(uk):
+		st.remove_task_force(tf)
+	st.rng.push_forced([1])
+	SoloAI.execute_code("X", st, g, engine, scenario.port_control(), uk)
+	var found := false
+	for tf in st.forces_of(uk):
+		for ship in tf.ships:
+			ne(ship.name, "Nelson", "la Nelson non entra: non e' lenta abbastanza")
+			ne(ship.name, "Rodney", "e nemmeno la Rodney")
+			if ship.type_code == "BB":
+				found = true
+	true_(found, "ma una BB nella nuova TF c'e'")

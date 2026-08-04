@@ -13,6 +13,12 @@ extends RefCounted
 const ROUTE_STEP_LIMIT := Trajectory.MAX_SEGMENTS
 
 const UK_TYPE_POOLS := {
+	# Le BB britanniche LENTE, senza Nelson ne' Rodney: e' il vincolo che N2
+	# (p.23) e N3 (p.27) stampano tutte e due, "a BB must be slow (not the
+	# Rodney or Nelson)". Le veloci - King George V, Prince of Wales, Duke of
+	# York - non entrano da questa porta.
+	"BB": ["Valiant", "Warspite", "Malaya", "Ramilles", "Resolution",
+		"Royal Oak"],
 	"BC": ["Hood", "Renown", "Repulse"],
 	"CA": ["Belfast", "Berwick", "Birmingham", "Cornwall", "Cumberland",
 		"Devonshire", "Dorsetshire", "Exeter", "London", "Norfolk", "Sheffield",
@@ -217,6 +223,12 @@ static func continue_follow_up(previous: Dictionary, state: GameState,
 			return _attempt_completion_at_port(graph, port_control, active,
 				String(follow.get("port_name", "")),
 				String(follow.get("note", "Solitario AI: continua verso il porto")))
+		"n2_norway":
+			# N2 pp.22-23: dopo la rotta verso Andalsnes o Bud si tenta il
+			# Completamento in Norvegia, e non si traccia una seconda Traiettoria.
+			return _n2_norway_completion(state, graph, active,
+				follow.get("hex", Vector2i.MAX), String(follow.get("place", "")),
+				String(follow.get("note", "Solitario AI N2")))
 		"n3_b_step2":
 			# N3 p.26: il passo 2 della 'B' arriva dopo la Traiettoria e NON puo'
 			# tracciarne un'altra. Sceglie fra Battaglia, Completamento a Bergen
@@ -791,44 +803,476 @@ static func _n1(code: String, state: GameState, graph: MapGraph,
 	return _completion_or_route(state, graph, engine, port_control, side)
 
 
+## N2 Operazione Weser (nord), Tabelle di Azione Britanniche di p.22 lette
+## sulle pagine renderizzate. Il giocatore e' il TEDESCO.
+##
+## N2 e' il gemello di N3 sull'altro inserto, e le sue procedure erano tutte
+## approssimate: AA e Bd puntavano a Bergen e Trondheim, cioe' ai porti della
+## Mappa Operazionale che erano stati usati come sostituti quando l'inserto non
+## era calibrato, e non ad Andalsnes e Bud.
 static func _n2(code: String, state: GameState, graph: MapGraph,
 		engine: ActionEngine, port_control: Dictionary, side: int) -> Dictionary:
 	match code:
 		"AA":
-			return _n_british_port_action(state, graph, engine, port_control, side,
-				"Bergen", "Andalsnes", "Solitario AI N2: AA")
+			return _n2_port_action(state, graph, engine, port_control, side,
+				"Andalsnes")
 		"BD":
-			return _n_british_port_action(state, graph, engine, port_control, side,
-				"Trondheim", "Bud", "Solitario AI N2: Bd")
-		"C":
-			var tf_c := _first_damaged_force(state, side)
-			if tf_c == null:
-				tf_c = _longest_force(state, side)
-			return _complete_or_route_to_port(state, graph, port_control, tf_c,
-				"Scapa Flow", "Solitario AI N2: Completamento a Scapa Flow")
+			return _n2_port_action(state, graph, engine, port_control, side, "Bud")
 		"N":
-			return _n_british_port_action(state, graph, engine, port_control, side,
-				"Narvik", "Narvik", "Solitario AI N2: N")
-		"P":
-			var out := _empty("Solitario AI N2: Passare.")
-			out["pass_initiative"] = true
-			return out
-		"R4":
-			return _n2_r4(state, graph, engine, side)
+			return _n2_port_action(state, graph, engine, port_control, side,
+				"Narvik")
 		"T":
-			return _n_british_port_action(state, graph, engine, port_control, side,
-				"Trondheim", "Trondheim", "Solitario AI N2: T")
-		"X":
-			var bb := _shortest_force_with_type(state, side, "BB")
-			if bb == null:
-				bb = _create_force_at(state, graph, side, "Scapa Flow",
-					["Nelson", "Rodney", "Belfast"], false)
-			return _attack_or_route_selected(state, graph, engine, bb,
-				_best_contact_or_port_target(state, graph, side, "Narvik"),
-				"Solitario AI N2: Bring to Battle")
+			return _n2_trondheim(state, graph, engine, port_control, side)
+		"C":
+			return _n2_scapa_flow(state, graph, port_control, side)
+		"P":
+			return _n2_pass(state, graph, side)
 		"MINE":
-			return _marker_not_modeled("Solitario AI N2: posa Mine britanniche")
+			return _n2_mines(state, graph, engine, port_control, side)
+		"R4":
+			return _n2_r4(state, graph, engine, port_control, side)
+		"X":
+			return _n2_bring_to_battle(state, graph, engine, side)
 	return _air_or_attack(state, graph, engine, side)
+
+
+## 'AA', 'Bd' e 'N' (p.22-23) sono la stessa procedura con un porto diverso:
+## se un tedesco e' nell'esagono si va in Battaglia, se no si Completa li'.
+static func _n2_port_action(state: GameState, graph: MapGraph,
+		engine: ActionEngine, port_control: Dictionary, side: int,
+		place: String) -> Dictionary:
+	var h := graph.place_hex(place)
+	var tf := _force_in_hex(state, side, h)
+	var why := "una TF britannica IN %s" % place
+	if tf == null:
+		tf = _longest_force(state, side)
+		why = "nessuna TF in %s: la Traiettoria britannica piu' lunga" % place
+	if tf == null:
+		tf = _create_unidentified_at(state, graph, side, "Scapa Flow")
+		why = "nessuna TF britannica in gioco: ne entra una non identificata a Scapa Flow"
+	if tf == null:
+		var no := _empty("Solitario AI N2 - %s: nessuna TF da scegliere; Passare." % place)
+		no["pass_initiative"] = true
+		return no
+	var note := "Solitario AI N2 - %s (%s)" % [place, why]
+	var enemy := _enemy_in_same_hex(state, side, tf)
+	if enemy != null:
+		var out := _empty("")
+		# "if the selected TF has a Convoy, replace the Convoy with a BC"
+		for line in _replace_convoy_or_damaged(state, tf, "BC", false,
+				"Solitario AI N2"):
+			(out["log"] as Array).append(line)
+		for key in ["ENGAGE", "NAVAL_SEARCH"]:
+			var d := _legal_action_for(state, engine, key, tf, enemy)
+			if bool(d["ok"]):
+				d["log"] = (out["log"] as Array) + (d["log"] as Array)
+				(d["log"] as Array).append("%s: %s porta in Battaglia %s."
+					% [note, tf.display_name(), enemy.display_name()])
+				d["time_lapse_goal"] = h
+				return d
+		out["ok"] = true
+		out["active"] = tf
+		out["turn_kind"] = "pass"
+		out["pass_initiative"] = true
+		out["time_lapse_before_pass"] = true
+		out["time_lapse_goal"] = h
+		(out["log"] as Array).append("%s: nessuna azione legale contro %s; Passa."
+			% [note, enemy.display_name()])
+		return out
+	# Andalsnes e Bud sono Punti di Interesse, non porti: li' il Completamento e'
+	# quello IN NORVEGIA di p.16, che vuole un Convoglio o uno Squadrone DD nella
+	# Task Force. Senza questo ramo la procedura dichiarava "porto non calibrato"
+	# e passava, cioe' non completava mai.
+	if graph.port_hex(place) == Vector2i.MAX:
+		return _n2_norway_completion(state, graph, tf, h, place, note)
+	var done := _complete_or_route_to_port(state, graph, port_control, tf, place,
+		"%s: Completamento a %s" % [note, place])
+	done["time_lapse_goal"] = h
+	return done
+
+
+## Il Completamento in un esagono di Norvegia che non e' un porto (p.16): serve
+## arrivarci, e serve avere a bordo un Convoglio o uno Squadrone DD.
+static func _n2_norway_completion(state: GameState, graph: MapGraph,
+		tf: TaskForce, h: Vector2i, place: String, note: String) -> Dictionary:
+	if h == Vector2i.MAX:
+		var unknown := _empty("%s: %s non e' un luogo di questa mappa; Passare."
+			% [note, place])
+		unknown["pass_initiative"] = true
+		return unknown
+	if not tf.trajectory.occupies(h):
+		var route := _route_toward_hex(state, graph, tf, h,
+			"%s: rotta verso %s" % [note, place])
+		if bool(route.get("ok", false)):
+			route["follow_up"] = {"kind": "n2_norway", "hex": h, "place": place,
+				"note": note}
+		route["time_lapse_goal"] = h
+		return route
+	var why := Norway.completion_error(graph, tf, h)
+	if why != "":
+		var passed := _empty("%s: Completamento in Norvegia impossibile (%s); Passa."
+			% [note, why])
+		passed["ok"] = true
+		passed["active"] = tf
+		passed["turn_kind"] = "pass"
+		passed["pass_initiative"] = true
+		passed["time_lapse_before_pass"] = true
+		passed["time_lapse_goal"] = h
+		return passed
+	var out := _empty("")
+	# L'avversario immaginario perde la Task Force quando Completa in Norvegia
+	# (p.16): e' la meta' della regola che vale per lui.
+	var done := Norway.complete(state, graph, tf, h, true)
+	(out["log"] as Array).append_array(done.get("log", []))
+	(out["log"] as Array).push_front("%s: Completamento in Norvegia a %s."
+		% [note, place])
+	out["ok"] = bool(done.get("ok", false))
+	out["pass_initiative"] = true
+	out["time_lapse_goal"] = h
+	return out
+
+
+## 'T' - AZIONE DI COMPLETAMENTO a TRONDHEIM (p.23). La cascata di scelta
+## rimanda a due ALTRI risultati, e i due rimandi vanno applicati davvero.
+static func _n2_trondheim(state: GameState, graph: MapGraph,
+		engine: ActionEngine, port_control: Dictionary, side: int) -> Dictionary:
+	var tf := _shortest_force_with_convoy(state, side)
+	var why := "una TF britannica con un Convoglio"
+	if tf == null:
+		tf = _best_unidentified(state, side)
+		why = "nessun Convoglio: una TF britannica non identificata"
+	if tf == null:
+		# "select the British TF nearest to Trondheim (and then apply an 'X'
+		# result instead, using that TF as the selected TF)"
+		var near := _nearest_force_to_place(state, side, graph, "Trondheim")
+		if near != null:
+			var as_x := _n2_bring_to_battle(state, graph, engine, side, near)
+			(as_x["log"] as Array).push_front("Solitario AI N2 - T: ne' Convoglio ne' "
+				+ "TF non identificata, quindi si usa la piu' vicina a Trondheim e si "
+				+ "applica un risultato 'X'.")
+			return as_x
+		# "If no British TF is in play, apply an 'N' result instead."
+		var as_n := _n2_port_action(state, graph, engine, port_control, side, "Narvik")
+		(as_n["log"] as Array).push_front("Solitario AI N2 - T: nessuna TF britannica "
+			+ "in gioco, quindi si applica un risultato 'N'.")
+		return as_n
+	var out := _complete_or_route_to_port(state, graph, port_control, tf,
+		"Trondheim", "Solitario AI N2 - T (%s)" % why)
+	out["time_lapse_goal"] = graph.place_hex("Trondheim")
+	if bool(out.get("completion", false)):
+		_n2_international_incident(state, out)
+	return out
+
+
+## 'C' - AZIONE DI COMPLETAMENTO a SCAPA FLOW (p.22).
+static func _n2_scapa_flow(state: GameState, graph: MapGraph,
+		port_control: Dictionary, side: int) -> Dictionary:
+	var tf := _first_damaged_force(state, side)
+	var why := "la TF britannica con una nave Danneggiata"
+	if tf == null:
+		tf = _longest_force(state, side)
+		why = "nessuna Danneggiata: la Traiettoria britannica piu' lunga"
+	if tf == null:
+		var no := _empty("Solitario AI N2 - C: nessuna TF britannica in gioco; Passare.")
+		no["pass_initiative"] = true
+		return no
+	var out := _complete_or_route_to_port(state, graph, port_control, tf,
+		"Scapa Flow", "Solitario AI N2 - C (%s)" % why)
+	out["time_lapse_goal"] = graph.place_hex("Scapa Flow")
+	if bool(out.get("completion", false)):
+		_n2_international_incident(state, out)
+	return out
+
+
+## 'P' - PASSARE (p.23). "If no British TF in play, do not perform Time Lapse."
+static func _n2_pass(state: GameState, graph: MapGraph, side: int) -> Dictionary:
+	var tf := _longest_force(state, side)
+	var out := _empty("Solitario AI N2 - P: il britannico esegue un Passare.")
+	out["ok"] = true
+	out["turn_kind"] = "pass"
+	out["pass_initiative"] = true
+	if tf != null:
+		out["active"] = tf
+		out["time_lapse_before_pass"] = true
+		out["time_lapse_goal"] = graph.place_hex("Scapa Flow")
+	else:
+		(out["log"] as Array).append("Solitario AI N2 - P: nessuna TF britannica in "
+			+ "gioco, quindi non si fa Scorrere del Tempo.")
+	return out
+
+
+## 'mine' - IL BRITANNICO POSA MINE (p.22). L'esagono lo sceglie un dado, e la
+## procedura NON e' una Ricognizione: non si attaccano segnalini Informazioni.
+static func _n2_mines(state: GameState, graph: MapGraph, engine: ActionEngine,
+		port_control: Dictionary, side: int) -> Dictionary:
+	var out := _empty("")
+	var roll := state.rng.d6("Solitario N2 esagono delle Mine")
+	var place := "Bud"
+	if roll == 1:
+		place = "Bud"
+	elif roll <= 3:
+		place = "Andalsnes"
+	elif roll <= 5:
+		place = "Trondheim"
+	else:
+		place = "Narvik"
+	var h := graph.place_hex(place)
+	(out["log"] as Array).append("Solitario AI N2 - mine: 1d6=%d -> l'esagono e' %s %s."
+		% [roll, place, str(h)])
+	if h == Vector2i.MAX:
+		(out["log"] as Array).append("Solitario AI N2 - mine: %s non e' un luogo di "
+			% place + "questa mappa; il britannico Passa.")
+		out["pass_initiative"] = true
+		return out
+	var already := false
+	for f in Stealth.forces_of(state, side):
+		if int(f.get("kind", -1)) == Stealth.Kind.MINES \
+				and Vector2i(int(f.get("q", 0)), int(f.get("r", 0))) == h:
+			already = true
+	if not already:
+		# "place one (this is not Recon; do not attach Intel markers)"
+		Stealth.place(state, side, Stealth.Kind.MINES, h,
+			"Mine britanniche posate dal risultato 'mine' di N2 (p.22)")
+		(out["log"] as Array).append("Solitario AI N2 - mine: forza Furtiva Mine "
+			+ "britannica posata in %s (non e' una Ricognizione: niente Informazioni)."
+			% str(h))
+		_n2_international_incident(state, out)
+		out["ok"] = true
+		out["pass_initiative"] = true
+		state.changed.emit()
+		return out
+	# "If it already has a Mines force in the hex, attach a Contact marker to
+	# the nearest German TF... If one already has a Contact marker, apply an 'X'
+	# result using that German TF as the target."
+	var nearest: Array[TaskForce] = []
+	var best := 1 << 30
+	for tf in state.forces_of(1 - side):
+		if tf.completed:
+			continue
+		var d := Hex.distance(_anchor_hex(tf), h)
+		if d < best:
+			best = d
+			nearest = [tf] as Array[TaskForce]
+		elif d == best:
+			nearest.append(tf)
+	if nearest.is_empty():
+		(out["log"] as Array).append("Solitario AI N2 - mine: le Mine ci sono gia' e "
+			+ "non c'e' nessuna TF tedesca a cui attaccare un Contatto; Passare.")
+		out["ok"] = true
+		out["pass_initiative"] = true
+		return out
+	for tf in nearest:
+		if tf.trajectory.contact_count() > 0:
+			var as_x := _n2_bring_to_battle(state, graph, engine, side, null, tf)
+			(as_x["log"] as Array).push_front(("Solitario AI N2 - mine: %s ha gia' un "
+				+ "segnalino Contatto, quindi si applica un risultato 'X' contro di lei.")
+				% tf.display_name())
+			(as_x["log"] as Array).push_front(String((out["log"] as Array)[0]))
+			return as_x
+	for tf in nearest:
+		var where := _closest_hex_of(tf, h)
+		tf.trajectory.set_contact_at(where, true)
+		(out["log"] as Array).append("Solitario AI N2 - mine: segnalino Contatto su "
+			+ "%s in %s." % [tf.display_name(), str(where)])
+	_n2_international_incident(state, out)
+	out["ok"] = true
+	out["pass_initiative"] = true
+	state.changed.emit()
+	return out
+
+
+## 'R4' - OPERAZIONE R4 (p.23).
+static func _n2_r4(state: GameState, graph: MapGraph, engine: ActionEngine,
+		port_control: Dictionary, side: int) -> Dictionary:
+	# "If R4 has already been garnered on the Action Table and it is garnered
+	# again, treat as 'X' instead."
+	var seen := int(state.solo_counters.get("n2_r4_results", 0))
+	state.solo_counters["n2_r4_results"] = seen + 1
+	if seen > 0:
+		var as_x := _n2_bring_to_battle(state, graph, engine, side)
+		(as_x["log"] as Array).push_front("Solitario AI N2 - R4: e' gia' uscito una "
+			+ "volta, quindi questo vale come una 'X'.")
+		return as_x
+	var used := _ship_names_in_play(state)
+	var tf1_ships: Array[String] = []
+	for _i in range(4):
+		var ca := _make_available_ship("CA", used)
+		if ca == null:
+			break
+		used[ca.name] = true
+		tf1_ships.append(ca.name)
+	var tf2_ships: Array[String] = ["Nelson", "Rodney"]
+	var extra := _make_available_ship("CA", used)
+	if extra != null:
+		tf2_ships.append(extra.name)
+	var tf1 := _create_force_at(state, graph, side, "Scapa Flow", tf1_ships, false)
+	var tf2 := _create_force_at(state, graph, side, "Scapa Flow", tf2_ships, false)
+	var out := _empty("Solitario AI N2 - R4: entrano due nuove TF britanniche a "
+		+ "Scapa Flow, TF1 con quattro CA e TF2 con Nelson, Rodney e un CA.")
+	var r1 := _route_toward_hex(state, graph, tf1, graph.place_hex("Trondheim"),
+		"Solitario AI N2 - R4: TF1 verso Trondheim")
+	var r2 := _route_toward_hex(state, graph, tf2, graph.place_hex("Narvik"),
+		"Solitario AI N2 - R4: TF2 verso Narvik")
+	(out["log"] as Array).append_array(r1.get("log", []))
+	(out["log"] as Array).append_array(r2.get("log", []))
+	# "Then: If a German TF has an Intel marker attached, TF1 or TF2, whichever
+	# is nearest, performs another Trajectory action to the nearest Intel marker
+	# and then performs a Signals action targeting that marker."
+	var intel_target: TaskForce = null
+	var intel_hex := Vector2i.MAX
+	var best := 1 << 30
+	for tf in state.forces_of(1 - side):
+		if tf.completed or tf.info_count() <= 0:
+			continue
+		for i in tf.trajectory.segments.size():
+			if not bool((tf.trajectory.segments[i] as Dictionary).get("info", false)):
+				continue
+			var h: Vector2i = (tf.trajectory.segments[i] as Dictionary)["hex"]
+			for candidate in [tf1, tf2]:
+				if candidate == null:
+					continue
+				var d := Hex.distance(_anchor_hex(candidate), h)
+				if d < best:
+					best = d
+					intel_target = tf
+					intel_hex = h
+	if intel_target != null:
+		var mover := tf1 if Hex.distance(_anchor_hex(tf1), intel_hex) \
+			<= Hex.distance(_anchor_hex(tf2), intel_hex) else tf2
+		var signal_decision := _legal_action_for(state, engine, "SIGNAL", mover,
+			intel_target)
+		signal_decision["target_hex"] = intel_hex
+		if bool(signal_decision["ok"]):
+			signal_decision["log"] = (out["log"] as Array) \
+				+ (signal_decision["log"] as Array)
+			(signal_decision["log"] as Array).append(("Solitario AI N2 - R4: %s esegue "
+				+ "una Segnalazione contro il segnalino Informazioni di %s in %s.")
+				% [mover.display_name(), intel_target.display_name(), str(intel_hex)])
+			signal_decision["time_lapse_goal"] = graph.place_hex("Scapa Flow")
+			signal_decision["time_lapse_prefer_near"] = true
+			return signal_decision
+		(out["log"] as Array).append("Solitario AI N2 - R4: la Segnalazione contro "
+			+ "%s non e' dichiarabile adesso." % intel_target.display_name())
+	# "No German Intel marker? Roll a die: If the number rolled is EVEN, select
+	# TF2; if ODD, select TF1."
+	var swing := state.rng.d6("Solitario N2 R4 scelta della TF")
+	var chosen := tf2 if swing % 2 == 0 else tf1
+	(out["log"] as Array).append("Solitario AI N2 - R4: 1d6=%d %s, quindi agisce %s."
+		% [swing, "PARI" if swing % 2 == 0 else "DISPARI",
+			"TF2" if swing % 2 == 0 else "TF1"])
+	var target := _nearest_enemy_to_hex(state, side, graph.place_hex("Narvik"))
+	if chosen == null or target == null:
+		out["ok"] = bool(r1.get("ok", false)) or bool(r2.get("ok", false))
+		out["pass_initiative"] = true
+		return out
+	var decision := _attack_or_route_selected(state, graph, engine, chosen, target,
+		"Solitario AI N2 - R4: Portare in Battaglia la TF piu' vicina a Narvik")
+	decision["log"] = (out["log"] as Array) + (decision["log"] as Array)
+	decision["time_lapse_goal"] = graph.place_hex("Scapa Flow")
+	decision["time_lapse_prefer_near"] = true
+	return decision
+
+
+## 'X' - PORTARE IN BATTAGLIA (p.23). `forced_active` e `forced_target` servono
+## ai due rimandi stampati - la 'T' senza Convoglio e il 'mine' su una TF che
+## ha gia' un Contatto - che applicano una 'X' con la TF gia' scelta.
+static func _n2_bring_to_battle(state: GameState, graph: MapGraph,
+		engine: ActionEngine, side: int, forced_active: TaskForce = null,
+		forced_target: TaskForce = null) -> Dictionary:
+	var out := _empty("")
+	var tf := forced_active
+	if tf == null:
+		tf = _shortest_force_with_type(state, side, "BB")
+	if tf == null:
+		var ships := _n2_new_british_tf_ships(state, out)
+		tf = _create_force_at(state, graph, side, "Scapa Flow", ships, false)
+	if tf == null:
+		out["log"].append("Solitario AI N2 - X: nessuna TF britannica disponibile; Passare.")
+		out["pass_initiative"] = true
+		return out
+	var target := forced_target
+	if target == null:
+		target = _best_contact_or_port_target(state, graph, side, "Narvik")
+	if target == null:
+		out["log"].append("Solitario AI N2 - X: nessuna TF tedesca da portare in "
+			+ "Battaglia; Passare.")
+		out["pass_initiative"] = true
+		return out
+	var decision := _attack_or_route_selected(state, graph, engine, tf, target,
+		"Solitario AI N2 - X: Portare in Battaglia %s" % target.display_name())
+	decision["log"] = (out["log"] as Array) + (decision["log"] as Array)
+	decision["time_lapse_goal"] = graph.place_hex("Scapa Flow")
+	return decision
+
+
+## La tabella Nuova TF Britannica di p.23, dentro il risultato 'X'. Le BB
+## disponibili sono gia' solo quelle LENTE, come prescrive la nota.
+static func _n2_new_british_tf_ships(state: GameState,
+		out: Dictionary) -> Array[String]:
+	var roll := state.rng.d6("Solitario N2 nuova TF britannica")
+	var wanted: Array[String] = []
+	if roll <= 2:
+		wanted = ["BC", "BB", "BB"]
+	elif roll == 3:
+		wanted = ["BB", "BB", "CA"]
+	elif roll == 4:
+		wanted = ["BB", "CA", "CA"]
+	elif roll == 5:
+		wanted = ["CA", "CA", "CA"]
+	else:
+		wanted = ["CA", "CL"]
+	var used := _ship_names_in_play(state)
+	var names: Array[String] = []
+	for type_code in wanted:
+		var ship := _make_available_ship(type_code, used)
+		if ship == null:
+			continue
+		used[ship.name] = true
+		names.append(ship.name)
+	(out["log"] as Array).append("Solitario AI N2 - X: 1d6=%d -> nuova TF a Scapa "
+		% roll + "Flow con %s." % ", ".join(names))
+	return names
+
+
+## Il riquadro verde 'IC': Incidente Internazionale. In N2 il fascicolo non gli
+## assegna nessun effetto stampato, quindi si conta e si dichiara.
+static func _n2_international_incident(state: GameState, out: Dictionary) -> void:
+	var n := int(state.solo_counters.get("n2_international_incidents", 0)) + 1
+	state.solo_counters["n2_international_incidents"] = n
+	(out["log"] as Array).append(("Incidente Internazionale numero %d. In N2 il "
+		+ "fascicolo non gli assegna nessun effetto stampato.") % n)
+
+
+## L'esagono di una TF piu' vicino a un altro esagono: dove si attacca un
+## segnalino quando la procedura dice "il piu' vicino".
+static func _closest_hex_of(tf: TaskForce, h: Vector2i) -> Vector2i:
+	var t := tf.trajectory
+	if t.is_station():
+		return t.station_hex
+	var best := t.end_hex(0)
+	var bestd := Hex.distance(best, h)
+	for candidate in t.hexes():
+		var d := Hex.distance(candidate, h)
+		if d < bestd:
+			bestd = d
+			best = candidate
+	return best
+
+
+## La TF di una parte piu' VICINA a un luogo stampato.
+static func _nearest_force_to_place(state: GameState, side: int,
+		graph: MapGraph, place: String) -> TaskForce:
+	var h := graph.place_hex(place)
+	if h == Vector2i.MAX:
+		return null
+	var best: TaskForce = null
+	var bestd := 1 << 30
+	for tf in state.forces_of(side):
+		var d := Hex.distance(_anchor_hex(tf), h)
+		if d < bestd:
+			bestd = d
+			best = tf
+	return best
 
 
 ## N3 Operazione Weser (sud), Tabella di Azione Britannica di p.26 letta sulla
@@ -908,7 +1352,8 @@ static func _n3_b_step2(state: GameState, graph: MapGraph, engine: ActionEngine,
 		var out := _empty("")
 		# "if the selected TF has a Convoy or damaged ship, replace
 		# Convoy/damaged ship with a CA"
-		for line in _n3_replace_convoy_or_damaged(state, tf):
+		for line in _replace_convoy_or_damaged(state, tf, "CA", true,
+				"Solitario AI N3"):
 			(out["log"] as Array).append(line)
 		var hex := _shared_hex(tf, enemy)
 		for key in ["ENGAGE", "NAVAL_SEARCH"]:
@@ -950,13 +1395,15 @@ static func _n3_b_step2(state: GameState, graph: MapGraph, engine: ActionEngine,
 
 ## "if the selected TF has a Convoy or damaged ship, replace Convoy/damaged
 ## ship with a CA; the Convoy turned back to port, or was never really there
-## despite intelligence to the contrary" (p.26).
+## despite intelligence to the contrary" (N3 p.26; N2 p.22 dice la stessa cosa
+## col solo Convoglio e con un BC al suo posto).
 ##
 ## E' una sostituzione vera, non una nota: la nave esce dalla Task Force e ne
 ## entra un'altra, altrimenti il Convoglio finirebbe in Battaglia proprio dove
 ## la procedura dice che non c'e'.
-static func _n3_replace_convoy_or_damaged(state: GameState,
-		tf: TaskForce) -> Array[String]:
+static func _replace_convoy_or_damaged(state: GameState, tf: TaskForce,
+		type_code: String, include_damaged: bool,
+		note: String) -> Array[String]:
 	var out: Array[String] = []
 	if tf == null:
 		return out
@@ -965,20 +1412,19 @@ static func _n3_replace_convoy_or_damaged(state: GameState,
 		var ship: Ship = tf.ships[i]
 		if ship.sunk:
 			continue
-		# "replace Convoy/damaged ship with a CA": le due categorie stampate, e
-		# nessun'altra.
-		if ship.kind != Ship.Kind.CONVOY and not ship.damaged:
+		var is_convoy := ship.kind == Ship.Kind.CONVOY
+		if not is_convoy and not (include_damaged and ship.damaged):
 			continue
-		var replacement := _make_available_ship("CA", used)
+		var replacement := _make_available_ship(type_code, used)
 		if replacement == null:
-			out.append("Solitario AI N3: nessun CA disponibile nel ruolino, "
-				+ "quindi %s resta nella TF." % ship.name)
+			out.append("%s: nessun %s disponibile nel ruolino, quindi %s resta "
+				% [note, type_code, ship.name] + "nella TF.")
 			continue
 		used[replacement.name] = true
 		tf.ships[i] = replacement
-		out.append("Solitario AI N3: %s esce dalla TF e al suo posto entra %s "
-			% [ship.name, replacement.name]
-			+ "(p.26: il Convoglio era tornato in porto, o non c'era mai stato).")
+		out.append("%s: %s esce dalla TF e al suo posto entra %s (il Convoglio era "
+			% [note, ship.name, replacement.name]
+			+ "tornato in porto, o non c'era mai stato).")
 	return out
 
 
@@ -3065,24 +3511,6 @@ static func _n_british_port_action(state: GameState, graph: MapGraph,
 		"%s: Completamento a %s" % [note, printed_name])
 
 
-static func _n2_r4(state: GameState, graph: MapGraph,
-		engine: ActionEngine, side: int) -> Dictionary:
-	var tf1 := _create_force_at(state, graph, side, "Scapa Flow",
-		["Sheffield", "Birmingham", "Belfast", "Suffolk"], false)
-	var tf2 := _create_force_at(state, graph, side, "Scapa Flow",
-		["Nelson", "Rodney", "Berwick"], false)
-	var r1 := _route_toward_hex(state, graph, tf1, _port_hex(graph, "Trondheim"),
-		"Solitario AI N2: R4 TF1 verso Trondheim")
-	var r2 := _route_toward_hex(state, graph, tf2, _port_hex(graph, "Narvik"),
-		"Solitario AI N2: R4 TF2 verso Narvik")
-	var out := _empty("Solitario AI N2: Operazione R4 crea due TF britanniche.")
-	out["ok"] = bool(r1.get("ok", false)) or bool(r2.get("ok", false))
-	out["pass_initiative"] = true
-	out["log"].append_array(r1.get("log", []))
-	out["log"].append_array(r2.get("log", []))
-	return out
-
-
 ## OPERAZIONE R4 (p.30). Il fascicolo stampa due procedure diverse sotto la
 ## stessa lettera, e quale si applichi dipende da quante volte R4 e' gia'
 ## uscito. La versione precedente eseguiva sempre la prima: alla seconda uscita
@@ -3676,7 +4104,9 @@ static func _best_contact_or_port_target(state: GameState, graph: MapGraph,
 		side: int, port_name: String) -> TaskForce:
 	var best_contact: TaskForce = null
 	var bestd := 999999
-	var port := _port_hex(graph, port_name)
+	# `place_hex` e non `port_hex`: sugli inserti i luoghi che le procedure
+	# nominano possono essere Punti di Interesse o caselle fuori mappa.
+	var port := graph.place_hex(port_name)
 	for tf in state.forces_of(1 - side):
 		if tf.trajectory.contact_count() <= 0:
 			continue
