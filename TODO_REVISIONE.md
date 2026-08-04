@@ -429,8 +429,41 @@ reticoli.
 
 ## P0 - Sistemi mancanti al solitario
 
-- [ ] Modellare Mine come stato puro in `core/`, con posizione, parte,
-  piazzamento/rimozione, rendering, salvataggio e test.
+- [ ] **Forze Furtive: Mine, Sottomarini, U-Boat.** E' la lacuna piu' grossa
+  rimasta, ed e' l'OBIETTIVO di N1 (posare Mine in Vestfjorden, Bud e
+  Andalsnes), oltre a comparire nello schieramento di BL3 (Sommergibile
+  britannico in (5,1)), N3 (Sommergibile tedesco) e A2 (due marker U-Boat, di
+  cui il motore tiene solo il conteggio).
+  **La tabella c'e' gia'**: `core/data/actions.json` ha `STEALTH_ATTACK` con
+  tutte e trenta le celle lette a ingrandimento 5x e `verified: true`. Quello
+  che manca e' la PEDINA e le sue regole, tutte in **RB p.41**:
+  - *stato*: parte, tipo (Mine / Sottomarino / U-Boat), esagono; piu'
+    serializzazione, undo e salvataggio come per ogni altro stato persistente;
+  - *Ricognizione* (solo Sottomarini e U-Boat): la forza viene spostata su un
+    esagono qualsiasi della mappa, e "non fa differenza dove la forza Furtiva e'
+    al momento in cui viene annunciata l'azione" - e' un piazzamento, non un
+    movimento;
+  - *restrizione al piazzamento*: mai in un esagono con Base Aerea nemica o
+    porto nemico; PUO' stare in un esagono con una TF nemica che contiene un CV;
+    eccezione tedesca col comandante Prien, che poi si rimuove;
+  - *la Ricognizione genera Informazioni*: piazzando la forza in un esagono con
+    una TF nemica - Stazione o segmento - si assegna un segnalino Informazioni a
+    OGNI TF nemica che ha Stazione o segmento in quell'esagono;
+  - *Attacco Furtivo*: bersaglia una TF nemica nel proprio esagono, con Totale
+    Traiettoria zero per la forza Furtiva; poi Scorrere del Tempo per tutte le
+    TF designate tranne il bersaglio, poi Cercare l'Iniziativa;
+  - *restrizione all'attacco*, ed e' quella che rende utile il segnalino
+    Contatto: si puo' attaccare solo una STAZIONE nemica, oppure una Traiettoria
+    se il segmento bersaglio ha assegnato un Contatto o delle Informazioni;
+  - *modificatori*: +3 in Zona U-Boat (che vale anche per Mine e Sottomarini,
+    non solo U-Boat) e +2 contro un Convoglio disperso; sono gia' nel dato.
+  Sopra questo va poi la procedura di N1 (fascicolo p.17): per posare una Mina,
+  una TF con un Convoglio deve riuscire un Completamento nell'esagono bersaglio;
+  se riesce, si piazza la Mina e si fa Scorrere del Tempo, e se la Mina e'
+  andata nell'esagono di Narvik/Vestfjorden si controlla la Reazione Norvegese
+  (p.19). Una volta posata, la Mina E' una forza Furtiva.
+  Non ho cominciato l'implementazione: e' una feature di motore con stato
+  persistente, e mezza feature non testata sarebbe peggio di una voce aperta.
 - [ ] Trascrivere e modellare le Basi Aeree: posizione, controllo, periodo di
   attivita', raggio e interazione con Attacco Aereo/Informazioni.
 - [ ] Modellare le forze Furtive permanenti che causano Informazioni, solo
