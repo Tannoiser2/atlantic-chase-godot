@@ -851,7 +851,7 @@ func _handle_interruption_cancel(res: Dictionary, dec: ActionEngine.Declaration)
 			if _seek_initiative():
 				await _maybe_run_solo_opponent_turn("Interruzione")
 		Interruption.Result.INITIATIVE_CHANGE:
-			if _change_initiative_to(1 - dec.active.side):
+			if _change_initiative_to(1 - dec.acting_side()):
 				await _maybe_run_solo_opponent_turn("Interruzione")
 
 
@@ -1006,6 +1006,9 @@ func _prepare_solo_battle(active: TaskForce, target: TaskForce) -> bool:
 		return true
 	for tf_v: Variant in [active, target]:
 		var tf: TaskForce = tf_v
+		# Con un attaccante Furtivo l'Attiva non esiste: niente da identificare.
+		if tf == null:
+			continue
 		var identified := SoloAI.identify_for_battle(solo, state, graph, engine,
 			_port_control(), tf)
 		if not bool(identified.get("needed", false)):
@@ -1916,10 +1919,18 @@ func _resolve_solo_ai_action(decision: Dictionary) -> String:
 		return "azione incompleta: manca la TF attiva o il bersaglio."
 	var active := dec.active
 	var target := dec.target
+	# RB p.41: l'Attacco Furtivo puo' essere eseguito dalla forza Furtiva, e
+	# allora una TF Attiva non c'e'. Ogni riga che la nominava deve saperlo.
+	var actor_name := active.display_name() if active != null \
+		else "la forza Furtiva %s" % Stealth.kind_name(
+			int(dec.active_stealth.get("kind", -1)))
+	if not dec.active_stealth.is_empty():
+		_msg("Solitario AI: l'azione la esegue %s (Totale Traiettoria zero, RB p.41)."
+			% actor_name)
 	if dec.active_coordinating != null:
 		_msg("Solitario AI: %s coordina l'azione."
 			% dec.active_coordinating.display_name())
-	if key == "AIR_STRIKE":
+	if key == "AIR_STRIKE" and active != null:
 		traj_layer.set_air_action_markers(active.side, dec.launch_hex, dec.target_hex)
 		await get_tree().create_timer(0.55).timeout
 	var res := engine.resolve(dec, state)
@@ -1940,7 +1951,7 @@ func _resolve_solo_ai_action(decision: Dictionary) -> String:
 		if _solo_is_imaginary_turn():
 			_queue_next_solo_action("dopo l'Interruzione")
 		return "%s di %s contro %s annullato da Interruzione." % [label,
-			active.display_name(), target.display_name()]
+			actor_name, target.display_name()]
 	var pending_battle := Results.Battle.NONE
 	var initiative_changes := false
 	var applied_texts: Array[String] = []
@@ -1969,8 +1980,12 @@ func _resolve_solo_ai_action(decision: Dictionary) -> String:
 		_open_battle(pending_battle, active, target, dec.target_hex)
 	else:
 		if bool(engine.action(key).get("causes_time_lapse", false)):
-			await _solo_time_lapse(active, dec.target_hex,
-				dec.launch_hex if key == "AIR_STRIKE" else Vector2i.MAX)
+			# Con un attaccante Furtivo non c'e' nessuna Traiettoria designata da
+			# accorciare, e `active` nullo fa uscire subito la funzione.
+			await _solo_time_lapse(active,
+				decision.get("time_lapse_goal", dec.target_hex),
+				dec.launch_hex if key == "AIR_STRIKE" else Vector2i.MAX,
+				bool(decision.get("time_lapse_prefer_near", false)))
 		if key == "AIR_STRIKE":
 			traj_layer.clear_air_action_markers()
 		match SoloSequence.after_action(key, initiative_changes):
@@ -1980,7 +1995,7 @@ func _resolve_solo_ai_action(decision: Dictionary) -> String:
 				# con Informazioni faceva tirare per Cercarla, e il Conto
 				# dell'Iniziativa si comportava in modo diverso da quello del
 				# percorso del giocatore, che la regola la applicava.
-				if _change_initiative_to(1 - active.side) \
+				if _change_initiative_to(1 - dec.acting_side()) \
 						and _solo_is_imaginary_turn():
 					_queue_next_solo_action("l'Iniziativa e' cambiata")
 			SoloSequence.AfterAction.OFFER_STEAL:
@@ -1996,7 +2011,7 @@ func _resolve_solo_ai_action(decision: Dictionary) -> String:
 	if outcome == "":
 		outcome = engine.describe(res)
 	return "%s con %s contro %s. Esito: %s" % [label,
-		active.display_name(), target.display_name(), outcome]
+		actor_name, target.display_name(), outcome]
 
 
 func _queue_next_solo_action(reason: String) -> void:
@@ -2017,7 +2032,8 @@ func _queue_next_solo_action(reason: String) -> void:
 ## diventa Stazione, sceglie fra gli esagoni liberati quello piu' vicino alla
 ## destinazione. Sono decisioni del bot, quindi non aprono dialoghi umani.
 func _solo_time_lapse(tf: TaskForce, goal: Vector2i = Vector2i.MAX,
-		protected_hex: Vector2i = Vector2i.MAX) -> void:
+		protected_hex: Vector2i = Vector2i.MAX,
+		prefer_near: bool = false) -> void:
 	if tf == null or tf.trajectory.is_station():
 		return
 	var amount := TimeLapse.required_removal(tf.speed, state.weather, state.rng)
@@ -2026,18 +2042,10 @@ func _solo_time_lapse(tf: TaskForce, goal: Vector2i = Vector2i.MAX,
 	if opts.is_empty():
 		_msg("Solitario AI - Scorrere del Tempo: nessuna rimozione legale.")
 		return
-	var chosen: Dictionary = opts[0]
-	var best_score := -INF
-	for option in opts:
-		var ends: Array = option["ends"]
-		var d0 := Hex.distance(tf.trajectory.end_hex(0), goal) \
-			if goal != Vector2i.MAX else 0
-		var d1 := Hex.distance(tf.trajectory.end_hex(1), goal) \
-			if goal != Vector2i.MAX else 0
-		var score := float(int(ends[0]) * d0 + int(ends[1]) * d1)
-		if score > best_score:
-			best_score = score
-			chosen = option
+	# La preferenza stampata dalla procedura sta in `SoloSequence`: e' una
+	# regola, e qui ne serve la stessa lettura del ciclo headless.
+	var chosen: Dictionary = opts[SoloSequence.time_lapse_preference(
+		opts, tf.trajectory, goal, prefer_near)]
 	var freed := TimeLapse.apply(tf.trajectory, chosen)
 	var station_note := ""
 	if tf.trajectory.length() == 0 and not freed.is_empty():

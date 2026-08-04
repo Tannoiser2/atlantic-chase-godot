@@ -24,6 +24,9 @@ func run() -> void:
 	test_save_and_reload()
 	test_scenario_places_stealth_forces()
 	test_n1_mines_procedure()
+	test_stealth_force_performs_the_attack()
+	test_decision_carries_stealth_and_modifier()
+	test_time_lapse_preference_reads_both_directions()
 
 
 func _state() -> GameState:
@@ -266,3 +269,107 @@ func test_n1_mines_procedure() -> void:
 	false_(bool(bud["check_norwegian_reaction"]),
 		"ma a Bud la Reazione Norvegese non si controlla")
 	eq(Stealth.mines_left(st, targets), 1, "ne resta una, ad Andalsnes")
+
+
+## L'ATTACCO FURTIVO ESEGUITO DALLA FORZA FURTIVA (RB p.41).
+##
+## Il difetto che questi test chiudono era visibile nel registro di una partita
+## BL2: "Attacco Furtivo -> Totale Traiettoria 2". Una forza Furtiva ha
+## Traiettoria ZERO, quindi quel 2 diceva che l'azione la stava eseguendo una
+## Task Force - cioe' che la forza Furtiva non c'entrava niente.
+func test_stealth_force_performs_the_attack() -> void:
+	_begin("l'Attacco Furtivo lo esegue la forza Furtiva, non una Task Force")
+	var st := _state()
+	var engine := ActionEngine.load_default()
+	var ge := TaskForce.Side.KRIEGSMARINE
+	var uk := TaskForce.Side.ROYAL_NAVY
+	var h := Vector2i(9, 3)
+	var target := _tf(st, uk, [Vector2i(8, 3), h, Vector2i(10, 3)])
+	target.trajectory.set_contact_at(h, true)
+	var force := Stealth.place(st, ge, Stealth.Kind.UBOAT, h)
+
+	var dec := ActionEngine.Declaration.new()
+	dec.action_key = "STEALTH_ATTACK"
+	dec.active_stealth = force
+	dec.target = target
+	dec.target_hex = h
+	eq(engine.legality_error(dec, st), "",
+		"senza TF Attiva l'azione e' legale, perche' l'attaccante e' la forza")
+	eq(dec.acting_side(), ge, "e la parte si legge dalla forza Furtiva")
+
+	var res := engine.resolve(dec, st)
+	true_(bool(res["ok"]), "l'azione si risolve")
+	eq(int(res["trajectory_total"]), 3,
+		"Totale Traiettoria: zero dall'attaccante Furtivo piu' i tre segmenti "
+		+ "del bersaglio")
+
+	# La restrizione al bersaglio resta quella di `Stealth`: e' li' che vive.
+	target.trajectory.set_contact_at(h, false)
+	true_(engine.legality_error(dec, st).contains("Contatto"),
+		"tolto il Contatto l'azione torna illegale, col motivo stampato")
+
+	# Una dichiarazione non puo' avere tutte e due gli attaccanti.
+	target.trajectory.set_contact_at(h, true)
+	dec.active = _tf(st, ge, [h])
+	true_(engine.legality_error(dec, st).contains("non entrambe"),
+		"forza Furtiva e TF Attiva insieme sono un errore dichiarato")
+
+
+## Il modificatore che una procedura stampata impone all'azione deve arrivare
+## fino al tiro: N3 p.26 da' +3 all'Attacco Furtivo del Sommergibile, e senza
+## questa cucitura il +3 restava scritto nella procedura e basta.
+func test_decision_carries_stealth_and_modifier() -> void:
+	_begin("la decisione porta la forza Furtiva e il modificatore fino al motore")
+	var st := _state()
+	var ge := TaskForce.Side.KRIEGSMARINE
+	var uk := TaskForce.Side.ROYAL_NAVY
+	var h := Vector2i(9, 3)
+	var target := _tf(st, uk, [h])
+	var force := Stealth.place(st, ge, Stealth.Kind.UBOAT, h)
+
+	var decision := {
+		"action_key": "STEALTH_ATTACK",
+		"active": null,
+		"active_stealth": force,
+		"target": target,
+		"target_hex": h,
+		"modifier": 3,
+	}
+	var dec := SoloSequence.declaration_for(decision)
+	true_(dec != null, "la dichiarazione si costruisce senza TF Attiva")
+	eq(dec.modifier, 3, "e porta il +3 stampato")
+	eq(dec.active_stealth.get("kind", -1), Stealth.Kind.UBOAT,
+		"e porta la forza Furtiva scelta")
+
+	# Senza attaccante di nessun tipo, invece, non si costruisce: e' il
+	# controllo che impedisce di dichiarare un'azione senza chi la esegue.
+	var orphan := {"action_key": "STEALTH_ATTACK", "target": target,
+		"target_hex": h}
+	true_(SoloSequence.declaration_for(orphan) == null,
+		"senza ne' TF ne' forza Furtiva non c'e' dichiarazione")
+
+
+## Lo Scorrere del Tempo prescritto dalle procedure: quasi sempre "i segmenti
+## piu' LONTANI da X", ogni tanto "i piu' VICINI a X" (N3 p.26, risultato X).
+## Il conto stava scritto due volte, e conosceva solo il primo caso.
+func test_time_lapse_preference_reads_both_directions() -> void:
+	_begin("la preferenza dello Scorrere del Tempo legge le due direzioni")
+	var st := _state()
+	var uk := TaskForce.Side.ROYAL_NAVY
+	# Una Traiettoria diritta: (5,0) e' il capo 0, (8,0) il capo 1.
+	var tf := _tf(st, uk, [Vector2i(5, 0), Vector2i(6, 0), Vector2i(7, 0),
+		Vector2i(8, 0)])
+	var goal := Vector2i(5, 0)
+	var opts: Array = [
+		{"ends": [1, 0], "label": "dalla testa"},
+		{"ends": [0, 1], "label": "dalla coda"},
+	]
+	# La testa e' l'obiettivo stesso: "piu' LONTANI da" toglie dalla coda.
+	eq(SoloSequence.time_lapse_preference(opts, tf.trajectory, goal, false), 1,
+		"'piu' lontani da' toglie dal capo lontano dall'obiettivo")
+	eq(SoloSequence.time_lapse_preference(opts, tf.trajectory, goal, true), 0,
+		"'piu' vicini a' toglie dal capo vicino, che e' la frase al contrario")
+	eq(SoloSequence.time_lapse_preference(opts, tf.trajectory, Vector2i.MAX), 0,
+		"senza obiettivo si tiene la prima opzione, senza inventare un criterio")
+	eq(SoloSequence.time_lapse_preference([], tf.trajectory, goal), -1,
+		"e senza opzioni non c'e' niente da preferire")

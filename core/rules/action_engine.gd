@@ -194,6 +194,21 @@ class Declaration extends RefCounted:
 	var launch_hex: Vector2i = Vector2i.MAX
 	var target_hex: Vector2i = Vector2i.MAX
 	var modifier: int = 0          ## modificatori comuni gia' sommati
+	## La forza Furtiva che esegue l'azione, quando a eseguirla NON e' una Task
+	## Force. RB p.41 la ammette come attaccante dell'Attacco Furtivo, ed e'
+	## l'unica azione in cui succede: qui l'Attiva puo' quindi restare `null`.
+	## E' il Dictionary di `GameState.stealth_forces`, non una copia.
+	var active_stealth: Dictionary = {}
+
+	## Di chi e' l'azione. Serve perche' con un attaccante Furtivo non c'e' una
+	## TF Attiva da cui leggere la parte, e la traccia dei Modificatori e
+	## l'Iniziativa hanno comunque bisogno di saperlo.
+	func acting_side() -> int:
+		if active != null:
+			return active.side
+		if not active_stealth.is_empty():
+			return int(active_stealth.get("side", -1))
+		return -1
 
 	func designated_active() -> Array[TaskForce]:
 		var out: Array[TaskForce] = []
@@ -218,7 +233,18 @@ func legality_error(dec: Declaration, state: GameState) -> String:
 	var a := action(dec.action_key)
 	if a.is_empty():
 		return "azione sconosciuta: %s" % dec.action_key
-	if dec.active == null:
+	# L'Attacco Furtivo e' l'unica azione che una forza Furtiva puo' eseguire da
+	# sola (RB p.41): li' l'Attiva manca per costruzione, e la restrizione al
+	# bersaglio la detta `Stealth`, non questa funzione.
+	var by_stealth := dec.action_key == "STEALTH_ATTACK" \
+		and not dec.active_stealth.is_empty()
+	if by_stealth:
+		if dec.active != null:
+			return "un Attacco Furtivo ha una forza Furtiva OPPURE una TF Attiva, non entrambe"
+		var stealth_why := Stealth.attack_error(state, dec.active_stealth, dec.target)
+		if stealth_why != "":
+			return stealth_why
+	elif dec.active == null:
 		return "manca la Task Force Attiva"
 	if not is_verified(dec.action_key):
 		return "tabella non ancora trascritta per '%s': %s" \
@@ -263,9 +289,11 @@ func legality_error(dec: Declaration, state: GameState) -> String:
 		return "una TF con segnalino Informazioni non puo' effettuare il Completamento"
 	# una Task Force con un Convoglio ha le mani legate: niente Attacco Aereo,
 	# Ingaggiare o Ricerca Navale (RB p.11). Sta scortando, non cacciando.
-	var convoy_why := Convoy.action_refusal(dec.active, dec.action_key)
-	if convoy_why != "":
-		return convoy_why
+	# Una forza Furtiva non scorta niente, quindi la regola non la tocca.
+	if not by_stealth:
+		var convoy_why := Convoy.action_refusal(dec.active, dec.action_key)
+		if convoy_why != "":
+			return convoy_why
 	return ""
 
 
@@ -309,14 +337,14 @@ func resolve(dec: Declaration, state: GameState) -> Dictionary:
 			out["ok"] = true
 			out["error"] = ""
 			out["results"] = [] as Array[String]
-			state.set_modifier_track(dec.active.side, int(out["modifier"]))
+			state.set_modifier_track(dec.acting_side(), int(out["modifier"]))
 			return out
 		out["modifier"] = int(out["modifier"]) + int(ir["modifier"])
 
 	# 5. tiro
 	if not is_table_driven(dec.action_key):
 		out["ok"] = true
-		state.set_modifier_track(dec.active.side, int(out["modifier"]))
+		state.set_modifier_track(dec.acting_side(), int(out["modifier"]))
 		return out
 	var dice := state.rng.d6x2("azione %s" % dec.action_key)
 	out["dice"] = dice
@@ -332,7 +360,7 @@ func resolve(dec: Declaration, state: GameState) -> Dictionary:
 	out["result_labels"] = labels
 	out["unverified"] = is_cell_unverified(dec.action_key, total, tt)
 	out["ok"] = true
-	state.set_modifier_track(dec.active.side, int(out["modifier"]))
+	state.set_modifier_track(dec.acting_side(), int(out["modifier"]))
 	return out
 
 

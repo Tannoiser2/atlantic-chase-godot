@@ -90,19 +90,61 @@ static func declaration_for(decision: Dictionary) -> ActionEngine.Declaration:
 	var key := String(decision.get("action_key", ""))
 	var active: TaskForce = decision.get("active", null)
 	var target: TaskForce = decision.get("target", null)
-	if key == "" or active == null or target == null:
+	var stealth: Dictionary = decision.get("active_stealth", {})
+	if key == "" or target == null:
+		return null
+	# Un Attacco Furtivo eseguito da una forza Furtiva non ha TF Attiva (RB
+	# p.41): li' l'attaccante e' la forza, e pretenderne una sarebbe il difetto
+	# gia' visto nel registro BL2, dove "Attacco Furtivo -> Totale Traiettoria
+	# 2" tradiva che a eseguirlo era una Task Force.
+	if active == null and stealth.is_empty():
 		return null
 	var dec := ActionEngine.Declaration.new()
 	dec.action_key = key
 	dec.active = active
+	dec.active_stealth = stealth
 	dec.target = target
 	dec.launch_hex = decision.get("launch_hex", Vector2i.MAX)
 	dec.target_hex = decision.get("target_hex", Vector2i.MAX)
+	# I modificatori che una procedura stampata impone all'azione (per esempio
+	# il +3 dell'Attacco Furtivo di N3, p.26). Zero se la procedura non ne da'.
+	dec.modifier = int(decision.get("modifier", 0))
 	var coordinating: TaskForce = decision.get("coordinating", null)
 	if coordinating != null and dec.target_hex != Vector2i.MAX \
 			and coordinating.trajectory.occupies(dec.target_hex):
 		dec.active_coordinating = coordinating
 	return dec
+
+
+## Quale opzione di Scorrere del Tempo prescrive la procedura stampata.
+##
+## Le Tabelle Azioni chiudono quasi ogni risultato con una riga "Time Lapse:
+## Remove segments farthest from X" - e ogni tanto con "nearest to X", che e'
+## la stessa frase al contrario. Il conto era scritto due volte, identico, in
+## `SoloRunner` e in `ui/main.gd`, e conosceva solo il caso "farthest": la 'X'
+## di N3 (p.26) dice "Remove segments nearest to Scapa Flow", e con una copia
+## sola quel caso si aggiunge una volta sola.
+##
+## Ritorna l'INDICE dell'opzione preferita in `options`, che resta una scelta:
+## chi ha un rispondente umano puo' ignorarla.
+static func time_lapse_preference(options: Array, traj: Trajectory,
+		goal: Vector2i, prefer_near: bool = false) -> int:
+	if options.is_empty():
+		return -1
+	if goal == Vector2i.MAX:
+		return 0
+	var best := 0
+	var best_score := -INF
+	var sign := -1.0 if prefer_near else 1.0
+	for i in options.size():
+		var ends: Array = (options[i] as Dictionary)["ends"]
+		var d0 := float(Hex.distance(traj.end_hex(0), goal))
+		var d1 := float(Hex.distance(traj.end_hex(1), goal))
+		var score := sign * (float(int(ends[0])) * d0 + float(int(ends[1])) * d1)
+		if score > best_score:
+			best_score = score
+			best = i
+	return best
 
 
 ## Che cosa succede all'Iniziativa quando l'azione si e' risolta senza aprire

@@ -376,6 +376,11 @@ func _resolve_bot_action(decision: Dictionary) -> void:
 		return
 	var active := dec.active
 	var target := dec.target
+	if not dec.active_stealth.is_empty():
+		_line("BOT   l'azione la esegue la forza Furtiva %s in %s: Totale Traiettoria zero (RB p.41)."
+			% [Stealth.kind_name(int(dec.active_stealth.get("kind", -1))),
+				str(Vector2i(int(dec.active_stealth.get("q", 0)),
+					int(dec.active_stealth.get("r", 0))))])
 	if dec.active_coordinating != null:
 		_line("BOT   %s coordina l'azione." % dec.active_coordinating.display_name())
 	var res := engine.resolve(dec, state)
@@ -410,11 +415,17 @@ func _resolve_bot_action(decision: Dictionary) -> void:
 		_run_battle(pending, active, target, dec.target_hex)
 		return
 	if bool(engine.action(key).get("causes_time_lapse", false)):
-		_bot_time_lapse(active, dec.target_hex,
-			dec.launch_hex if key == "AIR_STRIKE" else Vector2i.MAX)
+		# RB p.41: dopo un Attacco Furtivo fanno Scorrere del Tempo le Traiettorie
+		# delle TF DESIGNATE, e una forza Furtiva non e' una TF. Con lei sola
+		# designata non c'e' niente da accorciare, ed e' quello che succede qui
+		# perche' `active` e' nullo.
+		_bot_time_lapse(active,
+			decision.get("time_lapse_goal", dec.target_hex),
+			dec.launch_hex if key == "AIR_STRIKE" else Vector2i.MAX,
+			bool(decision.get("time_lapse_prefer_near", false)))
 	match SoloSequence.after_action(key, initiative_changes):
 		SoloSequence.AfterAction.CHANGE:
-			_give_initiative_to(1 - active.side)
+			_give_initiative_to(1 - dec.acting_side())
 		SoloSequence.AfterAction.OFFER_STEAL:
 			_inactive_steals("Ricerca Navale del bot")
 		_:
@@ -1177,7 +1188,7 @@ func _apply_interruption_cancel(res: Dictionary,
 		Interruption.Result.VIE_FOR_INITIATIVE:
 			_seek_initiative("Interruzione")
 		Interruption.Result.INITIATIVE_CHANGE:
-			_give_initiative_to(1 - dec.active.side)
+			_give_initiative_to(1 - dec.acting_side())
 
 
 func _seek_initiative(who: String) -> bool:
@@ -1215,8 +1226,9 @@ func _give_initiative_to(side: int) -> void:
 ## Scorrere del Tempo del bot: stessa scelta deterministica di `ui/main.gd`,
 ## cioe' il capo piu' lontano dall'obiettivo dichiarato dalla procedura.
 func _bot_time_lapse(tf: TaskForce, goal: Vector2i = Vector2i.MAX,
-		protected_hex: Vector2i = Vector2i.MAX) -> void:
-	_time_lapse(tf, goal, protected_hex, "BOT")
+		protected_hex: Vector2i = Vector2i.MAX,
+		prefer_near: bool = false) -> void:
+	_time_lapse(tf, goal, protected_hex, "BOT", prefer_near)
 
 
 func _player_time_lapse(tf: TaskForce, goal: Vector2i = Vector2i.MAX) -> void:
@@ -1224,7 +1236,7 @@ func _player_time_lapse(tf: TaskForce, goal: Vector2i = Vector2i.MAX) -> void:
 
 
 func _time_lapse(tf: TaskForce, goal: Vector2i, protected_hex: Vector2i,
-		who: String) -> void:
+		who: String, prefer_near: bool = false) -> void:
 	if tf == null or tf.trajectory.is_station():
 		return
 	# Il dado va tirato UNA volta per turno anche se il turno viene rigiocato
@@ -1239,24 +1251,15 @@ func _time_lapse(tf: TaskForce, goal: Vector2i, protected_hex: Vector2i,
 	if opts.is_empty():
 		_line("%s   Scorrere del Tempo: nessuna rimozione legale." % who)
 		return
-	# Il criterio: si toglie dal capo piu' LONTANO dall'obiettivo, cosi' la
-	# Traiettoria si accorcia dalla parte che non serve. Il conto sta qui perche'
-	# qui c'e' la Traiettoria; la scelta passa dalla cucitura.
-	var preferred := 0
-	var best := -INF
+	# Il criterio e' quello stampato dalla procedura - di solito "rimuovi i
+	# segmenti piu' LONTANI da X", ogni tanto "piu' VICINI a X" - e sta in
+	# `SoloSequence` perche' e' una regola, non un modo di mostrarla.
+	var preferred := SoloSequence.time_lapse_preference(opts, tf.trajectory,
+		goal, prefer_near)
 	var labels: Array[String] = []
-	for i in opts.size():
-		var option: Dictionary = opts[i]
-		var ends: Array = option["ends"]
-		var d0 := Hex.distance(tf.trajectory.end_hex(0), goal) \
-			if goal != Vector2i.MAX else 0
-		var d1 := Hex.distance(tf.trajectory.end_hex(1), goal) \
-			if goal != Vector2i.MAX else 0
-		var score := float(int(ends[0]) * d0 + int(ends[1]) * d1)
+	for option_v: Variant in opts:
+		var ends: Array = (option_v as Dictionary)["ends"]
 		labels.append("%d dalla testa, %d dalla coda" % [int(ends[0]), int(ends[1])])
-		if score > best:
-			best = score
-			preferred = i
 	var picked := ask_choice("segmenti da togliere a %s" % tf.display_name(),
 		labels, preferred)
 	if picked < 0:
@@ -1328,6 +1331,10 @@ func _bl2_neutral_incident(key: String, active: TaskForce,
 func _prepare_battle(active: TaskForce, target: TaskForce) -> bool:
 	for tf_v: Variant in [active, target]:
 		var tf: TaskForce = tf_v
+		# Con un attaccante Furtivo l'Attiva non esiste: non c'e' niente da
+		# identificare da quella parte.
+		if tf == null:
+			continue
 		var identified := SoloAI.identify_for_battle(solo, state, graph, engine,
 			port_control, tf)
 		if not bool(identified.get("needed", false)):
