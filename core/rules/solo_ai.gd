@@ -135,6 +135,19 @@ static func _end_condition_met(state: GameState, cond: Dictionary) -> bool:
 		"ships_sunk_total":
 			return state.sunk_count(TaskForce.Side.KRIEGSMARINE) \
 				+ state.sunk_count(TaskForce.Side.ROYAL_NAVY) >= value
+		"no_convoys_in_play":
+			# N1 p.17: "the British have no Convoys in play (they have Completed
+			# in Scapa Flow or been destroyed)". La parentesi non aggiunge una
+			# condizione, spiega le due strade per cui un Convoglio esce di
+			# scena: conta solo che non ce ne sia piu' nessuno sulla mappa.
+			for tf in state.task_forces:
+				if tf.side != _side_from_name(String(cond.get("side", ""))):
+					continue
+				if tf.completed:
+					continue
+				if _has_convoy(tf):
+					return false
+			return true
 		"convoys_or_unidentified_resolved":
 			# BL3 p.12: "two Convoys and/or Unidentified TFs have Completed or
 			# been destroyed". Sono due categorie contate INSIEME, e sia il

@@ -487,17 +487,21 @@ Tutti i test passano: **3016 verifiche, 18 suite, headless.**
   stiano sulla PROPRIA mappa. E' il difetto vero da cui erano nati - le
   posizioni inventate su porti sostitutivi - espresso in un modo che sopravvive
   al progresso.
-  **Restano quattro schieramenti**, e di N1 e' fatta la geometria: i suoi 18
-  segmenti formano due catene esatte, e la striscia bianca stampata in mezzo a
-  un segmento - che il programma adesso rileva e salva come `convoy_stripe` -
-  dice quale porta Convogli. Otto lisci in fila da Vestfjorden a Scapa Flow, che
-  finiscono su un cilindro Stazione, e otto striati lungo la costa norvegese con
-  esagoni doppi, cioe' piu' Traiettorie sullo stesso percorso. Manca
-  l'assegnazione delle navi, e non l'ho fatta: va letta sulla pagina, e
-  indovinarla sarebbe peggio che lasciarla aperta.
-  N2 ha dieci segmenti (sei striati), N3 dodici (otto striati), N5 nessuno - la
-  sua mappa e' solo lo sfondo dei riquadri di regola, quindi il suo schieramento
-  va ricavato interamente dal testo.
+  **Anche N1 si gioca.** Il nodo era nel testo, non nella geometria: la pagina
+  dice "Enemy: No German TFs at start" e insieme stampa un riquadro sui Convogli
+  tedeschi. p.19 lo scioglie - quei Convogli li crea a Kiel la Tabella delle
+  Azioni tedesche - quindi tutti i 18 segmenti disegnati sono britannici. La
+  striscia bianca sul segmento fa il resto: otto lisci in fila da Scapa Flow a
+  Vestfjorden sono Renown e Squadrone DD, gli otto striati sono due Traiettorie
+  parallele di Convogli posamine, e il terzo Convoglio e' il cilindro Stazione
+  in (2,5). I richiami di p.17 mandano Valiant, Repulse, Rodney e Sheffield con
+  Forbes nel Gruppo Rinforzo A e Birmingham nel B.
+  Le Mine restano lacuna dichiarata, ed e' scomodo perche' sono l'obiettivo
+  dello scenario: le forze Furtive permanenti non sono ancora una pedina.
+  **Restano tre schieramenti**: N2 (dieci segmenti, sei striati), N3 (dodici,
+  otto striati) e N5, che non ne disegna nessuno - la sua mappa e' solo lo
+  sfondo dei riquadri di regola, quindi il suo schieramento va ricavato tutto
+  dal testo.
 - **I Comandanti dicono la loro condizione stampata.** Gli undici testi sono
   trascritti da RB p.10 letta a 300 dpi: la scheda TF mostra la regola vera e
   non un riassunto, ed e' quella che decide se il beneficio si puo' usare

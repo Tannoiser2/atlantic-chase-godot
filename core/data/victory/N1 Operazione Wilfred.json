@@ -41,5 +41,20 @@
  ],
  "rules": {
   "convoy_dispersal": "vedi raw_victory_text e scenario_text"
+ },
+ "end_conditions": {
+  "_source": "AC_Solo_scenarios_2022 p.17, riquadro 'The End', letto sulla pagina renderizzata",
+  "_text": "The scenario ends when the British have no Convoys in play (they have Completed in Scapa Flow or been destroyed).",
+  "any": [
+   {
+    "reason": "Il britannico non ha piu' Convogli in gioco: hanno Completato a Scapa Flow o sono stati distrutti.",
+    "all": [
+     {
+      "kind": "no_convoys_in_play",
+      "side": "ROYAL_NAVY"
+     }
+    ]
+   }
+  ]
  }
 }

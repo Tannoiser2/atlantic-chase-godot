@@ -241,24 +241,23 @@ Uno scenario puo' essere marcato completo solo quando:
   "no Task Forces in play, or two Convoys and/or Unidentified TFs Completed or
   destroyed". Il marker Sommergibile britannico e' in (5,1) - posizione letta,
   ma le forze Furtive non sono ancora modellate, quindi resta lacuna dichiarata.
-  **Restano quattro schieramenti**: N1, N2, N3 e N5.
-  **N1 e' meta' strada.** La geometria e' risolta: i 18 segmenti disegnati
-  formano due catene esatte, e la striscia bianca sui segmenti - che adesso il
-  programma rileva e salva come `convoy_stripe` - dice quale delle due porta
-  Convogli.
-  - catena LISCIA, 8 segmenti in fila: (5,-2) (4,-1) (3,0) (3,1) (3,2) (2,3)
-    (2,4) (2,5), da Vestfjorden giu' verso Scapa Flow, e finisce su un cilindro
-    Stazione in basso a sinistra. Sono navi da guerra.
-  - catena STRIATA, 8 segmenti: (6,1), (5,2) x2, (4,3) x2, (3,4) x2, (2,5).
-    Gli esagoni doppi vogliono dire piu' di una Traiettoria sullo stesso
-    percorso. Sono Convogli.
-  Quello che **manca a N1** e' l'assegnazione: quali navi stanno su quale
-  Traiettoria, e come si concili con "Enemy: No German TFs at start" il fatto
-  che l'illustrazione mostri Convogli anche sul lato norvegese. Va letto sulla
-  pagina, e non l'ho fatto: meglio fermarsi che indovinare un'assegnazione.
-  Per N2 (dieci segmenti, sei striati), N3 (dodici, otto striati) e N5 (nessun
-  segmento: la sua mappa e' solo sfondo dei riquadri di regola, e lo
-  schieramento va ricavato tutto dal testo) resta tutto da leggere.
+  **N1 e' schierato e si gioca.** Il nodo era il testo: "Enemy: No German TFs at
+  start" e insieme un riquadro sui Convogli tedeschi. p.19 lo scioglie - i
+  Convogli tedeschi li crea a Kiel la Tabella delle Azioni, risultati M e N -
+  quindi tutti i 18 segmenti disegnati sono BRITANNICI. La striscia bianca
+  stampata sul segmento separa chi porta un Convoglio da chi no: otto lisci in
+  fila, (2,5) (2,4) (2,3) (3,2) (3,1) (3,0) (4,-1) (5,-2) da Scapa Flow a
+  Vestfjorden, sono Renown e Squadrone DD; gli otto striati sono due Traiettorie
+  parallele di quattro, e il terzo Convoglio e' il cilindro Stazione in (2,5).
+  I richiami di p.17 mandano Valiant, Repulse, Rodney e Sheffield con Forbes nel
+  Gruppo A e Birmingham nel Gruppo B. Fine stampata: "the British have no
+  Convoys in play".
+  Lacuna dichiarata: le Mine sono l'OBIETTIVO di N1 - una in Vestfjorden, una a
+  Bud, una ad Andalsnes - ma le forze Furtive non sono modellate, quindi la posa
+  non e' automatizzata.
+  **Restano tre schieramenti**: N2 (dieci segmenti, sei striati), N3 (dodici,
+  otto striati) e N5 (nessun segmento: la sua mappa e' solo sfondo dei riquadri
+  di regola, quindi lo schieramento va ricavato tutto dal testo).
   Tre test hanno cambiato premessa insieme al fatto, e vale la pena saperlo:
   controllavano che gli scenari inserto NON avessero schieramento, e adesso
   controllano che le loro TF stiano sulla PROPRIA mappa - che e' il difetto

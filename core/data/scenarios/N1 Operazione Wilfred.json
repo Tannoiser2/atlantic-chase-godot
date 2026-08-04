@@ -6,7 +6,7 @@
  "round": 1,
  "_map": {
   "name": "Mappa Inserto del Mare di Norvegia",
-  "status": "reticolo, esagoni, porti, caselle fuori mappa, frecce 'non adiacente' e basi aeree sono misurati e verificati contro le illustrazioni del fascicolo, e il motore carica la mappa; manca lo SCHIERAMENTO INIZIALE, cioe' quale segmento di Traiettoria sia di quale Task Force e in che ordine la formi, che va letto dalle pagine dello scenario",
+  "status": "mappa misurata e verificata, motore e interfaccia la caricano; lo schieramento e' trascritto dall'illustrazione di p.17",
   "source": "AC_Solo_scenarios_2022 p.17 'Map: Norwegian Sea Inset Map'",
   "inset": "map_norwegian_sea"
  },
@@ -93,15 +93,193 @@
    }
   }
  ],
- "task_forces": [],
+ "task_forces": [
+  {
+   "id": 1,
+   "side": 1,
+   "color": "Tan",
+   "slot": 0,
+   "name": "Renown / Squadrone DD",
+   "ships": [
+    "Renown",
+    "DD Squadron"
+   ],
+   "leader": "",
+   "speed": 2,
+   "trajectory": {
+    "segments": [
+     {
+      "q": 2,
+      "r": 5,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 2,
+      "r": 4,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 2,
+      "r": 3,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 3,
+      "r": 2,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 3,
+      "r": 1,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 3,
+      "r": 0,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 4,
+      "r": -1,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 5,
+      "r": -2,
+      "info": false,
+      "contact": false
+     }
+    ],
+    "station_q": 0,
+    "station_r": 0,
+    "station_contact": false,
+    "station_port": ""
+   }
+  },
+  {
+   "id": 2,
+   "side": 1,
+   "color": "Tan",
+   "slot": 1,
+   "name": "Convoglio posamine 1",
+   "ships": [
+    "Convoy x2"
+   ],
+   "leader": "",
+   "speed": 2,
+   "trajectory": {
+    "segments": [
+     {
+      "q": 6,
+      "r": 1,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 5,
+      "r": 2,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 4,
+      "r": 3,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 3,
+      "r": 4,
+      "info": false,
+      "contact": false
+     }
+    ],
+    "station_q": 0,
+    "station_r": 0,
+    "station_contact": false,
+    "station_port": ""
+   }
+  },
+  {
+   "id": 3,
+   "side": 1,
+   "color": "Tan",
+   "slot": 2,
+   "name": "Convoglio posamine 2",
+   "ships": [
+    "Convoy x2"
+   ],
+   "leader": "",
+   "speed": 2,
+   "trajectory": {
+    "segments": [
+     {
+      "q": 5,
+      "r": 2,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 4,
+      "r": 3,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 3,
+      "r": 4,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 2,
+      "r": 5,
+      "info": false,
+      "contact": false
+     }
+    ],
+    "station_q": 0,
+    "station_r": 0,
+    "station_contact": false,
+    "station_port": ""
+   }
+  },
+  {
+   "id": 4,
+   "side": 1,
+   "color": "Tan",
+   "slot": 3,
+   "name": "Convoglio posamine 3",
+   "ships": [
+    "Convoy x2"
+   ],
+   "leader": "",
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 2,
+    "station_r": 5,
+    "station_contact": false,
+    "station_port": ""
+   }
+  }
+ ],
  "reinforcements": {
   "RN Reinforcement A": [
+   "Valiant",
+   "Repulse",
    "Rodney",
-   "Valiant"
+   "Sheffield"
   ],
   "RN Reinforcement B": [
-   "Renown",
-   "Repulse"
+   "Birmingham"
   ]
  },
  "info_triggers": [],
@@ -114,7 +292,11 @@
  "setup_notes": [
   "Mappa Inserto del Mare di Norvegia: questo scenario NON si gioca sulla Mappa Operazionale. Le Task Force trascritte restano in 'unplaced_forces' finche' il reticolo dell'inserto non e' calibrato; gli esagoni che avevano prima erano porti della mappa grande usati come sostituti, cioe' posizioni inventate. Fonte: AC_Solo_scenarios_2022 p.17 'Map: Norwegian Sea Inset Map'.",
   "Meteo Sfavorevole; iniziativa britannica; mappa aggiuntiva Mare di Norvegia. Nessuna TF tedesca iniziale. Schieramento britannico letto dalla mappa stampata: Convogli per mine a Vestfjorden/Narvik, Bud e Aandalsnes; rotte da disegnare dal giocatore perche' il fascicolo non fornisce esagoni. Pound presente.",
-  "Le localita Bud e Andalsnes non hanno esagoni dedicati nel grafo principale: le relative TF sono stazioni nei porti norvegesi calibrati piu vicini."
+  "Le localita Bud e Andalsnes non hanno esagoni dedicati nel grafo principale: le relative TF sono stazioni nei porti norvegesi calibrati piu vicini.",
+  "Schieramento trascritto dall'illustrazione di p.17. I 18 segmenti disegnati formano tre Traiettorie piu' una Stazione, e la STRISCIA BIANCA stampata in mezzo a un segmento distingue chi porta un Convoglio da chi no: otto segmenti lisci in fila - (2,5) (2,4) (2,3) (3,2) (3,1) (3,0) (4,-1) (5,-2), da Scapa Flow su fino a Vestfjorden - sono la TF da guerra, Renown e Squadrone DD, che il richiamo della pagina indica sul pannello Task Force. Gli otto striati sono due Traiettorie parallele di quattro segmenti, (6,1) (5,2) (4,3) (3,4) e (5,2) (4,3) (3,4) (2,5): due dei tre Convogli posamine. Il terzo e' il cilindro Stazione in (2,5), l'esagono che tocca la Casella di Scapa Flow.",
+  "I richiami di p.17 mandano Valiant, Repulse, Rodney e Sheffield con Forbes nel Gruppo Rinforzo A e Birmingham nel Gruppo B; Pound e' comandante strategico. NIENTE TF TEDESCHE ALLO SCHIERAMENTO, come dice la pagina: i Convogli tedeschi di cui parla il riquadro entrano dopo, creati a Kiel dalla Tabella delle Azioni tedesche (p.19, risultati M e N).",
+  "LACUNA DICHIARATA: le Mine sono l'obiettivo dello scenario - una in Vestfjorden, una a Bud, una ad Andalsnes, posate con un Completamento di una TF con Convoglio - ma le forze Furtive permanenti non sono ancora una pedina modellata, quindi la posa non e' automatizzata. Vale anche la Reazione Norvegese di p.19.",
+  "I tre Convogli britannici sono resi con la pedina Convoy x2 del ruolino: il fascicolo li stampa come CONVOY -2/na distrutti da 2 Colpi, e nel ruolino esistono solo Convoy x2 e Convoy x3. La regola dei 2 Colpi resta nelle note, non e' automatizzata."
  ],
  "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati."
 }

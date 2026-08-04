@@ -618,10 +618,9 @@ const INSET_MAP_SOLO := [
 	"N5 Meglio Tardi che Mai",
 ]
 
-## BL3 e' il primo dei cinque ad avere lo schieramento trascritto: la sua
-## illustrazione di p.12 disegna cinque segmenti in fila e un cilindro Stazione,
-## e il replay lo gioca per intero sulla mappa inserto.
-const INSET_MAP_PLAYABLE := ["BL3 Raiders of the North Sea"]
+## Gli scenari inserto che hanno gia' lo schieramento trascritto dalla loro
+## illustrazione, e che il replay gioca per intero sulla mappa inserto.
+const INSET_MAP_PLAYABLE := ["BL3 Raiders of the North Sea", "N1 Operazione Wilfred"]
 
 
 ## Senza condizioni di fine trascritte uno scenario non finisce mai, e nel
