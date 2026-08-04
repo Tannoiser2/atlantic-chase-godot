@@ -570,25 +570,46 @@ func _declare_action(key: String) -> void:
 
 	var active := selected_tf
 	var launch_hex := Vector2i.MAX
-	if key == "AIR_STRIKE":
-		var sources := _air_sources(active.side)
-		active = await _pick_tf(sources, "Attacco Aereo - fonte",
-			"Scegli la Task Force con la portaerei integra che lancia l'attacco. "
-			+ "Le basi aeree non sono ancora modellate.", false)
-		if active == null:
-			return
-		selected_tf = active
-		traj_layer.selected_tf_id = active.id
-		var launches := ActionEngine.air_launch_hexes(active)
-		launch_hex = launches[0]
-		if launches.size() > 1:
-			launch_hex = await _pick_hex_on_map(launches,
-				"Punto di Lancio: clicca un esagono evidenziato della TF con la CV.")
-			if launch_hex == Vector2i.MAX:
-				_msg("Attacco Aereo annullato: nessun Punto di Lancio scelto.")
-				return
+	var stealth_source: Dictionary = {}
+	var air_base_source: Dictionary = {}
 
-	var enemies := _eligible_targets_for_action(key, active, launch_hex)
+	# RB p.41: l'Attacco Furtivo lo esegue una FORZA FURTIVA - "il giocatore
+	# Attivo deve designare una delle sue forze Furtive" - non una Task Force.
+	# Qui si dichiarava con `selected_tf`, ed e' il difetto che nel registro si
+	# leggeva come "Attacco Furtivo -> Totale Traiettoria 2": una forza Furtiva
+	# ha Traiettoria ZERO.
+	if key == "STEALTH_ATTACK":
+		var side := selected_tf.side if selected_tf != null else state.initiative
+		stealth_source = await _pick_stealth_force(side)
+		if stealth_source.is_empty():
+			return
+		active = null
+
+	if key == "AIR_STRIKE":
+		# RB p.27: la fonte e' una TF con una CV integra OPPURE una base aerea.
+		var chosen := await _pick_air_source(
+			selected_tf.side if selected_tf != null else state.initiative)
+		if chosen.is_empty():
+			return
+		if chosen.has("tf"):
+			active = chosen["tf"]
+			selected_tf = active
+			traj_layer.selected_tf_id = active.id
+			var launches := ActionEngine.air_launch_hexes(active)
+			launch_hex = launches[0]
+			if launches.size() > 1:
+				launch_hex = await _pick_hex_on_map(launches,
+					"Punto di Lancio: clicca un esagono evidenziato della TF con la CV.")
+				if launch_hex == Vector2i.MAX:
+					_msg("Attacco Aereo annullato: nessun Punto di Lancio scelto.")
+					return
+		else:
+			air_base_source = chosen["air_base"]
+			active = null
+			launch_hex = AirBase.hex_of(air_base_source)
+
+	var enemies := _eligible_targets_for_action(key, active, launch_hex,
+		stealth_source, air_base_source)
 	if enemies.is_empty():
 		_msg("%s: %s" % [String(engine.action(key).get("label", key)),
 			_enemy_action_unavailable_reason(key, active)])
@@ -601,9 +622,12 @@ func _declare_action(key: String) -> void:
 	var dec := ActionEngine.Declaration.new()
 	dec.action_key = key
 	dec.active = active
+	dec.active_stealth = stealth_source
+	dec.active_air_base = air_base_source
 	dec.target = target
 	dec.launch_hex = launch_hex
-	var target_hexes := _target_hexes_for_action(key, active, target, launch_hex)
+	var target_hexes := _target_hexes_for_action(key, active, target, launch_hex,
+		stealth_source)
 	if target_hexes.is_empty():
 		_msg("%s: nessun esagono bersaglio legale." % String(
 			engine.action(key).get("label", key)))
@@ -617,11 +641,12 @@ func _declare_action(key: String) -> void:
 				engine.action(key).get("label", key)))
 			return
 	if key == "AIR_STRIKE":
-		traj_layer.set_air_action_markers(active.side, launch_hex, dec.target_hex)
+		traj_layer.set_air_action_markers(dec.acting_side(), launch_hex,
+			dec.target_hex)
 
 	# RB p.47: la Coordinatrice deve occupare l'esagono Bersaglio.
 	var own: Array[TaskForce] = []
-	for tf in state.forces_of(active.side):
+	for tf in state.forces_of(dec.acting_side()):
 		if tf != active and tf.trajectory.occupies(dec.target_hex):
 			own.append(tf)
 	if not own.is_empty():
@@ -632,7 +657,7 @@ func _declare_action(key: String) -> void:
 	# Nell'Attacco Aereo la fonte e' gia' il Supporto Aereo (RB p.27).
 	var carriers: Array[TaskForce] = []
 	if key != "AIR_STRIKE":
-		for tf in state.forces_of(active.side):
+		for tf in state.forces_of(dec.acting_side()):
 			if tf == active or ActionEngine.air_launch_hexes(tf).is_empty():
 				continue
 			for h in ActionEngine.air_launch_hexes(tf):
@@ -744,10 +769,17 @@ func _pick_tf(candidates: Array[TaskForce], title: String, desc: String,
 
 
 func _target_hexes_for_action(key: String, active: TaskForce, target: TaskForce,
-		launch_hex: Vector2i = Vector2i.MAX) -> Array[Vector2i]:
+		launch_hex: Vector2i = Vector2i.MAX,
+		stealth_source: Dictionary = {}) -> Array[Vector2i]:
 	if key == "AIR_STRIKE":
 		return ActionEngine.air_target_hexes(launch_hex, target)
 	var out: Array[Vector2i] = []
+	if not stealth_source.is_empty():
+		# L'esagono bersaglio di un Attacco Furtivo e' quello della forza: RB
+		# p.41 lo chiama proprio "l'esagono bersaglio".
+		out.append(Vector2i(int(stealth_source.get("q", 0)),
+			int(stealth_source.get("r", 0))))
+		return out
 	if key == "ENGAGE" or key == "NAVAL_SEARCH":
 		var occupied := [target.trajectory.station_hex] \
 			if target.trajectory.is_station() else target.trajectory.hexes()
@@ -761,6 +793,68 @@ func _target_hexes_for_action(key: String, active: TaskForce, target: TaskForce,
 	return out
 
 
+## La fonte di un Attacco Aereo: una TF con una CV integra oppure una base
+## aerea (RB p.27). Ritorna { "tf": TaskForce } o { "air_base": Dictionary },
+## vuoto se il giocatore annulla o non ha nessuna fonte.
+func _pick_air_source(side: int) -> Dictionary:
+	var task_forces := _air_sources(side)
+	var bases := AirBase.sources_for(state, graph, side)
+	if task_forces.is_empty() and bases.is_empty():
+		_msg("Attacco Aereo: non hai ne' una Task Force con una portaerei integra "
+			+ "ne' una base aerea.")
+		return {}
+	var options: Array = []
+	for tf in task_forces:
+		options.append({"label": "%s (portaerei)" % tf.display_name(),
+			"detail": "Punto di Lancio in un esagono della Task Force"})
+	for b in bases:
+		options.append({"label": "Base aerea in %s" % str(AirBase.hex_of(b)),
+			"detail": String(b.get("note", "Punto di Lancio nell'esagono della base"))})
+	if options.size() == 1:
+		return {"tf": task_forces[0]} if not task_forces.is_empty() \
+			else {"air_base": bases[0]}
+	var i: int = await Choice.ask(self, "Attacco Aereo - fonte",
+		"Da dove parte l'attacco? RB p.27: una Task Force con una portaerei "
+		+ "integra, oppure una base aerea.", options, true)
+	if i < 0:
+		return {}
+	if i < task_forces.size():
+		return {"tf": task_forces[i]}
+	return {"air_base": bases[i - task_forces.size()]}
+
+
+## La forza Furtiva che esegue un Attacco Furtivo (RB p.41).
+func _pick_stealth_force(side: int) -> Dictionary:
+	var forces := Stealth.forces_of(state, side)
+	var usable: Array[Dictionary] = []
+	for f in forces:
+		if not Stealth.targets_for(state, f).is_empty():
+			usable.append(f)
+	if usable.is_empty():
+		if forces.is_empty():
+			_msg("Attacco Furtivo: non hai nessuna forza Furtiva in gioco. "
+				+ "RB p.41: l'attacco lo esegue una forza Furtiva, non una Task Force.")
+		else:
+			_msg("Attacco Furtivo: nessuna delle tue forze Furtive ha un bersaglio "
+				+ "legale nel proprio esagono. RB p.41: si attacca una Stazione "
+				+ "nemica, o un segmento con Contatto o Informazioni.")
+		return {}
+	if usable.size() == 1:
+		return usable[0]
+	var options: Array = []
+	for f in usable:
+		options.append({
+			"label": "%s in %s" % [Stealth.kind_name(int(f.get("kind", -1))),
+				str(Vector2i(int(f.get("q", 0)), int(f.get("r", 0))))],
+			"detail": "%d bersagli legali" % Stealth.targets_for(state, f).size(),
+		})
+	var i: int = await Choice.ask(self, "Attacco Furtivo - forza",
+		"Quale forza Furtiva attacca?", options, true)
+	if i < 0:
+		return {}
+	return usable[i]
+
+
 func _air_sources(side: int) -> Array[TaskForce]:
 	var out: Array[TaskForce] = []
 	for tf in state.forces_of(side):
@@ -771,8 +865,20 @@ func _air_sources(side: int) -> Array[TaskForce]:
 
 
 func _eligible_targets_for_action(key: String, active: TaskForce,
-		launch_hex: Vector2i = Vector2i.MAX) -> Array[TaskForce]:
+		launch_hex: Vector2i = Vector2i.MAX,
+		stealth_source: Dictionary = {},
+		air_base_source: Dictionary = {}) -> Array[TaskForce]:
 	var out: Array[TaskForce] = []
+	if not stealth_source.is_empty():
+		# I bersagli legali di una forza Furtiva li conosce `Stealth`: Stazione
+		# sempre, Traiettoria solo col Contatto o le Informazioni (RB p.41).
+		return Stealth.targets_for(state, stealth_source)
+	if not air_base_source.is_empty():
+		var side := int(air_base_source.get("side", -1))
+		for tf in state.forces_of(1 - side):
+			if not ActionEngine.air_target_hexes(launch_hex, tf).is_empty():
+				out.append(tf)
+		return out
 	if active == null:
 		return out
 	for tf in state.forces_of(1 - active.side):
@@ -3376,6 +3482,12 @@ func _action_unavailable_reason(key: String) -> String:
 	if _solo_is_imaginary_turn():
 		return "e' il turno dell'avversario immaginario: l'app tira la Tabella Solitario"
 	if selected_tf == null:
+		# L'Attacco Furtivo non lo esegue una Task Force (RB p.41): pretenderne
+		# una selezionata solo per sapere di che parte sei renderebbe l'azione
+		# indichiarabile a chi ha una forza Furtiva e nessuna TF sulla mappa.
+		if key == "STEALTH_ATTACK" \
+				and not Stealth.forces_of(state, state.initiative).is_empty():
+			return ""
 		return "nessuna Task Force selezionata"
 	if not _can_control_tf(selected_tf):
 		return "questa Task Force appartiene all'avversario immaginario"

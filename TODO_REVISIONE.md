@@ -32,13 +32,13 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 | Salvataggio, undo, ricarica | 🟢 | ogni stato persistente ha il suo test |
 | **Tabelle Azione solitarie** | 🟢 | **93 caselle su 93 trascritte e implementate; zero segnaposto** |
 | 15 scenari solitari, end-to-end | 🟢 | tutti giocabili, tutti chiudono su una fine STAMPATA |
-| Attacco Furtivo dalla forza Furtiva | 🟡 | fatto sul lato bot; il percorso del GIOCATORE usa ancora una TF |
+| Attacco Furtivo dalla forza Furtiva | 🟢 | bot e giocatore: l'attacco lo esegue la forza, mai una Task Force |
 | Forze Furtive (Mine, Sub, U-Boat) | 🟡 | nucleo, posa Mine e attacco fatti; U-Boat di A2 e disegno GUI no |
 | Basi Aeree | 🟢 | lanciano Attacchi Aerei (RB p.27); stampate e piazzate in partita |
 | Reazione Norvegese | 🟡 | quattro tabelle collegate ai due cicli; restano i risultati b/g |
 | Battaglia avanzata | 🟡 | mancano quattro scelte interattive e MS12 |
 | Comandanti | 🟡 | testi trascritti; Forbes e Marschall non automatizzati |
-| Basi aeree sulla Mappa Operazionale | 🔴 | non trascritte: sugli inserti si', sulla mappa grande no |
+| Basi aeree sulla Mappa Operazionale | 🔴 | esistono e sono coccarde con un ANNO: rilevate, non ancora trascritte |
 | Linea Artica | 🔴 | non e' un dato di mappa: i vincoli di RB p.27 non sono controllabili |
 | Mappa a due giocatori | 🟡 | 22 scenari importati, mai auditati end-to-end |
 | GUI operativa | 🟡 | il flusso solitario duplica `SoloRunner`; layout tagliato sotto i 1000 px |
@@ -96,12 +96,8 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 
 ## Che cosa e' DA RIFINIRE 🟡
 
-- **L'Attacco Furtivo dalla forza Furtiva e' fatto a META'.** Il motore lo
-  sa fare - `Declaration.active_stealth`, Totale Traiettoria zero come RB p.41,
-  restrizione al bersaglio da `Stealth.attack_error` - e il **lato bot** lo usa.
-  Il percorso del **GIOCATORE** in `ui/main.gd` no: `_declare_action`
-  ("STEALTH_ATTACK") passa ancora una Task Force come Attiva. E' la meta' che
-  resta, ed e' piccola: la cucitura c'e' gia'.
+- **Forze Furtive**: restano i due marker U-Boat di A2, di cui il motore tiene
+  solo il conteggio, e il disegno della pedina nella GUI.
 - **Basi Aeree: restano i risultati `b`/`g` della Reazione Norvegese.** Tutto
   il resto e' fatto - la pedina, il salvataggio, le Informazioni innescate, e
   soprattutto l'Attacco Aereo lanciato dalla base (RB p.27) - ma i due risultati
@@ -117,7 +113,29 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
   risultati `b`/`g` che spostano marker Base Aerea e il modificatore che dipende
   dalle Basi Aeree tedesche.
 - **Basi aeree sulla Mappa Operazionale**: sugli inserti sono dato completo con
-  la loro regola; sulla mappa grande non sono nemmeno trascritte.
+  la loro regola; sulla mappa grande non sono ancora trascritte, ma **adesso si
+  sa che cosa cercare**, ed e' diverso da quello che si cercava.
+  Sono **coccarde RAF** - cerchio rosso, anello bianco - con una **B rossa** e
+  un **ANNO** accanto, non i dischi bianchi con l'aereo degli inserti: per
+  questo il rilevatore degli inserti, che cerca il bianco puro del disco, sulla
+  mappa grande non trovava niente.
+  Il fascicolo a due giocatori (p.62) conferma che sono stampate e che l'anno
+  conta: "the British player may place one Airbase marker on any British
+  airbase printed on the Operations Map marked '1942' (but not Hvalfiord)".
+  **Un rilevatore che cerca il rosso saturo in forme tonde da 18 a 60 px ne
+  trova dieci vere** - fra cui Scapa Flow, Clyde/Liverpool, Halifax, New York
+  '1941', una '1939' nella Baia di Biscaglia e una '1942' verso Murmansk - piu'
+  sette falsi positivi, che sono tutti DENTRO le tabelle stampate sulla mappa
+  (traccia Intel Limit, tabella Ingaggiare, modificatori) e si escludono per
+  posizione. **Ma ne manca almeno una**: quella di Hvalfjordur, che si vede a
+  occhio in (2150, 520) circa e che il rilevatore non prende.
+  Quindi il lavoro che resta e' preciso: chiudere il rilevatore fino a
+  trovarle tutte, leggere ogni anno A OCCHIO sulla pagina, incrociare rilevato e
+  trascritto come fa `build_inset_graph.py` - che si ferma se i due non
+  combaciano - e infine trovare nel regolamento la regola che lega l'anno al
+  periodo di attivita'. Finche' l'elenco non e' completo non va scritto: un
+  elenco di basi aeree con un buco e' peggio di nessun elenco, perche' sembra
+  completo.
 - **Comandanti**: gli undici testi sono trascritti da RB p.10 letta a 300 dpi e
   Gensoul e' implementato; Forbes e Marschall no, e la voce Forbes ha un refuso
   di traduzione dichiarato.
