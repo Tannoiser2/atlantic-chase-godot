@@ -415,9 +415,29 @@ Tutti i test passano: **2957 verifiche, 18 suite, headless.**
   Punto di Lancio; la base aerea non puo' essere il bersaglio.
   **Con questo il dato di mappa degli inserti e' completo**: reticolo, esagoni,
   terreno, adiacenze, porti, punti di interesse, caselle fuori mappa, frecce
-  "non adiacente" e basi aeree. I cinque scenari restano dichiarati non
-  giocabili per un motivo solo, ed e' codice, non piu' dato: manca un secondo
-  `MapGraph` nel motore e il disegno dell'inserto nella GUI.
+  "non adiacente" e basi aeree.
+- **Il grafo degli inserti e' verificato contro il fascicolo.** La verita'
+  indipendente che per due passaggi era sembrata non esistere c'era: le
+  illustrazioni di schieramento dei cinque scenari disegnano i segmenti di
+  Traiettoria iniziali SULLA mappa, e nel PDF non sono pixel, sono grafica
+  vettoriale con coordinate esatte. L'illustrazione riusa la stessa immagine
+  dell'inserto, quindi la sua collocazione sulla pagina da' la registrazione, e
+  il reticolo gia' misurato da' l'esagono. **46 forme da segmento su cinque
+  pagine, tutte dentro esagoni che il grafo dichiara giocabili, zero fuori.**
+  `tools/validate_inset_setups.py` non prova a distinguere i segmenti veri
+  dalle pedine disegnate nei riquadri di regola incollati sopra la mappa: per
+  farlo bisognava mascherare per rettangolo, e il rettangolo di un riquadro
+  copre anche segmenti veri che gli passano accanto - si perdevano tre
+  controlli su quarantasei per guadagnare un conteggio piu' bello. Il conteggio
+  non serve, il controllo si'. Le forme dentro un riquadro sono marcate e
+  controllate come le altre.
+  **Sette incertezze su dieci si chiudono**: sei esagoni `needs_check` del Mare
+  del Nord e uno del Mare di Norvegia hanno un segmento stampato dentro, e un
+  esagono in cui il fascicolo disegna una Traiettoria e' giocabile - e' un dato
+  stampato, e batte una soglia di colore.
+  I cinque scenari restano dichiarati non giocabili per un motivo solo, ed e'
+  codice, non piu' dato: manca un secondo `MapGraph` nel motore e il disegno
+  dell'inserto nella GUI.
 - **I Comandanti dicono la loro condizione stampata.** Gli undici testi sono
   trascritti da RB p.10 letta a 300 dpi: la scheda TF mostra la regola vera e
   non un riassunto, ed e' quella che decide se il beneficio si puo' usare

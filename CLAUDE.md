@@ -79,9 +79,20 @@ verde e' giocabile, il rosso no, il magenta sono i porti e il verde acqua i
 Punti di Interesse, l'arancione le caselle fuori mappa con la riga verso i loro
 esagoni, il blu le frecce "non adiacente" con la coppia scritta sopra, il
 cerchio rosso o viola le basi aeree.
-**Il dato di mappa degli inserti e' completo.** I cinque scenari inserto
-restano dichiarati non giocabili per un motivo solo, ed e' codice: manca un
-secondo `MapGraph` nel motore e il disegno dell'inserto nella GUI.
+Per verificare il grafo contro il fascicolo:
+
+```bash
+tools/.venv/bin/python tools/validate_inset_setups.py
+```
+
+Legge i segmenti di Traiettoria disegnati sulle illustrazioni di schieramento
+dei cinque scenari e controlla che cadano tutti in esagoni del grafo. Esce con
+codice 1 se qualcuno cade fuori: sarebbe un difetto del grafo, non
+dell'illustrazione.
+
+**Il dato di mappa degli inserti e' completo e verificato.** I cinque scenari
+inserto restano dichiarati non giocabili per un motivo solo, ed e' codice:
+manca un secondo `MapGraph` nel motore e il disegno dell'inserto nella GUI.
 
 ## Metodo di revisione
 

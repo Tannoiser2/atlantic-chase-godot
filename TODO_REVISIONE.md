@@ -190,6 +190,20 @@ Uno scenario puo' essere marcato completo solo quando:
   che parte dal suo esagono, si fa **solo col Meteo Buono** e non puo' colpire
   oltre **due esagoni** dal Punto di Lancio; una base aerea **non puo' essere
   il bersaglio**.
+  **Il grafo e' verificato contro le illustrazioni del fascicolo**
+  (`tools/validate_inset_setups.py`, `core/data/inset_setups.json`). La verita'
+  indipendente che sembrava non esistere c'era: le illustrazioni di
+  schieramento dei cinque scenari disegnano i segmenti di Traiettoria iniziali
+  SULLA mappa, e nel PDF quei segmenti sono grafica vettoriale con coordinate
+  esatte. L'illustrazione riusa la stessa immagine dell'inserto, quindi la sua
+  collocazione sulla pagina da' la registrazione. **46 forme da segmento su
+  cinque pagine, tutte in esagoni che il grafo dichiara giocabili, zero fuori.**
+  **Sette incertezze su dieci si chiudono**: gli esagoni `needs_check` (1,2),
+  (5,3), (6,-1), (6,0), (6,1), (6,2) del Mare del Nord e (6,0) del Mare di
+  Norvegia hanno un segmento stampato dentro, e un esagono in cui il fascicolo
+  disegna una Traiettoria e' giocabile - e' un dato stampato, e batte una
+  soglia di colore. Restano aperti (1,1) e (2,4) del Mare del Nord, (5,-3) del
+  Mare di Norvegia, e i tre lati `disputed`.
   **Resta, ed e' l'ultima cosa che blocca i cinque scenari**: un secondo
   `MapGraph` nel motore e il disegno dell'inserto come superficie di gioco
   nella GUI. Tutto il dato di mappa c'e'.
