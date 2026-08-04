@@ -292,7 +292,8 @@ func _bot_turn() -> void:
 		_line("BOT   dato non modellato, modificatore non applicato: %s"
 			% String(line_v))
 	var selector := solo.action_row_selector(state, player_side, tid)
-	var result := solo.act(state.rng, selector, inferred["active"])
+	var chosen_mods := ask_modifiers(t, inferred)
+	var result := solo.act(state.rng, selector, chosen_mods)
 	state.set_modifier_track(imaginary_side, int(result.get("modifier", 0)))
 	_line("BOT - %s (%s)" % [t.title,
 		solo.action_row_selector_label(state, player_side, tid)])
@@ -750,6 +751,47 @@ func _run_player_turn_once(restore: bool = false) -> Dictionary:
 	return {"kind": "done"}
 
 
+## Il giocatore Inattivo vuole tentare di Sottrarre l'Iniziativa?
+##
+## E' l'ultima delle domande che il turno del bot pone all'avversario umano, e
+## nella GUI e' un bottone: "l'avversario immaginario tenta di Sottrarre" contro
+## "lasci correre". Qui risponde `player_steals_initiative`, che e' la policy
+## harness - il giocatore simulato di solito rinuncia, perche' un tentativo
+## fallito fa salire il conteggio e regala il turno dopo.
+var steal_answerer: Callable = Callable()
+
+
+func ask_steal(reason: String) -> bool:
+	if not steal_answerer.is_valid():
+		return player_steals_initiative
+	var given: Variant = steal_answerer.call(reason, player_steals_initiative)
+	return bool(given) if typeof(given) == TYPE_BOOL else player_steals_initiative
+
+
+## I modificatori della Tabella Azioni da attivare per questo tiro.
+##
+## E' una domanda a SCELTA MULTIPLA, non singola, e per questo non passa da
+## `ask_choice`: il fascicolo stampa condizioni indipendenti - "se il Meteo e'
+## Cattivo", "se una TF britannica e' nell'esagono" - e valgono tutte insieme.
+## Costringerla in una scelta singola avrebbe voluto dire inventare un elenco di
+## combinazioni che il fascicolo non stampa.
+##
+## `SoloRunner` risponde con quelli DEDOTTI dallo stato, che e' l'unico modo di
+## giocare senza un umano; la GUI apre le caselle da spuntare e lascia decidere.
+## Chi risponde riceve anche le spiegazioni e i casi non risolti, perche' sono
+## quello che rende la spunta una decisione informata e non un indovinello.
+var modifier_answerer: Callable = Callable()
+
+
+func ask_modifiers(table: SoloTable, inferred: Dictionary) -> Array:
+	var active: Array = inferred.get("active", [])
+	if not modifier_answerer.is_valid():
+		return active
+	var given: Variant = modifier_answerer.call(table, active,
+		inferred.get("explanations", []), inferred.get("unresolved", []))
+	return given if typeof(given) == TYPE_ARRAY else active
+
+
 ## L'ordine in cui il giocatore simulato prova le sue azioni.
 ##
 ## NON e' una regola GMT: e' la policy della harness, ed e' per questo che ogni
@@ -1150,7 +1192,7 @@ func _seek_initiative(who: String) -> bool:
 ## simulato, decide `player_steals_initiative`.
 func _inactive_steals(reason: String) -> bool:
 	var inactive := 1 - state.initiative
-	if inactive == player_side and not player_steals_initiative:
+	if inactive == player_side and not ask_steal(reason):
 		_line("   %s: il giocatore simulato rinuncia a Sottrarre." % reason)
 		return false
 	var r := Initiative.steal(state)

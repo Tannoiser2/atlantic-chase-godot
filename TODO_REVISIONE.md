@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Baseline: **3184 verifiche su 20 suite**, tutte verdi. Replay solitario:
+Baseline: **3193 verifiche su 20 suite**, tutte verdi. Replay solitario:
 **quindici `OK`** su quindici scenari, nessuno saltato.
 
 Questo e' il backlog autorevole. `STATO.md` contiene anche una lunga cronologia:
@@ -152,10 +152,18 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
   dello stato, tiri ricordati, registro troncato - che serve identico al lato
   bot, dove le domande sono i modificatori da spuntare e le scelte di esagono.
   Non e' lavoro buttato, e' lavoro fatto prima sull'altro lato.
-  **Cosa serve davvero**: portare `step()`/`answer()` sul turno del BOT e far
-  guidare quello a `ui/main.gd`. Le domande del bot pero' non sono tutte scelte
-  singole - i modificatori sono una spunta multipla - quindi la cucitura va
-  allargata prima di riusarla.
+  **Sul lato bot le cuciture ci sono**: `ask_modifiers` (spunta MULTIPLA, che
+  `ask_choice` non poteva coprire: il fascicolo stampa condizioni indipendenti
+  che valgono tutte insieme) e `ask_steal` per il tentativo di Sottrarre
+  l'Iniziativa. Senza rispondente valgono i modificatori dedotti dallo stato e
+  la policy che rinuncia a Sottrarre, cioe' il comportamento di prima.
+  **Resta la parte che ripaga**: far guidare `ui/main.gd` da `SoloRunner` e
+  cancellare le sue 211 righe rispecchiate. Le quattro coppie misurate sono
+  `_bot_turn`/`_solo_roll_action` (24 contro 42 righe),
+  `_apply_bot_result`/`_apply_solo_ai_result` (13 contro 11),
+  `_apply_bot_decision`/`_apply_solo_ai_decision` (52 contro 68) e
+  `_resolve_bot_action`/`_resolve_solo_ai_action` (57 contro 90). E' una
+  sessione a se': li' vivono l'asincrono e il riscontro visivo.
   **Non e' un lavoro da una sessione**, ed e' sul file piu' rischioso del
   progetto: e' quello che oggi si gioca davvero.
 - **Battaglia avanzata**: quattro scelte interattive e il mini-scenario MS12.
@@ -188,7 +196,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 3184 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 3193 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne

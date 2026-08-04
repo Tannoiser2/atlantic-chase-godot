@@ -70,6 +70,7 @@ func run() -> void:
 	test_choices_go_through_an_explicit_question()
 	test_a_different_answerer_changes_the_game()
 	test_the_cycle_can_be_driven_step_by_step()
+	test_the_bot_turn_asks_through_seams()
 
 
 ## Il conto delle verifiche di ogni suite e' fisso (`EXPECTED` in
@@ -1061,3 +1062,55 @@ func test_the_cycle_can_be_driven_step_by_step() -> void:
 	true_(idle.load_scenario(BL2, BL2_SEED), "quarto scenario caricato")
 	eq(String(idle.answer(0).get("kind", "")), "done",
 		"rispondere senza domanda in sospeso non fa danni")
+
+
+## Le domande che il turno del BOT pone all'avversario umano. Sono le tre che
+## `ui/main.gd` oggi riscrive per conto suo, ed e' quella la duplicazione vera:
+## `solo_runner.gd` ha tre commenti "Mirror headless di ui/main.gd::..." sopra
+## le funzioni corrispondenti.
+##
+## I modificatori non passano da `ask_choice` perche' sono una spunta MULTIPLA:
+## il fascicolo stampa condizioni indipendenti che valgono tutte insieme, e
+## costringerle in una scelta singola avrebbe voluto dire inventare un elenco di
+## combinazioni che il fascicolo non stampa.
+func test_the_bot_turn_asks_through_seams() -> void:
+	_begin("le domande del turno del bot passano da una cucitura")
+	var runner := SoloRunner.new()
+	true_(runner.load_scenario(BL2, BL2_SEED), "scenario caricato: %s" % runner.load_error)
+
+	# Modificatori: senza rispondente valgono quelli dedotti dallo stato.
+	var table := runner.solo.table(runner.solo.action_table_id())
+	true_(table != null, "lo scenario ha una Tabella delle Azioni")
+	var inferred := {"active": ["Meteo Cattivo"], "explanations": ["dedotto"],
+		"unresolved": ["non modellato"]}
+	eq(runner.ask_modifiers(table, inferred), ["Meteo Cattivo"],
+		"senza rispondente valgono i modificatori dedotti")
+	# Con un rispondente, decide lui - ed e' quello che fara' la GUI con le
+	# caselle da spuntare.
+	var seen_expl: Array = []
+	runner.modifier_answerer = func(_t: SoloTable, _a: Array, expl: Array,
+			unres: Array) -> Array:
+		# Le lambda GDScript catturano per VALORE: riassegnare non propaga.
+		# Si modifica l'Array, che e' un riferimento.
+		seen_expl.append_array(expl)
+		seen_expl.append_array(unres)
+		return []
+	eq(runner.ask_modifiers(table, inferred), [],
+		"con un rispondente decide lui, anche di non attivarne nessuno")
+	eq(seen_expl.size(), 2,
+		"e riceve spiegazioni e casi non risolti: la spunta dev'essere informata")
+
+	# Sottrarre l'Iniziativa: la policy harness rinuncia, un rispondente puo'
+	# dire altro. Nella GUI e' un bottone.
+	var plain := SoloRunner.new()
+	true_(plain.load_scenario(BL2, BL2_SEED), "secondo scenario caricato")
+	false_(plain.ask_steal("prova"),
+		"il giocatore simulato rinuncia: un tentativo fallito regala il turno dopo")
+	plain.steal_answerer = func(_reason: String, _default: bool) -> bool:
+		return true
+	true_(plain.ask_steal("prova"), "un rispondente puo' tentare comunque")
+	# Una risposta di tipo sbagliato non cambia il gioco di nascosto.
+	plain.steal_answerer = func(_reason: String, _default: bool) -> Variant:
+		return "forse"
+	false_(plain.ask_steal("prova"),
+		"e una risposta insensata ricade sul valore di policy")
