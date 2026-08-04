@@ -83,6 +83,8 @@ var _map_container: SubViewportContainer = null
 var _map_viewport: SubViewport = null
 var _map_frame: Panel = null
 var _inset_panel: PanelContainer = null
+## "" = Mappa Operazionale, altrimenti la chiave dell'inserto in uso.
+var _current_map_key: String = ""
 
 
 func _build_map_viewport() -> void:
@@ -203,6 +205,9 @@ func _load_scenario_at(idx: int, offer_setup_choices: bool = true) -> void:
 	if scenario.load_error != "":
 		_msg(scenario.load_error)
 		return
+	# La superficie va scelta PRIMA di schierare: cinque scenari solitari si
+	# giocano su una mappa inserto, non sulla Mappa Operazionale.
+	_use_map_for(scenario)
 	state.apply_dict(scenario.to_state_dict())
 	state.configure_port_info_triggers(scenario.port_control())
 	# apply_dict riparte dal dizionario dello scenario, che non sa nulla delle
@@ -224,7 +229,13 @@ func _load_scenario_at(idx: int, offer_setup_choices: bool = true) -> void:
 	if not scenario.map_info.is_empty() and state.task_forces.is_empty():
 		_msg("Scenario non ancora giocabile: %s. %s" % [
 			String(scenario.map_info.get("name", "mappa speciale")),
-			String(scenario.map_info.get("status", "reticolo non calibrato"))])
+			String(scenario.map_info.get("status", "schieramento non trascritto"))])
+		if graph.is_inset():
+			_msg("La mappa pero' c'e': %d esagoni, %d porti, %d frecce 'non adiacente'%s. "
+				% [graph.hex_count(), graph.port_count(), graph.blocked_edge_count(),
+					"" if graph.air_bases.is_empty()
+					else ", %d basi aeree" % graph.air_bases.size()]
+				+ "Premi G per vedere il reticolo.")
 	if scenario.has_import_warnings():
 		for w_v: Variant in scenario.import_warnings:
 			_msg("  [avviso di import] %s" % String(w_v))
@@ -3085,8 +3096,9 @@ func _build_inset_maps(parent: Control) -> void:
 	tabs.name = "InsetTabs"
 	tabs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	tabs.tooltip_text = ("Mappe inserto originali. Il reticolo non e' ancora "
-		+ "calibrato: per ora sono riferimenti visivi non interattivi.")
+	tabs.tooltip_text = ("Mappe inserto originali. Il reticolo e' calibrato e il "
+		+ "motore le carica: aprendo uno scenario inserto diventano la "
+		+ "superficie di gioco. Qui restano un riferimento visivo.")
 	_inset_panel.add_child(tabs)
 	_add_inset_map(tabs, "Nord", "Mare del Nord",
 		"res://assets/boards/map_north_sea.jpg")
@@ -3104,8 +3116,35 @@ func _add_inset_map(tabs: TabContainer, tab_title: String, title: String,
 	image.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	image.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	image.mouse_filter = Control.MOUSE_FILTER_PASS
-	image.tooltip_text = ("%s - riferimento visivo; reticolo non calibrato" % title)
+	image.tooltip_text = ("%s - riferimento visivo; il reticolo e' calibrato" % title)
 	tabs.add_child(image)
+
+
+## Cambia la superficie di gioco: Mappa Operazionale o una delle due inserto.
+##
+## Il grafo e' condiviso da stato, tabellone, traiettorie e camera, quindi vanno
+## ripuntati tutti insieme o restano a guardare la mappa di prima - e siccome i
+## centri degli esagoni esistono su entrambe, non si vedrebbe un errore, si
+## vedrebbe una partita giocata sulle coordinate sbagliate.
+func _use_map_for(sc: Scenario) -> void:
+	var key := sc.inset_key()
+	if key == _current_map_key:
+		return
+	var g: MapGraph = MapGraph.load_default() if key == "" else MapGraph.load_inset(key)
+	if g.load_error != "":
+		push_error(g.load_error)
+		_msg("mappa non caricata (%s): resto sulla Mappa Operazionale" % g.load_error)
+		if _current_map_key == "":
+			return
+		g = MapGraph.load_default()
+		key = ""
+	_current_map_key = key
+	graph = g
+	state.graph = g
+	board.setup(g)
+	traj_layer.setup(g, state)
+	cam.setup(Vector2(g.map_size))
+	_focus_selected()
 
 
 func _toggle_log_panel() -> void:

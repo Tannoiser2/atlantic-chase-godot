@@ -1,12 +1,18 @@
 class_name MapBoard
 extends Node2D
 
-## Disegna la mappa (tile) e il reticolo esagonale.
+## Disegna la superficie di gioco e il reticolo esagonale.
 ##
-## La mappa e' 4203x2763: come texture unica sarebbero ~46 MB in VRAM, troppi
-## per l'export web. Viene caricata a tile da 1024 posizionati sulle coordinate
-## originali, cosi' le coordinate del gioco restano quelle della mappa stampata
-## e tutti i dati estratti dal modulo VASSAL restano validi senza conversioni.
+## La Mappa Operazionale e' 4203x2763: come texture unica sarebbero ~46 MB in
+## VRAM, troppi per l'export web. Viene caricata a tile da 1024 posizionati
+## sulle coordinate originali, cosi' le coordinate del gioco restano quelle
+## della mappa stampata e tutti i dati estratti dal modulo VASSAL restano validi
+## senza conversioni.
+##
+## Le due mappe INSERTO sono invece 1020x1320, cioe' meno di un tile e mezzo:
+## niente da tagliare, si carica l'immagine intera. Il disegno del reticolo non
+## cambia di una riga, perche' e' tutto guidato dal `MapGraph`: l'inserto ha lo
+## stesso reticolo della mappa grande, solo con un'altra origine.
 
 const MANIFEST := "res://assets/map/manifest.json"
 
@@ -25,18 +31,39 @@ var _tiles_root: Node2D
 
 func setup(p_graph: MapGraph) -> void:
 	graph = p_graph
-	_load_tiles()
+	_load_surface()
 	queue_redraw()
 
 
-func _load_tiles() -> void:
+func _load_surface() -> void:
 	if _tiles_root != null:
+		_tiles_root.get_parent().remove_child(_tiles_root)
 		_tiles_root.queue_free()
 	_tiles_root = Node2D.new()
 	_tiles_root.name = "Tiles"
 	_tiles_root.z_index = -10
 	add_child(_tiles_root)
+	if graph != null and graph.is_inset():
+		_load_single_image()
+	else:
+		_load_tiles()
 
+
+## Un inserto sta in una texture sola: 1020x1320 non vale la pena tagliarli.
+func _load_single_image() -> void:
+	var path := "res://%s" % graph.map_image
+	var tex: Texture2D = load(path)
+	if tex == null:
+		push_error("immagine dell'inserto mancante: %s" % path)
+		return
+	var s := Sprite2D.new()
+	s.texture = tex
+	s.centered = false
+	s.position = Vector2.ZERO
+	_tiles_root.add_child(s)
+
+
+func _load_tiles() -> void:
 	var f := FileAccess.open(MANIFEST, FileAccess.READ)
 	if f == null:
 		push_error("manifest dei tile mancante: esegui tools/prepare_assets.py")

@@ -296,6 +296,13 @@ func intel_marker_once() -> Dictionary:
 	return victory_data.get("intel_marker_once", {})
 
 
+## L'inserto su cui si gioca questo scenario, o "" per la Mappa Operazionale.
+## Cinque scenari solitari su quindici hanno la loro mappa: BL3 e N3 sul Mare
+## del Nord, N1, N2 e N5 sul Mare di Norvegia.
+func inset_key() -> String:
+	return String(map_info.get("inset", ""))
+
+
 ## Note manuali sullo schieramento, usate soprattutto dagli scenari solitari:
 ## molte rotte sono stampate come "Halifax -> Clyde/Liverpool, 11 segmenti",
 ## non come esagoni. Mostrarlo e' piu' onesto che lasciare "0 TF, 0 navi".

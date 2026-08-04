@@ -38,9 +38,10 @@ godot --path . --script res://tools/smoke_ui.gd
 godot --path . --script res://tools/smoke_ui.gd -- adv
 godot --path . --script res://tools/smoke_solo_flow.gd
 godot --path . --script res://tools/smoke_solo_flow.gd -- BL1
+godot --path . --script res://tools/smoke_inset_map.gd
 ```
 
-Baseline corrente: **3001 verifiche, 18 suite** (era 2570 su 17 prima della
+Baseline corrente: **3005 verifiche, 18 suite** (era 2570 su 17 prima della
 suite `test_replay.gd`). Il totale non puo' scendere senza una rimozione
 intenzionale di test spiegata nel commit.
 
@@ -90,15 +91,21 @@ dei cinque scenari e controlla che cadano tutti in esagoni del grafo. Esce con
 codice 1 se qualcuno cade fuori: sarebbe un difetto del grafo, non
 dell'illustrazione.
 
-**Il dato di mappa degli inserti e' completo e verificato, e il motore lo
-carica**: `MapGraph.load_inset("map_north_sea")` o `"map_norwegian_sea"`.
+**Il dato di mappa degli inserti e' completo e verificato, il motore lo carica e
+l'interfaccia lo disegna**: aprendo uno dei cinque scenari inserto, la mappa
+inserto diventa la superficie di gioco al posto della Mappa Operazionale.
+`smoke_inset_map.gd` verifica che tabellone, stato, Traiettorie e camera
+cambino tutti insieme - se uno solo restasse indietro non si vedrebbe un
+errore, si vedrebbe una partita sulle coordinate sbagliate.
+In codice: `MapGraph.load_inset("map_north_sea")` o `"map_norwegian_sea"`.
 Attenzione a due convenzioni del dato inserto, che il caricatore traduce e i
 test sorvegliano: `theta_deg` e' l'angolo dei VERTICI (la mappa grande usa la
 direzione di BASE, 30 gradi piu' avanti) e le `(q,r)` sono ribasate
 sull'angolo della cornice, non sulla cella (0,0) del fit.
-I cinque scenari inserto restano dichiarati non giocabili per due cose:
-il disegno dell'inserto nella GUI e lo schieramento iniziale, che va letto
-dalle pagine del fascicolo.
+I cinque scenari inserto restano dichiarati non giocabili per una cosa sola:
+lo **schieramento iniziale**, cioe' quale segmento di Traiettoria sia di quale
+Task Force e in che ordine la formi. Le posizioni ci sono gia'
+(`core/data/inset_setups.json`), l'appartenenza no: va letta dalle pagine.
 
 ## Metodo di revisione
 

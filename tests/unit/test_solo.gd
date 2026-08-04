@@ -949,10 +949,21 @@ func test_bl3_declares_inset_setup_gaps() -> void:
 	var sc := Scenario.load_by_id("BL3 Raiders of the North Sea")
 	eq(String(sc.map_info.get("name", "")), "Mappa Inserto del Mare del Nord",
 		"BL3 dichiara la plancia corretta")
-	true_(String(sc.map_info.get("status", "")).contains("non calibrati"),
-		"il reticolo mancante e' dichiarato")
+	# Questa asserzione controllava che lo scenario dichiarasse "reticolo non
+	# calibrato". Adesso il reticolo E' calibrato, la mappa e' misurata e
+	# verificata, e il motore la carica: quel testo era diventato falso. Cio'
+	# che ancora manca e' lo SCHIERAMENTO, e ora e' quello che va dichiarato.
+	eq(sc.inset_key(), "map_north_sea", "BL3 dice su quale inserto si gioca")
+	var status := String(sc.map_info.get("status", ""))
+	true_(status.to_lower().contains("schieramento"),
+		"lo schieramento mancante e' dichiarato: %s" % status)
+	false_(status.contains("non calibrat"),
+		"e non si dichiara piu' un reticolo non calibrato, perche' lo e'")
+	var inset := MapGraph.load_inset(sc.inset_key())
+	eq(inset.load_error, "", "e l'inserto dichiarato si carica davvero")
+	true_(inset.hex_count() > 0, "con i suoi esagoni")
 	eq(sc.task_forces.size(), 0,
-		"non inventa coordinate sulla Mappa Operazionale")
+		"ma lo scenario non inventa coordinate: lo schieramento non c'e' ancora")
 	true_(sc.commanders.has("Raeder"), "Raeder e' trascritto come comandante strategico")
 	var group: Array = sc.reinforcements.get("KM Reinforcement A", [])
 	eq(group.size(), 2, "il Gruppo Rinforzi A contiene due CL")

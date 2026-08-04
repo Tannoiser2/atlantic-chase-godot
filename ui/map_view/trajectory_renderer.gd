@@ -104,10 +104,16 @@ var _lanes: Dictionary = {}
 var _station_lanes: Dictionary = {}
 
 
+## Puo' essere richiamato per cambiare superficie di gioco: i cinque scenari
+## solitari su mappa inserto rimettono qui un altro grafo. La connessione al
+## segnale va quindi rifatta con criterio, non aggiunta una seconda volta.
 func setup(p_graph: MapGraph, p_state: GameState) -> void:
+	if state != null and state.changed.is_connected(queue_redraw):
+		state.changed.disconnect(queue_redraw)
 	graph = p_graph
 	state = p_state
-	state.changed.connect(queue_redraw)
+	if not state.changed.is_connected(queue_redraw):
+		state.changed.connect(queue_redraw)
 	queue_redraw()
 
 

@@ -1,180 +1,181 @@
 {
-  "name": "N2 Operazione Weser (nord)",
-  "source": "Fascicolo Scenari in Solitario, seconda edizione INGLESE (AC_Solo_scenarios_2022.pdf), pp.21-24. Trascritta a mano da render/testo del PDF aggiornato.",
-  "weather": 1,
-  "initiative": 0,
-  "round": 1,
-  "_map": {
-    "name": "Mappa Inserto del Mare di Norvegia",
-    "status": "immagine presente in assets/boards/map_norwegian_sea.jpg; reticolo e coordinate non calibrati, quindi non sostituibile con la Mappa Operazionale",
-    "source": "AC_Solo_scenarios_2022 p.21 'Map: Norwegian Sea Inset Map'"
+ "name": "N2 Operazione Weser (nord)",
+ "source": "Fascicolo Scenari in Solitario, seconda edizione INGLESE (AC_Solo_scenarios_2022.pdf), pp.21-24. Trascritta a mano da render/testo del PDF aggiornato.",
+ "weather": 1,
+ "initiative": 0,
+ "round": 1,
+ "_map": {
+  "name": "Mappa Inserto del Mare di Norvegia",
+  "status": "reticolo, esagoni, porti, caselle fuori mappa, frecce 'non adiacente' e basi aeree sono misurati e verificati contro le illustrazioni del fascicolo, e il motore carica la mappa; manca lo SCHIERAMENTO INIZIALE, cioe' quale segmento di Traiettoria sia di quale Task Force e in che ordine la formi, che va letto dalle pagine dello scenario",
+  "source": "AC_Solo_scenarios_2022 p.21 'Map: Norwegian Sea Inset Map'",
+  "inset": "map_norwegian_sea"
+ },
+ "unplaced_forces": [
+  {
+   "id": 1,
+   "side": 0,
+   "color": "GE",
+   "slot": 0,
+   "name": "Convoglio per Narvik",
+   "ships": [
+    "Convoy x2",
+    "Gneisenau",
+    "Scharnhorst"
+   ],
+   "leader": "Raeder",
+   "speed": 2,
+   "trajectory": {
+    "segments": [
+     {
+      "q": 18,
+      "r": -6,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 17,
+      "r": -6,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 16,
+      "r": -6,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 16,
+      "r": -7,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 17,
+      "r": -8,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 16,
+      "r": -8,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 16,
+      "r": -9,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 16,
+      "r": -10,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 17,
+      "r": -10,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 17,
+      "r": -9,
+      "info": false,
+      "contact": false
+     }
+    ],
+    "station_q": 18,
+    "station_r": -6,
+    "station_contact": false,
+    "station_port": ""
+   }
   },
-  "unplaced_forces": [
-    {
-      "id": 1,
-      "side": 0,
-      "color": "GE",
-      "slot": 0,
-      "name": "Convoglio per Narvik",
-      "ships": [
-        "Convoy x2",
-        "Gneisenau",
-        "Scharnhorst"
-      ],
-      "leader": "Raeder",
-      "speed": 2,
-      "trajectory": {
-        "segments": [
-          {
-            "q": 18,
-            "r": -6,
-            "info": false,
-            "contact": false
-          },
-          {
-            "q": 17,
-            "r": -6,
-            "info": false,
-            "contact": false
-          },
-          {
-            "q": 16,
-            "r": -6,
-            "info": false,
-            "contact": false
-          },
-          {
-            "q": 16,
-            "r": -7,
-            "info": false,
-            "contact": false
-          },
-          {
-            "q": 17,
-            "r": -8,
-            "info": false,
-            "contact": false
-          },
-          {
-            "q": 16,
-            "r": -8,
-            "info": false,
-            "contact": false
-          },
-          {
-            "q": 16,
-            "r": -9,
-            "info": false,
-            "contact": false
-          },
-          {
-            "q": 16,
-            "r": -10,
-            "info": false,
-            "contact": false
-          },
-          {
-            "q": 17,
-            "r": -10,
-            "info": false,
-            "contact": false
-          },
-          {
-            "q": 17,
-            "r": -9,
-            "info": false,
-            "contact": false
-          }
-        ],
-        "station_q": 18,
-        "station_r": -6,
-        "station_contact": false,
-        "station_port": ""
-      }
-    },
-    {
-      "id": 2,
-      "side": 0,
-      "color": "GE",
-      "slot": 1,
-      "name": "DD per Trondheim",
-      "ships": [
-        "DD Squadron",
-        "Hipper"
-      ],
-      "leader": "",
-      "speed": 2,
-      "trajectory": {
-        "segments": [
-          {
-            "q": 18,
-            "r": -6,
-            "info": false,
-            "contact": false
-          },
-          {
-            "q": 17,
-            "r": -6,
-            "info": false,
-            "contact": false
-          },
-          {
-            "q": 16,
-            "r": -6,
-            "info": false,
-            "contact": false
-          },
-          {
-            "q": 16,
-            "r": -7,
-            "info": false,
-            "contact": false
-          },
-          {
-            "q": 16,
-            "r": -8,
-            "info": false,
-            "contact": false
-          },
-          {
-            "q": 16,
-            "r": -9,
-            "info": false,
-            "contact": false
-          },
-          {
-            "q": 17,
-            "r": -9,
-            "info": false,
-            "contact": false
-          },
-          {
-            "q": 17,
-            "r": -8,
-            "info": false,
-            "contact": false
-          }
-        ],
-        "station_q": 18,
-        "station_r": -6,
-        "station_contact": false,
-        "station_port": ""
-      }
-    }
-  ],
-  "task_forces": [],
-  "reinforcements": {},
-  "info_triggers": [],
-  "briefing": {
-    "title": "N2 Operazione Weser (nord)",
-    "end": "Vedi le istruzioni Fine dello scenario nel file solo e nel fascicolo.",
-    "victory": "Modo solitario: calcolare i VP manuali e leggere la Tabella dell'Esito.",
-    "historical": "Trascritto dal fascicolo solitario italiano; testo completo in core/data/solo."
-  },
-  "setup_notes": [
-    "Mappa Inserto del Mare di Norvegia: questo scenario NON si gioca sulla Mappa Operazionale. Le Task Force trascritte restano in 'unplaced_forces' finche' il reticolo dell'inserto non e' calibrato; gli esagoni che avevano prima erano porti della mappa grande usati come sostituti, cioe' posizioni inventate. Fonte: AC_Solo_scenarios_2022 p.21 'Map: Norwegian Sea Inset Map'.",
-    "Meteo Sfavorevole; iniziativa tedesca con conta iniziativa a 2; mappa aggiuntiva Mare di Norvegia. Nessuna TF britannica iniziale. Convoglio tedesco per Narvik e Squadrone DD per Trondheim; Raeder presente.",
-    "Nessuna TF britannica iniziale, come da fascicolo."
-  ],
-  "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati."
+  {
+   "id": 2,
+   "side": 0,
+   "color": "GE",
+   "slot": 1,
+   "name": "DD per Trondheim",
+   "ships": [
+    "DD Squadron",
+    "Hipper"
+   ],
+   "leader": "",
+   "speed": 2,
+   "trajectory": {
+    "segments": [
+     {
+      "q": 18,
+      "r": -6,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 17,
+      "r": -6,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 16,
+      "r": -6,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 16,
+      "r": -7,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 16,
+      "r": -8,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 16,
+      "r": -9,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 17,
+      "r": -9,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 17,
+      "r": -8,
+      "info": false,
+      "contact": false
+     }
+    ],
+    "station_q": 18,
+    "station_r": -6,
+    "station_contact": false,
+    "station_port": ""
+   }
+  }
+ ],
+ "task_forces": [],
+ "reinforcements": {},
+ "info_triggers": [],
+ "briefing": {
+  "title": "N2 Operazione Weser (nord)",
+  "end": "Vedi le istruzioni Fine dello scenario nel file solo e nel fascicolo.",
+  "victory": "Modo solitario: calcolare i VP manuali e leggere la Tabella dell'Esito.",
+  "historical": "Trascritto dal fascicolo solitario italiano; testo completo in core/data/solo."
+ },
+ "setup_notes": [
+  "Mappa Inserto del Mare di Norvegia: questo scenario NON si gioca sulla Mappa Operazionale. Le Task Force trascritte restano in 'unplaced_forces' finche' il reticolo dell'inserto non e' calibrato; gli esagoni che avevano prima erano porti della mappa grande usati come sostituti, cioe' posizioni inventate. Fonte: AC_Solo_scenarios_2022 p.21 'Map: Norwegian Sea Inset Map'.",
+  "Meteo Sfavorevole; iniziativa tedesca con conta iniziativa a 2; mappa aggiuntiva Mare di Norvegia. Nessuna TF britannica iniziale. Convoglio tedesco per Narvik e Squadrone DD per Trondheim; Raeder presente.",
+  "Nessuna TF britannica iniziale, come da fascicolo."
+ ],
+ "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati."
 }

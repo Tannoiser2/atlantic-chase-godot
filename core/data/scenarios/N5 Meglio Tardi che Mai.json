@@ -1,96 +1,97 @@
 {
-  "name": "N5 Meglio Tardi che Mai",
-  "source": "Fascicolo Scenari in Solitario, seconda edizione INGLESE (AC_Solo_scenarios_2022.pdf), pp.32-35. Trascritta a mano da render/testo del PDF aggiornato.",
-  "weather": 1,
-  "initiative": 1,
-  "round": 1,
-  "_map": {
-    "name": "Mappa Inserto del Mare di Norvegia",
-    "status": "immagine presente in assets/boards/map_norwegian_sea.jpg; reticolo e coordinate non calibrati, quindi non sostituibile con la Mappa Operazionale",
-    "source": "AC_Solo_scenarios_2022 p.32 'Map: Norwegian Sea Inset Map'"
+ "name": "N5 Meglio Tardi che Mai",
+ "source": "Fascicolo Scenari in Solitario, seconda edizione INGLESE (AC_Solo_scenarios_2022.pdf), pp.32-35. Trascritta a mano da render/testo del PDF aggiornato.",
+ "weather": 1,
+ "initiative": 1,
+ "round": 1,
+ "_map": {
+  "name": "Mappa Inserto del Mare di Norvegia",
+  "status": "reticolo, esagoni, porti, caselle fuori mappa, frecce 'non adiacente' e basi aeree sono misurati e verificati contro le illustrazioni del fascicolo, e il motore carica la mappa; manca lo SCHIERAMENTO INIZIALE, cioe' quale segmento di Traiettoria sia di quale Task Force e in che ordine la formi, che va letto dalle pagine dello scenario",
+  "source": "AC_Solo_scenarios_2022 p.32 'Map: Norwegian Sea Inset Map'",
+  "inset": "map_norwegian_sea"
+ },
+ "unplaced_forces": [
+  {
+   "id": 1,
+   "side": 1,
+   "color": "Brown",
+   "slot": 0,
+   "name": "Forza Narvik",
+   "ships": [
+    "Southampton",
+    "Birmingham"
+   ],
+   "leader": "Pound",
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 17,
+    "station_r": -9,
+    "station_contact": false,
+    "station_port": "Narvik"
+   }
   },
-  "unplaced_forces": [
-    {
-      "id": 1,
-      "side": 1,
-      "color": "Brown",
-      "slot": 0,
-      "name": "Forza Narvik",
-      "ships": [
-        "Southampton",
-        "Birmingham"
-      ],
-      "leader": "Pound",
-      "speed": 2,
-      "trajectory": {
-        "segments": [],
-        "station_q": 17,
-        "station_r": -9,
-        "station_contact": false,
-        "station_port": "Narvik"
-      }
-    },
-    {
-      "id": 2,
-      "side": 1,
-      "color": "Tan",
-      "slot": 0,
-      "name": "Convoglio Narvik",
-      "ships": [
-        "Convoy x3"
-      ],
-      "leader": "",
-      "speed": 2,
-      "trajectory": {
-        "segments": [],
-        "station_q": 17,
-        "station_r": -9,
-        "station_contact": false,
-        "station_port": "Narvik"
-      }
-    },
-    {
-      "id": 3,
-      "side": 1,
-      "color": "Tan",
-      "slot": 1,
-      "name": "Convoglio Trondheim",
-      "ships": [
-        "Convoy x3"
-      ],
-      "leader": "",
-      "speed": 2,
-      "trajectory": {
-        "segments": [],
-        "station_q": 17,
-        "station_r": -8,
-        "station_contact": false,
-        "station_port": "Trondheim"
-      }
-    }
+  {
+   "id": 2,
+   "side": 1,
+   "color": "Tan",
+   "slot": 0,
+   "name": "Convoglio Narvik",
+   "ships": [
+    "Convoy x3"
+   ],
+   "leader": "",
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 17,
+    "station_r": -9,
+    "station_contact": false,
+    "station_port": "Narvik"
+   }
+  },
+  {
+   "id": 3,
+   "side": 1,
+   "color": "Tan",
+   "slot": 1,
+   "name": "Convoglio Trondheim",
+   "ships": [
+    "Convoy x3"
+   ],
+   "leader": "",
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 17,
+    "station_r": -8,
+    "station_contact": false,
+    "station_port": "Trondheim"
+   }
+  }
+ ],
+ "task_forces": [],
+ "reinforcements": {
+  "RN Reinforcement A": [
+   "Renown",
+   "Valiant"
   ],
-  "task_forces": [],
-  "reinforcements": {
-    "RN Reinforcement A": [
-      "Renown",
-      "Valiant"
-    ],
-    "RN Reinforcement B": [
-      "Repulse",
-      "Rodney"
-    ]
-  },
-  "info_triggers": [],
-  "briefing": {
-    "title": "N5 Meglio Tardi che Mai",
-    "end": "Vedi le istruzioni Fine dello scenario nel file solo e nel fascicolo.",
-    "victory": "Modo solitario: calcolare i VP manuali e leggere la Tabella dell'Esito.",
-    "historical": "Trascritto dal fascicolo solitario italiano; testo completo in core/data/solo."
-  },
-  "setup_notes": [
-    "Mappa Inserto del Mare di Norvegia: questo scenario NON si gioca sulla Mappa Operazionale. Le Task Force trascritte restano in 'unplaced_forces' finche' il reticolo dell'inserto non e' calibrato; gli esagoni che avevano prima erano porti della mappa grande usati come sostituti, cioe' posizioni inventate. Fonte: AC_Solo_scenarios_2022 p.32 'Map: Norwegian Sea Inset Map'.",
-    "Meteo Sfavorevole; giocatore britannico. Convogli britannici per Narvik/Trondheim e reazione norvegese; i rinforzi spendono RP. Schieramento mappa trascritto come note perche' contiene rotte/punti norvegesi non calibrati come esagoni dedicati.",
-    "Lo scenario usa punti norvegesi/inset: dove il fascicolo indica localita non calibrate, le TF sono poste nel porto norvegese calibrato corrispondente."
-  ],
-  "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati."
+  "RN Reinforcement B": [
+   "Repulse",
+   "Rodney"
+  ]
+ },
+ "info_triggers": [],
+ "briefing": {
+  "title": "N5 Meglio Tardi che Mai",
+  "end": "Vedi le istruzioni Fine dello scenario nel file solo e nel fascicolo.",
+  "victory": "Modo solitario: calcolare i VP manuali e leggere la Tabella dell'Esito.",
+  "historical": "Trascritto dal fascicolo solitario italiano; testo completo in core/data/solo."
+ },
+ "setup_notes": [
+  "Mappa Inserto del Mare di Norvegia: questo scenario NON si gioca sulla Mappa Operazionale. Le Task Force trascritte restano in 'unplaced_forces' finche' il reticolo dell'inserto non e' calibrato; gli esagoni che avevano prima erano porti della mappa grande usati come sostituti, cioe' posizioni inventate. Fonte: AC_Solo_scenarios_2022 p.32 'Map: Norwegian Sea Inset Map'.",
+  "Meteo Sfavorevole; giocatore britannico. Convogli britannici per Narvik/Trondheim e reazione norvegese; i rinforzi spendono RP. Schieramento mappa trascritto come note perche' contiene rotte/punti norvegesi non calibrati come esagoni dedicati.",
+  "Lo scenario usa punti norvegesi/inset: dove il fascicolo indica localita non calibrate, le TF sono poste nel porto norvegese calibrato corrispondente."
+ ],
+ "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati."
 }

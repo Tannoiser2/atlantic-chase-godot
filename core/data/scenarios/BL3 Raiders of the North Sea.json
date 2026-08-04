@@ -6,7 +6,8 @@
  "round": 1,
  "_map": {
   "name": "Mappa Inserto del Mare del Nord",
-  "status": "immagine presente in assets/boards/map_north_sea.jpg; reticolo e coordinate non calibrati, quindi non sostituibile con la Mappa Operazionale"
+  "status": "reticolo, esagoni, porti, caselle fuori mappa, frecce 'non adiacente' e basi aeree sono misurati e verificati contro le illustrazioni del fascicolo, e il motore carica la mappa; manca lo SCHIERAMENTO INIZIALE, cioe' quale segmento di Traiettoria sia di quale Task Force e in che ordine la formi, che va letto dalle pagine dello scenario",
+  "inset": "map_north_sea"
  },
  "commanders": [
   "Raeder"
@@ -27,8 +28,8 @@
   "historical": "Febbraio 1940. Raeder cerca il traffico britannico da e verso la Norvegia e tenta di attirare le navi nemiche sotto i cieli controllati dalla Luftwaffe."
  },
  "setup_notes": [
-  "Mappa Inserto del Mare del Nord: griglia non calibrata in questo progetto. Le tabelle sono trascritte, ma lo schieramento non e' convertibile sulla Mappa Operazionale senza calibrare l'inserto."
-  ,"Setup stampato non ancora applicabile: Scharnhorst, Gneisenau e Hipper; Marschall assegnato a una nave, Raeder disponibile; TF britannica non identificata e forza Sottomarino nelle posizioni illustrate. Karlsruhe e Koln sono nel Gruppo Rinforzi A, la cui casella va scelta fra Wilhelmshaven e Kiel."
+  "Mappa Inserto del Mare del Nord: griglia non calibrata in questo progetto. Le tabelle sono trascritte, ma lo schieramento non e' convertibile sulla Mappa Operazionale senza calibrare l'inserto.",
+  "Setup stampato non ancora applicabile: Scharnhorst, Gneisenau e Hipper; Marschall assegnato a una nave, Raeder disponibile; TF britannica non identificata e forza Sottomarino nelle posizioni illustrate. Karlsruhe e Koln sono nel Gruppo Rinforzi A, la cui casella va scelta fra Wilhelmshaven e Kiel."
  ],
  "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati."
 }

@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **3001 verifiche, 18 suite, headless.**
+Tutti i test passano: **3005 verifiche, 18 suite, headless.**
 
 ---
 
@@ -455,9 +455,22 @@ Tutti i test passano: **3001 verifiche, 18 suite, headless.**
   inchiodano misurando circumraggio, inraggio e l'allineamento dei vertici
   rispetto ai vicini: se theta e' sbagliato di 30 gradi un vertice punta dritto
   su un vicino e il coseno passa da 0.866 a 1.
-  Resta il disegno dell'inserto nella GUI, e lo schieramento iniziale dei cinque
-  scenari: quale segmento sia di quale Task Force e in che ordine formi la
-  Traiettoria va letto dalle pagine, non si ricava dalle posizioni.
+- **L'interfaccia disegna l'inserto come superficie di gioco.** Aprendo uno dei
+  cinque scenari, la mappa inserto prende il posto della Mappa Operazionale:
+  `MapBoard` carica una texture sola - 1020x1320, meno di un tile e mezzo -
+  invece dei quindici tile della mappa grande, e il disegno del reticolo non
+  cambia di una riga perche' e' tutto guidato dal `MapGraph`. Il grafo e' pero'
+  condiviso da stato, tabellone, Traiettorie e camera: se uno solo restasse
+  puntato sulla mappa di prima non si vedrebbe un errore, si vedrebbe una
+  partita giocata sulle coordinate sbagliate. `tools/smoke_inset_map.gd` apre
+  l'interfaccia vera e controlla che cambino tutti insieme, e che tornare a uno
+  scenario normale rimetta la Mappa Operazionale coi suoi tile.
+  Il testo che i cinque scenari mostravano - "reticolo e coordinate non
+  calibrati" - era ormai falso ed e' stato corretto: adesso dice che cosa manca
+  davvero, cioe' lo schieramento. Ed e' rimasta una cosa sola: le posizioni dei
+  segmenti ci sono in `core/data/inset_setups.json`, l'appartenenza no - quale
+  segmento e' di quale Task Force e in che ordine formi la Traiettoria va letto
+  dalle pagine, non si ricava dalle posizioni.
 - **I Comandanti dicono la loro condizione stampata.** Gli undici testi sono
   trascritti da RB p.10 letta a 300 dpi: la scheda TF mostra la regola vera e
   non un riassunto, ed e' quella che decide se il beneficio si puo' usare
