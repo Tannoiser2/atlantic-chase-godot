@@ -6,7 +6,7 @@
  "round": 1,
  "_map": {
   "name": "Mappa Inserto del Mare di Norvegia",
-  "status": "reticolo, esagoni, porti, caselle fuori mappa, frecce 'non adiacente' e basi aeree sono misurati e verificati contro le illustrazioni del fascicolo, e il motore carica la mappa; manca lo SCHIERAMENTO INIZIALE, cioe' quale segmento di Traiettoria sia di quale Task Force e in che ordine la formi, che va letto dalle pagine dello scenario",
+  "status": "mappa misurata e verificata, motore e interfaccia la caricano; lo schieramento e' composto dal giocatore, e l'app parte da un'organizzazione di ripiego dichiarata (p.32)",
   "source": "AC_Solo_scenarios_2022 p.32 'Map: Norwegian Sea Inset Map'",
   "inset": "map_norwegian_sea"
  },
@@ -70,15 +70,95 @@
    }
   }
  ],
- "task_forces": [],
+ "task_forces": [
+  {
+   "id": 1,
+   "side": 1,
+   "color": "Tan",
+   "slot": 0,
+   "name": "Convoglio / Sheffield",
+   "ships": [
+    "Convoy x2",
+    "Sheffield"
+   ],
+   "leader": "",
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 2,
+    "station_r": 5,
+    "station_contact": false,
+    "station_port": ""
+   }
+  },
+  {
+   "id": 2,
+   "side": 1,
+   "color": "Tan",
+   "slot": 1,
+   "name": "Convoglio / Birmingham",
+   "ships": [
+    "Convoy x2",
+    "Birmingham"
+   ],
+   "leader": "",
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 2,
+    "station_r": 5,
+    "station_contact": false,
+    "station_port": ""
+   }
+  },
+  {
+   "id": 3,
+   "side": 1,
+   "color": "Tan",
+   "slot": 2,
+   "name": "Convoglio / Southampton",
+   "ships": [
+    "Convoy x2",
+    "Southampton"
+   ],
+   "leader": "",
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 2,
+    "station_r": 5,
+    "station_contact": false,
+    "station_port": ""
+   }
+  },
+  {
+   "id": 4,
+   "side": 1,
+   "color": "Tan",
+   "slot": 3,
+   "name": "Renown / Repulse / Glorious",
+   "ships": [
+    "Renown",
+    "Repulse",
+    "Glorious"
+   ],
+   "leader": "",
+   "speed": 2,
+   "trajectory": {
+    "segments": [],
+    "station_q": 2,
+    "station_r": 5,
+    "station_contact": false,
+    "station_port": ""
+   }
+  }
+ ],
  "reinforcements": {
   "RN Reinforcement A": [
-   "Renown",
-   "Valiant"
-  ],
-  "RN Reinforcement B": [
-   "Repulse",
-   "Rodney"
+   "Rodney",
+   "Valiant",
+   "Galatea",
+   "Arethusa"
   ]
  },
  "info_triggers": [],
@@ -91,7 +171,10 @@
  "setup_notes": [
   "Mappa Inserto del Mare di Norvegia: questo scenario NON si gioca sulla Mappa Operazionale. Le Task Force trascritte restano in 'unplaced_forces' finche' il reticolo dell'inserto non e' calibrato; gli esagoni che avevano prima erano porti della mappa grande usati come sostituti, cioe' posizioni inventate. Fonte: AC_Solo_scenarios_2022 p.32 'Map: Norwegian Sea Inset Map'.",
   "Meteo Sfavorevole; giocatore britannico. Convogli britannici per Narvik/Trondheim e reazione norvegese; i rinforzi spendono RP. Schieramento mappa trascritto come note perche' contiene rotte/punti norvegesi non calibrati come esagoni dedicati.",
-  "Lo scenario usa punti norvegesi/inset: dove il fascicolo indica localita non calibrate, le TF sono poste nel porto norvegese calibrato corrispondente."
+  "Lo scenario usa punti norvegesi/inset: dove il fascicolo indica localita non calibrate, le TF sono poste nel porto norvegese calibrato corrispondente.",
+  "N5 e' l'unico dei cinque scenari inserto la cui illustrazione NON disegna segmenti di Traiettoria, e non e' una dimenticanza: la pagina dice \"Organize these ships into two or more task forces (ALL TFs START IN SCAPA FLOW)\". Non c'e' niente da leggere sulla mappa perche' all'inizio non c'e' niente sulla mappa. La composizione delle Task Force e' una SCELTA DEL GIOCATORE, con un solo vincolo stampato: \"A Convoy may share a TF with only one other ship, a CA or a CL\".",
+  "L'app parte da un'organizzazione di RIPIEGO DICHIARATA, lo stesso criterio che BL2 usa per le sue quattro navi 'any' e A2 per l'acquisto in VP: tre TF con un Convoglio e un CA ciascuna (Sheffield, Birmingham, Southampton) piu' una TF di navi da guerra (Renown, Repulse, Glorious), tutte Stazioni in (2,5), l'esagono che tocca la Casella di Scapa Flow. Rodney, Valiant, Galatea e Arethusa vanno nel Gruppo Rinforzo A, nella Casella di Scapa Flow. E' un valore legale che rende lo scenario giocabile senza interazione, non una scelta al posto del giocatore: una partita normale la deve chiedere.",
+  "LACUNE DICHIARATE: i due CA 'any' del listino non sono scelti; i Punti Rinforzo (RP, una nave = 1 RP) che influenzano l'Esito di p.35 non sono contati; Forbes va attaccato a una nave dei rinforzi e non costa RP; restano fuori la Reazione Norvegese di p.34 e la regola \"Adjacent to Norwegian ports\", che permette il Completamento in un esagono adiacente a Narvik o Trondheim purche' abbia della terra. La regola dei Convogli britannici - non distruggibili, ma con 4+ Colpi possono Completare solo a Scapa Flow - resta nelle note."
  ],
  "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati."
 }

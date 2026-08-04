@@ -516,8 +516,17 @@ Tutti i test passano: **3016 verifiche, 18 suite, headless.**
   che la pagina prescrive "in Kristiansand" e' nel campo info del segmento
   (6,-1). Anche qui la banda e' letta a occhio, perche' il rilevatore su questa
   pagina esce invertito.
-  **Quattro dei cinque scenari inserto si giocano. Resta N5**, che non disegna
-  segmenti: il suo schieramento va ricavato interamente dal testo.
+  **Anche N5 si gioca, e con lui tutti e quindici i solitari chiudono su una
+  condizione stampata.** La sua illustrazione non disegna segmenti perche' non
+  c'e' niente da disegnare: "all TFs start in Scapa Flow". La composizione delle
+  Task Force e' una scelta del giocatore - unico vincolo stampato, un Convoglio
+  puo' condividere la TF con una sola altra nave, un CA o un CL - e l'app parte
+  da un'organizzazione di ripiego dichiarata, come BL2 con le sue navi 'any' e
+  A2 con l'acquisto in VP.
+  **Le lacune che restano sono DENTRO gli scenari, non piu' scenari fermi**:
+  Mine e forze Furtive permanenti (che sono l'obiettivo di N1), Reazione
+  Norvegese, Completamenti in Norvegia, i due CA 'any' di N5 e i suoi Punti
+  Rinforzo.
 - **I Comandanti dicono la loro condizione stampata.** Gli undici testi sono
   trascritti da RB p.10 letta a 300 dpi: la scheda TF mostra la regola vera e
   non un riassunto, ed e' quella che decide se il beneficio si puo' usare

@@ -278,8 +278,16 @@ Uno scenario puo' essere marcato completo solo quando:
   prescritto "in Kristiansand" e' nel campo `info` del segmento (6,-1), non in
   una nota. Anche qui la banda e' stata letta a occhio: il rilevatore automatico
   su questa pagina esce invertito.
-  **Resta un solo schieramento, N5**, e non ne disegna nessuno: la sua mappa e'
-  solo sfondo dei riquadri di regola, quindi va ricavato interamente dal testo.
+  **N5 e' schierato e si gioca, e con lui TUTTI E QUINDICI i solitari chiudono
+  su una condizione stampata.** La sua illustrazione non disegna segmenti, e non
+  era una dimenticanza: la pagina dice "all TFs start in Scapa Flow", quindi
+  all'inizio sulla mappa non c'e' niente da leggere. La composizione delle Task
+  Force e' una SCELTA DEL GIOCATORE, con un vincolo solo - "a Convoy may share a
+  TF with only one other ship, a CA or a CL" - e l'app parte da
+  un'organizzazione di ripiego dichiarata, lo stesso criterio di BL2 e A2.
+  **Restano lacune DENTRO gli scenari**, non piu' scenari fermi: Mine e forze
+  Furtive (che sono l'obiettivo di N1), Reazione Norvegese, Completamenti in
+  Norvegia, i due CA 'any' di N5 e i suoi Punti Rinforzo.
   mappa e' solo sfondo dei riquadri di regola, quindi va ricavato dal testo).
   Tre test hanno cambiato premessa insieme al fatto, e vale la pena saperlo:
   controllavano che gli scenari inserto NON avessero schieramento, e adesso
