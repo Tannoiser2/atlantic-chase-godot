@@ -215,6 +215,11 @@ static func continue_follow_up(previous: Dictionary, state: GameState,
 			return _attempt_completion_at_port(graph, port_control, active,
 				String(follow.get("port_name", "")),
 				String(follow.get("note", "Solitario AI: continua verso il porto")))
+		"n3_b_step2":
+			# N3 p.26: il passo 2 della 'B' arriva dopo la Traiettoria e NON puo'
+			# tracciarne un'altra. Sceglie fra Battaglia, Completamento a Bergen
+			# e Passare, sulla rotta appena costruita.
+			return _n3_b_step2(state, graph, engine, port_control, side, active)
 		_:
 			return _empty("Solitario AI: continuazione non riconosciuta.")
 
@@ -824,43 +829,458 @@ static func _n2(code: String, state: GameState, graph: MapGraph,
 	return _air_or_attack(state, graph, engine, side)
 
 
+## N3 Operazione Weser (sud), Tabella di Azione Britannica di p.26 letta sulla
+## pagina renderizzata. Il giocatore e' il TEDESCO: queste sono le procedure
+## dell'avversario immaginario britannico.
+##
+## Le sei procedure girano attorno al Sommergibile britannico, che e' l'unica
+## forza Furtiva stampata nello scenario: 'SA' lo fa attaccare, 'SR' lo piazza,
+## 'X' misura la distanza dei bersagli DA LUI. Prima erano tutte e tre
+## approssimate con la policy generica, e la 'SA' in particolare finiva su un
+## Attacco Furtivo dichiarato da una Task Force - che e' il difetto chiuso nel
+## commit precedente.
 static func _n3(code: String, state: GameState, graph: MapGraph,
 		engine: ActionEngine, port_control: Dictionary, side: int) -> Dictionary:
 	match code:
 		"B":
-			return _n_british_port_action(state, graph, engine, port_control, side,
-				"Bergen", "Bergen", "Solitario AI N3: B")
+			return _n3_b(state, graph, engine, port_control, side)
 		"C":
-			var tf_c := _first_damaged_force(state, side)
-			if tf_c == null:
-				tf_c = _longest_force(state, side)
-			if tf_c == null:
-				var air := _best_legal_action(state, engine, side, "AIR_STRIKE")
-				if bool(air["ok"]):
-					return air
-				var no := _empty("Solitario AI N3: nessuna TF britannica; Passare.")
-				no["pass_initiative"] = true
-				return no
-			return _complete_or_route_to_port(state, graph, port_control, tf_c,
-				"Scapa Flow", "Solitario AI N3: Completamento a Scapa Flow")
+			return _n3_c(state, graph, engine, port_control, side)
+		"CONTATTO":
+			return _n3_contact(state, graph, side)
 		"SA":
-			var stealth := _best_legal_action(state, engine, side, "STEALTH_ATTACK")
-			if bool(stealth["ok"]):
-				stealth["log"].append("Solitario AI N3: Attacco Furtivo.")
-				return stealth
-			return _n3_sr(state, graph, side)
+			return _n3_sa(state, graph, engine, port_control, side)
 		"SR":
-			return _n3_sr(state, graph, side)
+			return _n3_sr(state, graph, engine, port_control, side)
 		"X":
-			var bb := _shortest_force_with_type(state, side, "BB")
-			if bb == null:
-				bb = _create_force_at(state, graph, side, "Scapa Flow",
-					["Nelson", "Rodney", "Renown", "Sheffield", "Birmingham"], false)
-			_remove_damaged_ships(state, side)
-			return _attack_or_route_selected(state, graph, engine, bb,
-				_best_enemy_target(state, side, bb),
-				"Solitario AI N3: Bring on Battle")
+			return _n3_x(state, graph, engine, side)
 	return _air_or_attack(state, graph, engine, side)
+
+
+## 'B' - AZIONE TRAIETTORIA verso BERGEN (p.26).
+##
+## E' una procedura in due passi, e il secondo NON e' una seconda Traiettoria:
+## e' la trappola che il registro BL2 aveva gia' scoperto una volta. Il passo 1
+## costruisce la rotta, il passo 2 arriva come continuazione prescritta.
+static func _n3_b(state: GameState, graph: MapGraph, engine: ActionEngine,
+		port_control: Dictionary, side: int) -> Dictionary:
+	var bergen := graph.place_hex("Bergen")
+	# "Select a British TF in Bergen. If none, select the longest Trajectory.
+	# If no TF is in play, create a new unidentified TF in Methil."
+	var tf := _force_in_hex(state, side, bergen)
+	var why := "una TF britannica IN Bergen"
+	if tf == null:
+		tf = _longest_force(state, side)
+		why = "nessuna TF in Bergen: la Traiettoria britannica piu' lunga"
+	if tf == null:
+		tf = _create_unidentified_at(state, graph, side, "Methil")
+		why = "nessuna TF britannica in gioco: ne entra una non identificata a Methil"
+	if tf == null:
+		var no := _empty("Solitario AI N3 - B: non c'e' nessuna TF da scegliere; Passare.")
+		no["pass_initiative"] = true
+		return no
+	var note := "Solitario AI N3 - B (%s)" % why
+	# "(if already in Bergen, skip to step 2)"
+	if bergen != Vector2i.MAX and tf.trajectory.occupies(bergen):
+		var direct := _n3_b_step2(state, graph, engine, port_control, side, tf)
+		(direct["log"] as Array).push_front(
+			"%s: %s e' gia' in Bergen, quindi si va dritti al passo 2."
+			% [note, tf.display_name()])
+		return direct
+	var route := _route_toward_hex(state, graph, tf, bergen, note)
+	if bool(route.get("ok", false)):
+		route["follow_up"] = {"kind": "n3_b_step2", "note": note}
+	return route
+
+
+## 'B', passo 2 (p.26). Qui la rotta e' gia' costruita: la procedura sceglie
+## fra Portare in Battaglia, Completare a Bergen e Passare, e nessuno dei tre
+## puo' tracciare un'altra Traiettoria.
+static func _n3_b_step2(state: GameState, graph: MapGraph, engine: ActionEngine,
+		port_control: Dictionary, side: int, tf: TaskForce) -> Dictionary:
+	var note := "Solitario AI N3 - B passo 2"
+	# "if a German TF is in the same hex as the selected British TF (in any hex,
+	# not just Bergen), the TF attempts to bring to Battle that German TF"
+	var enemy := _enemy_in_same_hex(state, side, tf)
+	if enemy != null:
+		var out := _empty("")
+		# "if the selected TF has a Convoy or damaged ship, replace
+		# Convoy/damaged ship with a CA"
+		for line in _n3_replace_convoy_or_damaged(state, tf):
+			(out["log"] as Array).append(line)
+		var hex := _shared_hex(tf, enemy)
+		for key in ["ENGAGE", "NAVAL_SEARCH"]:
+			var d := _legal_action_for(state, engine, key, tf, enemy)
+			if bool(d["ok"]):
+				d["log"] = (out["log"] as Array) + (d["log"] as Array)
+				(d["log"] as Array).append(
+					"%s: %s e' nell'esagono %s di %s e la porta in Battaglia."
+					% [note, tf.display_name(), str(hex), enemy.display_name()])
+				d["time_lapse_goal"] = graph.place_hex("Bergen")
+				return d
+		out["ok"] = true
+		out["active"] = tf
+		out["turn_kind"] = "pass"
+		out["pass_initiative"] = true
+		out["time_lapse_before_pass"] = true
+		(out["log"] as Array).append(
+			"%s: %s non puo' dichiarare nessuna azione legale contro %s; Passa."
+			% [note, tf.display_name(), enemy.display_name()])
+		return out
+	# "if a Convoy or unidentified, it attempts a Completion action in Bergen...
+	# If it contains any other ship type, it Passes."
+	if _has_convoy(tf) or tf.unidentified:
+		var done := _attempt_completion_at_port(graph, port_control, tf, "Bergen",
+			"%s: %s ha un Convoglio o e' non identificata" % [note, tf.display_name()])
+		done["time_lapse_goal"] = graph.place_hex("Bergen")
+		return done
+	var passed := _empty(
+		"%s: %s non ha ne' Convoglio ne' incognita e nel suo esagono non c'e' nessun tedesco; Passa."
+		% [note, tf.display_name()])
+	passed["ok"] = true
+	passed["active"] = tf
+	passed["turn_kind"] = "pass"
+	passed["pass_initiative"] = true
+	passed["time_lapse_before_pass"] = true
+	passed["time_lapse_goal"] = graph.place_hex("Bergen")
+	return passed
+
+
+## "if the selected TF has a Convoy or damaged ship, replace Convoy/damaged
+## ship with a CA; the Convoy turned back to port, or was never really there
+## despite intelligence to the contrary" (p.26).
+##
+## E' una sostituzione vera, non una nota: la nave esce dalla Task Force e ne
+## entra un'altra, altrimenti il Convoglio finirebbe in Battaglia proprio dove
+## la procedura dice che non c'e'.
+static func _n3_replace_convoy_or_damaged(state: GameState,
+		tf: TaskForce) -> Array[String]:
+	var out: Array[String] = []
+	if tf == null:
+		return out
+	var used := _ship_names_in_play(state)
+	for i in range(tf.ships.size() - 1, -1, -1):
+		var ship: Ship = tf.ships[i]
+		if ship.sunk:
+			continue
+		# "replace Convoy/damaged ship with a CA": le due categorie stampate, e
+		# nessun'altra.
+		if ship.kind != Ship.Kind.CONVOY and not ship.damaged:
+			continue
+		var replacement := _make_available_ship("CA", used)
+		if replacement == null:
+			out.append("Solitario AI N3: nessun CA disponibile nel ruolino, "
+				+ "quindi %s resta nella TF." % ship.name)
+			continue
+		used[replacement.name] = true
+		tf.ships[i] = replacement
+		out.append("Solitario AI N3: %s esce dalla TF e al suo posto entra %s "
+			% [ship.name, replacement.name]
+			+ "(p.26: il Convoglio era tornato in porto, o non c'era mai stato).")
+	return out
+
+
+## 'C' - AZIONE DI COMPLETAMENTO verso SCAPA FLOW (p.26).
+##
+## Porta con se' una FINE STAMPATA che non stava nel riquadro "The End": senza
+## TF britanniche e senza Attacco Aereo possibile, se le truppe tedesche sono
+## arrivate in Norvegia lo scenario finisce.
+static func _n3_c(state: GameState, graph: MapGraph, engine: ActionEngine,
+		port_control: Dictionary, side: int) -> Dictionary:
+	var tf := _first_damaged_force(state, side)
+	var why := "una TF britannica con una nave Danneggiata"
+	if tf == null:
+		tf = _longest_force(state, side)
+		why = "nessuna Danneggiata: la Traiettoria britannica piu' lunga"
+	if tf == null:
+		# "If no British TF is in play, perform an Air Strike action (if Bad
+		# Weather or no German TF in range, and the German Convoy and DD
+		# Squadron delivered troops to Norway, the scenario ends; otherwise,
+		# the British Pass)."
+		if state.weather != TimeLapse.Weather.BAD:
+			var air := _best_legal_action(state, engine, side, "AIR_STRIKE")
+			if bool(air["ok"]):
+				(air["log"] as Array).append(
+					"Solitario AI N3 - C: nessuna TF britannica in gioco, quindi Attacco Aereo.")
+				return air
+		if _n3_troops_delivered(state, graph):
+			state.solo_ended = true
+			state.solo_end_reason = ("Nessuna Task Force britannica in gioco, nessun "
+				+ "Attacco Aereo possibile, e il Convoglio e lo Squadrone DD tedeschi "
+				+ "hanno consegnato le truppe in Norvegia (p.26).")
+			var over := _empty("Solitario AI N3 - C: LO SCENARIO FINISCE. " + state.solo_end_reason)
+			over["ok"] = true
+			over["turn_kind"] = "end"
+			over["end_scenario"] = true
+			return over
+		var no := _empty("Solitario AI N3 - C: nessuna TF britannica e nessun Attacco "
+			+ "Aereo possibile, ma le truppe tedesche non sono arrivate in Norvegia; "
+			+ "il britannico Passa.")
+		no["pass_initiative"] = true
+		return no
+	var out := _complete_or_route_to_port(state, graph, port_control, tf,
+		"Scapa Flow", "Solitario AI N3 - C (%s)" % why)
+	out["time_lapse_goal"] = graph.place_hex("Scapa Flow")
+	# "After Completion action: IC"
+	if bool(out.get("completion", false)):
+		_n3_international_incident(state, out)
+	return out
+
+
+## Il Convoglio e lo Squadrone DD tedeschi hanno consegnato le truppe?
+##
+## L'obiettivo di p.25 dice dove: "The Convoy must complete in Bergen while the
+## DD Squadron must complete in Kristiansand". Kristiansand e' un Punto di
+## Interesse, non un porto, e ci si Completa con la regola di p.16 - per questo
+## si guarda l'ESAGONO e non il nome del porto.
+static func _n3_troops_delivered(state: GameState, graph: MapGraph) -> bool:
+	var german := TaskForce.Side.KRIEGSMARINE
+	var convoy_done := false
+	var dd_done := false
+	for tf in state.task_forces:
+		if tf.side != german or not tf.completed:
+			continue
+		var where := String(tf.completed_port)
+		for name_v: Variant in tf.completed_ships:
+			var ship_name := String(name_v)
+			if ship_name.begins_with("Convoy") and where == "Bergen":
+				convoy_done = true
+			if ship_name.begins_with("DD") and where == "Kristiansand":
+				dd_done = true
+	return convoy_done and dd_done
+
+
+## Il riquadro verde 'IC' delle procedure: Incidente Internazionale.
+##
+## In N3 non ha nessun effetto STAMPATO - non compare fra i modificatori della
+## Tabella delle Azioni ne' fra i termini dell'Esito di p.27 - quindi qui si
+## conta e si dichiara, invece di inventargli una conseguenza.
+static func _n3_international_incident(state: GameState, out: Dictionary) -> void:
+	var n := int(state.solo_counters.get("n3_international_incidents", 0)) + 1
+	state.solo_counters["n3_international_incidents"] = n
+	(out["log"] as Array).append(("Incidente Internazionale numero %d. In N3 il "
+		+ "fascicolo non gli assegna nessun effetto: ne' un modificatore della "
+		+ "Tabella delle Azioni, ne' un termine dell'Esito di p.27.") % n)
+
+
+## Il simbolo dell'occhio della Tabella - CONTATTO (p.26).
+##
+## Non e' un'azione: cambia lo stato e basta. Era anche l'unico risultato che
+## non arrivava mai qui, perche' la sua cella era vuota nel dato.
+static func _n3_contact(state: GameState, graph: MapGraph,
+		side: int) -> Dictionary:
+	var out := _empty("")
+	var german := 1 - side
+	var touched := 0
+	var already := 0
+	for place in ["Bergen", "Kristiansand"]:
+		var h := graph.place_hex(place)
+		if h == Vector2i.MAX:
+			(out["log"] as Array).append(
+				"Solitario AI N3 - CONTATTO: %s non e' un luogo di questa mappa." % place)
+			continue
+		for tf in state.task_forces:
+			if tf.side != german or tf.completed:
+				continue
+			if not tf.trajectory.occupies(h):
+				continue
+			# "attach to station or segment in the port hex"
+			if tf.trajectory.has_contact_at(h):
+				already += 1
+				(out["log"] as Array).append(
+					"Solitario AI N3 - CONTATTO: %s in %s ha gia' un segnalino Contatto."
+					% [tf.display_name(), place])
+				continue
+			tf.trajectory.set_contact_at(h, true)
+			touched += 1
+			(out["log"] as Array).append(
+				"Solitario AI N3 - CONTATTO: segnalino Contatto su %s in %s."
+				% [tf.display_name(), place])
+	if touched == 0 and already == 0:
+		(out["log"] as Array).append("Solitario AI N3 - CONTATTO: nessuna TF tedesca "
+			+ "in Bergen o Kristiansand, quindi nessun segnalino da attaccare.")
+	# La pagina stampa l'Incidente due volte, ed e' voluto: "Then: IC" chiude il
+	# risultato, e "If a German TF already has a Contact marker attached: IC" ne
+	# aggiunge uno per ciascuna TF che ne aveva gia' uno.
+	for _i in range(1 + already):
+		_n3_international_incident(state, out)
+	out["ok"] = true
+	out["pass_initiative"] = true
+	state.changed.emit()
+	return out
+
+
+## 'SA' - ATTACCO FURTIVO (p.26).
+##
+## E' il risultato che il commit precedente ha reso eseguibile: l'attaccante e'
+## il Sommergibile, non una Task Force, e il +3 stampato arriva davvero al tiro.
+static func _n3_sa(state: GameState, graph: MapGraph, engine: ActionEngine,
+		port_control: Dictionary, side: int) -> Dictionary:
+	var force := _n3_submarine(state, side)
+	if force.is_empty():
+		var as_sr := _n3_sr(state, graph, engine, port_control, side)
+		(as_sr["log"] as Array).push_front("Solitario AI N3 - SA: il Sommergibile "
+			+ "non e' in gioco, quindi il risultato vale come 'SR'.")
+		return as_sr
+	var targets := Stealth.targets_for(state, force)
+	if targets.is_empty():
+		var fallback := _n3_sr(state, graph, engine, port_control, side)
+		(fallback["log"] as Array).push_front("Solitario AI N3 - SA: il Sommergibile "
+			+ "non ha bersagli nel suo esagono (nessuna Stazione tedesca, e nessun "
+			+ "segmento con Informazioni o Contatto), quindi il risultato vale come 'SR'.")
+		return fallback
+	var target := targets[0]
+	for t in targets:
+		if _target_score(t) > _target_score(target):
+			target = t
+	var h := Vector2i(int(force.get("q", 0)), int(force.get("r", 0)))
+	var out := _empty("")
+	out["ok"] = true
+	out["action_key"] = "STEALTH_ATTACK"
+	out["active"] = null
+	out["active_stealth"] = force
+	out["target"] = target
+	out["target_hex"] = h
+	# "gets a +3 modifier on the Stealth Attack Table"
+	out["modifier"] = 3
+	# "British use Coordination if there is a British TF in the target hex."
+	var coordinating := _force_in_hex(state, side, h)
+	if coordinating != null:
+		out["coordinating"] = coordinating
+		(out["log"] as Array).append("Solitario AI N3 - SA: %s e' nell'esagono "
+			% coordinating.display_name() + "bersaglio e coordina l'attacco.")
+	# "After the attack the Submarine marker is removed from play"
+	out["stealth_removed_after"] = true
+	(out["log"] as Array).append(("Solitario AI N3 - SA: il Sommergibile attacca %s "
+		+ "in %s col +3 stampato; dopo l'attacco lascia il gioco e potra' tornarci "
+		+ "con un altro 'SA' o 'SR'.") % [target.display_name(), str(h)])
+	return out
+
+
+## 'SR' - RICOGNIZIONE FURTIVA (p.26).
+##
+## "It does not matter where it is": e' un PIAZZAMENTO, non un movimento, ed e'
+## anche la strada per cui il Sommergibile rimosso da un 'SA' rientra in gioco.
+static func _n3_sr(state: GameState, graph: MapGraph, engine: ActionEngine,
+		port_control: Dictionary, side: int) -> Dictionary:
+	var bergen := graph.place_hex("Bergen")
+	var german := 1 - side
+	var force := _n3_submarine(state, side)
+	# "If the Sub force is already in Bergen, treat as CONTACT instead."
+	if not force.is_empty() and bergen != Vector2i.MAX \
+			and Vector2i(int(force.get("q", 0)), int(force.get("r", 0))) == bergen:
+		var as_contact := _n3_contact(state, graph, side)
+		(as_contact["log"] as Array).push_front("Solitario AI N3 - SR: il Sommergibile "
+			+ "e' gia' in Bergen, quindi il risultato vale come CONTATTO.")
+		return as_contact
+	# "Place the Submarine stealth force in a hex with a German TF... If more
+	# than one option for placement, choose the hex nearest Bergen."
+	var best := Vector2i.MAX
+	var best_distance := 1 << 30
+	for tf in state.task_forces:
+		if tf.side != german or tf.completed:
+			continue
+		var hexes := tf.trajectory.hexes()
+		if tf.trajectory.is_station():
+			hexes = [tf.trajectory.station_hex] as Array[Vector2i]
+		for h in hexes:
+			if not Stealth.can_place_at(state, graph, port_control, side, h):
+				continue
+			var d := Hex.distance(h, bergen) if bergen != Vector2i.MAX else 0
+			if d < best_distance:
+				best_distance = d
+				best = h
+	if best == Vector2i.MAX:
+		var no := _empty("Solitario AI N3 - SR: nessun esagono con una TF tedesca "
+			+ "dove il Sommergibile possa essere piazzato; il britannico Passa.")
+		no["pass_initiative"] = true
+		return no
+	var out := _empty("")
+	if force.is_empty():
+		force = Stealth.place(state, side, Stealth.Kind.SUBMARINE, best,
+			"Sommergibile britannico rientrato in gioco con un risultato SR (p.26)")
+		(out["log"] as Array).append(
+			"Solitario AI N3 - SR: il Sommergibile rientra in gioco in %s." % str(best))
+	var recon := Stealth.recon(state, graph, port_control, force, best)
+	(out["log"] as Array).append_array(recon.get("log", []))
+	if not bool(recon.get("ok", false)):
+		(out["log"] as Array).append("Solitario AI N3 - SR: Ricognizione rifiutata (%s)."
+			% String(recon.get("reason", "")))
+	out["ok"] = true
+	out["pass_initiative"] = true
+	return out
+
+
+## 'X' - PORTARE IN BATTAGLIA (p.26).
+##
+## Il bersaglio si misura DAL SOMMERGIBILE, non dalla TF che attacca: e' la
+## clausola che rende la 'X' diversa da una caccia generica.
+static func _n3_x(state: GameState, graph: MapGraph, engine: ActionEngine,
+		side: int) -> Dictionary:
+	var out_log: Array[String] = []
+	# "Select a British TF with a BB in it. If none, create a new TF in Scapa
+	# Flow (place 2 BBs, 1BC, and 2CAs in it)."
+	var tf := _shortest_force_with_type(state, side, "BB")
+	if tf == null:
+		tf = _create_force_at(state, graph, side, "Scapa Flow",
+			["Nelson", "Rodney", "Renown", "Norfolk", "Suffolk"], false)
+		out_log.append("Solitario AI N3 - X: nessuna TF britannica con una BB, "
+			+ "quindi ne entra una nuova a Scapa Flow con 2 BB, 1 BC e 2 CA.")
+	# "First, remove all Damaged British ships from TFs (if this empties a TF,
+	# remove that TF from play)."
+	_remove_damaged_ships(state, side)
+	for loss in state.remove_eliminated_forces("Solitario AI N3 - X"):
+		out_log.append("Solitario AI N3 - X: %s resta senza navi e lascia la mappa."
+			% String(loss.get("tf_name", "Task Force")))
+	if not state.task_forces.has(tf) or tf.completed:
+		tf = _shortest_force_with_type(state, side, "BB")
+	if tf == null:
+		var no := _empty("Solitario AI N3 - X: nessuna TF britannica rimasta; Passare.")
+		(no["log"] as Array).append_array(out_log)
+		no["pass_initiative"] = true
+		return no
+	# "targeting a German TF nearest to the Submarine force (if the Submarine
+	# force is not on the map, nearest to Bergen instead)"
+	var force := _n3_submarine(state, side)
+	var origin := graph.place_hex("Bergen")
+	var origin_note := "Bergen, perche' il Sommergibile non e' sulla mappa"
+	if not force.is_empty():
+		origin = Vector2i(int(force.get("q", 0)), int(force.get("r", 0)))
+		origin_note = "il Sommergibile in %s" % str(origin)
+	var target := _nearest_enemy_to_hex(state, side, origin)
+	if target == null:
+		var none := _empty("Solitario AI N3 - X: nessuna TF tedesca da portare in "
+			+ "Battaglia; il britannico Passa.")
+		(none["log"] as Array).append_array(out_log)
+		none["pass_initiative"] = true
+		return none
+	var decision := _attack_or_route_selected(state, graph, engine, tf, target,
+		"Solitario AI N3 - X: bersaglio piu' vicino a %s" % origin_note)
+	(decision["log"] as Array).append_array(out_log)
+	# "Time Lapse: Remove segments nearest to Scapa Flow." E' la frase al
+	# contrario di tutte le altre, ed e' il motivo per cui la preferenza dello
+	# Scorrere del Tempo ha una direzione.
+	decision["time_lapse_goal"] = graph.place_hex("Scapa Flow")
+	decision["time_lapse_prefer_near"] = true
+	return decision
+
+
+## La forza Furtiva Sommergibile di una parte, o {} se non e' in gioco.
+static func _n3_submarine(state: GameState, side: int) -> Dictionary:
+	for f in Stealth.forces_of(state, side):
+		if int(f.get("kind", -1)) == Stealth.Kind.SUBMARINE:
+			return f
+	return {}
+
+
+## La TF di una parte che occupa un esagono, o null.
+static func _force_in_hex(state: GameState, side: int, h: Vector2i) -> TaskForce:
+	if h == Vector2i.MAX:
+		return null
+	for tf in state.forces_of(side):
+		if tf.trajectory.occupies(h):
+			return tf
+	return null
 
 
 static func _n4(code: String, state: GameState, graph: MapGraph,
@@ -2311,26 +2731,6 @@ static func _n2_r4(state: GameState, graph: MapGraph,
 	out["pass_initiative"] = true
 	out["log"].append_array(r1.get("log", []))
 	out["log"].append_array(r2.get("log", []))
-	return out
-
-
-static func _n3_sr(state: GameState, graph: MapGraph, side: int) -> Dictionary:
-	var target := _best_enemy_target(state, side, null)
-	if target == null:
-		var no := _empty("Solitario AI N3: Ricognizione Furtiva senza bersaglio; Passare.")
-		no["pass_initiative"] = true
-		return no
-	var h := _anchor_hex(target)
-	if target.trajectory.is_station():
-		target.trajectory.set_contact_at(h, true)
-	else:
-		var idx := target.trajectory.index_of_hex(h)
-		if idx >= 0:
-			target.trajectory.set_info(idx, true)
-	var out := _empty("Solitario AI N3: Submarine piazza Informazioni su %s in %s."
-		% [target.display_name(), str(h)])
-	out["ok"] = true
-	out["pass_initiative"] = true
 	return out
 
 

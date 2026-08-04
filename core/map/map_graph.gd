@@ -284,6 +284,27 @@ func port_hex(name: String) -> Vector2i:
 	return Vector2i.MAX
 
 
+## L'esagono di un luogo STAMPATO col suo nome: prima i porti, poi i Punti di
+## Interesse.
+##
+## Serve perche' il fascicolo nomina anche i secondi. Fascicolo p.16: un Punto
+## di Interesse "has no effect on game play, except to orient the player" - ma
+## il suo ESAGONO viene chiamato in causa, e non solo di sfuggita: N3 manda lo
+## Squadrone DD tedesco a Completare "in Kristiansand", che sull'Inserto del
+## Mare del Nord e' un Punto di Interesse e non un porto, e N1 fa posare le
+## Mine "in the hexes with Bud and Andalsnes".
+##
+## Vector2i.MAX se il nome non e' stampato su questa mappa.
+func place_hex(name: String) -> Vector2i:
+	var p := port_hex(name)
+	if p != Vector2i.MAX:
+		return p
+	for poi in points_of_interest:
+		if String(poi.get("name", "")) == name:
+			return Vector2i(int(poi.get("q", 0)), int(poi.get("r", 0)))
+	return Vector2i.MAX
+
+
 ## Tutti i porti che stanno in un esagono (piu' porti possono condividerlo:
 ## Clyde e Liverpool stanno entrambi in 15,-4).
 func ports_in(h: Vector2i) -> Array[String]:

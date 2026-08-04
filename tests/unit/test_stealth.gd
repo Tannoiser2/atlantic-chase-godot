@@ -70,13 +70,32 @@ func test_placement_restrictions() -> void:
 	false_(Stealth.can_place_at(st, graph, {}, ge, Vector2i(-99, -99)),
 		"un esagono fuori mappa no")
 	# Porto nemico: vietato. Lo stesso porto, se e' proprio, e' permesso.
+	#
+	# `port_control` contiene NOMI di parte, non interi: e' la forma che usa il
+	# Completamento, ed e' quella che arriva dagli scenari. Questo test passava
+	# un intero, e passava lo stesso perche' il codice faceva `int(valore)` -
+	# che su una stringa non protesta, torna 0, cioe' KRIEGSMARINE. Con la forma
+	# giusta il difetto e' venuto fuori: ogni porto "BOTH" o "NONE" risultava
+	# tedesco.
 	var scapa := graph.port_hex("Scapa Flow")
 	true_(scapa != Vector2i.MAX, "Scapa Flow e' sulla mappa")
-	var control := {"Scapa Flow": uk}
+	var control := {"Scapa Flow": "ROYAL_NAVY"}
 	true_(Stealth.placement_error(st, graph, control, ge, scapa).contains("nemico"),
 		"un porto nemico e' vietato")
 	eq(Stealth.placement_error(st, graph, control, uk, scapa), "",
 		"lo stesso porto, per chi lo controlla, va bene")
+	# Un porto aperto a tutti e due non e' nemico di nessuno: N3 stampa Bergen
+	# cosi', ed e' l'esagono che la sua Tabella indica di preferire.
+	var shared := {"Scapa Flow": "BOTH"}
+	eq(Stealth.placement_error(st, graph, shared, ge, scapa), "",
+		"un porto 'BOTH' e' aperto anche all'altra parte")
+	eq(Stealth.placement_error(st, graph, shared, uk, scapa), "",
+		"a tutte e due, appunto")
+	# "NONE" e' un porto chiuso: nessuno lo controlla, quindi e' nemico per
+	# entrambi.
+	var closed := {"Scapa Flow": "NONE"}
+	true_(Stealth.placement_error(st, graph, closed, uk, scapa).contains("nemico"),
+		"un porto che non controlla nessuno resta vietato")
 	# RB p.41 lo dice apposta: si PUO' stare in un esagono con una TF nemica che
 	# contiene un CV. E' il caso che uno si aspetterebbe vietato.
 	var cv := _tf(st, uk, [open_sea])

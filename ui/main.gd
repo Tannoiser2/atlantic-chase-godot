@@ -1001,6 +1001,22 @@ func _open_battle(kind_result: int, active: TaskForce, target: TaskForce,
 ## Regole solitarie generali: una TF ignota viene identificata appena un
 ## risultato trasferisce le sue navi alla Mappa di Battaglia. La scelta delle
 ## navi e' del core; qui rendiamo leggibili tiro, applicazione ed eventuale gap.
+## Mirror di `SoloRunner::_remove_stealth_after_attack`: la procedura stampata
+## puo' far uscire di scena la forza Furtiva che ha appena attaccato.
+func _remove_stealth_after_attack(decision: Dictionary,
+		dec: ActionEngine.Declaration) -> void:
+	if not bool(decision.get("stealth_removed_after", false)):
+		return
+	if dec.active_stealth.is_empty():
+		return
+	var h := Vector2i(int(dec.active_stealth.get("q", 0)),
+		int(dec.active_stealth.get("r", 0)))
+	if Stealth.remove_at(state, h, dec.acting_side()):
+		_msg("Solitario AI: la forza Furtiva %s lascia il gioco dopo l'attacco, "
+			% Stealth.kind_name(int(dec.active_stealth.get("kind", -1)))
+			+ "come prescrive la procedura.")
+
+
 func _prepare_solo_battle(active: TaskForce, target: TaskForce) -> bool:
 	if solo == null:
 		return true
@@ -1965,6 +1981,9 @@ func _resolve_solo_ai_action(decision: Dictionary) -> String:
 		if applied["battle"] != Results.Battle.NONE:
 			pending_battle = applied["battle"]
 	_report_eliminated_forces("Solitario AI - %s" % label)
+	# "After the attack ... the Submarine marker is removed from play" (N3
+	# p.26). Dopo l'applicazione dei risultati, non prima.
+	_remove_stealth_after_attack(decision, dec)
 	log.record("Solitario AI: %s" % label)
 	state.changed.emit()
 	var late_event := SoloSequence.late_event_for_action(key)

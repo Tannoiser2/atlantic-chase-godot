@@ -222,7 +222,16 @@
   "Schieramento trascritto dall'illustrazione di p.25. Dodici segmenti in due Traiettorie che salgono dai porti tedeschi e condividono la coda: (5,3) (6,2) (6,1) (6,0) (5,0) (5,-1) (5,-2) fino a Bergen, e (5,3) (6,2) (6,1) (6,0) (6,-1) fino a Kristiansand. L'assegnazione viene dal Pannello Task Force Tedesco della stessa pagina: lo slot LISCIO tiene Konigsberg, Koln e il Convoglio, quello con la BANDA BLU tiene Karlsruhe e lo Squadrone DD. Combacia con l'obiettivo stampato, che manda il Convoglio a Bergen e lo Squadrone DD a Kristiansand.",
   "Il segnalino Informazioni e' attaccato al segmento in Kristiansand, cioe' (6,-1), come prescrive la pagina: nel dato e' il campo info del segmento, non una nota.",
   "ATTENZIONE, stessa trappola di N2: su questa pagina i segmenti sono BIANCHI e la banda e' BLU, e il rilevatore automatico di tools/validate_inset_setups.py cerca bande bianche, quindi da' un risultato INVERTITO. Questa assegnazione e' letta a occhio sull'illustrazione.",
-  "LACUNA DICHIARATA: il marker Sommergibile tedesco e' fra le pedine dello scenario ma le forze Furtive permanenti non sono ancora modellate, quindi non viene schierato. Restano fuori anche la Reazione Norvegese (p.27) e i Completamenti in Norvegia. Il Convoglio tedesco e' reso con Convoy x2: la sua regola dei 4 Colpi resta nelle note."
+  "Il marker Sommergibile dell'illustrazione di p.25 e' BRITANNICO, non tedesco: la pedina porta la Union Jack, e la Tabella delle Azioni parla sempre e solo della 'British Submarine stealth force'. La sua posizione e' MISURATA con la stessa registrazione di tools/validate_inset_setups.py - l'immagine di mappa incollata sulla pagina da' la trasformazione, il reticolo di map_insets.json da' l'esagono: centro della pedina a (947.2, 612.4) px di mappa, cioe' 7.1 px dal centro di (6,-1), contro un inraggio di circa 107 px. E' l'esagono di Kristiansand, lo stesso a cui la pagina fa attaccare il segnalino Informazioni. E' schierato in 'stealth_forces', come il Sommergibile di BL3. Restano fuori la Reazione Norvegese (p.27) e i Completamenti in Norvegia. Il Convoglio tedesco e' reso con Convoy x2: la sua regola dei 4 Colpi resta nelle note."
  ],
- "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati."
+ "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati.",
+ "stealth_forces": [
+  {
+   "side": 1,
+   "kind": 1,
+   "q": 6,
+   "r": -1,
+   "note": "Sommergibile britannico, misurato sull'illustrazione di p.25 (esagono di Kristiansand)"
+  }
+ ]
 }

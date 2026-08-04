@@ -41,7 +41,7 @@ godot --path . --script res://tools/smoke_solo_flow.gd -- BL1
 godot --path . --script res://tools/smoke_inset_map.gd
 ```
 
-Baseline corrente: **3193 verifiche, 20 suite** (era 2570 su 17 prima della
+Baseline corrente: **3255 verifiche, 20 suite** (era 2570 su 17 prima della
 suite `test_replay.gd`). Il totale non puo' scendere senza una rimozione
 intenzionale di test spiegata nel commit.
 
@@ -61,7 +61,7 @@ i dieci sulla Mappa Operazionale e i cinque sugli inserti - e nessun `SALTATO`, 
 schieramento trascritto.
 
 `audit_solo.gd` verde non significa completo: al passaggio stampa 93 caselle
-uniche, 42 procedure Azione segnaposto, 2 buchi dichiarati e 0 blocchi.
+uniche, 36 procedure Azione segnaposto, 2 buchi dichiarati e 0 blocchi.
 
 Per le mappe inserto:
 
@@ -146,7 +146,8 @@ quindici `OK` e nessun `SALTATO`. Non c'e' piu' uno scenario da far partire.
 Il prossimo lavoro e' uno dei due, e sono mestieri diversi che conviene NON
 mescolare:
 
-**A. Le 42 procedure segnaposto** delle Tabelle Azione, su 93 caselle uniche.
+**A. Le 36 procedure segnaposto** delle Tabelle Azione, su 93 caselle uniche.
+Erano 42: N3 e' chiuso. Restano concentrate in N1, N2 e N5.
 E' il numero che dice quanto manca al solitario "vero": in quelle caselle il bot
 applica una policy generica invece della procedura stampata. `audit_solo.gd` le
 elenca. E' lettura del fascicolo pagina per pagina, uno o due scenari per

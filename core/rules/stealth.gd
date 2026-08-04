@@ -115,11 +115,22 @@ static func placement_error(state: GameState, graph: MapGraph,
 		port_control: Dictionary, side: int, h: Vector2i) -> String:
 	if not graph.has_hex(h):
 		return "l'esagono %s non e' sulla mappa" % str(h)
+	# "porto NEMICO", e chi controlla un porto si legge come lo legge il
+	# Completamento: `port_control` contiene NOMI di parte - "KRIEGSMARINE",
+	# "ROYAL_NAVY", "BOTH", "NONE" - non interi.
+	#
+	# Qui c'era `int(owner_v) != side`, e su una stringa `int()` non protesta:
+	# torna 0, cioe' KRIEGSMARINE. Ogni porto neutrale o condiviso risultava
+	# quindi tedesco, e a una forza Furtiva britannica veniva rifiutato. Su N3
+	# si vedeva come un Sommergibile che non poteva entrare a Bergen, che la
+	# Tabella di p.26 indica invece come l'esagono da preferire.
 	for name in graph.ports_in(h):
-		var owner_v: Variant = port_control.get(name, null)
-		if owner_v == null:
+		if not port_control.has(name):
 			continue
-		if int(owner_v) != side:
+		var control := String(port_control[name])
+		if control == "BOTH":
+			continue
+		if control == "NONE" or control != VictoryTracker.side_name(side):
 			return "%s e' un porto nemico" % name
 	for base in graph.air_bases:
 		if Vector2i(int(base.get("q", 0)), int(base.get("r", 0))) != h:

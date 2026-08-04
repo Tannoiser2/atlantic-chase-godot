@@ -91,6 +91,16 @@ func run() -> void:
 	test_solo_ai_b3_intercept_end_conditions()
 	test_b3_identify_third_column_has_three_ships()
 	test_b3_procedures_are_transcribed()
+	test_n3_procedures_are_transcribed()
+	test_n3_contact_cell_is_not_empty()
+	test_n3_contact_marks_bergen_and_kristiansand()
+	test_n3_stealth_recon_places_the_submarine_nearest_bergen()
+	test_n3_stealth_recon_in_bergen_becomes_contact()
+	test_n3_stealth_attack_uses_the_submarine_with_the_printed_bonus()
+	test_n3_stealth_attack_falls_back_to_recon()
+	test_n3_bring_on_battle_measures_from_the_submarine()
+	test_n3_trajectory_to_bergen_has_a_second_step()
+	test_n3_convoy_is_replaced_by_a_cruiser_before_battle()
 	test_b2_reinforcement_groups_match_the_printed_display()
 	test_b2_replay_reaches_three_convoys()
 	test_b2_procedures_are_transcribed()
@@ -2365,3 +2375,296 @@ func _extend_one_segment(tf: TaskForce, st: GameState) -> void:
 	for h in graph.adjacent_hexes(from):
 		if tf.trajectory.extend(h, 1, graph, st.port_hexes(), false, tf.side):
 			return
+
+
+# ------------------------------------------------------------------------ N3 --
+#
+# N3 Operazione Weser (sud), fascicolo pp.25-27 lette sulle pagine renderizzate.
+# Il giocatore e' il TEDESCO; la Tabella e' quella britannica. Le sei procedure
+# girano attorno al Sommergibile britannico, ed erano tutte approssimate: la
+# 'SA' in particolare finiva su un Attacco Furtivo dichiarato da una Task
+# Force, che RB p.41 non ammette.
+
+
+func _n3_state(seed: int) -> GameState:
+	var scenario := Scenario.load_by_id("N3 Operazione Weser (sud)")
+	var g := MapGraph.load_inset("map_north_sea")
+	var st := GameState.new(g, seed)
+	st.apply_dict(scenario.to_state_dict())
+	st.solo_end_conditions = scenario.end_conditions()
+	return st
+
+
+func test_n3_procedures_are_transcribed() -> void:
+	_begin("N3: le undici procedure sono trascritte")
+	var o := SoloOpponent.load_for("N3 Operazione Weser (sud)")
+	var placeholders := 0
+	var total := 0
+	for tid in ["actions", "identify"]:
+		var t: SoloTable = o.table(tid)
+		ne(t, null, "la tabella '%s' esiste" % tid)
+		for code_v: Variant in t.legend.keys():
+			total += 1
+			if String(t.legend[code_v]).contains("senza automatismi del motore"):
+				placeholders += 1
+	eq(total, 11, "le procedure trascritte sono undici")
+	eq(placeholders, 0, "e nessuna e' rimasta un segnaposto")
+	# La fine stampata DENTRO la 'C', che non sta nel riquadro "The End".
+	var actions: SoloTable = o.table("actions")
+	true_(String(actions.legend.get("C", "")).contains("LO SCENARIO FINISCE"),
+		"la 'C' dichiara la propria condizione di fine")
+	# Il refuso delle colonne della tabella di Identificazione resta dichiarato.
+	var identify: SoloTable = o.table("identify")
+	true_(identify.note.contains("REFUSO DEL FASCICOLO"),
+		"il refuso delle colonne '1 | 2 | 4 | 5 | 5-6' e' dichiarato, non nascosto")
+
+
+## La colonna 5 della prima riga stampa il simbolo dell'occhio, cioe' CONTATTO.
+## Nel dato era una cella VUOTA, e un codice vuoto non arriva a nessuna
+## procedura: quel risultato non si e' mai potuto verificare.
+func test_n3_contact_cell_is_not_empty() -> void:
+	_begin("N3: la cella dell'occhio e' il risultato CONTATTO, non una cella vuota")
+	var o := SoloOpponent.load_for("N3 Operazione Weser (sud)")
+	var t: SoloTable = o.table("actions")
+	var first: Dictionary = t.rows[0]
+	eq(String((first["cells"] as Array)[4]), "CONTATTO",
+		"riga '0 Completamenti', colonna 5: il risultato e' CONTATTO")
+	true_(t.legend.has("CONTATTO"), "e la procedura corrispondente esiste")
+
+
+## "Each German TF in Bergen and Kristiansand gets a Contact marker attached
+## (attach to station or segment in the port hex). Then: IC. If a German TF
+## already has a Contact marker attached: IC." (p.26)
+func test_n3_contact_marks_bergen_and_kristiansand() -> void:
+	_begin("N3 CONTATTO: i segnalini vanno in Bergen e Kristiansand")
+	var st := _n3_state(11)
+	var g := st.graph
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("N3 Operazione Weser (sud)")
+	var uk := TaskForce.Side.ROYAL_NAVY
+	var bergen := g.place_hex("Bergen")
+	var kristiansand := g.place_hex("Kristiansand")
+	ne(bergen, Vector2i.MAX, "Bergen e' un porto dell'inserto")
+	ne(kristiansand, Vector2i.MAX,
+		"Kristiansand e' un Punto di Interesse, e il suo esagono si trova lo stesso")
+
+	var marked := 0
+	for tf in st.forces_of(TaskForce.Side.KRIEGSMARINE):
+		if tf.trajectory.occupies(bergen) or tf.trajectory.occupies(kristiansand):
+			marked += 1
+	true_(marked > 0, "lo schieramento mette almeno una TF tedesca nei due esagoni")
+
+	var out := SoloAI.execute_code("CONTATTO", st, g, engine,
+		scenario.port_control(), uk)
+	true_(bool(out.get("ok", false)), "il risultato applica qualcosa")
+	var with_contact := 0
+	for tf in st.forces_of(TaskForce.Side.KRIEGSMARINE):
+		if tf.trajectory.has_contact_at(bergen) \
+				or tf.trajectory.has_contact_at(kristiansand):
+			with_contact += 1
+	eq(with_contact, marked, "ogni TF tedesca nei due esagoni ha ora il Contatto")
+	eq(int(st.solo_counters.get("n3_international_incidents", 0)), 1,
+		"e il risultato porta un Incidente Internazionale")
+
+	# Ripetuto, ogni TF che ne aveva gia' uno ne aggiunge un altro.
+	SoloAI.execute_code("CONTATTO", st, g, engine, scenario.port_control(), uk)
+	eq(int(st.solo_counters.get("n3_international_incidents", 0)), 2 + marked,
+		"la seconda volta l'Incidente e' quello del risultato piu' uno per "
+		+ "ciascuna TF che aveva gia' il Contatto")
+
+
+## "Place the Submarine stealth force in a hex with a German TF... If more than
+## one option for placement, choose the hex nearest Bergen." (p.26)
+func test_n3_stealth_recon_places_the_submarine_nearest_bergen() -> void:
+	_begin("N3 SR: il Sommergibile si piazza nell'esagono piu' vicino a Bergen")
+	var st := _n3_state(12)
+	var g := st.graph
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("N3 Operazione Weser (sud)")
+	var uk := TaskForce.Side.ROYAL_NAVY
+	var bergen := g.place_hex("Bergen")
+
+	# Lo schieramento di p.25 mette il Sommergibile britannico in (6,-1).
+	var subs := Stealth.forces_of(st, uk)
+	eq(subs.size(), 1, "lo scenario schiera una forza Furtiva britannica")
+	eq(int(subs[0].get("kind", -1)), Stealth.Kind.SUBMARINE, "ed e' un Sommergibile")
+	eq(Vector2i(int(subs[0]["q"]), int(subs[0]["r"])), Vector2i(6, -1),
+		"nell'esagono di Kristiansand, misurato sull'illustrazione")
+
+	var out := SoloAI.execute_code("SR", st, g, engine, scenario.port_control(), uk)
+	true_(bool(out.get("ok", false)), "la Ricognizione si esegue")
+	var after := Stealth.forces_of(st, uk)[0]
+	var landed := Vector2i(int(after["q"]), int(after["r"]))
+	# Deve essere finito su una TF tedesca, e fra quelle la piu' vicina a Bergen.
+	var best := 1 << 30
+	for tf in st.forces_of(TaskForce.Side.KRIEGSMARINE):
+		for h in tf.trajectory.hexes():
+			best = mini(best, Hex.distance(h, bergen))
+	eq(Hex.distance(landed, bergen), best,
+		"e finisce nell'esagono tedesco piu' vicino a Bergen")
+
+
+## "If the Sub force is already in Bergen, treat as CONTACT instead." (p.26)
+func test_n3_stealth_recon_in_bergen_becomes_contact() -> void:
+	_begin("N3 SR: col Sommergibile gia' in Bergen il risultato diventa CONTATTO")
+	var st := _n3_state(13)
+	var g := st.graph
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("N3 Operazione Weser (sud)")
+	var uk := TaskForce.Side.ROYAL_NAVY
+	var bergen := g.place_hex("Bergen")
+	var force := Stealth.forces_of(st, uk)[0]
+	force["q"] = bergen.x
+	force["r"] = bergen.y
+
+	var out := SoloAI.execute_code("SR", st, g, engine, scenario.port_control(), uk)
+	true_(_solo_ai_log_contains(out, "vale come CONTATTO"),
+		"il rimando stampato e' applicato e dichiarato")
+	true_(int(st.solo_counters.get("n3_international_incidents", 0)) >= 1,
+		"e con lui arriva l'Incidente Internazionale del CONTATTO")
+
+
+## "Select the British Submarine stealth force. If not in play, treat as 'SR'
+## result instead." + "gets a +3 modifier on the Stealth Attack Table" (p.26)
+func test_n3_stealth_attack_uses_the_submarine_with_the_printed_bonus() -> void:
+	_begin("N3 SA: attacca il Sommergibile, col +3 stampato")
+	var st := _n3_state(14)
+	var g := st.graph
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("N3 Operazione Weser (sud)")
+	var uk := TaskForce.Side.ROYAL_NAVY
+	var force := Stealth.forces_of(st, uk)[0]
+	var h := Vector2i(int(force["q"]), int(force["r"]))
+
+	# Il segmento tedesco in Kristiansand ha il segnalino Informazioni previsto
+	# dalla pagina, quindi e' un bersaglio legale (RB p.41).
+	var targets := Stealth.targets_for(st, force)
+	true_(targets.size() > 0,
+		"il Sommergibile ha un bersaglio: il segmento con le Informazioni di p.25")
+
+	var out := SoloAI.execute_code("SA", st, g, engine, scenario.port_control(), uk)
+	eq(String(out.get("action_key", "")), "STEALTH_ATTACK", "dichiara l'Attacco Furtivo")
+	true_(out.get("active", null) == null,
+		"e non ha nessuna TF Attiva: l'attaccante e' la forza Furtiva")
+	eq(int(out.get("modifier", 0)), 3, "col +3 stampato dalla procedura")
+	eq(Vector2i(int((out["active_stealth"] as Dictionary)["q"]),
+		int((out["active_stealth"] as Dictionary)["r"])), h,
+		"e la forza designata e' proprio il Sommergibile")
+	true_(bool(out.get("stealth_removed_after", false)),
+		"dopo l'attacco il segnalino lascia il gioco, come prescritto")
+
+	# La dichiarazione che ne esce dev'essere legale per il motore.
+	var dec := SoloSequence.declaration_for(out)
+	ne(dec, null, "la dichiarazione si costruisce")
+	eq(engine.legality_error(dec, st), "", "ed e' legale")
+	eq(dec.modifier, 3, "col modificatore che arriva fino al tiro")
+
+
+## "If not in play, treat as 'SR' result instead." e "If it does not have a
+## target in its hex... treat as 'SR' result instead." (p.26)
+func test_n3_stealth_attack_falls_back_to_recon() -> void:
+	_begin("N3 SA: senza Sommergibile o senza bersaglio diventa 'SR'")
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("N3 Operazione Weser (sud)")
+	var uk := TaskForce.Side.ROYAL_NAVY
+
+	var st := _n3_state(15)
+	st.stealth_forces.clear()
+	var out := SoloAI.execute_code("SA", st, st.graph, engine,
+		scenario.port_control(), uk)
+	true_(_solo_ai_log_contains(out, "non e' in gioco, quindi il risultato vale come 'SR'"),
+		"senza Sommergibile in gioco si applica la 'SR'")
+	eq(Stealth.forces_of(st, uk).size(), 1,
+		"e la 'SR' lo rimette in gioco, che e' la strada stampata per farlo tornare")
+
+	# Senza bersaglio: si sposta il Sommergibile in un esagono vuoto.
+	var st2 := _n3_state(16)
+	var force: Dictionary = Stealth.forces_of(st2, uk)[0]
+	force["q"] = 1
+	force["r"] = 0
+	eq(Stealth.targets_for(st2, force).size(), 0, "li' non ha bersagli")
+	var out2 := SoloAI.execute_code("SA", st2, st2.graph, engine,
+		scenario.port_control(), uk)
+	true_(_solo_ai_log_contains(out2, "non ha bersagli nel suo esagono"),
+		"e il rimando alla 'SR' e' dichiarato col motivo stampato")
+
+
+## "targeting a German TF nearest to the Submarine force (if the Submarine
+## force is not on the map, nearest to Bergen instead)" e "Time Lapse: Remove
+## segments nearest to Scapa Flow." (p.26)
+func test_n3_bring_on_battle_measures_from_the_submarine() -> void:
+	_begin("N3 X: il bersaglio si misura dal Sommergibile, non dalla TF che attacca")
+	var st := _n3_state(17)
+	var g := st.graph
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("N3 Operazione Weser (sud)")
+	var uk := TaskForce.Side.ROYAL_NAVY
+
+	var out := SoloAI.execute_code("X", st, g, engine, scenario.port_control(), uk)
+	true_(_solo_ai_log_contains(out, "il Sommergibile in"),
+		"col Sommergibile sulla mappa, la distanza si misura da lui")
+	eq(out.get("time_lapse_goal", Vector2i.MAX), g.place_hex("Scapa Flow"),
+		"e lo Scorrere del Tempo guarda Scapa Flow")
+	true_(bool(out.get("time_lapse_prefer_near", false)),
+		"togliendo i segmenti piu' VICINI, che e' la frase al contrario di tutte le altre")
+
+	# Senza Sommergibile la procedura misura da Bergen.
+	var st2 := _n3_state(18)
+	st2.stealth_forces.clear()
+	var out2 := SoloAI.execute_code("X", st2, st2.graph, engine,
+		scenario.port_control(), uk)
+	true_(_solo_ai_log_contains(out2, "Bergen, perche' il Sommergibile non e' sulla mappa"),
+		"senza Sommergibile si misura da Bergen, come stampato")
+
+
+## 'B' passo 2 (p.26): dopo la Traiettoria la procedura NON puo' tracciarne
+## un'altra. E' la trappola gia' pagata su BL2, dove la stessa TF disegnava due
+## rotte consecutive.
+func test_n3_trajectory_to_bergen_has_a_second_step() -> void:
+	_begin("N3 B: il passo 2 continua la procedura senza una seconda Traiettoria")
+	var st := _n3_state(19)
+	var g := st.graph
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("N3 Operazione Weser (sud)")
+	var uk := TaskForce.Side.ROYAL_NAVY
+
+	var out := SoloAI.execute_code("B", st, g, engine, scenario.port_control(), uk)
+	# Senza TF britanniche in gioco ne entra una non identificata a Methil.
+	true_(_solo_ai_log_contains(out, "Methil"),
+		"senza TF britanniche ne entra una non identificata a Methil")
+	eq(String((out.get("follow_up", {}) as Dictionary).get("kind", "")), "n3_b_step2",
+		"e la procedura prescrive il proprio passo 2")
+
+	var next := SoloAI.continue_follow_up(out, st, g, engine,
+		scenario.port_control(), uk)
+	ne(String(next.get("turn_kind", "")), "trajectory",
+		"il passo 2 non e' una seconda azione Traiettoria")
+
+
+## "if the selected TF has a Convoy or damaged ship, replace Convoy/damaged
+## ship with a CA" (p.26). E' una sostituzione vera: se restasse una nota, il
+## Convoglio finirebbe in Battaglia proprio dove la procedura dice che non c'e'.
+func test_n3_convoy_is_replaced_by_a_cruiser_before_battle() -> void:
+	_begin("N3 B: il Convoglio esce dalla TF e al suo posto entra un CA")
+	var st := _n3_state(20)
+	var g := st.graph
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("N3 Operazione Weser (sud)")
+	var uk := TaskForce.Side.ROYAL_NAVY
+	var german := st.forces_of(TaskForce.Side.KRIEGSMARINE)[0]
+	var h := german.trajectory.end_hex(0)
+
+	# Una TF britannica con un Convoglio, nello stesso esagono di una tedesca.
+	var tf := TaskForce.new(90, uk)
+	tf.ships.append(ShipRoster.shared().make("Convoy x3"))
+	tf.trajectory.become_station(h)
+	st.add_task_force(tf)
+	true_(tf.ships.any(func(s: Ship) -> bool: return s.kind == Ship.Kind.CONVOY),
+		"la TF parte con un Convoglio")
+
+	SoloAI.continue_follow_up({"follow_up": {"kind": "n3_b_step2"}, "active": tf},
+		st, g, engine, scenario.port_control(), uk)
+	false_(tf.ships.any(func(s: Ship) -> bool: return s.kind == Ship.Kind.CONVOY),
+		"dopo il passo 2 il Convoglio non c'e' piu'")
+	true_(tf.ships.any(func(s: Ship) -> bool: return s.type_code == "CA"),
+		"e al suo posto c'e' un CA, come stampato")

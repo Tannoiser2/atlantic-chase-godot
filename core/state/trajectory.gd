@@ -193,6 +193,18 @@ func index_of_hex(h: Vector2i) -> int:
 	return -1
 
 
+## C'e' gia' un Contatto sul segmento (o sulla Stazione) in quell'esagono?
+##
+## Serve alle procedure che distinguono il primo Contatto dai successivi: N3
+## p.26 fa una cosa quando ne attacca uno e un'altra "if a German TF already
+## has a Contact marker attached".
+func has_contact_at(h: Vector2i) -> bool:
+	if is_station():
+		return station_hex == h and station_contact
+	var i := index_of_hex(h)
+	return i >= 0 and bool(segments[i].get("contact", false))
+
+
 ## Assegna Contatto al segmento (o alla Stazione) nell'esagono. RB p.23:
 ## uno solo per segmento/Stazione.
 func set_contact_at(h: Vector2i, value: bool) -> bool:

@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **3193 verifiche, 20 suite, headless.**
+Tutti i test passano: **3255 verifiche, 20 suite, headless.**
 
 ---
 
@@ -171,11 +171,57 @@ Tutti i test passano: **3193 verifiche, 20 suite, headless.**
   Mappa Operazionale sbagliata;
 - riepilogo persistente nel pannello di stato e procedura espandibile nel log
   mostrano tabella, tiro, TF scelta, bersaglio, risultato e ragione della policy;
-- `tools/audit_solo.gd`: 93 caselle azione, 0 blocchi, 82 testi segnaposto e 2
-  buchi dichiarati (Mine N2, Mine/Base Aerea N4).
+- `tools/audit_solo.gd`: 93 caselle azione, 0 blocchi, 36 testi segnaposto
+  nelle Tabelle Azioni e 2 buchi dichiarati (Mine N2, Mine/Base Aerea N4).
 | **M11** Effetti di Battaglia | ✅ **completo** | Suoni sintetizzati, vampe, traccianti, schizzi, esplosioni, incendi, siluri, affondamenti |
 
-### Cosa e' cambiato nell'ultima sessione (milestone R0)
+### Cosa e' cambiato nell'ultima sessione (procedure N3)
+
+- **L'Attacco Furtivo lo esegue la forza Furtiva, non una Task Force.** Il
+  difetto stava scritto in un registro BL2 e nessuno lo aveva letto: "Attacco
+  Furtivo -> Totale Traiettoria 2". RB p.41 da' alla forza Furtiva una
+  Traiettoria di ZERO, quindi quel 2 diceva che l'azione la stava dichiarando
+  una Task Force. Era anche l'unica strada possibile, perche' `ActionEngine`
+  rifiutava qualunque dichiarazione senza TF Attiva. Ora `Declaration` ha
+  `active_stealth`, la legalita' chiama `Stealth.attack_error` invece di
+  riscriverla, e il Totale Traiettoria viene giusto da solo perche'
+  `to_designations()` conta zero per un'Attiva assente.
+- **Le undici procedure di N3 sono trascritte e implementate** dalle pagine
+  renderizzate (pp.25-27). Girano tutte attorno al Sommergibile britannico:
+  'SA' lo fa attaccare col +3 stampato, 'SR' lo piazza nell'esagono con una TF
+  tedesca piu' vicino a Bergen (ed e' la strada per cui rientra dopo un 'SA'),
+  'X' misura la distanza dei bersagli DA LUI. La 'B' e' in due passi, e il
+  secondo non puo' tracciare una seconda Traiettoria: e' la trappola gia'
+  pagata su BL2.
+- **La cella dell'occhio era vuota.** La colonna 5 della prima riga della
+  Tabella di Azione Britannica stampa il simbolo del CONTATTO; nel dato era una
+  stringa vuota, e un codice vuoto non arriva a nessuna procedura. Quel
+  risultato non si e' mai potuto verificare in nessuna partita di N3.
+- **Il Sommergibile di N3 e' BRITANNICO, e il suo esagono si misura.** La nota
+  di schieramento lo diceva tedesco e "senza esagono noto"; la pedina
+  sull'illustrazione di p.25 porta la Union Jack, e la Tabella parla sempre e
+  solo della "British Submarine stealth force". La posizione e' stata misurata
+  con la registrazione che `validate_inset_setups.py` usa gia' per i segmenti:
+  centro della pedina a 7.1 px dal centro di **(6,-1)**, l'esagono di
+  Kristiansand, contro un inraggio di circa 107 px.
+- **`Stealth.placement_error` leggeva `port_control` con `int()`.** Su una
+  stringa `int()` non protesta: torna 0, cioe' KRIEGSMARINE. Ogni porto "BOTH"
+  o "NONE" risultava quindi tedesco, e a una forza Furtiva britannica veniva
+  rifiutato Bergen - proprio l'esagono che la procedura 'SR' di N3 dice di
+  preferire. Il test che avrebbe dovuto prenderlo passava un intero, cioe'
+  ripeteva l'errore del codice.
+- **La preferenza dello Scorrere del Tempo e' una regola sola.** Il conto era
+  scritto due volte, identico, in `SoloRunner` e in `ui/main.gd`, e conosceva
+  solo "rimuovi i segmenti piu' LONTANI da X". La 'X' di N3 stampa "nearest to
+  Scapa Flow", che e' la stessa frase al contrario: ora sta in
+  `SoloSequence.time_lapse_preference` e le due copie non possono divergere.
+- **Un refuso del fascicolo, dichiarato invece di tappato.** Le cinque colonne
+  della tabella di Identificazione di N3 sono intestate `1 | 2 | 4 | 5 | 5-6`:
+  manca la 3 e il 5 compare due volte. Su 1d6 l'unica lettura che copre tutte e
+  sei le facce e' `1 / 2 / 3 / 4 / 5-6`, ed e' quella usata; la faccia 3 resta
+  l'unica non verificabile sullo stampato, e il dato lo dice.
+
+### Cosa e' cambiato nella sessione precedente (milestone R0)
 
 - **Gli scenari solitari si giocano per intero senza interfaccia.**
   `core/rules/solo_runner.gd` e' `RefCounted` puro e percorre il ciclo

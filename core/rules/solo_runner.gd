@@ -405,6 +405,10 @@ func _resolve_bot_action(decision: Dictionary) -> void:
 		if applied["battle"] != Results.Battle.NONE:
 			pending = applied["battle"]
 	_report_eliminated("BOT - %s" % label)
+	# "After the attack ... the Submarine marker is removed from play"
+	# (N3 p.26). Dopo l'applicazione dei risultati, non prima: mentre si
+	# risolvono, l'attaccante dev'essere ancora nel suo esagono.
+	_remove_stealth_after_attack(decision, dec)
 	var late_event := SoloSequence.late_event_for_action(key)
 	if late_event != "":
 		_maybe_go_late(late_event, "il bot ha eseguito %s" % label)
@@ -1328,6 +1332,24 @@ func _bl2_neutral_incident(key: String, active: TaskForce,
 
 ## Identificazione automatica prima della Mappa di Battaglia (regola solitaria
 ## generale). False = la Battaglia non si apre, e va detto perche'.
+## Una procedura puo' prescrivere che la forza Furtiva lasci il gioco dopo aver
+## attaccato: N3 p.26 lo fa per il Sommergibile britannico, che potra' tornare
+## con un altro 'SA' o 'SR'. La condizione sta nella decisione, non qui: e' la
+## procedura stampata a stabilirla, non una regola generale delle forze Furtive.
+func _remove_stealth_after_attack(decision: Dictionary,
+		dec: ActionEngine.Declaration) -> void:
+	if not bool(decision.get("stealth_removed_after", false)):
+		return
+	if dec.active_stealth.is_empty():
+		return
+	var h := Vector2i(int(dec.active_stealth.get("q", 0)),
+		int(dec.active_stealth.get("r", 0)))
+	if Stealth.remove_at(state, h, dec.acting_side()):
+		_line("BOT   la forza Furtiva %s lascia il gioco dopo l'attacco, come "
+			% Stealth.kind_name(int(dec.active_stealth.get("kind", -1)))
+			+ "prescrive la procedura.")
+
+
 func _prepare_battle(active: TaskForce, target: TaskForce) -> bool:
 	for tf_v: Variant in [active, target]:
 		var tf: TaskForce = tf_v

@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Baseline: **3193 verifiche su 20 suite**, tutte verdi. Replay solitario:
+Baseline: **3255 verifiche su 20 suite**, tutte verdi. Replay solitario:
 **quindici `OK`** su quindici scenari, nessuno saltato.
 
 Questo e' il backlog autorevole. `STATO.md` contiene anche una lunga cronologia:
@@ -30,7 +30,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 | Battaglia avanzata | 🟡 | mancano quattro scelte interattive e MS12 |
 | Salvataggio, undo, ricarica | 🟢 | ogni stato persistente ha il suo test |
 | **15 scenari solitari** | 🟡 | **tutti giocabili e tutti chiudono su una fine stampata**; restano procedure segnaposto |
-| Tabelle Azione solitarie | 🟡 | 42 procedure ancora segnaposto su 93 caselle |
+| Tabelle Azione solitarie | 🟡 | 36 procedure ancora segnaposto su 93 caselle (N3 chiuso) |
 | Forze Furtive (Mine, Sub, U-Boat) | 🟡 | nucleo di regole e posa Mine fatti; manca l'azione che le innesca |
 | Basi aeree | 🟡 | dato completo sugli inserti; nessuna sulla mappa grande, e non giocano |
 | Comandanti | 🟡 | testi trascritti; Forbes e Marschall non automatizzati |
@@ -63,10 +63,10 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 
 ## Che cosa e' DA RIFINIRE 🟡
 
-- **42 procedure delle Tabelle Azione sono segnaposto** su 93 caselle uniche.
-  E' il numero che dice quanto manca al solitario "vero": lo scenario gira, ma
-  in quelle caselle il bot applica una policy generica invece della procedura
-  stampata. `audit_solo.gd` le elenca.
+- **36 procedure delle Tabelle Azione sono segnaposto** su 93 caselle uniche
+  (erano 42; N3 e' chiuso). E' il numero che dice quanto manca al solitario
+  "vero": lo scenario gira, ma in quelle caselle il bot applica una policy
+  generica invece della procedura stampata. `audit_solo.gd` le elenca.
 - **Forze Furtive**: il Completamento in Norvegia c'e' (`core/rules/norway.gd`)
   e la posa delle Mine anche, ma non sono ancora COLLEGATI al ciclo di gioco -
   ne' `SoloRunner` ne' la GUI offrono l'azione. Manca anche il collegamento
@@ -196,7 +196,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 3193 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 3255 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
@@ -257,7 +257,7 @@ davvero la procedura del fascicolo invece di una policy generica.
 | BL3 Raiders of the North Sea | Inserto Nord | 🟡 | Sommergibile schierato ma non giocabile; Limiti di Classe |
 | N1 Operazione Wilfred | Inserto Norvegia | 🟡 | le Mine sono l'OBIETTIVO: manca il Completamento in Norvegia |
 | N2 Operazione Weser (nord) | Inserto Norvegia | 🟡 | Reazione Norvegese; Completamenti in Norvegia |
-| N3 Operazione Weser (sud) | Inserto Nord | 🟡 | come N2, piu' il Sommergibile tedesco senza esagono |
+| N3 Operazione Weser (sud) | Inserto Nord | 🟢 | undici procedure trascritte e implementate; resta la Reazione Norvegese |
 | N4 Operazione Weser (nord & sud) | Operazionale | 🟡 | Mine, basi aeree, "Urgenza" |
 | N5 Meglio Tardi che Mai | Inserto Norvegia | 🟡 | Punti Rinforzo; due CA "any"; organizzazione TF di ripiego |
 | N6 Il Dilemma delle Operazioni | Operazionale | 🟡 | procedure segnaposto |
@@ -499,7 +499,34 @@ davvero la procedura del fascicolo invece di una policy generica.
   Azioni, Identificazione, porti, reazioni e setup.
 - [ ] **N2 Operazione Weser (nord)**: 26 procedure testuali; modellare Mine o
   mantenere il buco esplicito finche' dati e pedine non sono verificati.
-- [ ] **N3 Operazione Weser (sud)**: 11 procedure testuali.
+- [x] **N3 Operazione Weser (sud)**: le undici procedure sono trascritte dalle
+  pagine renderizzate (pp.25-27) **e implementate**, non piu' approssimate. Le
+  sei della Tabella di Azione Britannica girano tutte attorno al Sommergibile
+  britannico: 'SA' lo fa attaccare col +3 stampato, 'SR' lo piazza (ed e' la
+  strada per cui rientra dopo un 'SA'), 'X' misura la distanza dei bersagli DA
+  LUI. Quattro difetti veri trovati per strada:
+  la cella della colonna 5 della prima riga era **vuota** nel dato, mentre la
+  pagina ci stampa il simbolo dell'occhio, cioe' il risultato CONTATTO - quel
+  risultato non si e' mai potuto verificare;
+  il marker Sommergibile dell'illustrazione e' **britannico**, non tedesco come
+  diceva la nota di schieramento (la pedina porta la Union Jack, e la Tabella
+  parla sempre di "the British Submarine stealth force"), e il suo esagono non
+  era ignoto: e' **(6,-1)**, misurato con la registrazione di
+  `validate_inset_setups.py` - 7.1 px dal centro, contro un inraggio di ~107;
+  la 'C' porta una **fine stampata** che non sta nel riquadro "The End" (senza
+  TF britanniche e senza Attacco Aereo possibile, se il Convoglio e lo Squadrone
+  DD tedeschi hanno consegnato in Norvegia lo scenario finisce);
+  `Stealth.placement_error` leggeva `port_control` con `int()`, che su una
+  stringa torna 0 senza protestare, quindi **ogni porto "BOTH" o "NONE"
+  risultava tedesco** e a una forza Furtiva britannica veniva rifiutato Bergen -
+  proprio l'esagono che la 'SR' dice di preferire.
+  **RESTA DICHIARATO** un refuso del fascicolo: le cinque colonne della tabella
+  di Identificazione sono intestate `1 | 2 | 4 | 5 | 5-6`, cioe' manca la 3 e il
+  5 compare due volte. Su 1d6 l'unica lettura che copre tutte e sei le facce e'
+  `1 / 2 / 3 / 4 / 5-6`, ed e' quella usata; la faccia 3 resta l'unica non
+  verificabile sullo stampato. **Restano** la Reazione Norvegese di p.27 - la
+  tabella e' trascritta, il tiro dentro il ciclo di N3 no - e i Completamenti in
+  Norvegia.
 - [ ] **N4 Operazione Weser (nord & sud)**: tabella e modificatori gia'
   coincidevano col fascicolo; le sei procedure sono ora trascritte per esteso e
   la **Tabella della Reazione Norvegese (p.30) e' stata aggiunta**, prima
