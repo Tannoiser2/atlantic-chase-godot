@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Baseline: **3165 verifiche su 20 suite**, tutte verdi. Replay solitario:
+Baseline: **3172 verifiche su 20 suite**, tutte verdi. Replay solitario:
 **quindici `OK`** su quindici scenari, nessuno saltato.
 
 Questo e' il backlog autorevole. `STATO.md` contiene anche una lunga cronologia:
@@ -139,6 +139,10 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
       runner.answer(indice)           # GUI: dopo await Choice.ask. Replay: subito
   ```
   Nessuna coroutine da nessuna parte, e il replay resta sincrono.
+  **Chi risponde e' gia' iniettabile** (`runner.answerer`), ed e' la stessa
+  forma che avra' `answer()`: un test sostituisce il rispondente e la
+  trascrizione cambia, che e' la prova che la cucitura non e' decorativa. Il
+  ciclo regge anche una risposta fuori elenco invece di rompersi.
   **Il progetto per il resto**:
   1. `SoloRunner` diventa una MACCHINA A PASSI invece di un ciclo: un
      `step()` che ritorna o un risultato o una DOMANDA (quale porto, quale
@@ -185,7 +189,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 3165 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 3172 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne

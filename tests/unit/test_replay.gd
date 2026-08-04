@@ -68,6 +68,7 @@ func run() -> void:
 	test_start_counters_survive_setup_and_reload()
 	test_player_policy_order_is_explicit()
 	test_choices_go_through_an_explicit_question()
+	test_a_different_answerer_changes_the_game()
 
 
 ## Il conto delle verifiche di ogni suite e' fisso (`EXPECTED` in
@@ -951,3 +952,49 @@ func test_choices_go_through_an_explicit_question() -> void:
 	eq(runner.ask_choice("prova", three, 9), 2,
 		"e un preferito fuori elenco viene riportato dentro, non fa saltare tutto")
 	eq(runner.ask_choice("prova", three, -3), 0, "anche da sotto")
+
+
+## La cucitura non e' decorativa: chi risponde si puo' sostituire, e la partita
+## cambia. Senza questa prova, `ask_choice` potrebbe essere un giro a vuoto e i
+## test precedenti non se ne accorgerebbero.
+##
+## E' anche la forma che avra' `answer()` quando il ciclo diventera' una
+## macchina a passi: la GUI rispondera' cosi', dopo aver chiesto all'umano.
+func test_a_different_answerer_changes_the_game() -> void:
+	_begin("sostituire chi risponde cambia la partita")
+	var asked: Array[String] = []
+	var base := SoloRunner.new()
+	true_(base.load_scenario(BL2, BL2_SEED), "scenario caricato: %s" % base.load_error)
+	base.answerer = func(q: String, _o: Array, p: int) -> int:
+		asked.append(q)
+		return p
+	var plain := base.run()
+	true_(asked.size() > 0, "il ciclo ha davvero posto delle domande (%d)" % asked.size())
+	true_(bool(plain["ended"]), "e la partita e' finita")
+
+	# Stessa partita, stesso seme, ma chi risponde prende l'ULTIMA opzione
+	# invece della preferita. Se la cucitura conta, la trascrizione cambia.
+	var other := SoloRunner.new()
+	true_(other.load_scenario(BL2, BL2_SEED), "secondo scenario caricato")
+	other.answerer = func(_q: String, o: Array, _p: int) -> int:
+		return o.size() - 1
+	var flipped := other.run()
+	var a: Array = plain["transcript"]
+	var b: Array = flipped["transcript"]
+	var same := a.size() == b.size()
+	if same:
+		for i in a.size():
+			if String(a[i]) != String(b[i]):
+				same = false
+				break
+	false_(same, "la trascrizione e' diversa: le risposte contano davvero")
+
+	# E il ciclo regge una risposta sbagliata invece di rompersi: un indice
+	# fuori elenco viene riportato dentro.
+	var rude := SoloRunner.new()
+	true_(rude.load_scenario(BL2, BL2_SEED), "terzo scenario caricato")
+	rude.answerer = func(_q: String, _o: Array, _p: int) -> int:
+		return 9999
+	var survived := rude.run()
+	true_(bool(survived["ended"]) or String(survived["stopped"]) != "",
+		"con risposte fuori elenco il ciclo arriva comunque a una fine")

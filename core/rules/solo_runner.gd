@@ -611,11 +611,30 @@ func _player_reinforce() -> bool:
 ##
 ## Ritorna l'INDICE scelto. Non puo' rifiutare: rifiutare e' una decisione della
 ## sequenza, non della scelta, e sta nei passi della policy.
-func ask_choice(_question: String, options: Array[String],
+## Chi risponde alle domande, se qualcuno e' stato messo. Riceve
+## (domanda, opzioni, preferito) e ritorna l'indice. Vuoto = risponde la policy
+## harness accettando il preferito.
+##
+## E' la forma che avra' `answer()` nella macchina a passi: gia' adesso permette
+## a un test di forzare una strada diversa e vedere la partita cambiare, che e'
+## l'unico modo di sapere che la cucitura non e' decorativa.
+var answerer: Callable = Callable()
+
+
+func ask_choice(question: String, options: Array[String],
 		preferred: int = 0) -> int:
 	if options.is_empty():
 		return -1
-	return clampi(preferred, 0, options.size() - 1)
+	var fallback := clampi(preferred, 0, options.size() - 1)
+	if not answerer.is_valid():
+		return fallback
+	var given: Variant = answerer.call(question, options, fallback)
+	if typeof(given) != TYPE_INT:
+		return fallback
+	# Una risposta fuori elenco non fa saltare la partita: si riporta dentro e
+	# si tira avanti. Un guidatore che sbaglia indice e' un difetto suo, non un
+	# motivo per fermare il ciclo a meta'.
+	return clampi(int(given), 0, options.size() - 1)
 
 
 ## L'ordine in cui il giocatore simulato prova le sue azioni.
