@@ -122,10 +122,29 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
   L'attacco in particolare non esce piu' al primo candidato legale: li raccoglie
   tutti in ordine di preferenza e poi sceglie, che e' la forma di cui la GUI ha
   bisogno per mostrarli.
-  **Il progetto per il resto**, che non e' "spostare del codice":
+  **PASSO 4: l'ereditarieta' NON funziona, ed e' stato verificato.** L'idea era
+  che la GUI ereditasse `SoloRunner` e ridefinisse `ask_choice` con un
+  `await Choice.ask`. GDScript lo rifiuta a compile-time: "Function is a
+  coroutine, so it must be called with await". Basta un `await` dentro
+  `ask_choice` per rendere coroutine ogni chiamante - `_run_player_step`,
+  `_player_turn`, `run()` - e con loro `tools/replay_solo.gd` e la harness dei
+  test, che sono sincroni. Il costo non e' la GUI: e' rendere coroutine tutto
+  il collaudo.
+  **La forma giusta e' quella INVERTITA**, e la verifica lo dimostra: non un
+  metodo virtuale che sospende, ma una macchina a passi che RITORNA la domanda
+  e viene ripresa con la risposta.
+  ```
+  var q := runner.step()              # {"kind": "question", ...} oppure {"kind": "done"}
+  if q["kind"] == "question":
+      runner.answer(indice)           # GUI: dopo await Choice.ask. Replay: subito
+  ```
+  Nessuna coroutine da nessuna parte, e il replay resta sincrono.
+  **Il progetto per il resto**:
   1. `SoloRunner` diventa una MACCHINA A PASSI invece di un ciclo: un
      `step()` che ritorna o un risultato o una DOMANDA (quale porto, quale
-     bersaglio, quale segmento togliere).
+     bersaglio, quale segmento togliere), e un `answer()` che la riprende. E'
+     il pezzo grosso: il ciclo va spezzato in stati ripartibili, perche' oggi
+     `_player_turn()` va da cima a fondo in una chiamata sola.
   2. Chi lo guida risponde alle domande. Il replay risponde con la policy
      harness - le righe marcate `GIOCATORE (policy harness)` sono gia' quello -
      la GUI risponde con `await Choice.ask` e i clic sulla mappa.
