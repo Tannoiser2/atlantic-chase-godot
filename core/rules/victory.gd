@@ -338,11 +338,37 @@ func debriefing_row(score: float) -> Dictionary:
 ##     "tie": bool, "tiebreak_text": String, "resolved": bool }
 ## `resolved` false significa che l'ultima parola spetta ai giocatori: parita'
 ## da sciogliere a mano, scenario a condizioni, oppure debriefing.
+## I punti che vengono dalle righe manuali SPUNTATE dal giocatore, per parte.
+##
+## Una riga manuale non spuntata vale zero, ma non e' la stessa cosa di una
+## riga falsa: il pannello del Debriefing conta anche quante ne restano da
+## guardare, cosi' un punteggio incompleto si vede invece di sembrare finito.
+func manual_claimed_points(state: GameState, side: int) -> float:
+	var total := 0.0
+	for a in manual_awards():
+		if int(a["side"]) != side:
+			continue
+		if state.manual_awards_claimed.has(String(a["label"])):
+			total += float(a["points"])
+	return total
+
+
+func manual_pending_count(state: GameState) -> int:
+	var n := 0
+	for a in manual_awards():
+		if not state.manual_awards_claimed.has(String(a["label"])):
+			n += 1
+	return n
+
+
 func outcome(state: GameState) -> Dictionary:
-	var km := state.vp_of(TaskForce.Side.KRIEGSMARINE)
-	var rn := state.vp_of(TaskForce.Side.ROYAL_NAVY)
+	var km := state.vp_of(TaskForce.Side.KRIEGSMARINE) \
+		+ manual_claimed_points(state, TaskForce.Side.KRIEGSMARINE)
+	var rn := state.vp_of(TaskForce.Side.ROYAL_NAVY) \
+		+ manual_claimed_points(state, TaskForce.Side.ROYAL_NAVY)
 	var out := {"mode": mode, "km": km, "rn": rn,
 		"tie": is_equal_approx(km, rn), "resolved": true, "winner": -1,
+		"manual_pending": manual_pending_count(state),
 		"tiebreak_text": String(tiebreak.get("condition", ""))}
 	if mode == Mode.OBJECTIVES:
 		# non c'e' un punteggio da confrontare: ci sono quattro caselle e i
@@ -355,7 +381,7 @@ func outcome(state: GameState) -> Dictionary:
 		# nel solitario non c'e' un vincitore: c'e' un punteggio e una riga
 		out["tie"] = false
 		out["winner"] = -1
-		out["score"] = state.vp_of(solo_side)
+		out["score"] = state.vp_of(solo_side) + manual_claimed_points(state, solo_side)
 		var row := debriefing_row(float(out["score"]))
 		out["row"] = row
 		out["resolved"] = not row.is_empty()

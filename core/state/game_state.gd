@@ -127,6 +127,20 @@ var solo_end_reason: String = ""
 ## una partita ripresa deve finire quando finiva prima.
 var solo_end_conditions: Dictionary = {}
 
+## I premi di vittoria MANUALI che il giocatore ha spuntato, per etichetta.
+##
+## Alcune righe delle tabelle di Esito il motore non puo' valutarle da solo -
+## "le Mine sono state posate", "il marcatore Base Aerea e' sulla mappa", "la TF
+## dell'Hipper ha eseguito un'azione Traiettoria", la zona di sicurezza USA - e
+## finora venivano soltanto ELENCATE: il giocatore le leggeva e faceva la somma
+## a mente. Adesso le spunta, e la spunta e' stato di gioco come ogni altro:
+## deve sopravvivere al salvataggio, se no il Debriefing di una partita ripresa
+## darebbe un punteggio diverso.
+##
+## Una riga non spuntata resta DIVERSA da una riga falsa: qui c'e' solo cio' che
+## il giocatore ha affermato, e il pannello dice quante ne restano da guardare.
+var manual_awards_claimed: Array[String] = []
+
 ## La facolta' di piazzare un segnalino Informazioni una volta per
 ## scenario: B-Dienst in BL1, Bletchley Park in A1. Vuoto = non prevista.
 var solo_intel_marker_once: Dictionary = {}
@@ -480,6 +494,7 @@ func to_dict() -> Dictionary:
 		"rendezvous_markers": rendezvous_markers.duplicate(true),
 		"stealth_forces": stealth_forces.duplicate(true),
 		"placed_air_bases": placed_air_bases.duplicate(true),
+		"manual_awards_claimed": manual_awards_claimed.duplicate(),
 		"commander_uses": commander_uses.duplicate(),
 		"commanders": commanders.duplicate(),
 		"casualties": casualties.duplicate(true),
@@ -514,6 +529,9 @@ func apply_dict(d: Dictionary) -> void:
 	for rv_v: Variant in d.get("rendezvous_markers", []):
 		var rv: Dictionary = rv_v
 		rendezvous_markers.append(rv.duplicate(true))
+	manual_awards_claimed.clear()
+	for m_v: Variant in d.get("manual_awards_claimed", []):
+		manual_awards_claimed.append(String(m_v))
 	placed_air_bases.clear()
 	for ab_v: Variant in d.get("placed_air_bases", []):
 		var ab: Dictionary = ab_v

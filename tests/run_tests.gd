@@ -27,7 +27,7 @@ const EXPECTED := {
 	"res://tests/unit/test_battle.gd": 152,
 	"res://tests/unit/test_ships.gd": 71,
 	"res://tests/unit/test_scenarios.gd": 228,
-	"res://tests/unit/test_victory.gd": 184,
+	"res://tests/unit/test_victory.gd": 193,
 	"res://tests/unit/test_reorganize_signal.gd": 138,
 	"res://tests/unit/test_solo.gd": 1033,
 	"res://tests/unit/test_attitude.gd": 167,

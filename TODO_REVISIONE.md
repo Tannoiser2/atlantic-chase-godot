@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Baseline: **3384 verifiche su 20 suite**, tutte verdi. Replay solitario:
+Baseline: **3393 verifiche su 20 suite**, tutte verdi. Replay solitario:
 **quindici `OK`** su quindici scenari, nessuno saltato. `audit_solo.gd`:
 **93 caselle azione, zero procedure segnaposto, ZERO buchi dichiarati, zero
 blocchi.**
@@ -172,7 +172,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 3384 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 3393 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
@@ -796,8 +796,14 @@ sopra scenario per scenario.
   Il layout della fascia inferiore assume di ricevere l'altezza richiesta.
 - [ ] Verificare che i marker GMT siano uno per traccia dove previsto e che
   seguano valore, lato, inclinazione e salvataggio.
-- [ ] Migliorare il Debriefing con lista delle condizioni manuali e totale,
-  mantenendo distinta una condizione falsa da un dato non disponibile.
+- [x] **Debriefing con le condizioni manuali spuntabili**: `V` mostra le righe
+  che il motore non puo' valutare da solo con la loro spunta e il loro
+  sottototale, `Shift+V` le spunta. Una riga spuntata entra DAVVERO nel
+  punteggio (`Victory.manual_claimed_points`) e la spunta sta nel salvataggio,
+  se no il Debriefing di una partita ripresa darebbe un numero diverso. La
+  distinzione che il TODO chiedeva e' mantenuta: una riga non spuntata non e'
+  una riga falsa, e il pannello scrive quante ne restano da guardare - un
+  punteggio incompleto si vede invece di sembrare finito.
 
 ## P2 - Distribuzione e manutenzione
 

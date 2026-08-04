@@ -37,6 +37,7 @@ func run() -> void:
 	test_completion_scores()
 	test_battle_scores()
 	test_debriefing()
+	test_manual_awards_are_claimable_and_counted()
 
 
 func _v(id: String) -> Victory:
@@ -569,3 +570,53 @@ func test_debriefing() -> void:
 	eq(int(o["winner"]), -1, "e non c'e' nessun vincitore da dichiarare")
 	eq(String(o["row"]["label"]), "Fallimento", "l'esito e' il peggiore")
 	true_(v.describe(st).contains("Fallimento"), "e viene scritto per esteso")
+
+
+## LE CONDIZIONI DA SPUNTARE A MANO.
+##
+## Alcune righe delle tabelle di Esito il motore non puo' valutarle da solo -
+## Mine posate, marcatore Base Aerea, zona di sicurezza USA, "la TF dell'Hipper
+## ha eseguito un'azione Traiettoria". Finora venivano soltanto ELENCATE, e la
+## somma la faceva il giocatore a mente.
+func test_manual_awards_are_claimable_and_counted() -> void:
+	_begin("le condizioni manuali si spuntano ed entrano nel punteggio")
+	var graph2 := MapGraph.load_default()
+	var with_manual: Scenario = null
+	for id in Scenario.list_ids():
+		var sc := Scenario.load_by_id(id)
+		var v := Victory.from_scenario(sc)
+		if not v.manual_awards().is_empty():
+			with_manual = sc
+			break
+	ne(with_manual, null, "almeno uno scenario ha righe di Esito manuali")
+	var victory2 := Victory.from_scenario(with_manual)
+	var st := GameState.new(graph2, 7)
+	st.apply_dict(with_manual.to_state_dict())
+	var rows := victory2.manual_awards()
+
+	eq(victory2.manual_pending_count(st), rows.size(),
+		"all'inizio nessuna riga e' stata guardata")
+	var first: Dictionary = rows[0]
+	var side := int(first["side"])
+	var before := victory2.manual_claimed_points(st, side)
+	eq(before, 0.0, "e nessuna riga porta punti")
+
+	st.manual_awards_claimed.append(String(first["label"]))
+	almost(victory2.manual_claimed_points(st, side), float(first["points"]), 0.001,
+		"spuntata la prima riga, i suoi punti entrano nel conto")
+	eq(victory2.manual_pending_count(st), rows.size() - 1,
+		"e ne resta una in meno da guardare")
+
+	# Il punteggio dell'Esito deve tenerne conto, se no la spunta non serve.
+	var o := victory2.outcome(st)
+	true_(o.has("manual_pending"), "l'Esito dice quante righe restano da guardare")
+	eq(int(o["manual_pending"]), rows.size() - 1, "e il conto e' quello giusto")
+
+	# E la spunta e' stato di gioco: deve sopravvivere al salvataggio, se no il
+	# Debriefing di una partita ripresa darebbe un punteggio diverso.
+	var reloaded := GameState.new(graph2, 1)
+	reloaded.apply_dict(st.to_dict())
+	true_(reloaded.manual_awards_claimed.has(String(first["label"])),
+		"la spunta sopravvive a salvataggio e ricarica")
+	almost(victory2.manual_claimed_points(reloaded, side), float(first["points"]),
+		0.001, "e con lei i suoi punti")

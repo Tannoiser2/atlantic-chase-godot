@@ -508,7 +508,10 @@ func _on_key(k: InputEventKey) -> void:
 			else:
 				await _do_load()
 		KEY_V:
-			_show_outcome()
+			if k.shift_pressed:
+				await _edit_manual_awards()
+			else:
+				_show_outcome()
 		KEY_O:
 			await _do_solo()
 		KEY_B:
@@ -1623,9 +1626,78 @@ func _show_outcome() -> void:
 		state.vp_text(TaskForce.Side.KRIEGSMARINE),
 		state.vp_text(TaskForce.Side.ROYAL_NAVY)]
 	text += "[b]PUNTEGGIO ED ESITO CORRENTE[/b]\n" + description
+	text += _manual_awards_text()
 	if late != "":
 		text += "\n\n[color=#ff9a3c][b]FINE PARTITA[/b]\n%s[/color]" % late
 	_show_info_panel("Punteggio ed Esito", text)
+
+
+## Le righe di Esito che il motore NON puo' valutare da solo - Mine posate,
+## marcatore Base Aerea, zona di sicurezza USA, "la TF dell'Hipper ha eseguito
+## un'azione Traiettoria" - con la loro spunta e il loro sottototale.
+##
+## Finora erano soltanto ELENCATE, e la somma la faceva il giocatore a mente.
+## Adesso una riga spuntata entra davvero nel punteggio, e quante ne restano da
+## guardare e' scritto: un punteggio incompleto si vede, invece di sembrare
+## finito.
+func _manual_awards_text() -> String:
+	if victory == null:
+		return ""
+	var rows := victory.manual_awards()
+	if rows.is_empty():
+		return ""
+	var out := "\n\n[b]CONDIZIONI DA SPUNTARE A MANO[/b]  [i](Shift+V per "
+	out += "spuntarle)[/i]\n"
+	for a in rows:
+		var claimed: bool = state.manual_awards_claimed.has(String(a["label"]))
+		var mark := "[color=#7ee081]V[/color]" if claimed else "[color=#8b8b8b]-[/color]"
+		out += "  %s  %s  [b]%s[/b]  (%s)\n" % [mark, String(a["label"]),
+			GameState.vp_str(float(a["points"])),
+			Initiative.side_name(int(a["side"]))]
+	var pending := victory.manual_pending_count(state)
+	if pending > 0:
+		out += "[color=#ffcc66]Restano %d righe da guardare: " % pending
+		out += "il punteggio qui sopra non e' ancora completo.[/color]"
+	else:
+		out += "[color=#7ee081]Tutte guardate: il punteggio e' completo.[/color]"
+	return out
+
+
+## Spunta e despunta le righe manuali, una alla volta, finche' non si chiude.
+func _edit_manual_awards() -> void:
+	if victory == null:
+		return
+	var rows := victory.manual_awards()
+	if rows.is_empty():
+		_msg("Questo scenario non ha righe di Esito da spuntare a mano.")
+		return
+	while true:
+		var options: Array = []
+		for a in rows:
+			var claimed: bool = state.manual_awards_claimed.has(String(a["label"]))
+			options.append({
+				"label": "%s  %s" % ["[V]" if claimed else "[  ]", String(a["label"])],
+				"detail": "%s per %s%s" % [GameState.vp_str(float(a["points"])),
+					Initiative.side_name(int(a["side"])),
+					"  -  gia' spuntata" if claimed else ""],
+			})
+		options.append({"label": "Chiudi", "detail": "torna al Punteggio"})
+		var i: int = await Choice.ask(self, "Condizioni da spuntare a mano",
+			"Il motore non puo' valutarle da solo: le guardi tu sulla mappa e "
+			+ "sul tabellone. Una riga spuntata entra nel punteggio, e la "
+			+ "spunta resta nel salvataggio.", options, true)
+		if i < 0 or i >= rows.size():
+			break
+		var label := String(rows[i]["label"])
+		if state.manual_awards_claimed.has(label):
+			state.manual_awards_claimed.erase(label)
+			_msg("Condizione tolta: %s" % label)
+		else:
+			state.manual_awards_claimed.append(label)
+			_msg("Condizione spuntata: %s (%s)" % [label,
+				GameState.vp_str(float(rows[i]["points"]))])
+		state.changed.emit()
+	_show_outcome()
 
 
 ## BL1 p.8: la tabella Murmansk si tira PRIMA del Debriefing, una volta sola,
@@ -3863,6 +3935,14 @@ func _build_help(root: Control) -> void:
   0   apre una Battaglia di prova
   Ctrl+W  alterna meteo buono/cattivo
   Ctrl+Z / Ctrl+Shift+Z   annulla / ripristina
+
+[b]Punteggio e Debriefing[/b]
+  V         punteggio, esito corrente e condizioni da spuntare
+  Shift+V   spunta le condizioni che il motore non puo' valutare da solo
+	  (Mine posate, marcatore Base Aerea, zona di sicurezza USA...).
+	  Una riga spuntata entra nel punteggio e resta nel salvataggio;
+	  quante ne restano da guardare e' sempre scritto, cosi' un
+	  punteggio incompleto si vede invece di sembrare finito.
 
 [b]Guida in tempo reale[/b]
 	  Il pannello in basso dice chi ha l'Iniziativa, cosa puoi fare ora e
