@@ -498,16 +498,18 @@ Tutti i test passano: **3016 verifiche, 18 suite, headless.**
   Forbes nel Gruppo Rinforzo A e Birmingham nel B.
   Le Mine restano lacuna dichiarata, ed e' scomodo perche' sono l'obiettivo
   dello scenario: le forze Furtive permanenti non sono ancora una pedina.
-  **Restano tre schieramenti**, e su N2 mi sono fermato a meta' apposta. La
-  geometria c'e' - due catene, una a Narvik e una a Trondheim, che combaciano
-  con l'obiettivo stampato - ma il pannello Task Force di p.21 mostra che lo
-  slot con la banda blu tiene Hipper e lo Squadrone DD, e sulla mappa il
-  segmento a Namsos ha la banda mentre il rilevatore lo dava liscio. Il flag
-  della banda vale solo dove i segmenti sono marroni e la banda bianca (BL3,
-  N1); su N2 e N3 i segmenti sono bianchi e la banda e' blu, quindi cercare
-  forme bianche trova le meta' del segmento. Adesso il dato lo dichiara con
-  `band_reliable`, e uno schieramento costruito su quel flag sarebbe stato
-  sbagliato in silenzio.
+  **Anche N2 si gioca.** Due Traiettorie che salgono da Kiel, una a Narvik e una
+  a Trondheim, e l'assegnazione viene dal pannello Task Force di p.21: lo slot
+  con la banda blu tiene Hipper e lo Squadrone DD, l'altro Scharnhorst,
+  Gneisenau e il Convoglio - che e' anche quello che dice l'obiettivo stampato.
+  Il rilevatore automatico della banda resta rotto su N2 e N3 e il tentativo di
+  sistemarlo e' fallito: cercare il contrasto col segmento invece del bianco
+  assoluto fa risultare bandati tutti i segmenti, perche' ognuno e' disegnato in
+  piu' pezzi di colore diverso, e filtrare per lunghezza non separa l'ombra
+  dalla banda. Tentativo annullato, flag lasciato dichiarato inaffidabile, e
+  l'assegnazione letta a occhio sull'illustrazione - che e' il metodo che il
+  progetto usa per le tabelle.
+  **Restano due schieramenti**: N3 e N5.
 - **I Comandanti dicono la loro condizione stampata.** Gli undici testi sono
   trascritti da RB p.10 letta a 300 dpi: la scheda TF mostra la regola vera e
   non un riassunto, ed e' quella che decide se il beneficio si puo' usare

@@ -620,7 +620,8 @@ const INSET_MAP_SOLO := [
 
 ## Gli scenari inserto che hanno gia' lo schieramento trascritto dalla loro
 ## illustrazione, e che il replay gioca per intero sulla mappa inserto.
-const INSET_MAP_PLAYABLE := ["BL3 Raiders of the North Sea", "N1 Operazione Wilfred"]
+const INSET_MAP_PLAYABLE := ["BL3 Raiders of the North Sea", "N1 Operazione Wilfred",
+	"N2 Operazione Weser (nord)"]
 
 
 ## Senza condizioni di fine trascritte uno scenario non finisce mai, e nel

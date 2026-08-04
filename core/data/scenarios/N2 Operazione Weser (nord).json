@@ -6,7 +6,7 @@
  "round": 1,
  "_map": {
   "name": "Mappa Inserto del Mare di Norvegia",
-  "status": "reticolo, esagoni, porti, caselle fuori mappa, frecce 'non adiacente' e basi aeree sono misurati e verificati contro le illustrazioni del fascicolo, e il motore carica la mappa; manca lo SCHIERAMENTO INIZIALE, cioe' quale segmento di Traiettoria sia di quale Task Force e in che ordine la formi, che va letto dalle pagine dello scenario",
+  "status": "mappa misurata e verificata, motore e interfaccia la caricano; lo schieramento e' trascritto dall'illustrazione di p.21",
   "source": "AC_Solo_scenarios_2022 p.21 'Map: Norwegian Sea Inset Map'",
   "inset": "map_norwegian_sea"
  },
@@ -163,7 +163,111 @@
    }
   }
  ],
- "task_forces": [],
+ "task_forces": [
+  {
+   "id": 1,
+   "side": 0,
+   "color": "GE",
+   "slot": 0,
+   "name": "Scharnhorst/Gneisenau + Convoglio",
+   "ships": [
+    "Scharnhorst",
+    "Gneisenau",
+    "Convoy x2"
+   ],
+   "leader": "Raeder",
+   "speed": 2,
+   "trajectory": {
+    "segments": [
+     {
+      "q": 5,
+      "r": 3,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 5,
+      "r": 2,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 5,
+      "r": 1,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 5,
+      "r": 0,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 5,
+      "r": -1,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 5,
+      "r": -2,
+      "info": false,
+      "contact": false
+     }
+    ],
+    "station_q": 0,
+    "station_r": 0,
+    "station_contact": false,
+    "station_port": ""
+   }
+  },
+  {
+   "id": 2,
+   "side": 0,
+   "color": "GE",
+   "slot": 1,
+   "name": "Hipper + Squadrone DD",
+   "ships": [
+    "Hipper",
+    "DD Squadron"
+   ],
+   "leader": "",
+   "speed": 2,
+   "trajectory": {
+    "segments": [
+     {
+      "q": 5,
+      "r": 3,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 5,
+      "r": 2,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 5,
+      "r": 1,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 6,
+      "r": 0,
+      "info": false,
+      "contact": false
+     }
+    ],
+    "station_q": 0,
+    "station_r": 0,
+    "station_contact": false,
+    "station_port": ""
+   }
+  }
+ ],
  "reinforcements": {},
  "info_triggers": [],
  "briefing": {
@@ -175,7 +279,10 @@
  "setup_notes": [
   "Mappa Inserto del Mare di Norvegia: questo scenario NON si gioca sulla Mappa Operazionale. Le Task Force trascritte restano in 'unplaced_forces' finche' il reticolo dell'inserto non e' calibrato; gli esagoni che avevano prima erano porti della mappa grande usati come sostituti, cioe' posizioni inventate. Fonte: AC_Solo_scenarios_2022 p.21 'Map: Norwegian Sea Inset Map'.",
   "Meteo Sfavorevole; iniziativa tedesca con conta iniziativa a 2; mappa aggiuntiva Mare di Norvegia. Nessuna TF britannica iniziale. Convoglio tedesco per Narvik e Squadrone DD per Trondheim; Raeder presente.",
-  "Nessuna TF britannica iniziale, come da fascicolo."
+  "Nessuna TF britannica iniziale, come da fascicolo.",
+  "Schieramento trascritto dall'illustrazione di p.21. Dieci segmenti in due Traiettorie che salgono da Kiel: (5,3) (5,2) (5,1) (5,0) (5,-1) (5,-2) fino a Narvik, e (5,3) (5,2) (5,1) (6,0) fino a Trondheim. L'assegnazione viene dal pannello Task Force della stessa pagina: lo slot con la BANDA BLU tiene Hipper e lo Squadrone DD, l'altro Scharnhorst, Gneisenau e il Convoglio. Sulla mappa i segmenti con la banda sono quelli di (6,0) (5,1) (5,2) (5,3), cioe' la catena di Trondheim, e combacia con l'obiettivo stampato: il Convoglio consegna a Narvik, lo Squadrone DD a Trondheim.",
+  "ATTENZIONE: la banda su questa pagina e' BLU su segmenti BIANCHI, e il rilevatore automatico di tools/validate_inset_setups.py cerca bande BIANCHE - vale su BL3 e N1, dove i segmenti sono marroni, e su N2/N3 esce INVERTITO. Il dato lo dichiara con band_reliable, e questa assegnazione e' letta a occhio sull'illustrazione, non presa dal flag.",
+  "LACUNA DICHIARATA: la Reazione Norvegese (p.24) e i Completamenti in Norvegia con Convoglio o Squadrone DD non sono automatizzati. Il Convoglio tedesco e' reso con Convoy x2: il fascicolo lo stampa distrutto da 4 Colpi, regola che resta nelle note."
  ],
  "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati."
 }
