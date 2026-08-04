@@ -1,0 +1,275 @@
+{
+ "_source": "AC_Solo_scenarios_2022, pagine 19, 24, 27 e 34, lette sulle pagine renderizzate a 300 dpi.",
+ "_rule": "Fascicolo p.16: \"When you perform a successful Completion action in a Norwegian Port or point of interest, roll a die and check the result on the Norwegian Reaction Table (specific to each scenario). The imaginary player is not required to do this (Reaction is incorporated into the Action Tables).\" Tira solo il GIOCATORE.",
+ "_warning": "Le quattro tabelle NON hanno la stessa forma. N1 ha una riga sola; N2 si divide secondo la presenza di MINE britanniche nell'esagono; N3 secondo la presenza di una TF BRITANNICA; N5 secondo se il Completamento e' NELL'esagono del porto o in uno ADIACENTE. Anche i risultati cambiano: solo N1 dichiara che la reazione non tocca il gioco. Il testo estratto dal PDF di p.19 e' per giunta fuorviante, perche' elenca i risultati in un ordine che non e' quello stampato: 1-2 e' Angry reaction, non No reaction.",
+ "tables": {
+  "N1 Operazione Wilfred": {
+   "_page": 19,
+   "title": "Norwegian Reaction: Narvik",
+   "trigger": "Quando un CONVOGLIO BRITANNICO esegue un'azione di Completamento in un esagono con Narvik.",
+   "note": "\"The reaction will not affect game play, but will influence the Debriefing Table\": in N1 la reazione NON tocca la partita, conta solo al Debriefing. E' l'unica delle quattro che lo dice.",
+   "axis": null,
+   "columns": [
+    {
+     "label": "1-2",
+     "min": 1,
+     "max": 2
+    },
+    {
+     "label": "3-6 o piu'",
+     "min": 3,
+     "max": 99
+    }
+   ],
+   "rows": [
+    {
+     "label": "",
+     "cells": [
+      "angry",
+      "none"
+     ]
+    }
+   ],
+   "modifiers": [
+    {
+     "value": 1,
+     "when": "una BB britannica e' NELL'esagono di Narvik"
+    }
+   ],
+   "legend": {
+    "angry": "Reazione Adirata (Angry reaction). Non ha effetto sulla partita, ma influenza la Tabella di Debriefing.",
+    "none": "Nessuna reazione."
+   }
+  },
+  "N2 Operazione Weser (nord)": {
+   "_page": 24,
+   "title": "Norwegian Reaction: German Completion Actions",
+   "trigger": "Quando un CONVOGLIO o uno SQUADRONE DD TEDESCO esegue con successo un Completamento in un esagono con Narvik o Trondheim.",
+   "axis": "Mine britanniche nell'esagono?",
+   "columns": [
+    {
+     "label": "0 o 1",
+     "min": -99,
+     "max": 1
+    },
+    {
+     "label": "2",
+     "min": 2,
+     "max": 2
+    },
+    {
+     "label": "3",
+     "min": 3,
+     "max": 3
+    },
+    {
+     "label": "4",
+     "min": 4,
+     "max": 4
+    },
+    {
+     "label": "5+",
+     "min": 5,
+     "max": 99
+    }
+   ],
+   "rows": [
+    {
+     "label": "SI'",
+     "cells": [
+      "cancel",
+      "two_hits",
+      "ar",
+      "none",
+      "none"
+     ]
+    },
+    {
+     "label": "NO",
+     "cells": [
+      "cancel",
+      "hit",
+      "hit",
+      "ar",
+      "none"
+     ]
+    }
+   ],
+   "modifiers": [
+    {
+     "value": 1,
+     "when": "ci sono DUE O PIU' forze Furtive Mine britanniche sulla mappa"
+    },
+    {
+     "value": 1,
+     "when": "uno o piu' BC o CA tedeschi sono NELL'esagono"
+    },
+    {
+     "value": -1,
+     "when": "una o piu' TF britanniche sono NELL'esagono"
+    }
+   ],
+   "legend": {
+    "none": "Nessuna reazione.",
+    "hit": "Il Convoglio o lo Squadrone DD subisce un Colpo. E' una Reazione Aggressiva.",
+    "two_hits": "Il Convoglio o lo Squadrone DD subisce due Colpi. Puoi dirottare uno dei due su un'altra nave tedesca nell'esagono, purche' la sua TF sia una Stazione. E' una Reazione Aggressiva.",
+    "ar": "Le forze norvegesi, forse appoggiate da truppe britanniche, oppongono resistenza ma vengono sopraffatte. E' una Reazione Aggressiva.",
+    "cancel": "Il Completamento e' annullato. Il Convoglio o lo Squadrone DD tedesco subisce due Colpi e deve Completare a Kiel. E' una Reazione Aggressiva. L'Iniziativa passa al britannico."
+   }
+  },
+  "N3 Operazione Weser (sud)": {
+   "_page": 27,
+   "title": "Norwegian Reaction: German Completion Actions",
+   "trigger": "Quando un CONVOGLIO o uno SQUADRONE DD TEDESCO esegue con successo un Completamento in un esagono con Bergen o Kristiansand.",
+   "axis": "Task Force britannica nell'esagono?",
+   "columns": [
+    {
+     "label": "1",
+     "min": -99,
+     "max": 1
+    },
+    {
+     "label": "2",
+     "min": 2,
+     "max": 2
+    },
+    {
+     "label": "3",
+     "min": 3,
+     "max": 3
+    },
+    {
+     "label": "4",
+     "min": 4,
+     "max": 4
+    },
+    {
+     "label": "5+",
+     "min": 5,
+     "max": 99
+    }
+   ],
+   "rows": [
+    {
+     "label": "SI'",
+     "cells": [
+      "cancel",
+      "two_hits",
+      "hit",
+      "none",
+      "none"
+     ]
+    },
+    {
+     "label": "NO",
+     "cells": [
+      "cancel",
+      "hit",
+      "hit",
+      "hit",
+      "none"
+     ]
+    }
+   ],
+   "modifiers": [
+    {
+     "value": 1,
+     "when": "uno o piu' CL tedeschi sono NELL'esagono"
+    }
+   ],
+   "legend": {
+    "none": "Nessuna reazione (nessun effetto aggiuntivo sul gioco).",
+    "hit": "Il Convoglio o lo Squadrone DD subisce un Colpo. E' una Reazione Aggressiva.",
+    "two_hits": "Il Convoglio o lo Squadrone DD subisce due Colpi. Puoi dirottare uno dei due su un'altra nave tedesca nell'esagono, purche' la sua TF sia una Stazione. E' una Reazione Aggressiva.",
+    "cancel": "Il Completamento e' annullato. Il Convoglio o lo Squadrone DD tedesco subisce due Colpi e deve Completare a Kiel OPPURE a Wilhelmshaven. E' una Reazione Aggressiva. L'Iniziativa passa al britannico."
+   }
+  },
+  "N5 Meglio Tardi che Mai": {
+   "_page": 34,
+   "title": "Norwegian Reaction: British Completion Actions",
+   "trigger": "Quando un CONVOGLIO BRITANNICO esegue con successo un Completamento in un esagono con Trondheim o Narvik, OPPURE in un esagono adiacente a uno dei due porti.",
+   "axis": "Completamento NELL'esagono del porto o ADIACENTE?",
+   "columns": [
+    {
+     "label": "1 o meno",
+     "min": -99,
+     "max": 1
+    },
+    {
+     "label": "2-3",
+     "min": 2,
+     "max": 3
+    },
+    {
+     "label": "4",
+     "min": 4,
+     "max": 4
+    },
+    {
+     "label": "5",
+     "min": 5,
+     "max": 5
+    },
+    {
+     "label": "6+",
+     "min": 6,
+     "max": 99
+    }
+   ],
+   "rows": [
+    {
+     "label": "NELL'esagono",
+     "cells": [
+      "cancel",
+      "two_hits",
+      "g_and_hit",
+      "g",
+      "none"
+     ]
+    },
+    {
+     "label": "ADIACENTE",
+     "cells": [
+      "cancel",
+      "hit",
+      "g",
+      "none",
+      "b"
+     ]
+    }
+   ],
+   "modifiers": [
+    {
+     "value": 1,
+     "when": "una o piu' BB o BC britanniche sono NELL'esagono del Convoglio"
+    },
+    {
+     "value": 1,
+     "when": "c'e' stato un precedente Completamento britannico riuscito nell'esagono del Convoglio o in uno adiacente"
+    },
+    {
+     "value": 1,
+     "when": "c'e' stato un precedente Completamento britannico riuscito a Trondheim"
+    },
+    {
+     "value": -1,
+     "when": "un marker Base Aerea tedesca e' in Norvegia (-2 invece se e' nell'esagono del Completamento)"
+    },
+    {
+     "value": -1,
+     "when": "due o piu' Convogli tedeschi hanno Completato con successo a Narvik"
+    }
+   ],
+   "legend": {
+    "none": "Nessun effetto aggiuntivo.",
+    "hit": "Il Convoglio subisce un Colpo.",
+    "two_hits": "Il Convoglio subisce due Colpi. Puoi dirottare uno dei due su un'altra nave britannica nell'esagono, purche' sia in una TF Stazione.",
+    "cancel": "Il Completamento e' annullato (la TF del Convoglio fa Scorrere del Tempo). Il Convoglio britannico subisce due Colpi e deve Completare in un altro esagono, in Norvegia o a Scapa Flow. L'Iniziativa passa al tedesco.",
+    "b": "Metti un marker Base Aerea BRITANNICA nell'esagono. Se pero' c'e' un marker Base Aerea tedesca in Norvegia, rimuovi quello invece; se ce n'e' piu' d'uno, il piu' VICINO all'esagono del Completamento.",
+    "g": "Se c'e' un marker Base Aerea britannica in Norvegia, rimuovilo (il piu' VICINO all'esagono del Completamento se ce n'e' piu' d'uno). Se non ce n'e' nessuna, metti un marker Base Aerea TEDESCA a Trondheim; se c'e' gia', a Narvik; se c'e' gia' anche a Narvik, esegui subito un Attacco Aereo sulla TF britannica piu' vicina a portata (col Meteo Cattivo, attacca invece un marker Contatto a tutte le TF britanniche a portata di tutte le Basi Aeree tedesche).",
+    "g_and_hit": "Due risultati insieme: la 'G' e un Colpo al Convoglio."
+   }
+  }
+ },
+ "_status": "Le quattro tabelle sono TRASCRITTE, non ancora automatizzate: manca il tiro dentro il ciclo di gioco e l'applicazione dei risultati. La regola di QUANDO si tira sta in core/rules/norway.gd."
+}

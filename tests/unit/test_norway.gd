@@ -21,6 +21,7 @@ func run() -> void:
 	test_player_keeps_the_force()
 	test_imaginary_player_loses_it()
 	test_n5_adjacent_landing()
+	test_norwegian_reaction_tables()
 
 
 func _tf(st: GameState, side: int, h: Vector2i, ships: Array) -> TaskForce:
@@ -136,3 +137,78 @@ func test_n5_adjacent_landing() -> void:
 	# L'esagono di Narvik stesso non e' "adiacente a Narvik".
 	true_(Norway.adjacent_landing_error(inset, narvik, ports) != "",
 		"l'esagono del porto non e' adiacente a se stesso")
+
+
+## Le quattro tabelle di Reazione Norvegese, trascritte da pp.19, 24, 27, 34.
+##
+## Non hanno la stessa forma, ed e' il motivo per cui questo test esiste: N1 ha
+## una riga sola, N2 si divide sulle Mine britanniche, N3 su una TF britannica,
+## N5 su "nell'esagono o adiacente". Trattarle come quattro copie della stessa
+## tabella e' l'errore facile.
+func test_norwegian_reaction_tables() -> void:
+	_begin("le quattro tabelle di Reazione Norvegese")
+	var f := FileAccess.open("res://core/data/solo/norwegian_reaction.json",
+		FileAccess.READ)
+	true_(f != null, "il file delle tabelle c'e'")
+	if f == null:
+		return
+	var parsed: Variant = JSON.parse_string(f.get_as_text())
+	f.close()
+	true_(typeof(parsed) == TYPE_DICTIONARY, "ed e' JSON valido")
+	var doc: Dictionary = parsed
+	var tables: Dictionary = doc.get("tables", {})
+	eq(tables.size(), 4, "quattro tabelle, una per scenario")
+
+	var pages := {"N1 Operazione Wilfred": 19, "N2 Operazione Weser (nord)": 24,
+		"N3 Operazione Weser (sud)": 27, "N5 Meglio Tardi che Mai": 34}
+	var missing: Array[String] = []
+	var unsourced: Array[String] = []
+	var bad_shape: Array[String] = []
+	for id_v: Variant in pages.keys():
+		var id := String(id_v)
+		if not tables.has(id):
+			missing.append(id)
+			continue
+		var t: Dictionary = tables[id]
+		if int(t.get("_page", 0)) != int(pages[id]):
+			unsourced.append(id)
+		if String(t.get("trigger", "")) == "" or (t.get("legend", {}) as Dictionary).is_empty():
+			unsourced.append(id)
+		# Ogni riga deve avere una cella per colonna: una tabella sbilanciata e'
+		# una trascrizione sbagliata, non un dato incompleto.
+		var cols: int = (t.get("columns", []) as Array).size()
+		for row_v: Variant in t.get("rows", []):
+			var row: Dictionary = row_v
+			if (row.get("cells", []) as Array).size() != cols:
+				bad_shape.append("%s/%s" % [id, String(row.get("label", "?"))])
+			for c_v: Variant in row.get("cells", []):
+				if not (t.get("legend", {}) as Dictionary).has(String(c_v)):
+					bad_shape.append("%s: risultato '%s' senza legenda" % [id, String(c_v)])
+	eq(missing.size(), 0, "nessuna tabella manca: %s" % ", ".join(missing))
+	eq(unsourced.size(), 0, "tutte citano pagina, innesco e legenda: %s" % ", ".join(unsourced))
+	eq(bad_shape.size(), 0, "tutte le righe sono complete e spiegate: %s" % ", ".join(bad_shape))
+
+	# Le quattro forme sono DIVERSE, e il dato lo deve dire.
+	var n1: Dictionary = tables["N1 Operazione Wilfred"]
+	eq((n1.get("rows", []) as Array).size(), 1, "N1 ha una riga sola")
+	# p.19, e il testo estratto dal PDF lo dava all'incontrario: 1-2 e' la
+	# reazione adirata, non l'assenza di reazione.
+	var n1_row: Dictionary = (n1["rows"] as Array)[0]
+	eq(String((n1_row["cells"] as Array)[0]), "angry",
+		"su 1-2 la reazione e' adirata")
+	eq(String((n1_row["cells"] as Array)[1]), "none",
+		"e su 3-6 non c'e' reazione")
+	true_(String(n1.get("note", "")).contains("Debriefing"),
+		"e N1 dichiara che la reazione non tocca la partita, solo il Debriefing")
+
+	true_(String(tables["N2 Operazione Weser (nord)"].get("axis", "")).contains("Mine"),
+		"N2 si divide sulle Mine britanniche")
+	true_(String(tables["N3 Operazione Weser (sud)"].get("axis", "")).contains("Task Force"),
+		"N3 su una Task Force britannica")
+	true_(String(tables["N5 Meglio Tardi che Mai"].get("axis", "")).contains("ADIACENTE"),
+		"N5 su dentro o adiacente all'esagono del porto")
+	# N5 e' l'unica con risultati che spostano Basi Aeree.
+	true_((tables["N5 Meglio Tardi che Mai"]["legend"] as Dictionary).has("g"),
+		"e solo N5 ha risultati che spostano le Basi Aeree")
+	true_(String(doc.get("_status", "")).contains("non ancora automatizzate"),
+		"il dato dichiara che le tabelle non sono ancora giocate")
