@@ -139,16 +139,36 @@ manualmente in `/Applications/Atlantic Chase.app`.
 
 ## Primo lavoro consigliato
 
-**R0 e' chiusa**: `core/rules/solo_runner.gd` gioca uno scenario solitario per
-intero senza GUI, `tools/replay_solo.gd` lo esegue con semi fissi e
-`tests/unit/test_replay.gd` verifica determinismo, terminazione, legalita' dei
-Completamenti e salvataggio/ricarica.
+**Tutti e quindici gli scenari solitari si giocano** e chiudono su una
+condizione di fine STAMPATA, con la pagina citata nel dato. Il replay stampa
+quindici `OK` e nessun `SALTATO`. Non c'e' piu' uno scenario da far partire.
 
-Continuare da **R1**: audit pagina per pagina di BL1 e BL2, poi BL3.
-Non lavorare in parallelo su tutti i JSON: rende impossibile capire quale
-tabella abbia introdotto una regressione.
+Il prossimo lavoro e' uno dei due, e sono mestieri diversi che conviene NON
+mescolare:
 
-Attenzione a una duplicazione nota: `ui/main.gd` implementa la stessa sequenza
-del ciclo solitario con le sue attese asincrone. Finche' non sara' riscritta
-sopra `SoloRunner` (voce aperta in `TODO_REVISIONE.md`), una modifica alla
-sequenza va fatta in tutti e due i posti.
+**A. Le 42 procedure segnaposto** delle Tabelle Azione, su 93 caselle uniche.
+E' il numero che dice quanto manca al solitario "vero": in quelle caselle il bot
+applica una policy generica invece della procedura stampata. `audit_solo.gd` le
+elenca. E' lettura del fascicolo pagina per pagina, uno o due scenari per
+sessione, col metodo di sempre - pagina renderizzata a risoluzione nativa, mai
+il testo estratto. Non lavorare in parallelo su tutti i JSON: rende impossibile
+capire quale tabella abbia introdotto una regressione.
+
+**B. Chiudere la duplicazione GUI/SoloRunner.** Le cuciture ci sono gia' -
+`ask_choice`, `ask_modifiers`, `ask_steal`, i rispondenti iniettabili e la
+macchina a passi `step()`/`answer()` col suo meccanismo di ripresa. Resta far
+guidare `ui/main.gd` da `SoloRunner` e cancellare le sue 211 righe rispecchiate:
+quattro coppie, misurate nel TODO. E' una sessione a se', perche' li' vivono
+l'asincrono e il riscontro visivo, ed e' il punto dove un errore non si vede nei
+test ma si vede giocando.
+
+Finche' B non e' chiusa, una modifica alla sequenza del turno del bot va fatta
+in tutti e due i posti: `solo_runner.gd` porta tre commenti "Mirror headless di
+`ui/main.gd::...`" che dicono esattamente quali funzioni si rispecchiano.
+Leggerli PRIMA di cominciare un refactor: in questa sessione li ho letti dopo, e
+quattro passi sono finiti sulla meta' sbagliata.
+
+Il paracadute di entrambi i lavori e' `tests/unit/test_replay.gd`, che confronta
+la TRASCRIZIONE dei replay riga per riga a parita' di seme. Se dopo una modifica
+un seme da' una partita diversa, la modifica ha cambiato il gioco - e va deciso
+di proposito, non scoperto dopo.
