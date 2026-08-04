@@ -102,9 +102,27 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 - **Comandanti**: gli undici testi sono trascritti da RB p.10 letta a 300 dpi e
   Gensoul e' implementato; Forbes e Marschall no, e la voce Forbes ha un refuso
   di traduzione dichiarato.
-- **`ui/main.gd` duplica la sequenza di `SoloRunner`** con le sue attese
-  asincrone: una modifica alla sequenza va fatta in due posti. `SoloSequence`
-  condivide le REGOLE, non l'ordine dei passi.
+- **`ui/main.gd` duplica la sequenza di `SoloRunner`.** E' la voce piu' cara
+  rimasta, e ogni regola nuova la rende piu' cara: lo sbarco in Norvegia e'
+  adesso scritto in tutti e due i posti.
+  Le cifre, perche' la stima non sia a occhio: `ui/main.gd` e' **4075 righe con
+  141 punti di `await`**, `solo_runner.gd` ne ha 1291 ed e' sincrono,
+  `solo_sequence.gd` ne condivide 133 - le REGOLE della sequenza, non l'ordine
+  dei passi.
+  **Il progetto**, che non e' "spostare del codice":
+  1. `SoloRunner` diventa una MACCHINA A PASSI invece di un ciclo: un
+     `step()` che ritorna o un risultato o una DOMANDA (quale porto, quale
+     bersaglio, quale segmento togliere).
+  2. Chi lo guida risponde alle domande. Il replay risponde con la policy
+     harness - le righe marcate `GIOCATORE (policy harness)` sono gia' quello -
+     la GUI risponde con `await Choice.ask` e i clic sulla mappa.
+  3. Sparisce la policy dal ciclo: oggi `SoloRunner` decide E sequenzia, e le
+     due cose vanno separate o la GUI si porta dietro le decisioni del bot.
+  4. I test di `test_replay.gd` restano il paracadute: determinismo, fine
+     stampata, Completamenti legali. Se dopo il refactor un seme da' una
+     trascrizione diversa, il refactor ha cambiato il gioco.
+  **Non e' un lavoro da una sessione**, ed e' sul file piu' rischioso del
+  progetto: e' quello che oggi si gioca davvero.
 - **Battaglia avanzata**: quattro scelte interattive e il mini-scenario MS12.
 - **I 22 scenari a due giocatori** hanno dati, setup e vittoria, ma nessun
   audit end-to-end.
