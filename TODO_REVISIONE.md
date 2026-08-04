@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Aggiornato dopo la chiusura di **R0** (3 agosto 2026). Baseline: **3059
+Aggiornato dopo la chiusura di **R0** (3 agosto 2026). Baseline: **3081
 verifiche su 18 suite**.
 
 Questo e' il backlog autorevole per continuare la revisione. `STATO.md`
@@ -26,7 +26,7 @@ vecchie sezioni "Cosa manca" non devono riaprire lavori gia' completati.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 3059 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 3081 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
@@ -442,13 +442,22 @@ reticoli.
   Chiusa anche una promessa vecchia: il commento di `GameState.triggers_info`
   elencava da sempre quattro cause di RB p.21 e ne implementava tre, perche' la
   quarta - "forza Furtiva" - non aveva una pedina. Adesso ce l'ha.
-  **Restano**: piazzare le forze Furtive dallo SCHIERAMENTO degli scenari (il
-  Sommergibile di BL3 in (5,1), quello tedesco di N3, i due marker U-Boat di A2
-  di cui il motore tiene solo il conteggio), la procedura Mine di N1 - una TF
-  con un Convoglio Completa nell'esagono bersaglio, si posa la Mina, Scorrere
-  del Tempo, e se e' Narvik/Vestfjorden si controlla la Reazione Norvegese
-  (p.19) - il collegamento all'azione `STEALTH_ATTACK`, la cui tabella e' gia'
-  trascritta e verificata, e il disegno della pedina nella GUI.
+  **Il piazzamento dallo schieramento c'e'**: `Scenario.stealth_forces` passa
+  nello stato come ogni altra pedina, e BL3 schiera il suo Sommergibile
+  britannico in (5,1), letto sull'illustrazione di p.12.
+  **La procedura Mine di N1 c'e'** (`Stealth.lay_mines`, fascicolo p.17): i tre
+  bersagli sono nel dato dello scenario - Narvik/Vestfjorden (5,-2), Bud (5,2),
+  Andalsnes (6,1) - e la regola impone una TF CON UN CONVOGLIO, un solo marker
+  per esagono, lo Scorrere del Tempo con la TF che NON viene rimossa, e la
+  Reazione Norvegese sul solo Narvik.
+  **Restano**: l'AZIONE che innesca la posa, cioe' il Completamento in un
+  esagono di Norvegia di p.16 (con Convoglio o Squadrone DD nella TF); la
+  Tabella di Reazione Norvegese, diversa per ogni scenario (pp.19, 24, 27, 34);
+  il Sommergibile tedesco di N3, di cui non conosco l'esagono perche'
+  l'illustrazione non lo piazza; i due marker U-Boat di A2, di cui il motore
+  tiene solo il conteggio; il collegamento all'azione `STEALTH_ATTACK`, la cui
+  tabella e' gia' trascritta e verificata; e il disegno della pedina nella
+  GUI.
   Una lacuna dichiarata dentro il nucleo: le Informazioni stanno sui SEGMENTI,
   quindi una Ricognizione su una TF nemica che e' Stazione le dichiara invece
   di assegnarle.

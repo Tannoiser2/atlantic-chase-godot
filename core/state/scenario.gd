@@ -54,6 +54,14 @@ var map_info: Dictionary = {}
 ## Contatori solitari gia' pieni allo schieramento: vedi solo_start_counters().
 var start_counters: Dictionary = {}
 
+## Forze Furtive schierate: Mine, Sottomarini, U-Boat gia' sulla mappa allo
+## schieramento. Ognuna e' { side, kind, q, r, note }; le regole stanno in
+## `Stealth` (RB p.41).
+var stealth_forces: Array = []
+
+## Bersagli delle Mine (N1, p.17): { name, q, r, reaction }.
+var d_mines: Array = []
+
 var load_error: String = ""
 
 
@@ -104,6 +112,10 @@ func load_from(path: String) -> bool:
 	battle_setup = bs if typeof(bs) == TYPE_DICTIONARY else {}
 	var sp: Variant = d.get("ship_pool", null)
 	_pool = sp if typeof(sp) == TYPE_DICTIONARY else {}
+	var sf: Variant = d.get("stealth_forces", null)
+	stealth_forces = sf if typeof(sf) == TYPE_ARRAY else []
+	var mt: Variant = d.get("mines_targets", null)
+	d_mines = mt if typeof(mt) == TYPE_ARRAY else []
 	var sc: Variant = d.get("solo_counters", null)
 	start_counters = sc if typeof(sc) == TYPE_DICTIONARY else {}
 	title = String(briefing.get("title", id))
@@ -285,6 +297,11 @@ func reinforcement_routes() -> Dictionary:
 ## U-Boat force markers" (p.65) e la fine stampata sul risultato 'E' li consuma
 ## uno alla volta. Modellare il CONTEGGIO non e' modellare la pedina, ed e'
 ## scritto cosi' anche nel dato: il resto resta una lacuna dichiarata.
+## I bersagli delle Mine di N1 (fascicolo p.17). Vuoto per gli altri scenari.
+func mines_targets() -> Array:
+	return d_mines.duplicate(true)
+
+
 func solo_start_counters() -> Dictionary:
 	return start_counters.duplicate(true)
 
@@ -351,6 +368,7 @@ func to_state_dict() -> Dictionary:
 		"end_conditions": end_conditions(),
 		"intel_marker_once": intel_marker_once(),
 		"solo_counters": solo_start_counters(),
+		"stealth_forces": stealth_forces.duplicate(true),
 	}
 
 

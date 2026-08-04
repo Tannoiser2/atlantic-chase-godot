@@ -296,7 +296,28 @@
   "Schieramento trascritto dall'illustrazione di p.17. I 18 segmenti disegnati formano tre Traiettorie piu' una Stazione, e la STRISCIA BIANCA stampata in mezzo a un segmento distingue chi porta un Convoglio da chi no: otto segmenti lisci in fila - (2,5) (2,4) (2,3) (3,2) (3,1) (3,0) (4,-1) (5,-2), da Scapa Flow su fino a Vestfjorden - sono la TF da guerra, Renown e Squadrone DD, che il richiamo della pagina indica sul pannello Task Force. Gli otto striati sono due Traiettorie parallele di quattro segmenti, (6,1) (5,2) (4,3) (3,4) e (5,2) (4,3) (3,4) (2,5): due dei tre Convogli posamine. Il terzo e' il cilindro Stazione in (2,5), l'esagono che tocca la Casella di Scapa Flow.",
   "I richiami di p.17 mandano Valiant, Repulse, Rodney e Sheffield con Forbes nel Gruppo Rinforzo A e Birmingham nel Gruppo B; Pound e' comandante strategico. NIENTE TF TEDESCHE ALLO SCHIERAMENTO, come dice la pagina: i Convogli tedeschi di cui parla il riquadro entrano dopo, creati a Kiel dalla Tabella delle Azioni tedesche (p.19, risultati M e N).",
   "LACUNA DICHIARATA: le Mine sono l'obiettivo dello scenario - una in Vestfjorden, una a Bud, una ad Andalsnes, posate con un Completamento di una TF con Convoglio - ma le forze Furtive permanenti non sono ancora una pedina modellata, quindi la posa non e' automatizzata. Vale anche la Reazione Norvegese di p.19.",
-  "I tre Convogli britannici sono resi con la pedina Convoy x2 del ruolino: il fascicolo li stampa come CONVOY -2/na distrutti da 2 Colpi, e nel ruolino esistono solo Convoy x2 e Convoy x3. La regola dei 2 Colpi resta nelle note, non e' automatizzata."
+  "I tre Convogli britannici sono resi con la pedina Convoy x2 del ruolino: il fascicolo li stampa come CONVOY -2/na distrutti da 2 Colpi, e nel ruolino esistono solo Convoy x2 e Convoy x3. La regola dei 2 Colpi resta nelle note, non e' automatizzata.",
+  "I tre bersagli delle Mine sono nel dato (mines_targets): Narvik/Vestfjorden (5,-2), Bud (5,2) e Andalsnes (6,1), col flag della Reazione Norvegese sul solo Narvik, come prescrive p.17. La regola della posa sta in core/rules/stealth.gd: una TF CON UN CONVOGLIO, un solo marker per esagono, la TF non viene rimossa e fa Scorrere del Tempo. LACUNA DICHIARATA: manca l'azione che la innesca, cioe' il Completamento in un esagono di Norvegia di p.16, e manca la Tabella di Reazione Norvegese di p.19."
  ],
- "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati."
+ "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati.",
+ "mines_targets": [
+  {
+   "name": "Narvik (Vestfjorden)",
+   "q": 5,
+   "r": -2,
+   "reaction": true
+  },
+  {
+   "name": "Bud",
+   "q": 5,
+   "r": 2,
+   "reaction": false
+  },
+  {
+   "name": "Andalsnes",
+   "q": 6,
+   "r": 1,
+   "reaction": false
+  }
+ ]
 }

@@ -228,3 +228,99 @@ static func _hex_of(f: Dictionary) -> Vector2i:
 
 static func _side_from_tag(tag: String) -> int:
 	return TaskForce.Side.ROYAL_NAVY if tag == "UK" else TaskForce.Side.KRIEGSMARINE
+
+
+# ------------------------------------------------------- posa delle Mine --
+
+## La procedura Mine di N1 (fascicolo p.17).
+##
+## "Up to 3 Mines stealth force markers may be placed (one in the
+## Narvik/Vestfjorden hex, one in the Bud hex, and one in the Andalsnes hex).
+## To place a Mines marker, a TF WITH A CONVOY must successfully perform a
+## Completion action in the target hex. If successful, place the Mines marker
+## and perform Time Lapse (once placed, it is a Stealth force). Then, if the
+## Mines was placed in the Narvik (Vestfjorden) hex, check Norwegian Reaction."
+##
+## Qui sta la parte che il fascicolo prescrive: quali esagoni, chi puo' posarle,
+## quante, e quando scatta la Reazione Norvegese. NON sta qui l'azione che la
+## innesca - il Completamento in un esagono di Norvegia di p.16 - che resta una
+## lacuna dichiarata.
+##
+## `targets` e' l'elenco preso dal dato dello scenario: ogni voce
+## { "q", "r", "name", "reaction": bool }.
+static func mines_error(state: GameState, targets: Array, tf: TaskForce,
+		h: Vector2i) -> String:
+	if tf == null or tf.completed:
+		return "nessuna Task Force"
+	var target := _target_at(targets, h)
+	if target.is_empty():
+		return "%s non e' un esagono bersaglio per le Mine" % str(h)
+	var has_convoy := false
+	for s in tf.ships:
+		if s.kind == Ship.Kind.CONVOY and not s.sunk:
+			has_convoy = true
+			break
+	if not has_convoy:
+		return "solo una Task Force CON UN CONVOGLIO puo' posare le Mine"
+	for f in state.stealth_forces:
+		if int(f.get("kind", -1)) == Kind.MINES and _hex_of(f) == h:
+			return "in %s c'e' gia' una Mina" % String(target.get("name", str(h)))
+	return ""
+
+
+static func can_lay_mines(state: GameState, targets: Array, tf: TaskForce,
+		h: Vector2i) -> bool:
+	return mines_error(state, targets, tf, h) == ""
+
+
+## Posa la Mina dopo un Completamento riuscito. Ritorna
+## { "ok", "reason", "log", "time_lapse", "check_norwegian_reaction" }.
+##
+## `time_lapse` e' sempre vero quando la posa riesce: il fascicolo lo prescrive
+## e la Task Force NON viene rimossa, che e' la differenza fra un Completamento
+## in Norvegia e uno in porto (p.16).
+static func lay_mines(state: GameState, targets: Array, tf: TaskForce,
+		h: Vector2i) -> Dictionary:
+	var out := {"ok": false, "reason": "", "log": [] as Array[String],
+		"time_lapse": false, "check_norwegian_reaction": false}
+	var err := mines_error(state, targets, tf, h)
+	if err != "":
+		out["reason"] = err
+		return out
+	var target := _target_at(targets, h)
+	var name := String(target.get("name", str(h)))
+	place(state, tf.side, Kind.MINES, h, name)
+	out["ok"] = true
+	out["time_lapse"] = true
+	out["check_norwegian_reaction"] = bool(target.get("reaction", false))
+	(out["log"] as Array[String]).append(
+		"Mine posate in %s da %s; la Task Force resta in gioco e fa Scorrere del Tempo."
+		% [name, tf.display_name()])
+	if bool(out["check_norwegian_reaction"]):
+		(out["log"] as Array[String]).append(
+			"Mine nell'esagono di Narvik (Vestfjorden): va controllata la Reazione Norvegese.")
+	return out
+
+
+## Quante Mine restano da posare fra i bersagli dichiarati.
+static func mines_left(state: GameState, targets: Array) -> int:
+	var n := 0
+	for t_v: Variant in targets:
+		var t: Dictionary = t_v
+		var h := Vector2i(int(t.get("q", 0)), int(t.get("r", 0)))
+		var taken := false
+		for f in state.stealth_forces:
+			if int(f.get("kind", -1)) == Kind.MINES and _hex_of(f) == h:
+				taken = true
+				break
+		if not taken:
+			n += 1
+	return n
+
+
+static func _target_at(targets: Array, h: Vector2i) -> Dictionary:
+	for t_v: Variant in targets:
+		var t: Dictionary = t_v
+		if Vector2i(int(t.get("q", 0)), int(t.get("r", 0))) == h:
+			return t
+	return {}

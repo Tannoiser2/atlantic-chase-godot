@@ -22,6 +22,8 @@ func run() -> void:
 	test_attack_restriction()
 	test_enemy_force_triggers_info()
 	test_save_and_reload()
+	test_scenario_places_stealth_forces()
+	test_n1_mines_procedure()
 
 
 func _state() -> GameState:
@@ -182,3 +184,85 @@ func test_save_and_reload() -> void:
 		"Vestfjorden", "con la nota che le e' stata data")
 	true_(Stealth.remove_at(back, Vector2i(9, 3), ge), "si possono togliere")
 	eq(back.stealth_forces.size(), 1, "e l'elenco si accorcia")
+
+
+## Le forze Furtive schierate arrivano dallo scenario, come ogni altra pedina.
+func test_scenario_places_stealth_forces() -> void:
+	_begin("lo schieramento porta le forze Furtive")
+	var sc := Scenario.load_by_id("BL3 Raiders of the North Sea")
+	eq(sc.stealth_forces.size(), 1, "BL3 schiera una forza Furtiva")
+	var inset := MapGraph.load_inset(sc.inset_key())
+	var st := GameState.new(inset, 1)
+	st.apply_dict(sc.to_state_dict())
+	eq(st.stealth_forces.size(), 1, "e arriva nello stato")
+	var f: Dictionary = st.stealth_forces[0]
+	eq(Vector2i(int(f["q"]), int(f["r"])), Vector2i(5, 1),
+		"il Sommergibile britannico e' in (5,1), come sull'illustrazione di p.12")
+	eq(int(f["side"]), TaskForce.Side.ROYAL_NAVY, "ed e' britannico")
+	true_(inset.has_hex(Vector2i(5, 1)), "in un esagono che esiste sull'inserto")
+	# E deve innescare Informazioni al tedesco, che e' il punto di averlo.
+	true_(st.triggers_info(Vector2i(5, 1), TaskForce.Side.KRIEGSMARINE),
+		"e rende quell'esagono pericoloso al tedesco")
+	# Uno scenario che non ne ha non se le inventa.
+	eq(Scenario.load_by_id("BL1 Raiders of the North Atlantic").stealth_forces.size(), 0,
+		"BL1 non schiera forze Furtive")
+
+
+## La procedura Mine di N1 (p.17): tre esagoni bersaglio, solo una TF con un
+## Convoglio, un marker per esagono, e la Reazione Norvegese sul solo Narvik.
+func test_n1_mines_procedure() -> void:
+	_begin("la posa delle Mine di N1")
+	var sc := Scenario.load_by_id("N1 Operazione Wilfred")
+	var targets := sc.mines_targets()
+	eq(targets.size(), 3, "N1 dichiara tre bersagli per le Mine")
+	var inset := MapGraph.load_inset(sc.inset_key())
+	var st := GameState.new(inset, 1)
+	st.apply_dict(sc.to_state_dict())
+	eq(Stealth.mines_left(st, targets), 3, "all'inizio sono tutte da posare")
+
+	var uk := TaskForce.Side.ROYAL_NAVY
+	var narvik := Vector2i(5, -2)
+	var convoy := TaskForce.new(90, uk)
+	convoy.ships.append(ShipRoster.shared().make("Convoy x2"))
+	convoy.trajectory.become_station(narvik)
+	st.add_task_force(convoy)
+	var warship := TaskForce.new(91, uk)
+	warship.ships.append(ShipRoster.shared().make("Sheffield"))
+	warship.trajectory.become_station(narvik)
+	st.add_task_force(warship)
+
+	# "To place a Mines marker, a TF WITH A CONVOY must successfully perform a
+	# Completion action in the target hex."
+	false_(Stealth.can_lay_mines(st, targets, warship, narvik),
+		"una TF senza Convoglio non posa Mine")
+	true_(Stealth.mines_error(st, targets, warship, narvik).contains("CONVOGLIO"),
+		"e il motivo lo dice")
+	false_(Stealth.can_lay_mines(st, targets, convoy, Vector2i(3, 1)),
+		"e nemmeno in un esagono che non e' bersaglio")
+
+	var out := Stealth.lay_mines(st, targets, convoy, narvik)
+	true_(bool(out["ok"]), "col Convoglio nell'esagono giusto si posa: %s" % String(out["reason"]))
+	true_(bool(out["time_lapse"]),
+		"e si fa Scorrere del Tempo, perche' la TF NON viene rimossa (p.16)")
+	# "if the Mines was placed in the Narvik (Vestfjorden) hex, check Norwegian
+	# Reaction": solo li'.
+	true_(bool(out["check_norwegian_reaction"]),
+		"a Narvik va controllata la Reazione Norvegese")
+	eq(Stealth.mines_left(st, targets), 2, "ne restano due")
+	# La Mina posata e' una forza Furtiva a tutti gli effetti.
+	true_(st.triggers_info(narvik, TaskForce.Side.KRIEGSMARINE),
+		"e da quel momento l'esagono innesca Informazioni al nemico")
+
+	# "one in the Narvik/Vestfjorden hex, one in the Bud hex, one in the
+	# Andalsnes hex": una sola per esagono.
+	var again := Stealth.lay_mines(st, targets, convoy, narvik)
+	false_(bool(again["ok"]), "non se ne posa una seconda nello stesso esagono")
+	true_(String(again["reason"]).contains("gia'"), "e il motivo lo dice")
+
+	# Bud e Andalsnes non fanno scattare la Reazione.
+	convoy.trajectory.become_station(Vector2i(5, 2))
+	var bud := Stealth.lay_mines(st, targets, convoy, Vector2i(5, 2))
+	true_(bool(bud["ok"]), "a Bud si posa")
+	false_(bool(bud["check_norwegian_reaction"]),
+		"ma a Bud la Reazione Norvegese non si controlla")
+	eq(Stealth.mines_left(st, targets), 1, "ne resta una, ad Andalsnes")

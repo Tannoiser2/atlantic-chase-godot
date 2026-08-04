@@ -102,7 +102,16 @@
   "Mappa Inserto del Mare del Nord: griglia non calibrata in questo progetto. Le tabelle sono trascritte, ma lo schieramento non e' convertibile sulla Mappa Operazionale senza calibrare l'inserto.",
   "Setup stampato non ancora applicabile: Scharnhorst, Gneisenau e Hipper; Marschall assegnato a una nave, Raeder disponibile; TF britannica non identificata e forza Sottomarino nelle posizioni illustrate. Karlsruhe e Koln sono nel Gruppo Rinforzi A, la cui casella va scelta fra Wilhelmshaven e Kiel.",
   "Schieramento trascritto dall'illustrazione di p.12, leggendo i segmenti come grafica vettoriale del PDF e riportandoli sul reticolo calibrato (tools/validate_inset_setups.py). La TF britannica non identificata ha una Traiettoria di cinque segmenti in fila: (1,2) (2,1) (3,0) (4,-1) (5,-2), da Methil verso Bergen. La TF tedesca e' una Stazione in (5,2), vicino a Heligoland: sull'illustrazione e' il cilindro bianco a riga blu, cioe' lo stesso set colore che il pannello Task Force assegna a Scharnhorst, Gneisenau e Hipper. Marschall si attacca a una nave della TF tedesca, Raeder resta comandante strategico.",
-  "LACUNA DICHIARATA: il marker Sommergibile britannico e' in (5,1) - la posizione e' letta, ma le forze Furtive permanenti non sono ancora una pedina modellata, quindi non viene schierato. Vale anche il Limite di Classe e la regola speciale che vieta di trasferire TF nelle Caselle Porto."
+  "Il marker Sommergibile britannico e' schierato in (5,1), letto sull'illustrazione di p.12: adesso le forze Furtive sono una pedina del motore (core/rules/stealth.gd, RB p.41). Vale anche il Limite di Classe e la regola speciale che vieta di trasferire TF nelle Caselle Porto."
  ],
- "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati."
+ "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati.",
+ "stealth_forces": [
+  {
+   "side": 1,
+   "kind": 1,
+   "q": 5,
+   "r": 1,
+   "note": "Sommergibile britannico, letto sull'illustrazione di p.12"
+  }
+ ]
 }
