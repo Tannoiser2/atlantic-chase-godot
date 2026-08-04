@@ -135,6 +135,28 @@ static func _end_condition_met(state: GameState, cond: Dictionary) -> bool:
 		"ships_sunk_total":
 			return state.sunk_count(TaskForce.Side.KRIEGSMARINE) \
 				+ state.sunk_count(TaskForce.Side.ROYAL_NAVY) >= value
+		"convoys_or_unidentified_resolved":
+			# BL3 p.12: "two Convoys and/or Unidentified TFs have Completed or
+			# been destroyed". Sono due categorie contate INSIEME, e sia il
+			# Completamento sia la distruzione fanno punteggio: non basta
+			# contare i Convogli Completati.
+			var side2 := _side_from_name(String(cond.get("side", "")))
+			var n := 0
+			for tf in state.task_forces:
+				if tf.side != side2 or not tf.completed:
+					continue
+				if tf.unidentified or _has_convoy(tf) \
+						or tf.completed_ships.any(func(x: String) -> bool:
+							return x.begins_with("Convoy")):
+					n += 1
+			for loss_v: Variant in state.casualties:
+				var loss: Dictionary = loss_v
+				if int(loss.get("side", -1)) != side2:
+					continue
+				if int(loss.get("convoys", 0)) > 0 \
+						or bool(loss.get("unidentified", false)):
+					n += 1
+			return n >= value
 		"any_force_lost_or_completed":
 			# A2 p.63 scrive "no Task Forces in play (they are sunk or
 			# Completed)": la parentesi non e' un commento, distingue "non ne

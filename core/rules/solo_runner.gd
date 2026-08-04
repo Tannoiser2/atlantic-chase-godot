@@ -89,7 +89,15 @@ func load_scenario(scenario_id: String, p_seed: int) -> bool:
 		load_error = "scenario '%s' non caricato: %s" % [scenario_id,
 			scenario.load_error if scenario != null else "file assente"]
 		return false
-	graph = MapGraph.load_default()
+	# Cinque scenari solitari si giocano su una mappa inserto, non sulla Mappa
+	# Operazionale. La superficie va scelta prima di schierare: gli esagoni
+	# esistono su tutte e due, quindi sbagliarla non da' errore, da' una partita
+	# giocata sulle coordinate sbagliate.
+	var inset := scenario.inset_key()
+	graph = MapGraph.load_default() if inset == "" else MapGraph.load_inset(inset)
+	if graph.load_error != "":
+		load_error = "mappa non caricata per '%s': %s" % [scenario_id, graph.load_error]
+		return false
 	engine = ActionEngine.load_default()
 	state = GameState.new(graph, p_seed)
 	state.apply_dict(scenario.to_state_dict())
@@ -109,7 +117,7 @@ func load_scenario(scenario_id: String, p_seed: int) -> bool:
 	imaginary_side = 1 - player_side
 	if state.task_forces.is_empty() and not scenario.map_info.is_empty():
 		load_error = "%s: %s" % [String(scenario.map_info.get("name", "mappa speciale")),
-			String(scenario.map_info.get("status", "reticolo non calibrato"))]
+			String(scenario.map_info.get("status", "schieramento non trascritto"))]
 		return false
 	return true
 

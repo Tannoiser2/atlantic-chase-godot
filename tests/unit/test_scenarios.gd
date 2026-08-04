@@ -51,10 +51,15 @@ func test_all_load_and_are_valid() -> void:
 		var sid := String(sid_v)
 		var sc := Scenario.load_by_id(sid)
 		eq(sc.load_error, "", "%s si carica" % sid)
-		var st := GameState.new(graph, 1)
+		# Ogni scenario va validato sulla SUA mappa: cinque scenari solitari si
+		# giocano su una mappa inserto, e una Traiettoria legale li' sarebbe
+		# illegale sulla Mappa Operazionale e viceversa.
+		var sc_graph := graph if sc.inset_key() == "" \
+			else MapGraph.load_inset(sc.inset_key())
+		var st := GameState.new(sc_graph, 1)
 		st.apply_dict(sc.to_state_dict())
 		for tf in st.task_forces:
-			var errs := tf.trajectory.validate(graph)
+			var errs := tf.trajectory.validate(sc_graph)
 			# Le pedine del modulo VASSAL sono piazzate a mano su una mappa
 			# senza griglia, quindi qualche rotta ricostruita risulta illegale.
 			# Non e' un bug delle regole: e' il dato di partenza impreciso.

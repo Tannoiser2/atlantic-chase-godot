@@ -154,15 +154,23 @@ func test_all_solo_transcriptions_load() -> void:
 		var sc := Scenario.load_by_id(id)
 		eq(sc.load_error, "", "%s: scenario manuale caricato" % id)
 		# Cinque scenari solitari si giocano su una MAPPA INSERTO, non sulla
-		# Mappa Operazionale: il loro reticolo non e' calibrato in questo
-		# progetto, quindi non hanno - e non devono avere - uno schieramento
-		# sulla mappa grande. Prima ce l'avevano, fatto di porti usati come
-		# sostituti, cioe' di posizioni inventate.
+		# Mappa Operazionale. Prima ci piazzavano le TF su porti della mappa
+		# grande usati come sostituti, cioe' su posizioni inventate: il
+		# controllo non e' "nessuna TF" - BL3 adesso ce le ha, sull'inserto - ma
+		# "nessuna TF fuori dalla propria mappa".
 		if not sc.map_info.is_empty():
 			true_(str(sc.raw_setup_notes()).contains("Mappa Inserto"),
-				"%s: dichiara perche' non piazza TF sulla mappa principale" % id)
-			eq(sc.task_forces.size(), 0,
-				"%s: nessuna TF piazzata sulla mappa sbagliata" % id)
+				"%s: dichiara su quale mappa si gioca" % id)
+			var inset := MapGraph.load_inset(sc.inset_key())
+			eq(inset.load_error, "", "%s: l'inserto dichiarato si carica" % id)
+			var stray := 0
+			var st_i := GameState.new(inset, 1)
+			st_i.apply_dict(sc.to_state_dict())
+			for tf in st_i.task_forces:
+				for h in tf.trajectory.hexes():
+					if not inset.has_hex(h):
+						stray += 1
+			eq(stray, 0, "%s: nessuna TF fuori dalla propria mappa" % id)
 		else:
 			true_(sc.task_forces.size() > 0, "%s: schieramento iniziale piazzato" % id)
 		true_(sc.has_victory_table(), "%s: tabella Esito/Debriefing" % id)
@@ -962,8 +970,18 @@ func test_bl3_declares_inset_setup_gaps() -> void:
 	var inset := MapGraph.load_inset(sc.inset_key())
 	eq(inset.load_error, "", "e l'inserto dichiarato si carica davvero")
 	true_(inset.hex_count() > 0, "con i suoi esagoni")
-	eq(sc.task_forces.size(), 0,
-		"ma lo scenario non inventa coordinate: lo schieramento non c'e' ancora")
+	# Questa asserzione pretendeva che BL3 non avesse schieramento. Adesso ce
+	# l'ha, letto dall'illustrazione di p.12, e quello che conta e' che stia
+	# sull'inserto: la Traiettoria britannica e' una fila di cinque segmenti.
+	eq(sc.task_forces.size(), 2, "BL3 schiera due Task Force")
+	var st_bl3 := GameState.new(inset, 1)
+	st_bl3.apply_dict(sc.to_state_dict())
+	var off := 0
+	for tf in st_bl3.task_forces:
+		for h in tf.trajectory.hexes():
+			if not inset.has_hex(h):
+				off += 1
+	eq(off, 0, "e tutte le posizioni stanno sull'inserto, non su coordinate inventate")
 	true_(sc.commanders.has("Raeder"), "Raeder e' trascritto come comandante strategico")
 	var group: Array = sc.reinforcements.get("KM Reinforcement A", [])
 	eq(group.size(), 2, "il Gruppo Rinforzi A contiene due CL")

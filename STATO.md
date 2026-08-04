@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **3005 verifiche, 18 suite, headless.**
+Tutti i test passano: **3016 verifiche, 18 suite, headless.**
 
 ---
 
@@ -466,11 +466,29 @@ Tutti i test passano: **3005 verifiche, 18 suite, headless.**
   l'interfaccia vera e controlla che cambino tutti insieme, e che tornare a uno
   scenario normale rimetta la Mappa Operazionale coi suoi tile.
   Il testo che i cinque scenari mostravano - "reticolo e coordinate non
-  calibrati" - era ormai falso ed e' stato corretto: adesso dice che cosa manca
-  davvero, cioe' lo schieramento. Ed e' rimasta una cosa sola: le posizioni dei
-  segmenti ci sono in `core/data/inset_setups.json`, l'appartenenza no - quale
-  segmento e' di quale Task Force e in che ordine formi la Traiettoria va letto
-  dalle pagine, non si ricava dalle posizioni.
+  calibrati" - era ormai falso ed e' stato corretto.
+- **BL3 si gioca sul suo inserto: e' l'undicesimo scenario solitario che chiude
+  su una condizione stampata**, e il primo fuori dalla Mappa Operazionale.
+  Lo schieramento e' letto dall'illustrazione di p.12: cinque segmenti in fila,
+  (1,2) (2,1) (3,0) (4,-1) (5,-2) da Methil verso Bergen, che sono la
+  Traiettoria della TF britannica non identificata; e un cilindro Stazione in
+  (5,2), vicino a Heligoland, che il pannello Task Force identifica come la TF
+  tedesca - stesso set colore bianco a riga blu di Scharnhorst, Gneisenau e
+  Hipper. `SoloRunner` sceglie la mappa dallo scenario, come gia' fa
+  l'interfaccia. La fine stampata di p.12 e' stata aggiunta come condizione: "no
+  Task Forces in play, or two Convoys and/or Unidentified TFs Completed or
+  destroyed" - la seconda meta' e' una forma nuova, perche' conta due categorie
+  insieme e conta sia i Completamenti sia le distruzioni.
+  Il marker Sommergibile britannico e' in (5,1): la posizione e' letta, ma le
+  forze Furtive permanenti non sono ancora una pedina modellata, quindi resta
+  lacuna dichiarata.
+  Tre test hanno cambiato premessa insieme al fatto: controllavano che gli
+  scenari inserto NON avessero schieramento, e adesso controllano che le loro TF
+  stiano sulla PROPRIA mappa. E' il difetto vero da cui erano nati - le
+  posizioni inventate su porti sostitutivi - espresso in un modo che sopravvive
+  al progresso.
+  **Restano quattro schieramenti**: N1 (18 segmenti disegnati), N2 (dieci), N3
+  (dodici), N5 (nessuno, la sua mappa e' solo sfondo dei riquadri di regola).
 - **I Comandanti dicono la loro condizione stampata.** Gli undici testi sono
   trascritti da RB p.10 letta a 300 dpi: la scheda TF mostra la regola vera e
   non un riassunto, ed e' quella che decide se il beneficio si puo' usare

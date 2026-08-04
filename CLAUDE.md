@@ -41,7 +41,7 @@ godot --path . --script res://tools/smoke_solo_flow.gd -- BL1
 godot --path . --script res://tools/smoke_inset_map.gd
 ```
 
-Baseline corrente: **3005 verifiche, 18 suite** (era 2570 su 17 prima della
+Baseline corrente: **3016 verifiche, 18 suite** (era 2570 su 17 prima della
 suite `test_replay.gd`). Il totale non puo' scendere senza una rimozione
 intenzionale di test spiegata nel commit.
 
@@ -56,8 +56,9 @@ godot --headless --path . --script res://tools/replay_solo.gd
 `replay_solo.gd` gioca tutti e quindici gli scenari solitari dall'inizio alla
 fine con `SoloRunner` e distingue tre esiti: `OK` (fine stampata), `STALLO`
 (lacuna dichiarata del fascicolo) e `FALLITO` (il ciclo non converge: un
-difetto). Al passaggio: dieci `OK` - tutti gli scenari sulla Mappa Operazionale
-- e cinque `SALTATO`, i cinque della mappa inserto non calibrata.
+difetto). Al passaggio: **undici `OK`** - i dieci sulla Mappa Operazionale piu'
+BL3 sul suo inserto - e quattro `SALTATO`, gli scenari inserto a cui manca lo
+schieramento trascritto.
 
 `audit_solo.gd` verde non significa completo: al passaggio stampa 93 caselle
 uniche, 42 procedure Azione segnaposto, 2 buchi dichiarati e 0 blocchi.
@@ -102,10 +103,11 @@ Attenzione a due convenzioni del dato inserto, che il caricatore traduce e i
 test sorvegliano: `theta_deg` e' l'angolo dei VERTICI (la mappa grande usa la
 direzione di BASE, 30 gradi piu' avanti) e le `(q,r)` sono ribasate
 sull'angolo della cornice, non sulla cella (0,0) del fit.
-I cinque scenari inserto restano dichiarati non giocabili per una cosa sola:
-lo **schieramento iniziale**, cioe' quale segmento di Traiettoria sia di quale
-Task Force e in che ordine la formi. Le posizioni ci sono gia'
-(`core/data/inset_setups.json`), l'appartenenza no: va letta dalle pagine.
+**BL3 e' il primo dei cinque a giocarsi davvero sul suo inserto.** Agli altri
+quattro - N1, N2, N3, N5 - manca lo **schieramento iniziale**: quale segmento di
+Traiettoria sia di quale Task Force e in che ordine la formi. Le posizioni ci
+sono gia' (`core/data/inset_setups.json`), l'appartenenza no, e va letta dalle
+pagine una per una.
 
 ## Metodo di revisione
 

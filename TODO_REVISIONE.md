@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Aggiornato dopo la chiusura di **R0** (3 agosto 2026). Baseline: **3005
+Aggiornato dopo la chiusura di **R0** (3 agosto 2026). Baseline: **3016
 verifiche su 18 suite**.
 
 Questo e' il backlog autorevole per continuare la revisione. `STATO.md`
@@ -26,7 +26,7 @@ vecchie sezioni "Cosa manca" non devono riaprire lavori gia' completati.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 3005 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 3016 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
@@ -231,11 +231,25 @@ Uno scenario puo' essere marcato completo solo quando:
   Corretto anche un difetto vecchio riemerso: `TrajectoryRenderer.setup()`
   riconnetteva il segnale ogni volta, e adesso che si puo' chiamare due volte
   Godot protestava.
-  **Resta una cosa sola a bloccare i cinque scenari**: lo **schieramento
-  iniziale**. Le posizioni dei segmenti ci sono gia' in
-  `core/data/inset_setups.json`; quello che manca e' l'appartenenza - quale
-  segmento e' di quale Task Force e in che ordine forma la Traiettoria - e non
-  si ricava dalle posizioni: va letta dalle pagine del fascicolo.
+  **BL3 e' schierato e si gioca.** E' il primo dei cinque: l'illustrazione di
+  p.12 disegna cinque segmenti in fila - (1,2) (2,1) (3,0) (4,-1) (5,-2), da
+  Methil verso Bergen - che sono la Traiettoria della TF britannica non
+  identificata, e un cilindro Stazione in (5,2) che il pannello Task Force
+  identifica come la TF tedesca (Scharnhorst, Gneisenau, Hipper: stesso set
+  colore bianco a riga blu). `SoloRunner` sceglie la mappa dallo scenario, e il
+  replay porta BL3 alla sua fine stampata di p.12, aggiunta come condizione:
+  "no Task Forces in play, or two Convoys and/or Unidentified TFs Completed or
+  destroyed". Il marker Sommergibile britannico e' in (5,1) - posizione letta,
+  ma le forze Furtive non sono ancora modellate, quindi resta lacuna dichiarata.
+  **Restano quattro schieramenti**: N1, N2, N3 e N5. Le posizioni dei segmenti
+  ci sono gia' in `core/data/inset_setups.json` - N1 ne ha 18, N2 dieci, N3
+  dodici, N5 nessuno perche' la sua mappa e' solo sfondo dei riquadri - ma
+  l'appartenenza no: quale segmento e' di quale Task Force e in che ordine forma
+  la Traiettoria va letto dalle pagine, una per una.
+  Tre test hanno cambiato premessa insieme al fatto, e vale la pena saperlo:
+  controllavano che gli scenari inserto NON avessero schieramento, e adesso
+  controllano che le loro TF stiano sulla PROPRIA mappa - che e' il difetto
+  vero da cui quei test erano nati, le posizioni inventate su porti sostitutivi.
   **Otto esagoni sono marcati `needs_check`**: hanno terra e mare quasi in
   parti uguali, e il colore non basta a decidere. Gli esagoni scartati per un
   soffio restano scritti in `excluded_near_miss`, col motivo: nessuno sparisce

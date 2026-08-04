@@ -608,13 +608,20 @@ const OPERATIONS_MAP_SOLO := [
 	"A1 Convogli PQ", "A2 L'Ultima Battaglia",
 ]
 
-## Cinque scenari solitari si giocano su una MAPPA INSERTO, con un'altra
-## griglia. Questo progetto ha calibrato solo la mappa grande.
+## Cinque scenari solitari si giocano su una MAPPA INSERTO. Il reticolo dei due
+## inserti e' misurato, il grafo verificato contro le illustrazioni del
+## fascicolo e il motore li carica; quello che manca, per quattro di loro, e' lo
+## SCHIERAMENTO iniziale.
 const INSET_MAP_SOLO := [
 	"BL3 Raiders of the North Sea", "N1 Operazione Wilfred",
 	"N2 Operazione Weser (nord)", "N3 Operazione Weser (sud)",
 	"N5 Meglio Tardi che Mai",
 ]
+
+## BL3 e' il primo dei cinque ad avere lo schieramento trascritto: la sua
+## illustrazione di p.12 disegna cinque segmenti in fila e un cilindro Stazione,
+## e il replay lo gioca per intero sulla mappa inserto.
+const INSET_MAP_PLAYABLE := ["BL3 Raiders of the North Sea"]
 
 
 ## Senza condizioni di fine trascritte uno scenario non finisce mai, e nel
@@ -642,25 +649,67 @@ func test_every_playable_solo_scenario_has_printed_end_conditions() -> void:
 func test_inset_map_scenarios_refuse_the_operations_map() -> void:
 	_begin("gli scenari su mappa inserto lo dichiarano")
 	var undeclared: Array[String] = []
-	var misplaced: Array[String] = []
+	var wrong_map: Array[String] = []
+	var no_setup_but_playable: Array[String] = []
 	for id in INSET_MAP_SOLO:
 		var sc := Scenario.load_by_id(id)
-		if sc.map_info.is_empty():
+		if sc.map_info.is_empty() or sc.inset_key() == "":
 			undeclared.append(id)
-		if not sc.task_forces.is_empty():
-			misplaced.append(id)
-	eq(undeclared.size(), 0, "non dichiarano la mappa inserto: %s"
+			continue
+		# Le TF di uno scenario inserto devono stare in esagoni DELL'INSERTO.
+		# Prima quattro di questi le piazzavano su porti della mappa grande
+		# usati come sostituti, cioe' su posizioni inventate: il controllo
+		# adesso non e' piu' "nessuna TF", e' "nessuna TF fuori dalla sua mappa".
+		var inset := MapGraph.load_inset(sc.inset_key())
+		if inset.load_error != "":
+			undeclared.append(id)
+			continue
+		for tf_v: Variant in sc.task_forces:
+			var traj: Dictionary = (tf_v as Dictionary).get("trajectory", {})
+			var hs: Array[Vector2i] = []
+			for seg_v: Variant in traj.get("segments", []):
+				var seg: Dictionary = seg_v
+				hs.append(Vector2i(int(seg["q"]), int(seg["r"])))
+			if traj.get("segments", []).is_empty():
+				hs.append(Vector2i(int(traj.get("station_q", 0)),
+					int(traj.get("station_r", 0))))
+			for h in hs:
+				if not inset.has_hex(h):
+					wrong_map.append("%s %s" % [id, str(h)])
+		if sc.task_forces.is_empty() and INSET_MAP_PLAYABLE.has(id):
+			no_setup_but_playable.append(id)
+	eq(undeclared.size(), 0, "non dichiarano il loro inserto: %s"
 		% ", ".join(undeclared))
-	# E' il punto: prima quattro di questi piazzavano le TF su porti della
-	# mappa grande usati come sostituti, cioe' su posizioni inventate.
-	eq(misplaced.size(), 0, "piazzano TF sulla mappa sbagliata: %s"
-		% ", ".join(misplaced))
-	# Il replay deve rifiutarsi di giocarli, non giocarli male.
-	var runner := SoloRunner.new()
-	false_(runner.load_scenario(INSET_MAP_SOLO[0], 1),
-		"il replay rifiuta uno scenario su mappa inserto")
-	true_(runner.load_error.contains("Inserto"),
-		"e dice che il problema e' la mappa: %s" % runner.load_error)
+	eq(wrong_map.size(), 0, "piazzano TF fuori dalla loro mappa: %s"
+		% ", ".join(wrong_map))
+	eq(no_setup_but_playable.size(), 0, "dichiarati giocabili ma senza schieramento: %s"
+		% ", ".join(no_setup_but_playable))
+
+	# BL3 ha lo schieramento: il replay lo gioca, sulla SUA mappa.
+	var ok_runner := SoloRunner.new()
+	true_(ok_runner.load_scenario("BL3 Raiders of the North Sea", 20260803),
+		"BL3 si carica: %s" % ok_runner.load_error)
+	true_(ok_runner.graph != null and ok_runner.graph.is_inset(),
+		"e gioca su una mappa inserto")
+	eq(ok_runner.graph.inset_key, "map_north_sea", "quella giusta")
+	var out := ok_runner.run()
+	true_(bool(out.get("ended", false)),
+		"e arriva a una fine stampata: %s" % String(out.get("stopped", "")))
+
+	# Gli altri quattro no, e il motivo non deve essere generico.
+	var refused := 0
+	var says_setup := 0
+	for id in INSET_MAP_SOLO:
+		if INSET_MAP_PLAYABLE.has(id):
+			continue
+		var runner := SoloRunner.new()
+		if not runner.load_scenario(id, 1):
+			refused += 1
+			if runner.load_error.to_lower().contains("schieramento"):
+				says_setup += 1
+	eq(refused, INSET_MAP_SOLO.size() - INSET_MAP_PLAYABLE.size(),
+		"gli scenari senza schieramento vengono rifiutati, non giocati male")
+	eq(says_setup, refused, "e il motivo dichiarato e' lo schieramento, non la mappa")
 
 
 ## L'interprete conosce poche forme, quelle che il fascicolo usa davvero. Una
