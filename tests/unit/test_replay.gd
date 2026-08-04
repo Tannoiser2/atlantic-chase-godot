@@ -67,6 +67,7 @@ func run() -> void:
 	test_a2_selection_table_matches_the_printed_die()
 	test_start_counters_survive_setup_and_reload()
 	test_player_policy_order_is_explicit()
+	test_choices_go_through_an_explicit_question()
 
 
 ## Il conto delle verifiche di ogni suite e' fisso (`EXPECTED` in
@@ -919,3 +920,27 @@ func test_player_policy_order_is_explicit() -> void:
 			dupes.append(step)
 		seen.append(step)
 	eq(dupes.size(), 0, "nessun passo ripetuto: %s" % ", ".join(dupes))
+
+
+## Passo 2 dell'unificazione: le scelte del giocatore passano da una DOMANDA
+## esplicita invece di essere risolte prendendo `options[0]` dentro al ciclo.
+##
+## E' la cucitura che permette a un guidatore diverso - la GUI, che quelle
+## scelte le deve chiedere - di riusare il ciclo invece di riscriverlo.
+func test_choices_go_through_an_explicit_question() -> void:
+	_begin("le scelte del giocatore passano da una domanda")
+	var runner := SoloRunner.new()
+	true_(runner.load_scenario(BL1, BL1_SEED), "scenario caricato: %s" % runner.load_error)
+	# Il contratto: risponde con un indice valido, e la policy harness sceglie
+	# la prima opzione, che e' quella che l'elenco gia' ordina per preferenza.
+	var three: Array[String] = ["Kiel", "Brest", "Narvik"]
+	eq(runner.ask_choice("prova", three), 0, "la policy harness prende la prima")
+	true_(runner.ask_choice("prova", three) < three.size(),
+		"e l'indice e' dentro l'elenco")
+	# Senza opzioni non si inventa una scelta.
+	eq(runner.ask_choice("prova", [] as Array[String]), -1,
+		"un elenco vuoto non da' una scelta")
+	# La domanda non decide da sola: la stessa risposta per elenchi diversi
+	# significa che il ciclo non sta nascondendo una preferenza sua.
+	eq(runner.ask_choice("altra", ["Scapa Flow"] as Array[String]), 0,
+		"con una sola opzione la risposta e' quella")

@@ -595,6 +595,25 @@ func _player_reinforce() -> bool:
 ## `convoys_only` distingue le due occasioni in cui il giocatore simulato
 ## Completa: la prima e' il mestiere di un Convoglio, la seconda e' il rientro
 ## quando non c'e' piu' niente da fare.
+## Passo 2 dell'unificazione: le DOMANDE che il ciclo pone diventano esplicite.
+##
+## Finora il ciclo rispondeva da solo alle scelte del giocatore prendendo la
+## prima opzione - `options[0]` - e la GUI, che quelle stesse scelte le deve
+## CHIEDERE, non poteva riusare il ciclo. Ogni scelta passa adesso di qui.
+##
+## `SoloRunner` risponde con la policy harness: la prima opzione, che e' quella
+## che le opzioni gia' ordinano per preferenza. Un guidatore diverso - una GUI,
+## un test che vuole forzare una strada - eredita e ridefinisce questo metodo,
+## e il resto del ciclo non cambia di una riga.
+##
+## Ritorna l'INDICE scelto. Non puo' rifiutare: rifiutare e' una decisione della
+## sequenza, non della scelta, e sta nei passi della policy.
+func ask_choice(_question: String, options: Array[String]) -> int:
+	if options.is_empty():
+		return -1
+	return 0
+
+
 ## L'ordine in cui il giocatore simulato prova le sue azioni.
 ##
 ## NON e' una regola GMT: e' la policy della harness, ed e' per questo che ogni
@@ -742,12 +761,17 @@ func _player_completion(convoys_only: bool) -> bool:
 		var options := Completion.port_options(tf, graph, port_control)
 		if options.is_empty():
 			continue
+		var labels: Array[String] = []
+		for o_v: Variant in options:
+			labels.append(String((o_v as Dictionary)["name"]))
+		var pick := ask_choice("porto di Completamento per %s" % tf.display_name(),
+			labels)
 		_line("GIOCATORE (policy harness): Completamento di %s a %s."
-			% [tf.display_name(), String(options[0]["name"])])
+			% [tf.display_name(), labels[pick]])
 		if _inactive_steals("Completamento del giocatore"):
 			_line("GIOCATORE   Completamento impedito dal cambio d'Iniziativa.")
 			return true
-		var comp := Completion.resolve(tf, options[0], vp_tracker)
+		var comp := Completion.resolve(tf, options[pick], vp_tracker)
 		for line_v: Variant in comp.get("log", []):
 			_line("GIOCATORE   " + String(line_v))
 		if bool(comp.get("ok", false)):
