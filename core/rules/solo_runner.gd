@@ -444,34 +444,18 @@ func _player_turn() -> void:
 	# soltanto quando non resta niente da fare. Un giocatore che Completa alla
 	# prima occasione toglie dalla mappa proprio le navi che devono agire, e il
 	# replay non arriverebbe mai a meta' partita.
-	# Prima di tutto lo sbarco in Norvegia, quando lo scenario lo prevede: e'
-	# l'OBIETTIVO di N1 (posare le Mine) e di N2/N3 (consegnare truppe), non un
-	# ripiego. Un giocatore che Completa in porto per primo si porta via le
-	# navi che devono ancora sbarcare.
-	if _player_norway_completion():
-		return
-	if _player_completion(true):
-		return
-	# Alcuni scenari chiedono piu' Convogli Completati di quanti ne siano in
-	# gioco: B2, B4 e A1 ne vogliono tre e ne schierano due. Il terzo sta in un
-	# Gruppo di Rinforzo, e va chiamato o la condizione di fine stampata non
-	# potra' mai avverarsi. Non e' una tattica: e' l'unico modo di finire.
-	if _needs_more_convoys() and _player_reinforce():
-		return
-	if _player_attack():
-		return
-	# Il rientro va tentato PRIMA della Traiettoria, non dopo: una TF che puo'
-	# sempre allungare di un segmento non arriva mai all'ultima riga, e resta a
-	# fare avanti e indietro fra due porti fino al limite dei turni. E' successo
-	# davvero con il seme 42.
-	var going_home := not _enemy_convoy_in_play() \
-		or bool(state.solo_counters.get("bl1_fuel_limits", false))
-	if going_home and _player_completion(false):
-		return
-	if _player_trajectory():
-		return
-	if _player_completion(false):
-		return
+	# L'ordine della policy e' un ELENCO, non una catena di if. E' il primo
+	# passo verso l'unificazione con la GUI: in una macchina a passi ogni voce
+	# di questo elenco diventa un caso, e chi guida il ciclo - il replay con la
+	# sua policy, l'interfaccia con le sue domande - sceglie come rispondere.
+	# Finche' resta cablato qui, la GUI e' costretta a riscriverlo.
+	#
+	# Le ragioni dell'ordine stanno accanto a ogni voce, e non sono di comodo:
+	# vengono dagli obiettivi stampati degli scenari.
+	for step_v: Variant in _player_step_order():
+		var step := String(step_v)
+		if _run_player_step(step):
+			return
 	_line("GIOCATORE (policy harness): Passare.")
 	_player_time_lapse(_player_main_force())
 	_seek_initiative("GIOCATORE")
@@ -611,6 +595,55 @@ func _player_reinforce() -> bool:
 ## `convoys_only` distingue le due occasioni in cui il giocatore simulato
 ## Completa: la prima e' il mestiere di un Convoglio, la seconda e' il rientro
 ## quando non c'e' piu' niente da fare.
+## L'ordine in cui il giocatore simulato prova le sue azioni.
+##
+## NON e' una regola GMT: e' la policy della harness, ed e' per questo che ogni
+## riga che ne esce e' marcata "GIOCATORE (policy harness)" nella trascrizione.
+## Le ragioni pero' vengono dal fascicolo, e sono queste:
+##
+##   norway      lo sbarco in Norvegia e' l'OBIETTIVO di N1 (posare le Mine) e
+##               di N2/N3 (consegnare truppe), non un ripiego. Chi Completa in
+##               porto per primo si porta via le navi che devono sbarcare.
+##   convoy      un Convoglio che arriva in porto e' l'obiettivo stampato di
+##               BL1 e BL2.
+##   reinforce   B2, B4 e A1 chiedono piu' Convogli Completati di quanti ne
+##               schierino: il terzo sta in un Gruppo di Rinforzo e va chiamato,
+##               o la condizione di fine non potra' mai avverarsi.
+##   attack      un cacciatore va a caccia di Convogli.
+##   go_home     il rientro va tentato PRIMA della Traiettoria: una TF che puo'
+##               sempre allungare di un segmento non arriva mai all'ultima riga
+##               e resta a fare avanti e indietro fra due porti fino al limite
+##               dei turni. E' successo davvero, col seme 42.
+##   trajectory  altrimenti si naviga.
+##   complete    e solo in ultimo si rientra comunque.
+func _player_step_order() -> Array[String]:
+	return ["norway", "convoy", "reinforce", "attack", "go_home",
+		"trajectory", "complete"]
+
+
+## Esegue un passo della policy. Ritorna vero se il passo ha consumato l'azione.
+func _run_player_step(step: String) -> bool:
+	match step:
+		"norway":
+			return _player_norway_completion()
+		"convoy":
+			return _player_completion(true)
+		"reinforce":
+			return _needs_more_convoys() and _player_reinforce()
+		"attack":
+			return _player_attack()
+		"go_home":
+			var going_home := not _enemy_convoy_in_play() \
+				or bool(state.solo_counters.get("bl1_fuel_limits", false))
+			return going_home and _player_completion(false)
+		"trajectory":
+			return _player_trajectory()
+		"complete":
+			return _player_completion(false)
+	push_error("passo di policy sconosciuto: %s" % step)
+	return false
+
+
 ## Completamento in Norvegia (fascicolo p.16), con quello che ne consegue: la
 ## posa delle Mine se l'esagono e' un bersaglio dichiarato (N1 p.17) e il tiro
 ## della Reazione Norvegese, che tocca al giocatore e non all'avversario

@@ -66,6 +66,7 @@ func run() -> void:
 	test_a2_interception_ends_on_each_printed_clause()
 	test_a2_selection_table_matches_the_printed_die()
 	test_start_counters_survive_setup_and_reload()
+	test_player_policy_order_is_explicit()
 
 
 ## Il conto delle verifiche di ogni suite e' fisso (`EXPECTED` in
@@ -880,3 +881,41 @@ func _a2_state(graph: MapGraph) -> GameState:
 	st.apply_dict(sc.to_state_dict())
 	st.scenario_name = A2
 	return st
+
+
+## Primo passo dell'unificazione GUI/SoloRunner: l'ordine della policy del
+## giocatore simulato e' un ELENCO leggibile, non una catena di if cablata.
+##
+## Serve perche' in una macchina a passi ogni voce diventa un caso, e chi guida
+## il ciclo - il replay con la sua policy, l'interfaccia con le sue domande -
+## sceglie come rispondere. Finche' l'ordine resta cablato, la GUI e' costretta
+## a riscriverlo, ed e' esattamente la duplicazione da chiudere.
+func test_player_policy_order_is_explicit() -> void:
+	_begin("l'ordine della policy del giocatore e' esplicito")
+	var runner := SoloRunner.new()
+	true_(runner.load_scenario(BL1, BL1_SEED), "scenario caricato: %s" % runner.load_error)
+	var order: Array[String] = runner._player_step_order()
+	true_(order.size() >= 5, "l'elenco ha i suoi passi (%d)" % order.size())
+	# Le due voci il cui ORDINE viene da un difetto pagato: lo sbarco in
+	# Norvegia prima di ogni Completamento in porto, e il rientro prima della
+	# Traiettoria - senza, una TF allunga di un segmento all'infinito.
+	eq(order[0], "norway", "lo sbarco in Norvegia viene per primo")
+	true_(order.find("go_home") < order.find("trajectory"),
+		"il rientro viene prima della Traiettoria")
+	true_(order.find("trajectory") < order.find("complete"),
+		"e il Completamento di ripiego per ultimo")
+	# Ogni voce dev'essere gestita: un passo senza caso e' un buco silenzioso.
+	var unknown: Array[String] = []
+	for step in order:
+		if not ["norway", "convoy", "reinforce", "attack", "go_home",
+				"trajectory", "complete"].has(step):
+			unknown.append(step)
+	eq(unknown.size(), 0, "nessun passo senza gestore: %s" % ", ".join(unknown))
+	# Nessun doppione: due volte lo stesso passo vuol dire un ordine sbagliato.
+	var seen: Array[String] = []
+	var dupes: Array[String] = []
+	for step in order:
+		if seen.has(step):
+			dupes.append(step)
+		seen.append(step)
+	eq(dupes.size(), 0, "nessun passo ripetuto: %s" % ", ".join(dupes))

@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Baseline: **3150 verifiche su 20 suite**, tutte verdi. Replay solitario:
+Baseline: **3157 verifiche su 20 suite**, tutte verdi. Replay solitario:
 **quindici `OK`** su quindici scenari, nessuno saltato.
 
 Questo e' il backlog autorevole. `STATO.md` contiene anche una lunga cronologia:
@@ -109,7 +109,12 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
   141 punti di `await`**, `solo_runner.gd` ne ha 1291 ed e' sincrono,
   `solo_sequence.gd` ne condivide 133 - le REGOLE della sequenza, non l'ordine
   dei passi.
-  **Il progetto**, che non e' "spostare del codice":
+  **PASSO 1 FATTO**: l'ordine della policy del giocatore e' un elenco leggibile
+  (`_player_step_order` / `_run_player_step`) invece di una catena di if, con
+  la ragione di ogni voce accanto e un test che ne difende l'ordine. La
+  trascrizione del replay e' rimasta identica a parita' di seme, che e' la
+  prova che il refactor non ha cambiato il gioco.
+  **Il progetto per il resto**, che non e' "spostare del codice":
   1. `SoloRunner` diventa una MACCHINA A PASSI invece di un ciclo: un
      `step()` che ritorna o un risultato o una DOMANDA (quale porto, quale
      bersaglio, quale segmento togliere).
@@ -153,7 +158,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 3150 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 3157 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
