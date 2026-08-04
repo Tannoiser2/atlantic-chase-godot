@@ -944,3 +944,10 @@ func test_choices_go_through_an_explicit_question() -> void:
 	# significa che il ciclo non sta nascondendo una preferenza sua.
 	eq(runner.ask_choice("altra", ["Scapa Flow"] as Array[String]), 0,
 		"con una sola opzione la risposta e' quella")
+	# Chi chiama puo' passare l'indice che PREFERIREBBE: certe scelte hanno un
+	# criterio che vive dove stanno i numeri - allo Scorrere del Tempo si toglie
+	# dal capo piu' lontano dall'obiettivo. La policy harness lo accetta sempre.
+	eq(runner.ask_choice("prova", three, 2), 2, "il preferito viene accettato")
+	eq(runner.ask_choice("prova", three, 9), 2,
+		"e un preferito fuori elenco viene riportato dentro, non fa saltare tutto")
+	eq(runner.ask_choice("prova", three, -3), 0, "anche da sotto")

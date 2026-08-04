@@ -601,17 +601,21 @@ func _player_reinforce() -> bool:
 ## prima opzione - `options[0]` - e la GUI, che quelle stesse scelte le deve
 ## CHIEDERE, non poteva riusare il ciclo. Ogni scelta passa adesso di qui.
 ##
-## `SoloRunner` risponde con la policy harness: la prima opzione, che e' quella
-## che le opzioni gia' ordinano per preferenza. Un guidatore diverso - una GUI,
-## un test che vuole forzare una strada - eredita e ridefinisce questo metodo,
-## e il resto del ciclo non cambia di una riga.
+## Chi chiama passa anche l'indice che PREFERIREBBE, perche' certe scelte hanno
+## un criterio che vive dove stanno i numeri: allo Scorrere del Tempo si toglie
+## dal capo piu' lontano dall'obiettivo, e quel conto lo sa fare solo chi ha la
+## Traiettoria sotto mano. Il criterio resta li'; qui sta la DECISIONE di
+## accettarlo. `SoloRunner` la accetta sempre - e' la policy harness - mentre
+## una GUI ignora il preferito e chiede all'essere umano, senza che il resto
+## del ciclo cambi di una riga.
 ##
 ## Ritorna l'INDICE scelto. Non puo' rifiutare: rifiutare e' una decisione della
 ## sequenza, non della scelta, e sta nei passi della policy.
-func ask_choice(_question: String, options: Array[String]) -> int:
+func ask_choice(_question: String, options: Array[String],
+		preferred: int = 0) -> int:
 	if options.is_empty():
 		return -1
-	return 0
+	return clampi(preferred, 0, options.size() - 1)
 
 
 ## L'ordine in cui il giocatore simulato prova le sue azioni.
@@ -787,6 +791,17 @@ func _player_completion(convoys_only: bool) -> bool:
 ## nemica perche' capita nello stesso esagono e' esattamente la mossa che il
 ## fascicolo scoraggia, e nel primo replay costava la partita al turno uno.
 func _player_attack() -> bool:
+	# I candidati si RACCOLGONO tutti, in ordine di preferenza, e poi si sceglie
+	# dalla cucitura. Prima si usciva al primo legale: comodo per il replay,
+	# inutile per la GUI, che quei candidati li deve mostrare tutti perche' la
+	# scelta e' del giocatore.
+	#
+	# L'ordine e' la preferenza: prima i Convogli. L'obiettivo stampato di BL1 e
+	# BL2 e' colpire i Convogli, e attaccare la corazzata nemica perche' capita
+	# nello stesso esagono e' la mossa che il fascicolo scoraggia - nel primo
+	# replay costava la partita al turno uno.
+	var moves: Array[Dictionary] = []
+	var labels: Array[String] = []
 	for convoys_first in [true, false]:
 		for tf in state.forces_of(player_side):
 			if _carries_convoy(tf):
@@ -808,12 +823,17 @@ func _player_attack() -> bool:
 						continue
 					if not convoys_first and not _worth_attacking(tf, enemy):
 						continue
-					_line("GIOCATORE (policy harness): %s con %s contro %s."
+					moves.append({"dec": dec, "key": key, "tf": tf, "enemy": enemy})
+					labels.append("%s con %s contro %s"
 						% [String(engine.action(key).get("label", key)),
 							tf.display_name(), enemy.display_name()])
-					_resolve_player_action(dec)
-					return true
-	return false
+	if moves.is_empty():
+		return false
+	var pick := ask_choice("attacco del giocatore", labels)
+	var move: Dictionary = moves[pick]
+	_line("GIOCATORE (policy harness): %s." % labels[pick])
+	_resolve_player_action(move["dec"])
+	return true
 
 
 ## Una TF senza Convoglio attacca un'altra TF senza Convoglio solo se non ci
@@ -1035,18 +1055,27 @@ func _time_lapse(tf: TaskForce, goal: Vector2i, protected_hex: Vector2i,
 	if opts.is_empty():
 		_line("%s   Scorrere del Tempo: nessuna rimozione legale." % who)
 		return
-	var chosen: Dictionary = opts[0]
+	# Il criterio: si toglie dal capo piu' LONTANO dall'obiettivo, cosi' la
+	# Traiettoria si accorcia dalla parte che non serve. Il conto sta qui perche'
+	# qui c'e' la Traiettoria; la scelta passa dalla cucitura.
+	var preferred := 0
 	var best := -INF
-	for option in opts:
+	var labels: Array[String] = []
+	for i in opts.size():
+		var option: Dictionary = opts[i]
 		var ends: Array = option["ends"]
 		var d0 := Hex.distance(tf.trajectory.end_hex(0), goal) \
 			if goal != Vector2i.MAX else 0
 		var d1 := Hex.distance(tf.trajectory.end_hex(1), goal) \
 			if goal != Vector2i.MAX else 0
 		var score := float(int(ends[0]) * d0 + int(ends[1]) * d1)
+		labels.append("%d dalla testa, %d dalla coda" % [int(ends[0]), int(ends[1])])
 		if score > best:
 			best = score
-			chosen = option
+			preferred = i
+	var picked := ask_choice("segmenti da togliere a %s" % tf.display_name(),
+		labels, preferred)
+	var chosen: Dictionary = opts[picked]
 	var freed := TimeLapse.apply(tf.trajectory, chosen)
 	var station_note := ""
 	if tf.trajectory.length() == 0 and not freed.is_empty():
