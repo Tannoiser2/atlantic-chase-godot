@@ -69,6 +69,7 @@ func run() -> void:
 	test_player_policy_order_is_explicit()
 	test_choices_go_through_an_explicit_question()
 	test_a_different_answerer_changes_the_game()
+	test_the_cycle_can_be_driven_step_by_step()
 
 
 ## Il conto delle verifiche di ogni suite e' fisso (`EXPECTED` in
@@ -998,3 +999,65 @@ func test_a_different_answerer_changes_the_game() -> void:
 	var survived := rude.run()
 	true_(bool(survived["ended"]) or String(survived["stopped"]) != "",
 		"con risposte fuori elenco il ciclo arriva comunque a una fine")
+
+
+## Passo 4: il ciclo si puo' GUIDARE a passi invece di eseguirlo tutto.
+##
+## `step()` gioca un turno del giocatore e si ferma alla prima domanda senza
+## risposta; `answer()` risponde e riprende. E' la forma di cui la GUI ha
+## bisogno, perche' fra i due ci sta il suo `await Choice.ask` mentre il ciclo
+## resta sincrono - ed e' esattamente il motivo per cui l'ereditarieta' con una
+## `ask_choice` coroutine non poteva funzionare: GDScript rifiuta a
+## compile-time di chiamare una coroutine senza await.
+func test_the_cycle_can_be_driven_step_by_step() -> void:
+	_begin("il ciclo si guida a passi")
+	var runner := SoloRunner.new()
+	true_(runner.load_scenario(BL2, BL2_SEED), "scenario caricato: %s" % runner.load_error)
+
+	var questions := 0
+	var guard := 0
+	var out := runner.step()
+	while String(out.get("kind", "")) == "question" and guard < 50:
+		guard += 1
+		questions += 1
+		# La domanda arriva completa: chi guida deve poterla mostrare.
+		true_(String(out.get("question", "")) != "", "la domanda ha un testo")
+		var opts: Array = out.get("options", [])
+		true_(opts.size() > 0, "e almeno un'opzione")
+		var pref := int(out.get("preferred", 0))
+		true_(pref >= 0 and pref < opts.size(),
+			"e un preferito dentro l'elenco (%d di %d)" % [pref, opts.size()])
+		out = runner.answer(pref)
+	eq(String(out.get("kind", "")), "done", "il turno arriva in fondo")
+	true_(guard < 50, "e non gira a vuoto")
+
+	# Rispondere sempre col preferito deve dare lo STESSO turno che il ciclo
+	# normale gioca da solo: la macchina a passi non e' un'altra partita.
+	var whole := SoloRunner.new()
+	true_(whole.load_scenario(BL2, BL2_SEED), "secondo scenario caricato")
+	var driven := SoloRunner.new()
+	true_(driven.load_scenario(BL2, BL2_SEED), "terzo scenario caricato")
+	# Un turno con il ciclo normale, uno guidato a passi.
+	whole._begin_player_turn()
+	whole._player_turn()
+	var d := driven.step()
+	var loops := 0
+	while String(d.get("kind", "")) == "question" and loops < 50:
+		loops += 1
+		d = driven.answer(int(d.get("preferred", 0)))
+	var a: Array = whole.transcript
+	var b: Array = driven.transcript
+	eq(b.size(), a.size(), "stesso numero di righe di trascrizione")
+	var same := a.size() == b.size()
+	if same:
+		for i in a.size():
+			if String(a[i]) != String(b[i]):
+				same = false
+				break
+	true_(same, "e le righe sono le stesse: guidare a passi non cambia la partita")
+
+	# Rispondere a niente non rompe niente.
+	var idle := SoloRunner.new()
+	true_(idle.load_scenario(BL2, BL2_SEED), "quarto scenario caricato")
+	eq(String(idle.answer(0).get("kind", "")), "done",
+		"rispondere senza domanda in sospeso non fa danni")

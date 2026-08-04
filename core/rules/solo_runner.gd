@@ -153,6 +153,7 @@ func run(max_turns: int = MAX_TURNS) -> Dictionary:
 			_bot_turn()
 		else:
 			player_turns += 1
+			_begin_player_turn()
 			_player_turn()
 		if SoloAI.enforce_scenario_end(state):
 			_line("FINE SCENARIO: %s" % state.solo_end_reason)
@@ -423,10 +424,15 @@ func _resolve_bot_action(decision: Dictionary) -> void:
 
 ## POLICY DELL'HARNESS, non una regola del fascicolo: vedi l'intestazione.
 func _player_turn() -> void:
+	# I Controlli Rifornimento tirano dadi, e un turno rigiocato dopo una
+	# domanda non deve ritirarli: si fanno una volta per turno, e la memoria
+	# la azzera chi COMINCIA un turno nuovo, non chi lo rigioca.
+	if not _turn_rolls.has("fueling"):
+		_turn_rolls["fueling"] = true
+		_bl1_fueling_checks()
 	# Il Controllo Rifornimento di BL1 non e' una scelta: e' obbligatorio non
 	# appena il tedesco ha l'Iniziativa e una sua Stazione occupa un RV
 	# (AC Solo scenarios 2022 p.6). Va quindi prima dell'azione.
-	_bl1_fueling_checks()
 	var forces := state.forces_of(player_side)
 	if forces.is_empty():
 		# Restare senza Task Force non e' la fine dello scenario: i Gruppi di
@@ -455,6 +461,8 @@ func _player_turn() -> void:
 	for step_v: Variant in _player_step_order():
 		var step := String(step_v)
 		if _run_player_step(step):
+			return
+		if _aborted:
 			return
 	_line("GIOCATORE (policy harness): Passare.")
 	_player_time_lapse(_player_main_force())
@@ -620,21 +628,126 @@ func _player_reinforce() -> bool:
 ## l'unico modo di sapere che la cucitura non e' decorativa.
 var answerer: Callable = Callable()
 
+# --- macchina a passi (passo 4 dell'unificazione con la GUI) -----------------
+#
+# Il meccanismo, ed e' semplice a patto di dire cosa lo rende sicuro: una
+# domanda senza risposta INTERROMPE il turno, e `answer()` lo rigioca da capo
+# con le risposte accumulate. Rigiocare va bene solo se prima di ogni domanda
+# non e' successo niente di irreversibile - e c'era un'eccezione, il dado dello
+# Scorrere del Tempo, che adesso viene tirato una volta sola e ricordato
+# (`_turn_rolls`).
+var _pending: Dictionary = {}          ## domanda in attesa, o vuoto
+var _answers: Array[int] = []          ## risposte gia' date per QUESTO turno
+var _answer_index: int = 0
+var _turn_rolls: Dictionary = {}       ## tiri gia' fatti in questo turno
+var _aborted: bool = false
+var _stepping: bool = false            ## vero solo dentro step()/answer()
+## Lunghezza della trascrizione all'inizio del turno. Rigiocare un turno
+## riemette le righe gia' scritte, e il registro e' l'unico effetto che
+## sopravvive alla ripresa: si riporta indietro a ogni giro. Se ne e' accorto
+## il test, che confrontava un turno guidato a passi con lo stesso turno giocato
+## tutto insieme e ne trovava nove righe contro sette.
+var _turn_transcript_len: int = 0
+## Fotografia dello stato all'inizio del turno.
+##
+## Rigiocare un turno non basta riportare indietro il registro: i passi della
+## policy MODIFICANO lo stato prima di arrivare a una domanda - il passo
+## Traiettoria allunga la rotta e solo dopo lo Scorrere del Tempo chiede quali
+## segmenti togliere. Al secondo giro il mondo era diverso e la partita
+## imboccava un'altra strada: nel test, un Completamento a Methil al posto di
+## una Traiettoria.
+##
+## La fotografia usa `to_dict`/`apply_dict`, cioe' la stessa strada del
+## salvataggio, che il progetto verifica da sempre - RNG compreso, che e'
+## serializzato come stringa apposta. Se il ripristino non fosse fedele, non lo
+## sarebbe nemmeno caricare una partita.
+var _turn_snapshot: Dictionary = {}
+
 
 func ask_choice(question: String, options: Array[String],
 		preferred: int = 0) -> int:
 	if options.is_empty():
 		return -1
 	var fallback := clampi(preferred, 0, options.size() - 1)
-	if not answerer.is_valid():
+	# Risposta gia' data in un giro precedente di questo stesso turno: si
+	# riconsuma nell'ordine, cosi' rigiocare il turno da' la stessa partita.
+	if _answer_index < _answers.size():
+		var replayed := _answers[_answer_index]
+		_answer_index += 1
+		return clampi(replayed, 0, options.size() - 1)
+	if answerer.is_valid():
+		var given: Variant = answerer.call(question, options, fallback)
+		if typeof(given) == TYPE_INT:
+			# Una risposta fuori elenco non fa saltare la partita: si riporta
+			# dentro e si tira avanti. Un guidatore che sbaglia indice e' un
+			# difetto suo, non un motivo per fermare il ciclo a meta'.
+			return clampi(int(given), 0, options.size() - 1)
 		return fallback
-	var given: Variant = answerer.call(question, options, fallback)
-	if typeof(given) != TYPE_INT:
+	if not _stepping:
 		return fallback
-	# Una risposta fuori elenco non fa saltare la partita: si riporta dentro e
-	# si tira avanti. Un guidatore che sbaglia indice e' un difetto suo, non un
-	# motivo per fermare il ciclo a meta'.
-	return clampi(int(given), 0, options.size() - 1)
+	# Nessuno puo' rispondere adesso: si sospende il turno e si consegna la
+	# domanda a chi guida.
+	_pending = {"question": question, "options": options.duplicate(),
+		"preferred": fallback}
+	_aborted = true
+	return -1
+
+
+# ------------------------------------------------- macchina a passi (API) --
+
+## Comincia un turno del giocatore pulito: niente risposte accumulate, niente
+## tiri ricordati. Chi RIGIOCA un turno dopo una domanda non deve chiamarlo.
+func _begin_player_turn() -> void:
+	_answers.clear()
+	_answer_index = 0
+	_turn_rolls.clear()
+	_pending = {}
+	_aborted = false
+	_turn_transcript_len = transcript.size()
+	_turn_snapshot = state.to_dict()
+
+
+## Gioca un turno del giocatore fermandosi alla prima domanda senza risposta.
+##
+## Ritorna { "kind": "question", "question", "options", "preferred" } se serve
+## una scelta, oppure { "kind": "done" } se il turno e' finito.
+##
+## E' la forma che la GUI puo' guidare: fra `step()` e `answer()` ci sta il suo
+## `await Choice.ask`, e il ciclo resta sincrono - che e' il motivo per cui
+## l'ereditarieta' con una `ask_choice` coroutine non poteva funzionare.
+func step() -> Dictionary:
+	_begin_player_turn()
+	return _run_player_turn_once()
+
+
+## Risponde alla domanda in sospeso e riprende. Il turno viene RIGIOCATO da capo
+## con tutte le risposte date finora: e' sicuro perche' prima di ogni domanda
+## non succede niente di irreversibile - i tiri di dado del turno sono
+## ricordati, e i passi della policy che precedono sono solo controlli.
+func answer(index: int) -> Dictionary:
+	if _pending.is_empty():
+		return {"kind": "done"}
+	_answers.append(index)
+	_answer_index = 0
+	_pending = {}
+	_aborted = false
+	# Si riparte dalla fotografia: le risposte gia' date rifanno lo stesso
+	# cammino, e quella nuova prosegue da dove ci si era fermati.
+	return _run_player_turn_once(true)
+
+
+func _run_player_turn_once(restore: bool = false) -> Dictionary:
+	if restore and not _turn_snapshot.is_empty():
+		state.apply_dict(_turn_snapshot)
+	transcript.resize(_turn_transcript_len)
+	_stepping = true
+	_player_turn()
+	_stepping = false
+	if not _pending.is_empty():
+		var q := _pending.duplicate(true)
+		q["kind"] = "question"
+		return q
+	return {"kind": "done"}
 
 
 ## L'ordine in cui il giocatore simulato prova le sue azioni.
@@ -789,6 +902,8 @@ func _player_completion(convoys_only: bool) -> bool:
 			labels.append(String((o_v as Dictionary)["name"]))
 		var pick := ask_choice("porto di Completamento per %s" % tf.display_name(),
 			labels)
+		if pick < 0:
+			return true
 		_line("GIOCATORE (policy harness): Completamento di %s a %s."
 			% [tf.display_name(), labels[pick]])
 		if _inactive_steals("Completamento del giocatore"):
@@ -849,6 +964,8 @@ func _player_attack() -> bool:
 	if moves.is_empty():
 		return false
 	var pick := ask_choice("attacco del giocatore", labels)
+	if pick < 0:
+		return true
 	var move: Dictionary = moves[pick]
 	_line("GIOCATORE (policy harness): %s." % labels[pick])
 	_resolve_player_action(move["dec"])
@@ -1068,7 +1185,13 @@ func _time_lapse(tf: TaskForce, goal: Vector2i, protected_hex: Vector2i,
 		who: String) -> void:
 	if tf == null or tf.trajectory.is_station():
 		return
-	var amount := TimeLapse.required_removal(tf.speed, state.weather, state.rng)
+	# Il dado va tirato UNA volta per turno anche se il turno viene rigiocato
+	# dopo una domanda: senza questa memoria, ogni ripresa ne consumerebbe un
+	# altro e la stessa partita darebbe risultati diversi.
+	var roll_key := "time_lapse:%d" % tf.id
+	var amount: int = int(_turn_rolls[roll_key]) if _turn_rolls.has(roll_key) \
+		else TimeLapse.required_removal(tf.speed, state.weather, state.rng)
+	_turn_rolls[roll_key] = amount
 	var opts := TimeLapse.removal_options(tf.trajectory, tf.speed, amount,
 		protected_hex)
 	if opts.is_empty():
@@ -1094,6 +1217,8 @@ func _time_lapse(tf: TaskForce, goal: Vector2i, protected_hex: Vector2i,
 			preferred = i
 	var picked := ask_choice("segmenti da togliere a %s" % tf.display_name(),
 		labels, preferred)
+	if picked < 0:
+		return
 	var chosen: Dictionary = opts[picked]
 	var freed := TimeLapse.apply(tf.trajectory, chosen)
 	var station_note := ""

@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Baseline: **3172 verifiche su 20 suite**, tutte verdi. Replay solitario:
+Baseline: **3184 verifiche su 20 suite**, tutte verdi. Replay solitario:
 **quindici `OK`** su quindici scenari, nessuno saltato.
 
 Questo e' il backlog autorevole. `STATO.md` contiene anche una lunga cronologia:
@@ -122,41 +122,25 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
   L'attacco in particolare non esce piu' al primo candidato legale: li raccoglie
   tutti in ordine di preferenza e poi sceglie, che e' la forma di cui la GUI ha
   bisogno per mostrarli.
-  **PASSO 4: l'ereditarieta' NON funziona, ed e' stato verificato.** L'idea era
-  che la GUI ereditasse `SoloRunner` e ridefinisse `ask_choice` con un
-  `await Choice.ask`. GDScript lo rifiuta a compile-time: "Function is a
-  coroutine, so it must be called with await". Basta un `await` dentro
-  `ask_choice` per rendere coroutine ogni chiamante - `_run_player_step`,
-  `_player_turn`, `run()` - e con loro `tools/replay_solo.gd` e la harness dei
-  test, che sono sincroni. Il costo non e' la GUI: e' rendere coroutine tutto
-  il collaudo.
-  **La forma giusta e' quella INVERTITA**, e la verifica lo dimostra: non un
-  metodo virtuale che sospende, ma una macchina a passi che RITORNA la domanda
-  e viene ripresa con la risposta.
-  ```
-  var q := runner.step()              # {"kind": "question", ...} oppure {"kind": "done"}
-  if q["kind"] == "question":
-      runner.answer(indice)           # GUI: dopo await Choice.ask. Replay: subito
-  ```
-  Nessuna coroutine da nessuna parte, e il replay resta sincrono.
-  **Chi risponde e' gia' iniettabile** (`runner.answerer`), ed e' la stessa
-  forma che avra' `answer()`: un test sostituisce il rispondente e la
-  trascrizione cambia, che e' la prova che la cucitura non e' decorativa. Il
-  ciclo regge anche una risposta fuori elenco invece di rompersi.
-  **Il progetto per il resto**:
-  1. `SoloRunner` diventa una MACCHINA A PASSI invece di un ciclo: un
-     `step()` che ritorna o un risultato o una DOMANDA (quale porto, quale
-     bersaglio, quale segmento togliere), e un `answer()` che la riprende. E'
-     il pezzo grosso: il ciclo va spezzato in stati ripartibili, perche' oggi
-     `_player_turn()` va da cima a fondo in una chiamata sola.
-  2. Chi lo guida risponde alle domande. Il replay risponde con la policy
-     harness - le righe marcate `GIOCATORE (policy harness)` sono gia' quello -
-     la GUI risponde con `await Choice.ask` e i clic sulla mappa.
-  3. Sparisce la policy dal ciclo: oggi `SoloRunner` decide E sequenzia, e le
-     due cose vanno separate o la GUI si porta dietro le decisioni del bot.
-  4. I test di `test_replay.gd` restano il paracadute: determinismo, fine
-     stampata, Completamenti legali. Se dopo il refactor un seme da' una
-     trascrizione diversa, il refactor ha cambiato il gioco.
+  **PASSO 4 FATTO: il ciclo si guida a passi.** `step()` gioca un turno del
+  giocatore e si ferma alla prima domanda senza risposta; `answer(indice)`
+  risponde e riprende. Fra i due ci sta l'`await Choice.ask` della GUI, e il
+  ciclo resta sincrono.
+  L'ereditarieta' con una `ask_choice` coroutine NON funzionava, ed e' stato
+  verificato: GDScript rifiuta a compile-time di chiamare una coroutine senza
+  `await`, quindi sarebbe diventato coroutine tutto il collaudo.
+  Come funziona la ripresa, e perche' e' sicura: il turno viene RIGIOCATO da
+  capo con le risposte accumulate. Rigiocare richiede di riportare indietro
+  tutto quello che il primo giro aveva toccato, e sono tre cose, tutte trovate
+  dal test e non a tavolino: i tiri di dado del turno (ricordati), il registro
+  (troncato) e **lo stato del gioco** - il passo Traiettoria allunga la rotta e
+  solo dopo lo Scorrere del Tempo chiede quali segmenti togliere, quindi al
+  secondo giro il mondo era diverso e la partita imboccava un'altra strada. La
+  fotografia usa `to_dict`/`apply_dict`, la stessa strada del salvataggio, che
+  il progetto verifica da sempre.
+  **Resta solo il collegamento della GUI**: `ui/main.gd` deve guidare
+  `step()`/`answer()` invece di riscrivere la sequenza. Il ciclo e' pronto, la
+  duplicazione non lo e' ancora.
   **Non e' un lavoro da una sessione**, ed e' sul file piu' rischioso del
   progetto: e' quello che oggi si gioca davvero.
 - **Battaglia avanzata**: quattro scelte interattive e il mini-scenario MS12.
@@ -189,7 +173,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 3172 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 3184 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
