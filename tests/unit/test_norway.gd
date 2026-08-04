@@ -22,6 +22,8 @@ func run() -> void:
 	test_imaginary_player_loses_it()
 	test_n5_adjacent_landing()
 	test_norwegian_reaction_tables()
+	test_reaction_roll()
+	test_reaction_effects()
 
 
 func _tf(st: GameState, side: int, h: Vector2i, ships: Array) -> TaskForce:
@@ -212,3 +214,101 @@ func test_norwegian_reaction_tables() -> void:
 		"e solo N5 ha risultati che spostano le Basi Aeree")
 	true_(String(doc.get("_status", "")).contains("non ancora automatizzate"),
 		"il dato dichiara che le tabelle non sono ancora giocate")
+
+
+## Il tiro della Reazione Norvegese, con i dadi forzati: ogni riga e ogni
+## colonna delle quattro tabelle deve essere raggiungibile.
+func test_reaction_roll() -> void:
+	_begin("il tiro della Reazione Norvegese")
+	var uk := TaskForce.Side.ROYAL_NAVY
+	var ge := TaskForce.Side.KRIEGSMARINE
+	var narvik := inset.port_hex("Narvik")
+
+	# N1: una riga sola. 1-2 adirata, 3-6 nessuna reazione.
+	var st := GameState.new(inset, 1)
+	var conv := _tf(st, uk, narvik, ["Convoy x2"])
+	st.rng.push_forced([2])
+	var r1 := Norway.roll_reaction(st, inset, st.rng, "N1 Operazione Wilfred", conv, narvik)
+	true_(bool(r1["ok"]), "il tiro riesce: %s" % String(r1["reason"]))
+	eq(String(r1["result"]), "angry", "1d6=2 -> reazione adirata")
+	st.rng.push_forced([5])
+	var r2 := Norway.roll_reaction(st, inset, st.rng, "N1 Operazione Wilfred", conv, narvik)
+	eq(String(r2["result"]), "none", "1d6=5 -> nessuna reazione")
+	# Modificatore stampato: +1 con una BB britannica nell'esagono di Narvik.
+	var bb := _tf(st, uk, narvik, ["Rodney"])
+	st.rng.push_forced([2])
+	var r3 := Norway.roll_reaction(st, inset, st.rng, "N1 Operazione Wilfred", conv, narvik)
+	eq(int(r3["modifier"]), 1, "la BB britannica vale +1")
+	eq(String(r3["result"]), "none", "e 2+1=3 ribalta il risultato")
+
+	# N2: la riga cambia se ci sono Mine britanniche nell'esagono.
+	var st2 := GameState.new(inset, 1)
+	var ge_conv := _tf(st2, ge, narvik, ["Convoy x2"])
+	st2.rng.push_forced([3])
+	var n2a := Norway.roll_reaction(st2, inset, st2.rng, "N2 Operazione Weser (nord)",
+		ge_conv, narvik)
+	eq(String(n2a["result"]), "hit", "senza Mine, 3 -> un Colpo")
+	Stealth.place(st2, uk, Stealth.Kind.MINES, narvik)
+	st2.rng.push_forced([3])
+	var n2b := Norway.roll_reaction(st2, inset, st2.rng, "N2 Operazione Weser (nord)",
+		ge_conv, narvik)
+	eq(String(n2b["result"]), "ar", "con le Mine, lo stesso 3 -> Reazione Aggressiva")
+	true_(bool(n2b["aggressive"]), "ed e' marcata come aggressiva")
+
+	# N5: la riga cambia se il Completamento e' nell'esagono o adiacente, e ha
+	# modificatori che il motore NON sa calcolare. Vanno dichiarati, non taciuti.
+	var st3 := GameState.new(inset, 1)
+	var uk_conv := _tf(st3, uk, narvik, ["Convoy x2"])
+	st3.rng.push_forced([2])
+	var n5 := Norway.roll_reaction(st3, inset, st3.rng, "N5 Meglio Tardi che Mai",
+		uk_conv, narvik)
+	eq(String(n5["result"]), "two_hits", "nell'esagono, 2-3 -> due Colpi")
+	true_((n5["undeclared"] as Array).size() >= 2,
+		"e i modificatori che dipendono dallo storico sono dichiarati, non taciuti")
+
+	# Uno scenario senza tabella lo dice invece di inventarne una.
+	var none := Norway.roll_reaction(st, inset, st.rng, "BL1 Raiders of the North Atlantic",
+		conv, narvik)
+	false_(bool(none["ok"]), "BL1 non ha Reazione Norvegese")
+	true_(String(none["reason"]).contains("Reazione"), "e il motivo lo dice")
+
+
+## L'applicazione dei risultati: Colpi al Convoglio, Completamento annullato con
+## l'Iniziativa che passa, e i marker Base Aerea dichiarati invece che inventati.
+func test_reaction_effects() -> void:
+	_begin("l'applicazione dei risultati")
+	var uk := TaskForce.Side.ROYAL_NAVY
+	var ge := TaskForce.Side.KRIEGSMARINE
+	var narvik := inset.port_hex("Narvik")
+	var st := GameState.new(inset, 1)
+	var conv := _tf(st, ge, narvik, ["Convoy x2", "Hipper"])
+
+	var hit := Norway.apply_reaction(st, {"result": "hit"}, conv)
+	eq(int(hit["hits"]), 1, "'hit' da' un Colpo")
+	eq(conv.ships[0].hits, 1, "e il Colpo va al Convoglio, non alla scorta")
+	eq(conv.ships[1].hits, 0, "l'incrociatore resta illeso")
+
+	var two := Norway.apply_reaction(st, {"result": "two_hits"}, conv)
+	eq(int(two["hits"]), 2, "'two_hits' ne da' due")
+	eq(conv.ships[0].hits, 3, "che si sommano ai precedenti")
+
+	var cancel := Norway.apply_reaction(st, {"result": "cancel"}, conv)
+	true_(bool(cancel["cancelled"]), "'cancel' annulla il Completamento")
+	eq(int(cancel["hits"]), 2, "con due Colpi")
+	eq(int(cancel["initiative_to"]), uk,
+		"e l'Iniziativa passa a chi NON stava Completando")
+
+	var ar := Norway.apply_reaction(st, {"result": "ar"}, conv)
+	eq(int(ar["hits"]), 0, "'ar' non fa Colpi")
+	false_(bool(ar["cancelled"]), "e non annulla niente")
+
+	var none := Norway.apply_reaction(st, {"result": "none"}, conv)
+	eq(int(none["hits"]), 0, "'none' non fa nulla")
+
+	# N5: i risultati che spostano Basi Aeree non si applicano, si dichiarano.
+	var g := Norway.apply_reaction(st, {"result": "g"}, conv)
+	true_(bool(g["declared_gap"]),
+		"il risultato 'g' e' dichiarato: le Basi Aeree non sono pedine giocabili")
+	var gh := Norway.apply_reaction(st, {"result": "g_and_hit"}, conv)
+	eq(int(gh["hits"]), 1, "'g_and_hit' il Colpo lo da' davvero")
+	true_(bool(gh["declared_gap"]), "ma la parte della Base Aerea resta dichiarata")

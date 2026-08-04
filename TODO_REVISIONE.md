@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Baseline: **3124 verifiche su 20 suite**, tutte verdi. Replay solitario:
+Baseline: **3150 verifiche su 20 suite**, tutte verdi. Replay solitario:
 **quindici `OK`** su quindici scenari, nessuno saltato.
 
 Questo e' il backlog autorevole. `STATO.md` contiene anche una lunga cronologia:
@@ -74,9 +74,15 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 - **Reazione Norvegese**: la regola di quando si tira c'e' (il giocatore si',
   il bot no, p.16) e le quattro TABELLE sono trascritte in
   `core/data/solo/norwegian_reaction.json` con innesco, colonne, righe,
-  modificatori e legenda. Manca l'automazione: il tiro dentro il ciclo e
-  l'applicazione dei risultati - Colpi, Completamento annullato, marker Base
-  Aerea spostati in N5.
+  modificatori e legenda. **Il tiro e l'applicazione sono automatizzati**
+  (`Norway.roll_reaction` e `Norway.apply_reaction`): la riga giusta viene scelta
+  sullo stato - Mine in N2, TF britannica in N3, dentro-o-adiacente in N5 - i
+  modificatori calcolabili si applicano, i Colpi vanno al Convoglio o allo
+  Squadrone DD, il risultato `!` annulla il Completamento e passa l'Iniziativa.
+  **Restano dichiarati** i due modificatori di N5 che dipendono da Completamenti
+  precedenti (il motore non tiene quello storico), quello legato alle Basi Aeree
+  tedesche, e i risultati `b`/`g` che spostano marker Base Aerea. Manca il
+  collegamento al ciclo: nessuno chiama ancora `roll_reaction`.
 - **L'Attacco Furtivo della GUI non usa una forza Furtiva.** Nel registro di
   una partita BL2 si legge "Attacco Furtivo -> Totale Traiettoria 2": per RB
   p.41 una forza Furtiva ha Totale Traiettoria ZERO, quindi quell'azione la sta
@@ -122,7 +128,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 3124 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 3150 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne

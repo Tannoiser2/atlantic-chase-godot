@@ -149,3 +149,243 @@ static func adjacent_landing_error(graph: MapGraph, h: Vector2i,
 		if ph != Vector2i.MAX and Hex.are_adjacent(h, ph):
 			return ""
 	return "%s non e' adiacente a %s" % [str(h), ", ".join(to_ports)]
+
+
+# ------------------------------------------------- Reazione Norvegese --
+
+## Le quattro tabelle stanno nel dato, una per scenario, con innesco, colonne,
+## righe, modificatori e legenda: `core/data/solo/norwegian_reaction.json`,
+## trascritte da pp.19, 24, 27 e 34.
+const REACTION_PATH := "res://core/data/solo/norwegian_reaction.json"
+
+
+static func reaction_table(scenario_id: String) -> Dictionary:
+	var f := FileAccess.open(REACTION_PATH, FileAccess.READ)
+	if f == null:
+		return {}
+	var parsed: Variant = JSON.parse_string(f.get_as_text())
+	f.close()
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return {}
+	var tables: Variant = (parsed as Dictionary).get("tables", {})
+	if typeof(tables) != TYPE_DICTIONARY:
+		return {}
+	for k_v: Variant in (tables as Dictionary).keys():
+		var k := String(k_v)
+		if scenario_id == k or scenario_id.begins_with(k.get_slice(" ", 0)):
+			return (tables as Dictionary)[k]
+	return {}
+
+
+## Quale RIGA della tabella. Le quattro si dividono su condizioni diverse, e
+## sono scritte una per una perche' sono predicati sullo stato, non dato.
+static func _reaction_row(state: GameState, graph: MapGraph, table: Dictionary,
+		scenario_id: String, tf: TaskForce, h: Vector2i) -> int:
+	var rows: Array = table.get("rows", [])
+	if rows.size() <= 1:
+		return 0
+	if scenario_id.begins_with("N2"):
+		# "British Mines in hex?"
+		for f in state.stealth_forces:
+			if int(f.get("kind", -1)) == Stealth.Kind.MINES \
+					and int(f.get("side", -1)) == TaskForce.Side.ROYAL_NAVY \
+					and Vector2i(int(f.get("q", 0)), int(f.get("r", 0))) == h:
+				return 0
+		return 1
+	if scenario_id.begins_with("N3"):
+		# "British TF in hex?"
+		for other in state.task_forces:
+			if other.side == TaskForce.Side.ROYAL_NAVY and not other.completed \
+					and other.trajectory.occupies(h):
+				return 0
+		return 1
+	if scenario_id.begins_with("N5"):
+		# "in" oppure "adjacent" a Narvik o Trondheim.
+		for name in ["Narvik", "Trondheim"]:
+			if graph.port_hex(name) == h:
+				return 0
+		return 1
+	return 0
+
+
+## I modificatori applicabili, calcolati sullo stato. Ritorna
+## { "total", "applied": Array[String], "undeclared": Array[String] }.
+##
+## `undeclared` sono i modificatori stampati che il motore NON sa calcolare
+## perche' gli manca lo storico: N5 ne ha due che dipendono da Completamenti
+## precedenti. Non si fingono zero in silenzio.
+static func _reaction_modifiers(state: GameState, graph: MapGraph,
+		scenario_id: String, tf: TaskForce, h: Vector2i) -> Dictionary:
+	var total := 0
+	var applied: Array[String] = []
+	var undeclared: Array[String] = []
+	var ge := TaskForce.Side.KRIEGSMARINE
+	var uk := TaskForce.Side.ROYAL_NAVY
+	if scenario_id.begins_with("N1"):
+		if _has_type_in(state, uk, h, "BB"):
+			total += 1
+			applied.append("+1 una BB britannica e' nell'esagono di Narvik")
+	elif scenario_id.begins_with("N2"):
+		var mines := 0
+		for f in state.stealth_forces:
+			if int(f.get("kind", -1)) == Stealth.Kind.MINES \
+					and int(f.get("side", -1)) == uk:
+				mines += 1
+		if mines >= 2:
+			total += 1
+			applied.append("+1 due o piu' Mine britanniche sulla mappa")
+		if _has_type_in(state, ge, h, "BC") or _has_type_in(state, ge, h, "CA"):
+			total += 1
+			applied.append("+1 un BC o CA tedesco e' nell'esagono")
+		for other in state.task_forces:
+			if other.side == uk and not other.completed and other.trajectory.occupies(h):
+				total -= 1
+				applied.append("-1 una TF britannica e' nell'esagono")
+				break
+	elif scenario_id.begins_with("N3"):
+		if _has_type_in(state, ge, h, "CL"):
+			total += 1
+			applied.append("+1 un CL tedesco e' nell'esagono")
+	elif scenario_id.begins_with("N5"):
+		if _has_type_in(state, uk, h, "BB") or _has_type_in(state, uk, h, "BC"):
+			total += 1
+			applied.append("+1 una BB o BC britannica e' nell'esagono del Convoglio")
+		undeclared.append("+1 se c'e' stato un precedente Completamento "
+			+ "britannico nell'esagono o in uno adiacente")
+		undeclared.append("+1 se c'e' stato un precedente Completamento "
+			+ "britannico a Trondheim")
+		undeclared.append("-1 (o -2) se un marker Base Aerea tedesca e' in "
+			+ "Norvegia: le Basi Aeree non sono ancora pedine giocabili")
+		if state.convoys_completed_for(ge) >= 2:
+			total -= 1
+			applied.append("-1 due o piu' Convogli tedeschi hanno Completato")
+	return {"total": total, "applied": applied, "undeclared": undeclared}
+
+
+static func _has_type_in(state: GameState, side: int, h: Vector2i,
+		type_code: String) -> bool:
+	for tf in state.task_forces:
+		if tf.side != side or tf.completed or not tf.trajectory.occupies(h):
+			continue
+		for s in tf.ships:
+			if not s.sunk and s.type_code == type_code:
+				return true
+	return false
+
+
+## Tira la Reazione Norvegese e dice che cosa e' uscito. NON applica ancora
+## nulla: l'applicazione sta in `apply_reaction`, cosi' il tiro si puo' provare
+## da solo e il chiamante puo' mostrarlo prima di subirlo.
+##
+## Ritorna { "ok", "reason", "roll", "modifier", "total", "result", "text",
+## "aggressive", "log", "undeclared" }.
+static func roll_reaction(state: GameState, graph: MapGraph, rng: DiceRNG,
+		scenario_id: String, tf: TaskForce, h: Vector2i) -> Dictionary:
+	var out := {"ok": false, "reason": "", "roll": 0, "modifier": 0, "total": 0,
+		"result": "", "text": "", "aggressive": false,
+		"log": [] as Array[String], "undeclared": [] as Array[String]}
+	var table := reaction_table(scenario_id)
+	if table.is_empty():
+		out["reason"] = "%s non ha una Tabella di Reazione Norvegese" % scenario_id
+		return out
+	var row_index := _reaction_row(state, graph, table, scenario_id, tf, h)
+	var rows: Array = table.get("rows", [])
+	if row_index >= rows.size():
+		out["reason"] = "riga %d fuori dalla tabella" % row_index
+		return out
+	var row: Dictionary = rows[row_index]
+	var mods := _reaction_modifiers(state, graph, scenario_id, tf, h)
+	var roll := rng.d6("Reazione Norvegese (%s)" % scenario_id)
+	var total: int = roll + int(mods["total"])
+	var cells: Array = row.get("cells", [])
+	var key := ""
+	for i in (table.get("columns", []) as Array).size():
+		var col: Dictionary = (table["columns"] as Array)[i]
+		if total >= int(col.get("min", -99)) and total <= int(col.get("max", 99)):
+			if i < cells.size():
+				key = String(cells[i])
+			break
+	if key == "":
+		out["reason"] = "nessuna colonna per il totale %d" % total
+		return out
+	var legend: Dictionary = table.get("legend", {})
+	out["ok"] = true
+	out["roll"] = roll
+	out["modifier"] = int(mods["total"])
+	out["total"] = total
+	out["result"] = key
+	out["text"] = String(legend.get(key, key))
+	out["aggressive"] = String(out["text"]).contains("Reazione Aggressiva")
+	out["undeclared"] = mods["undeclared"]
+	var label := String(row.get("label", ""))
+	(out["log"] as Array[String]).append(
+		"Reazione Norvegese%s: 1d6=%d%s = %d -> %s"
+		% ["" if label == "" else " (%s)" % label, roll,
+			"" if int(mods["total"]) == 0 else " %+d" % int(mods["total"]),
+			total, String(out["text"])])
+	for m_v: Variant in mods["applied"]:
+		(out["log"] as Array[String]).append("   " + String(m_v))
+	for u_v: Variant in mods["undeclared"]:
+		(out["log"] as Array[String]).append("   NON CALCOLATO: " + String(u_v))
+	return out
+
+
+## Applica il risultato. Ritorna { "hits", "cancelled", "initiative_to",
+## "declared_gap", "log" }.
+##
+## I risultati che spostano marker Base Aerea (N5, 'b' e 'g') NON si applicano:
+## le Basi Aeree non sono ancora pedine giocabili. Si dichiarano.
+static func apply_reaction(state: GameState, result: Dictionary,
+		tf: TaskForce) -> Dictionary:
+	var out := {"hits": 0, "cancelled": false, "initiative_to": -1,
+		"declared_gap": false, "log": [] as Array[String]}
+	var key := String(result.get("result", ""))
+	match key:
+		"none":
+			(out["log"] as Array[String]).append("Nessuna reazione.")
+			return out
+		"hit":
+			out["hits"] = 1
+		"two_hits":
+			out["hits"] = 2
+		"g_and_hit":
+			out["hits"] = 1
+			out["declared_gap"] = true
+		"cancel":
+			out["hits"] = 2
+			out["cancelled"] = true
+			# "British have Initiative" in N2/N3; "Germans have Initiative" in
+			# N5. In tutti e tre i casi passa a CHI NON stava Completando.
+			out["initiative_to"] = 1 - tf.side
+		"ar":
+			(out["log"] as Array[String]).append(
+				"Le forze norvegesi resistono ma vengono sopraffatte: Reazione Aggressiva.")
+			return out
+		"b", "g":
+			out["declared_gap"] = true
+	if out["declared_gap"]:
+		(out["log"] as Array[String]).append(
+			"LACUNA DICHIARATA: il risultato sposta un marker Base Aerea, e le "
+			+ "Basi Aeree non sono ancora pedine giocabili.")
+	if int(out["hits"]) > 0:
+		var landed := _hit_landing_force(tf, int(out["hits"]))
+		(out["log"] as Array[String]).append(
+			"%s subisce %d Colpo/i dalla Reazione Norvegese." % [landed, int(out["hits"])])
+	if bool(out["cancelled"]):
+		(out["log"] as Array[String]).append(
+			"Il Completamento e' annullato e l'Iniziativa passa all'altra parte.")
+	state.changed.emit()
+	return out
+
+
+## I Colpi vanno al Convoglio o allo Squadrone DD, che e' quello che il
+## fascicolo colpisce: "Convoy or DD suffers a Hit".
+static func _hit_landing_force(tf: TaskForce, hits: int) -> String:
+	for s in tf.ships:
+		if s.sunk:
+			continue
+		if s.kind == Ship.Kind.CONVOY or s.kind == Ship.Kind.DD_SQUADRON \
+				or s.name.begins_with("Convoy") or s.name == "DD Squadron":
+			s.hits += hits
+			return s.name
+	return tf.display_name()
