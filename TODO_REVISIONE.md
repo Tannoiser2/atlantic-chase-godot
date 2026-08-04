@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Baseline: **3081 verifiche su 19 suite**, tutte verdi. Replay solitario:
+Baseline: **3109 verifiche su 20 suite**, tutte verdi. Replay solitario:
 **quindici `OK`** su quindici scenari, nessuno saltato.
 
 Questo e' il backlog autorevole. `STATO.md` contiene anche una lunga cronologia:
@@ -67,11 +67,18 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
   E' il numero che dice quanto manca al solitario "vero": lo scenario gira, ma
   in quelle caselle il bot applica una policy generica invece della procedura
   stampata. `audit_solo.gd` le elenca.
-- **Forze Furtive**: manca l'AZIONE che le usa - il Completamento in un esagono
-  di Norvegia (p.16) che posa le Mine, e il collegamento alla tabella
-  `STEALTH_ATTACK`, che e' gia' trascritta e verificata a ingrandimento 5x.
-- **Reazione Norvegese**: citata da N1, N2, N3 e N5, tabella diversa per
-  ciascuno (pp.19, 24, 27, 34). Nessuna trascritta.
+- **Forze Furtive**: il Completamento in Norvegia c'e' (`core/rules/norway.gd`)
+  e la posa delle Mine anche, ma non sono ancora COLLEGATI al ciclo di gioco -
+  ne' `SoloRunner` ne' la GUI offrono l'azione. Manca anche il collegamento
+  alla tabella `STEALTH_ATTACK`, gia' trascritta e verificata a 5x.
+- **Reazione Norvegese**: la regola di quando si tira c'e' (il giocatore si',
+  il bot no, p.16), ma le TABELLE no: sono quattro, una per scenario
+  (pp.19, 24, 27, 34), e nessuna e' trascritta.
+- **L'Attacco Furtivo della GUI non usa una forza Furtiva.** Nel registro di
+  una partita BL2 si legge "Attacco Furtivo -> Totale Traiettoria 2": per RB
+  p.41 una forza Furtiva ha Totale Traiettoria ZERO, quindi quell'azione la sta
+  eseguendo una Task Force. Va ricollegata a `Stealth`, che adesso conosce sia
+  i bersagli legali sia la restrizione del segnalino Contatto.
 - **Basi aeree**: sugli inserti sono dato completo con la loro regola (RB p.27,
   raggio due esagoni, solo Meteo Buono, non bersagliabili); sulla Mappa
   Operazionale non sono nemmeno trascritte, e in nessun caso il motore le fa
@@ -112,7 +119,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 3081 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 3109 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
