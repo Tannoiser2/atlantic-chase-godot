@@ -41,7 +41,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 | Basi aeree sulla Mappa Operazionale | 🔴 | esistono e sono coccarde con un ANNO: rilevate, non ancora trascritte |
 | Linea Artica | 🔴 | non e' un dato di mappa: i vincoli di RB p.27 non sono controllabili |
 | Mappa a due giocatori | 🟡 | 22 scenari importati, mai auditati end-to-end |
-| GUI operativa | 🟡 | il flusso solitario duplica `SoloRunner`; layout tagliato sotto i 1000 px |
+| GUI operativa | 🟡 | il flusso solitario duplica `SoloRunner` |
 | iPad / web | 🔴 | esportabile, mai provato su dispositivo |
 
 ## Che cosa e' FATTO 🟢
@@ -139,14 +139,18 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 - **Comandanti**: gli undici testi sono trascritti da RB p.10 letta a 300 dpi e
   Gensoul e' implementato; Forbes e Marschall no, e la voce Forbes ha un refuso
   di traduzione dichiarato.
-- **Il layout non regge un viewport piu' basso di quanto chiede.**
-  `project.godot` chiede 1600x1000; se lo schermo concede meno - per esempio un
-  rettangolo utilizzabile di 1920x980 - Godot riduce la finestra a 1600x947 e la
-  fascia inferiore sfora di circa 53 px, facendo fallire
-  `tools/smoke_map_workspace.gd`. **Dipende da quanto spazio lo schermo concede
-  in quel momento**: con la barra e il Dock in una posizione passa, in un'altra
-  no. Non e' una regressione - si riproduce al commit `4aa1ee6` - ma e' una
-  prova di fumo che non e' deterministica, e questo da solo vale il lavoro.
+- ~~Il layout non regge un viewport piu' basso di quanto chiede~~ - **NON ERA
+  VERO, ed era la prova di fumo a sbagliare.** `smoke_map_workspace.gd`
+  confrontava il fondo della fascia inferiore con `root.size.y`, cioe' l'altezza
+  della FINESTRA in pixel, mentre quel rettangolo vive nelle coordinate LOGICHE
+  della HUD. Con `window/stretch/mode="canvas_items"` e `aspect="expand"` i due
+  spazi non coincidono: una finestra da 948 px porta un viewport logico da 1000,
+  e la fascia a quota 988 risultava tagliata pur essendo tutta visibile - lo
+  screenshot a 1600x948 mostra la fascia intera, col suo margine sotto. Il
+  controllo passava o falliva a seconda di dove stavano barra e Dock, ed e' cosi'
+  che si e' notato. Adesso confronta il viewport logico.
+  **Resta aperta la verifica vera**: provare 1280x720, 1600x900 e un viewport
+  stretto, che nessuno ha ancora fatto.
 - **Battaglia avanzata**: quattro scelte interattive e il mini-scenario MS12.
 - **I 22 scenari a due giocatori** hanno dati, setup e vittoria, ma nessun
   audit end-to-end.

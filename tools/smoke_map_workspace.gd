@@ -77,7 +77,17 @@ func _process(_delta: float) -> bool:
 			return _finish(false, "la composizione TF e' ancora troppo stretta")
 		if not _root._tf_ships is HFlowContainer:
 			return _finish(false, "le navi della TF non vanno su piu' righe")
-		if bottom_row.get_global_rect().end.y > root.size.y:
+		# ATTENZIONE, difetto gia' pagato: qui c'era `root.size.y`, cioe'
+		# l'altezza della FINESTRA in pixel, confrontata con un rettangolo che
+		# vive nelle coordinate LOGICHE della HUD. Con
+		# `window/stretch/mode="canvas_items"` e `aspect="expand"` i due spazi
+		# non coincidono: una finestra da 948 px porta un viewport logico da
+		# 1000, e la fascia inferiore a quota 988 risultava "tagliata" pur
+		# essendo tutta visibile. Il controllo passava o falliva a seconda di
+		# quanto spazio lo schermo concedeva - barra e Dock - il che lo rendeva
+		# non deterministico, ed e' cosi' che si e' notato.
+		var viewport_height: float = bottom_row.get_viewport_rect().size.y
+		if bottom_row.get_global_rect().end.y > viewport_height + 0.5:
 			return _finish(false, "la fascia inferiore viene tagliata dal viewport")
 		if _target.leader != "":
 			var leader_counter: Control = _root._tf_ships.get_node_or_null(

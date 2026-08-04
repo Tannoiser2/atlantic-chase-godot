@@ -3517,13 +3517,19 @@ func _action_unavailable_reason(key: String) -> String:
 		if state.weather != TimeLapse.Weather.GOOD:
 			return "Attacco Aereo richiede Condizioni Meteo Buone"
 		var sources := _air_sources(selected_tf.side)
-		if sources.is_empty():
-			return ("nessuna TF di questa parte ha una CV integra; le basi aeree "
-				+ "non sono ancora modellate")
+		var bases := AirBase.sources_for(state, graph, selected_tf.side)
+		if sources.is_empty() and bases.is_empty():
+			return "nessuna TF di questa parte ha una CV integra, e nessuna base aerea"
 		for source in sources:
 			for launch in ActionEngine.air_launch_hexes(source):
 				if not _eligible_targets_for_action(key, source, launch).is_empty():
 					return ""
+		# RB p.27: anche una base aerea e' una fonte, e il suo Punto di Lancio e'
+		# il proprio esagono.
+		for b in bases:
+			if not _eligible_targets_for_action(key, null,
+					AirBase.hex_of(b), {}, b).is_empty():
+				return ""
 		return "nessuna TF nemica e' entro due esagoni da una CV integra"
 	if ActionBar.needs_enemy(key) and _eligible_targets_for_action(key, selected_tf).is_empty():
 		return _enemy_action_unavailable_reason(key, selected_tf)
