@@ -116,10 +116,20 @@ static func hex_of(marker: Dictionary) -> Vector2i:
 ## `MapGraph.air_bases` scrive la parte come sigla - "UK", "GE" - perche' viene
 ## dal colore della lettera sulla mappa; qui diventa la parte del gioco, cosi'
 ## chi lancia un Attacco Aereo non deve sapere da dove viene il marcatore.
-static func printed_of(graph: MapGraph, side: int) -> Array[Dictionary]:
+## L'anno dello scenario NON e' un dato trascritto: i file di scenario non lo
+## hanno, e la data compare solo nel testo del briefing. Finche' non lo e', una
+## base aerea che porta un anno resta FUORI - RB p.8 dice "prima dell'anno
+## indicato, ignorate la base aerea", e senza sapere l'anno non si puo'
+## affermare che sia in gioco. Le undici basi senza anno funzionano subito.
+static func printed_of(graph: MapGraph, side: int,
+		scenario_year: int = 0) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	for b in graph.air_bases:
 		if _side_from_tag(String(b.get("side", ""))) != side:
+			continue
+		var from_year := int(b.get("from_year", 0)) if b.get("from_year") != null \
+			else 0
+		if from_year > 0 and scenario_year < from_year:
 			continue
 		out.append({
 			"side": side,
@@ -127,7 +137,21 @@ static func printed_of(graph: MapGraph, side: int) -> Array[Dictionary]:
 			"r": int(b.get("r", 0)),
 			"note": "base aerea stampata sulla mappa",
 			"printed": true,
+			"from_year": b.get("from_year", null),
 		})
+	return out
+
+
+## Le basi stampate che restano fuori perche' portano un anno e l'anno dello
+## scenario non e' un dato trascritto. Serve a dichiarare la lacuna invece di
+## lasciarla muta: sono basi che ESISTONO sulla mappa e che il motore non usa.
+static func printed_pending_year(graph: MapGraph, side: int) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for b in graph.air_bases:
+		if _side_from_tag(String(b.get("side", ""))) != side:
+			continue
+		if b.get("from_year") != null and int(b.get("from_year", 0)) > 0:
+			out.append(b)
 	return out
 
 

@@ -11,6 +11,7 @@ extends RefCounted
 ## Forth, Irlanda, Galles, ...). Quei lati stanno in `blocked_edges` e questa
 ## classe li rispetta in `is_adjacent()`.
 
+const ANNOTATIONS_PATH := "res://core/data/map_annotations.json"
 const DATA_PATH := "res://core/data/map_graph.json"
 
 ## Le due mappe inserto, generate da tools/build_inset_graph.py e verificate
@@ -265,7 +266,30 @@ func load_from(path: String) -> bool:
 		load_error = "JSON non valido in %s" % path
 		push_error(load_error)
 		return false
-	return _apply(parsed as Dictionary)
+	if not _apply(parsed as Dictionary):
+		return false
+	_load_printed_air_bases()
+	return true
+
+
+## Le basi aeree STAMPATE sulla Mappa Operazionale.
+##
+## Stanno in `core/data/map_annotations.json` e non nel grafo generato, per la
+## stessa ragione dei lati negati e dei porti: sono state lette a occhio
+## sull'immagine, e una rigenerazione del grafo non deve poterle perdere.
+func _load_printed_air_bases() -> void:
+	var f := FileAccess.open(ANNOTATIONS_PATH, FileAccess.READ)
+	if f == null:
+		return
+	var parsed: Variant = JSON.parse_string(f.get_as_text())
+	f.close()
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return
+	var section: Variant = (parsed as Dictionary).get("air_bases", {})
+	if typeof(section) != TYPE_DICTIONARY:
+		return
+	for b_v: Variant in (section as Dictionary).get("bases", []):
+		air_bases.append((b_v as Dictionary).duplicate(true))
 
 
 func _apply(d: Dictionary) -> bool:

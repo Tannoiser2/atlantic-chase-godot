@@ -429,7 +429,21 @@ func test_loading_an_inset_does_not_touch_the_main_map() -> void:
 	var main := MapGraph.load_default()
 	eq(main.hex_count(), before, "la mappa grande ha sempre i suoi esagoni")
 	false_(main.is_inset(), "e non si dichiara inserto")
-	eq(main.air_bases_of().size(), 0,
-		"la mappa grande non porta basi aeree: non sono trascritte per lei")
+	# Le basi aeree della Mappa Operazionale sono TRASCRITTE: diciassette
+	# coccarde RAF lette sull'immagine a risoluzione nativa, sei con un anno
+	# stampato accanto. Zero tedesche, e l'elenco vuoto e' un dato - il
+	# regolamento le fa PIAZZARE come marcatori.
+	eq(main.air_bases_of().size(), 17,
+		"la mappa grande porta diciassette basi aeree stampate")
+	eq(main.air_bases_of("UK").size(), 17, "sono tutte britanniche")
+	eq(main.air_bases_of("GE").size(), 0,
+		"zero tedesche stampate: quelle si piazzano come marcatori")
+	var with_year := 0
+	for b_v: Variant in main.air_bases_of("UK"):
+		if (b_v as Dictionary).get("from_year") != null:
+			with_year += 1
+	# Sette portano un anno - quattro 1942, e una ciascuno per 1939, 1940, 1941 -
+	# e dieci no. RB p.8: prima dell'anno indicato la base non e' in gioco.
+	eq(with_year, 7, "sette portano un anno stampato")
 	true_(main.hex_count() != ns.hex_count(), "le due mappe restano distinte")
 	true_(main.port_count() > ns.port_count(), "e hanno porti diversi")

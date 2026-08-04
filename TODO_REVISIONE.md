@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Baseline: **3379 verifiche su 20 suite**, tutte verdi. Replay solitario:
+Baseline: **3384 verifiche su 20 suite**, tutte verdi. Replay solitario:
 **quindici `OK`** su quindici scenari, nessuno saltato. `audit_solo.gd`:
 **93 caselle azione, zero procedure segnaposto, ZERO buchi dichiarati, zero
 blocchi.**
@@ -38,7 +38,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 | Reazione Norvegese | 🟡 | quattro tabelle collegate ai due cicli; restano i risultati b/g |
 | Battaglia avanzata | 🟡 | mancano quattro scelte interattive e MS12 |
 | Comandanti | 🟡 | testi trascritti; Forbes e Marschall non automatizzati |
-| Basi aeree sulla Mappa Operazionale | 🔴 | esistono e sono coccarde con un ANNO: rilevate, non ancora trascritte |
+| Basi aeree sulla Mappa Operazionale | 🟡 | diciassette trascritte; le sette con un anno aspettano l'anno dello scenario |
 | Linea Artica | 🔴 | non e' un dato di mappa: i vincoli di RB p.27 non sono controllabili |
 | Mappa a due giocatori | 🟡 | 22 scenari importati, mai auditati end-to-end |
 | GUI operativa | 🟡 | il flusso solitario duplica `SoloRunner` |
@@ -112,30 +112,19 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
   annulla il Completamento e passa l'Iniziativa. **Restano dichiarati** i
   risultati `b`/`g` che spostano marker Base Aerea e il modificatore che dipende
   dalle Basi Aeree tedesche.
-- **Basi aeree sulla Mappa Operazionale**: sugli inserti sono dato completo con
-  la loro regola; sulla mappa grande non sono ancora trascritte, ma **adesso si
-  sa che cosa cercare**, ed e' diverso da quello che si cercava.
-  Sono **coccarde RAF** - cerchio rosso, anello bianco - con una **B rossa** e
-  un **ANNO** accanto, non i dischi bianchi con l'aereo degli inserti: per
-  questo il rilevatore degli inserti, che cerca il bianco puro del disco, sulla
-  mappa grande non trovava niente.
-  Il fascicolo a due giocatori (p.62) conferma che sono stampate e che l'anno
-  conta: "the British player may place one Airbase marker on any British
-  airbase printed on the Operations Map marked '1942' (but not Hvalfiord)".
-  **Un rilevatore che cerca il rosso saturo in forme tonde da 18 a 60 px ne
-  trova dieci vere** - fra cui Scapa Flow, Clyde/Liverpool, Halifax, New York
-  '1941', una '1939' nella Baia di Biscaglia e una '1942' verso Murmansk - piu'
-  sette falsi positivi, che sono tutti DENTRO le tabelle stampate sulla mappa
-  (traccia Intel Limit, tabella Ingaggiare, modificatori) e si escludono per
-  posizione. **Ma ne manca almeno una**: quella di Hvalfjordur, che si vede a
-  occhio in (2150, 520) circa e che il rilevatore non prende.
-  Quindi il lavoro che resta e' preciso: chiudere il rilevatore fino a
-  trovarle tutte, leggere ogni anno A OCCHIO sulla pagina, incrociare rilevato e
-  trascritto come fa `build_inset_graph.py` - che si ferma se i due non
-  combaciano - e infine trovare nel regolamento la regola che lega l'anno al
-  periodo di attivita'. Finche' l'elenco non e' completo non va scritto: un
-  elenco di basi aeree con un buco e' peggio di nessun elenco, perche' sembra
-  completo.
+- **Basi aeree sulla Mappa Operazionale: trascritte, ma sette aspettano un
+  dato che non c'e'.** Le diciassette coccarde RAF sono lette sull'immagine a
+  risoluzione nativa e stanno in `core/data/map_annotations.json`, col loro
+  esagono, la posizione in pixel e l'anno stampato accanto quando c'e'. **Zero
+  tedesche**, ed e' un dato: il regolamento le fa piazzare come marcatori.
+  RB p.8 dice "prima dell'anno indicato, ignorate la base aerea", e **l'anno
+  dello scenario non e' trascritto** - i file di scenario non lo hanno, la data
+  compare solo nel testo del briefing. Finche' non lo e', le **sette basi con un
+  anno restano fuori**: senza sapere l'anno non si puo' affermare che siano in
+  gioco. Le dieci senza anno funzionano gia'.
+  Restano fuori dal grafo giocabile due esagoni, (17,-4) e (4,6), su cui la
+  coccarda e' stampata: segnato nel dato con `hex_outside_graph`, non corretto a
+  mano.
 - **Comandanti**: gli undici testi sono trascritti da RB p.10 letta a 300 dpi e
   Gensoul e' implementato; Forbes e Marschall no, e la voce Forbes ha un refuso
   di traduzione dichiarato.
@@ -183,7 +172,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 3379 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 3384 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne

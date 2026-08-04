@@ -79,25 +79,36 @@ func test_placement_restrictions() -> void:
 	# che su una stringa non protesta, torna 0, cioe' KRIEGSMARINE. Con la forma
 	# giusta il difetto e' venuto fuori: ogni porto "BOTH" o "NONE" risultava
 	# tedesco.
-	var scapa := graph.port_hex("Scapa Flow")
-	true_(scapa != Vector2i.MAX, "Scapa Flow e' sulla mappa")
-	var control := {"Scapa Flow": "ROYAL_NAVY"}
+	# NON Scapa Flow: li' c'e' una base aerea britannica stampata, e RB p.41
+	# vieta il piazzamento in un esagono con una Base Aerea nemica - il che e'
+	# proprio quello che il blocco piu' sotto verifica.
+	var scapa := graph.port_hex("Murmansk")
+	true_(scapa != Vector2i.MAX, "Murmansk e' sulla mappa")
+	var control := {"Murmansk": "ROYAL_NAVY"}
 	true_(Stealth.placement_error(st, graph, control, ge, scapa).contains("nemico"),
 		"un porto nemico e' vietato")
 	eq(Stealth.placement_error(st, graph, control, uk, scapa), "",
 		"lo stesso porto, per chi lo controlla, va bene")
 	# Un porto aperto a tutti e due non e' nemico di nessuno: N3 stampa Bergen
 	# cosi', ed e' l'esagono che la sua Tabella indica di preferire.
-	var shared := {"Scapa Flow": "BOTH"}
+	var shared := {"Murmansk": "BOTH"}
 	eq(Stealth.placement_error(st, graph, shared, ge, scapa), "",
 		"un porto 'BOTH' e' aperto anche all'altra parte")
 	eq(Stealth.placement_error(st, graph, shared, uk, scapa), "",
 		"a tutte e due, appunto")
 	# "NONE" e' un porto chiuso: nessuno lo controlla, quindi e' nemico per
 	# entrambi.
-	var closed := {"Scapa Flow": "NONE"}
+	var closed := {"Murmansk": "NONE"}
 	true_(Stealth.placement_error(st, graph, closed, uk, scapa).contains("nemico"),
 		"un porto che non controlla nessuno resta vietato")
+	# E la regola che questo test non poteva provare finche' le basi aeree della
+	# Mappa Operazionale non erano trascritte: mai in un esagono con una Base
+	# Aerea NEMICA. Scapa Flow ne ha una britannica stampata.
+	var uk_base := graph.port_hex("Scapa Flow")
+	true_(Stealth.placement_error(st, graph, {}, ge, uk_base).contains("base aerea"),
+		"una forza Furtiva tedesca non si piazza sulla base aerea di Scapa Flow")
+	eq(Stealth.placement_error(st, graph, {}, uk, uk_base), "",
+		"ma il britannico, che quella base ce l'ha, si'")
 	# RB p.41 lo dice apposta: si PUO' stare in un esagono con una TF nemica che
 	# contiene un CV. E' il caso che uno si aspetterebbe vietato.
 	var cv := _tf(st, uk, [open_sea])

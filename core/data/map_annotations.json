@@ -388,5 +388,218 @@
   "12,-7": "verificato sulla mappa come esterno all'area giocabile",
   "21,-11": "interamente sopra la Gunnery Table stampata: 93% fuori dalla cornice di gioco, 27% di mare. Verificato a occhio sovrapponendo il reticolo alla mappa a risoluzione nativa.",
   "18,-7": "quasi tutto sopra la tabella Weather Check e sulla Svezia: 78% fuori dalla cornice, 26% di mare."
+ },
+ "air_bases": {
+  "_source": "Lette sull'immagine della mappa a risoluzione nativa (images/Atlantic Chase Map120.jpg, 4203x2763). Il simbolo e' una COCCARDA RAF - cerchio rosso, anello bianco - con una B rossa sopra e, per alcune, un ANNO stampato accanto. NON e' il disco bianco con l'aereo degli inserti: e' il motivo per cui il rilevatore degli inserti, che cerca il bianco puro, sulla mappa grande non trovava niente.",
+  "_rule": "RB p.8: 'Cosa significano le date? Prima dell'anno indicato, ignorate la base aerea (non e' in gioco). Quando e' in gioco, una base aerea serve come causa di Informazioni per le Task Force nemiche, e puo' funzionare come fonte di un Attacco Aereo e Supporto Aereo.' Una base senza anno e' quindi sempre in gioco.",
+  "_german": "ZERO basi aeree tedesche stampate, ed e' un dato, non una dimenticanza: la ricerca del viola - il colore delle tedesche sugli inserti - non trova nessuna forma tonda sulla mappa grande. Coerente col regolamento, che le basi tedesche le fa PIAZZARE come marcatori ('Place a German airbase in Trondheim or Narvik').",
+  "_method": "Rilevate cercando il rosso saturo in forme tonde da 14 a 60 px, poi guardate una per una ingrandite per leggere l'anno. I falsi positivi sono tutti DENTRO le tabelle stampate sulla mappa - traccia Intel Limit, tabella Ingaggiare, modificatori, Attacco con Siluri - e si riconoscono perche' stanno su un pannello e non sul mare. Il minimo di 14 px non e' arbitrario: con 18 la coccarda di Hvalfjordur, alta 17, veniva persa.",
+  "bases": [
+   {
+    "side": "UK",
+    "q": 22,
+    "r": -13,
+    "from_year": 1942,
+    "marker_px": [
+     3880,
+     505
+    ],
+    "where": "Mare di Barents, verso Archangel e Murmansk",
+    "hex_outside_graph": false
+   },
+   {
+    "side": "UK",
+    "q": 13,
+    "r": -6,
+    "from_year": 1942,
+    "marker_px": [
+     2204,
+     566
+    ],
+    "where": "Hvalfjordur, Islanda",
+    "hex_outside_graph": false
+   },
+   {
+    "side": "UK",
+    "q": 7,
+    "r": 1,
+    "from_year": 1942,
+    "marker_px": [
+     905,
+     1075
+    ],
+    "where": "Atlantico occidentale",
+    "hex_outside_graph": false
+   },
+   {
+    "side": "UK",
+    "q": 15,
+    "r": -5,
+    "from_year": null,
+    "marker_px": [
+     2523,
+     1094
+    ],
+    "where": "Scapa Flow",
+    "hex_outside_graph": false
+   },
+   {
+    "side": "UK",
+    "q": 14,
+    "r": -4,
+    "from_year": null,
+    "marker_px": [
+     2286,
+     1251
+    ],
+    "where": "a ovest della Scozia",
+    "hex_outside_graph": false
+   },
+   {
+    "side": "UK",
+    "q": 7,
+    "r": 2,
+    "from_year": 1940,
+    "marker_px": [
+     845,
+     1287
+    ],
+    "where": "Atlantico occidentale, a sud della precedente",
+    "hex_outside_graph": false
+   },
+   {
+    "side": "UK",
+    "q": 15,
+    "r": -4,
+    "from_year": null,
+    "marker_px": [
+     2404,
+     1348
+    ],
+    "where": "Mare d'Irlanda, fra Clyde e Liverpool",
+    "hex_outside_graph": false
+   },
+   {
+    "side": "UK",
+    "q": 6,
+    "r": 3,
+    "from_year": null,
+    "marker_px": [
+     596,
+     1390
+    ],
+    "where": "verso St. John's",
+    "hex_outside_graph": false
+   },
+   {
+    "side": "UK",
+    "q": 5,
+    "r": 4,
+    "from_year": null,
+    "marker_px": [
+     381,
+     1469
+    ],
+    "where": "Halifax",
+    "hex_outside_graph": false
+   },
+   {
+    "side": "UK",
+    "q": 16,
+    "r": -4,
+    "from_year": null,
+    "marker_px": [
+     2600,
+     1475
+    ],
+    "where": "costa orientale inglese, verso lo Humber",
+    "hex_outside_graph": false
+   },
+   {
+    "side": "UK",
+    "q": 15,
+    "r": -3,
+    "from_year": null,
+    "marker_px": [
+     2325,
+     1538
+    ],
+    "where": "Galles",
+    "hex_outside_graph": false
+   },
+   {
+    "side": "UK",
+    "q": 4,
+    "r": 5,
+    "from_year": 1941,
+    "marker_px": [
+     200,
+     1548
+    ],
+    "where": "New York",
+    "hex_outside_graph": false
+   },
+   {
+    "side": "UK",
+    "q": 17,
+    "r": -4,
+    "from_year": null,
+    "marker_px": [
+     2652,
+     1571
+    ],
+    "where": "Canale della Manica, lato orientale",
+    "hex_outside_graph": true
+   },
+   {
+    "side": "UK",
+    "q": 16,
+    "r": -3,
+    "from_year": null,
+    "marker_px": [
+     2517,
+     1618
+    ],
+    "where": "Canale della Manica, verso Portsmouth",
+    "hex_outside_graph": false
+   },
+   {
+    "side": "UK",
+    "q": 4,
+    "r": 6,
+    "from_year": 1942,
+    "marker_px": [
+     235,
+     1736
+    ],
+    "where": "Atlantico occidentale, a sud di New York",
+    "hex_outside_graph": true
+   },
+   {
+    "side": "UK",
+    "q": 15,
+    "r": -1,
+    "from_year": 1939,
+    "marker_px": [
+     2233,
+     1846
+    ],
+    "where": "Golfo di Biscaglia",
+    "hex_outside_graph": false
+   },
+   {
+    "side": "UK",
+    "q": 14,
+    "r": 2,
+    "from_year": null,
+    "marker_px": [
+     1955,
+     2439
+    ],
+    "where": "Gibilterra",
+    "hex_outside_graph": false
+   }
+  ],
+  "_outside_graph": "Due esagoni - (17,-4) e (4,6) - non sono nel grafo giocabile: la classificazione del terreno li ha scartati. La coccarda pero' e' stampata li', e il fatto e' segnato invece di essere corretto a mano: una base aerea lancia comunque a due esagoni di distanza, e il bersaglio sta in acqua giocabile."
  }
 }
