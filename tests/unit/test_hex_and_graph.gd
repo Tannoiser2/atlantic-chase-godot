@@ -293,12 +293,26 @@ func test_inset_graphs_load() -> void:
 	eq(ns.load_error, "", "il Mare del Nord si carica")
 	true_(ns.is_inset(), "e si dichiara inserto")
 	eq(ns.hex_count(), 34, "34 esagoni sul Mare del Nord")
-	eq(ns.port_count(), 5, "5 porti: i cerchi vuoti sono Punti di Interesse, non porti")
+	# Cinque pallini stampati - i cerchi VUOTI sono Punti di Interesse, non
+	# porti - piu' le caselle fuori mappa che il fascicolo usa come porti. Qui
+	# e' Portsmouth: Kiel e Scapa Flow hanno gia' il loro pallino.
+	eq(ns.port_count(), 6,
+		"5 porti stampati piu' Portsmouth, che e' una casella fuori mappa")
 	eq(ns.port_hex("Scapa Flow"), Vector2i(1, 0), "Scapa Flow e' in 1,0")
+	ne(ns.port_hex("Portsmouth"), Vector2i.MAX,
+		"una casella fuori mappa che sulla mappa grande e' un porto lo e' anche qui")
 	var nw := MapGraph.load_inset("map_norwegian_sea")
 	eq(nw.load_error, "", "il Mare di Norvegia si carica")
 	eq(nw.hex_count(), 33, "33 esagoni sul Mare di Norvegia")
 	eq(nw.port_hex("Narvik"), Vector2i(5, -2), "Narvik e' in 5,-2")
+	# Senza questa traduzione il tedesco di N1 non poteva Completare da nessuna
+	# parte: la sua Tabella dei Porti (p.18) elenca Murmansk e Kiel, e sul Mare
+	# di Norvegia sono bande stampate ai bordi, non pallini.
+	ne(nw.port_hex("Kiel"), Vector2i.MAX, "Kiel e' un porto anche qui")
+	ne(nw.port_hex("Murmansk"), Vector2i.MAX, "e Murmansk pure")
+	eq(nw.port_hex("Denmark Strait"), Vector2i.MAX,
+		"il Denmark Strait invece NON e' un porto: non lo e' su nessuna mappa, "
+		+ "e chi lo nomina deve dichiarare che cosa ne fa")
 	var bad := MapGraph.load_inset("map_del_mare_inventato")
 	true_(bad.load_error != "", "un inserto che non esiste da' un errore, non un grafo vuoto")
 

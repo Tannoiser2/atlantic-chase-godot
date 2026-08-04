@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **3329 verifiche, 20 suite, headless.**
+Tutti i test passano: **3360 verifiche, 20 suite, headless.**
 
 ---
 
@@ -171,11 +171,43 @@ Tutti i test passano: **3329 verifiche, 20 suite, headless.**
   Mappa Operazionale sbagliata;
 - riepilogo persistente nel pannello di stato e procedura espandibile nel log
   mostrano tabella, tiro, TF scelta, bersaglio, risultato e ragione della policy;
-- `tools/audit_solo.gd`: 93 caselle azione, 0 blocchi, 14 testi segnaposto
-  nelle Tabelle Azioni (tutti in N1) e 1 buco dichiarato (Mine/Base Aerea N4).
+- `tools/audit_solo.gd`: 93 caselle azione, 0 blocchi, **0 testi segnaposto**
+  e 1 buco dichiarato (Mine/Base Aerea N4).
 | **M11** Effetti di Battaglia | ✅ **completo** | Suoni sintetizzati, vampe, traccianti, schizzi, esplosioni, incendi, siluri, affondamenti |
 
-### Cosa e' cambiato nell'ultima sessione (procedure N2, N3 e N5)
+### Cosa e' cambiato nell'ultima sessione (le procedure segnaposto, chiuse)
+
+**Le 42 procedure segnaposto delle Tabelle Azioni sono zero.** Era il numero
+che diceva quanto mancava al solitario "vero": in quelle caselle il bot
+applicava una policy generica invece della procedura stampata. N3, N5, N2 e N1
+sono stati ripresi uno per volta sulle pagine renderizzate, e ogni rilettura ha
+trovato difetti che nessun test poteva prendere, perche' erano nel DATO.
+
+- **Tre tabelle erano trascritte scalate di una colonna**, tutte per lo stesso
+  motivo: il fascicolo unisce due facce del dado in una colonna sola - `2-3`,
+  `3-4`, `5-6` - e chi trascrive legge sei colonne dove ce ne sono cinque. E'
+  successo alla Identificazione di N2 (`1 | 2 | 3-4 | 5 | 6`), a quella di N1
+  (`1 | 2-3 | 4 | 5 | 6`) e alla riga '1' di N5, dove un `CL/CL` era diventato
+  un `CL` solo. E' lo stesso difetto della Tabella Murmansk di BL1, e si vede
+  solo rimettendo l'occhio sulla pagina.
+- **Tre tabelle stampate DENTRO i risultati non c'erano affatto nel dato**: la
+  Nuova TF Britannica e l'esagono delle Mine di N2, la X - Identificazione della
+  TF Tedesca di N1.
+- **N3 aveva una cella vuota** dove la pagina stampa il simbolo dell'occhio,
+  cioe' il risultato CONTATTO: quel risultato non si e' mai potuto verificare in
+  nessuna partita di N3.
+- **N2 aveva un modificatore che non le appartiene** sulla tabella Iniziale, che
+  la pagina riserva esplicitamente alla Seguente.
+- **Il tedesco di N1 non poteva Completare da nessuna parte.** La sua Tabella
+  dei Porti elenca Murmansk e Kiel, che sul Mare di Norvegia sono bande
+  stampate ai bordi e non pallini: `Completion.port_options` non li trovava.
+  Ora `MapGraph.load_inset` promuove a porti le caselle fuori mappa il cui nome
+  e' un porto della Mappa Operazionale, prendendo da li' la nazione. Il Denmark
+  Strait resta fuori, perche' non e' un porto su nessuna mappa.
+- **Tre fini stampate dentro i risultati** non scattavano mai: la 'C' di N3, la
+  'X' di N5 e la 'I' di N1.
+
+### Cosa e' cambiato nelle sessioni prima (procedure N2, N3 e N5)
 
 - **N2 aveva la tabella di Identificazione scalata di una colonna.** Le colonne
   stampate a p.23 sono `1 | 2 | 3-4 | 5 | 6`, e la trascrizione le aveva lette

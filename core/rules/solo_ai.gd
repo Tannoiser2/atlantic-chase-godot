@@ -755,52 +755,409 @@ static func _move_rv_by_policy(state: GameState, graph: MapGraph, from: Vector2i
 		out["log"].append("Nessun marker RV calibrato in %s: spostamento registrato solo nel log." % str(from))
 
 
+## N1 Operazione Wilfred, Tabelle di Azione Tedesche di p.18 lette sulle
+## pagine renderizzate. Il giocatore e' il BRITANNICO; il tedesco NON parte con
+## nessuna Task Force in gioco, quindi quasi ogni procedura sa anche crearne
+## una.
+##
+## Quattro risultati su sette rimandano a un ALTRO risultato in almeno un ramo
+## - la 'C' senza TF diventa 'M', la 'M' in Murmansk diventa 'N' o 'D' - e i
+## rimandi vanno applicati davvero, se no la procedura non e' quella stampata.
 static func _n1(code: String, state: GameState, graph: MapGraph,
 		engine: ActionEngine, port_control: Dictionary, side: int) -> Dictionary:
 	match code:
 		"C":
-			var tf := _first_damaged_force(state, side)
-			if tf == null:
-				tf = _shortest_force_with_convoy(state, side)
-			if tf == null:
-				tf = _shortest_force(state, side)
-			if tf == null:
-				return _n1("M", state, graph, engine, port_control, side)
-			var port := "Kiel" if _has_damaged(tf) or _has_convoy(tf) \
-				else _n1_port_table(state)
-			return _complete_or_route_to_port(state, graph, port_control, tf, port,
-				"Solitario AI N1: Completamento tedesco")
+			return _n1_completion(state, graph, engine, port_control, side)
 		"D":
-			var tf_d := _nearest_eligible_denmark_strait_force(state, side)
-			if tf_d == null:
-				tf_d = _create_force_at(state, graph, side, "Kiel", ["Scheer"], false)
-			return _route_toward_hex(state, graph, tf_d, _denmark_strait_reference(graph),
-				"Solitario AI N1: D verso il riferimento calibrato del Denmark Strait")
+			return _n1_denmark_strait(state, graph, port_control, side)
 		"I":
-			var tf_i := _nearest_force_to_port(state, side, graph, "Narvik")
-			if tf_i == null:
-				tf_i = _create_unidentified_at(state, graph, side, "Kiel")
-			return _attack_or_route_selected(state, graph, engine, tf_i,
-				_n1_interception_target(state, graph, side),
-				"Solitario AI N1: Intercettazione tedesca")
+			return _n1_interception(state, graph, engine, side)
 		"M":
-			return _n_complete_with_priority(state, graph, port_control, side,
-				"Murmansk", "Solitario AI N1: rotta/Completamento a Murmansk")
+			return _n1_murmansk(state, graph, engine, port_control, side)
 		"N":
-			return _n_complete_with_priority(state, graph, port_control, side,
-				"Narvik", "Solitario AI N1: rotta/Completamento a Narvik")
+			return _n1_trajectory_to(state, graph, port_control, side, "Narvik")
 		"T":
-			return _n_complete_with_priority(state, graph, port_control, side,
-				"Trondheim", "Solitario AI N1: rotta/Completamento a Trondheim")
+			return _n1_trondheim(state, graph, port_control, side)
 		"X":
-			_remove_damaged_ships(state, side)
-			var tf_x := _best_type_priority(state, side, ["BC", "PB", "CA"])
-			if tf_x == null or _has_convoy(tf_x):
-				tf_x = _create_unidentified_at(state, graph, side, "Kiel")
-			return _attack_or_route_selected(state, graph, engine, tf_x,
-				_n1_battle_target(state, graph, side),
-				"Solitario AI N1: Bring on Battle")
+			return _n1_bring_on_battle(state, graph, engine, side)
 	return _completion_or_route(state, graph, engine, port_control, side)
+
+
+## 'C' - AZIONE DI COMPLETAMENTO verso... dove? (p.18)
+static func _n1_completion(state: GameState, graph: MapGraph,
+		engine: ActionEngine, port_control: Dictionary, side: int) -> Dictionary:
+	var forces := state.forces_of(side)
+	if forces.is_empty():
+		var as_m := _n1_murmansk(state, graph, engine, port_control, side)
+		(as_m["log"] as Array).push_front("Solitario AI N1 - C: nessuna TF tedesca in "
+			+ "gioco, quindi si applica un risultato 'M'.")
+		return as_m
+	var tf: TaskForce = null
+	var why := ""
+	if forces.size() == 1:
+		tf = forces[0]
+		why = "l'unica TF tedesca in gioco"
+	else:
+		tf = _first_damaged_force(state, side)
+		why = "la TF con una nave Danneggiata"
+		if tf == null:
+			tf = _shortest_force_with_convoy(state, side)
+			why = "la TF con un Convoglio"
+		if tf == null:
+			tf = _shortest_force(state, side)
+			why = "ne' Danneggiate ne' Convogli: la Traiettoria piu' corta"
+	var port := _n1_port_table(state, tf)
+	var out := _complete_or_route_to_port(state, graph, port_control, tf, port,
+		"Solitario AI N1 - C (%s): Completamento a %s" % [why, port])
+	out["time_lapse_goal"] = graph.place_hex(port)
+	if bool(out.get("completion", false)):
+		_n1_international_incident(state, out)
+	return out
+
+
+## La Tabella del Porto di p.18. "If Damaged or a Convoy, do not roll a die:
+## its destination port is Kiel."
+static func _n1_port_table(state: GameState, tf: TaskForce) -> String:
+	if tf != null and (_has_damaged(tf) or _has_convoy(tf)):
+		return "Kiel"
+	var roll := state.rng.d6("Solitario N1 Tabella del Porto")
+	if roll == 1:
+		return "Murmansk"
+	if roll == 2:
+		return "Kiel"
+	if roll <= 4:
+		return "Trondheim"
+	return "Narvik"
+
+
+## 'D' - AZIONE DI COMPLETAMENTO verso il DENMARK STRAIT (p.18).
+static func _n1_denmark_strait(state: GameState, graph: MapGraph,
+		port_control: Dictionary, side: int) -> Dictionary:
+	var goal := graph.place_hex("Denmark Strait")
+	if goal == Vector2i.MAX:
+		goal = _denmark_strait_reference(graph)
+	# "The selected TF may not have a Convoy or Damaged ship."
+	var tf: TaskForce = null
+	var bestd := 1 << 30
+	for candidate in state.forces_of(side):
+		if _has_convoy(candidate) or _has_damaged(candidate):
+			continue
+		var dist := Hex.distance(_anchor_hex(candidate), goal) \
+			if goal != Vector2i.MAX else 0
+		if dist < bestd:
+			bestd = dist
+			tf = candidate
+	var out := _empty("")
+	if tf == null:
+		tf = _create_force_at(state, graph, side, "Kiel", ["Scheer"], false)
+		(out["log"] as Array).append("Solitario AI N1 - D: nessuna TF idonea, quindi "
+			+ "entra una nuova TF con una PB a Kiel.")
+	if tf == null or goal == Vector2i.MAX:
+		(out["log"] as Array).append("Solitario AI N1 - D: il Denmark Strait non e' un "
+			+ "porto di questa mappa e non c'e' una TF idonea; il tedesco Passa.")
+		out["pass_initiative"] = true
+		return out
+	# Il Denmark Strait NON e' un porto su nessuna mappa del gioco: e' un tratto
+	# di mare. Il Completamento va quindi verso il suo esagono, e se la
+	# Traiettoria ci arriva la procedura lo dichiara invece di fingere un porto
+	# che non esiste.
+	if not tf.trajectory.occupies(goal):
+		var route := _route_toward_hex(state, graph, tf, goal,
+			"Solitario AI N1 - D: rotta verso l'esagono di porto del Denmark Strait")
+		route["log"] = (out["log"] as Array) + (route["log"] as Array)
+		route["time_lapse_goal"] = goal
+		return route
+	(out["log"] as Array).append(("Solitario AI N1 - D: %s e' nell'esagono del Denmark "
+		+ "Strait %s. LACUNA DICHIARATA: il fascicolo lo chiama 'port hex', ma il "
+		+ "Denmark Strait non e' un porto su nessuna mappa del gioco e non ha un "
+		+ "controllo stampato, quindi il Completamento non e' risolvibile qui.")
+		% [tf.display_name(), str(goal)])
+	out["ok"] = true
+	out["active"] = tf
+	out["turn_kind"] = "pass"
+	out["pass_initiative"] = true
+	out["time_lapse_before_pass"] = true
+	out["time_lapse_goal"] = goal
+	return out
+
+
+## 'I' - INTERCETTAZIONE (p.18). Porta dentro una fine stampata.
+static func _n1_interception(state: GameState, graph: MapGraph,
+		engine: ActionEngine, side: int) -> Dictionary:
+	var out := _empty("")
+	var tf := _nearest_force_to_place(state, side, graph, "Narvik")
+	if tf == null:
+		tf = _create_unidentified_at(state, graph, side, "Kiel")
+		(out["log"] as Array).append("Solitario AI N1 - I: nessuna TF tedesca in "
+			+ "gioco, quindi ne entra una nuova a Kiel.")
+	if tf == null:
+		(out["log"] as Array).append("Solitario AI N1 - I: nessuna TF creabile; Passare.")
+		out["pass_initiative"] = true
+		return out
+	if tf.unidentified:
+		for line in _n1_identify_new_german_tf(state, tf):
+			(out["log"] as Array).append(line)
+	# "Target an enemy Station (but not one in Scapa Flow). If none, target a
+	# Trajectory nearest to Trondheim."
+	var scapa := graph.place_hex("Scapa Flow")
+	var target: TaskForce = null
+	var bestd := 1 << 30
+	for enemy in state.forces_of(1 - side):
+		if enemy.completed or not enemy.trajectory.is_station():
+			continue
+		if scapa != Vector2i.MAX and enemy.trajectory.station_hex == scapa:
+			continue
+		var dist := Hex.distance(_anchor_hex(tf), enemy.trajectory.station_hex)
+		if dist < bestd:
+			bestd = dist
+			target = enemy
+	if target == null:
+		var trondheim := graph.place_hex("Trondheim")
+		bestd = 1 << 30
+		for enemy in state.forces_of(1 - side):
+			if enemy.completed or enemy.trajectory.is_station():
+				continue
+			var dist2 := Hex.distance(_anchor_hex(enemy), trondheim) \
+				if trondheim != Vector2i.MAX else 0
+			if dist2 < bestd:
+				bestd = dist2
+				target = enemy
+	if target == null:
+		# "If no TF to target, the scenario ends. Proceed to Debriefing."
+		state.solo_ended = true
+		state.solo_end_reason = ("Risultato 'I' senza nessuna Task Force britannica "
+			+ "da intercettare (p.18).")
+		var over := _empty("Solitario AI N1 - I: LO SCENARIO FINISCE. "
+			+ state.solo_end_reason)
+		(over["log"] as Array).append_array(out["log"] as Array)
+		over["ok"] = true
+		over["turn_kind"] = "end"
+		over["end_scenario"] = true
+		return over
+	var decision := _attack_or_route_selected(state, graph, engine, tf, target,
+		"Solitario AI N1 - I: Intercettazione di %s" % target.display_name())
+	decision["log"] = (out["log"] as Array) + (decision["log"] as Array)
+	decision["time_lapse_goal"] = graph.place_hex("Kiel")
+	decision["time_lapse_prefer_near"] = true
+	return decision
+
+
+## La tabella Nuova TF Tedesca di p.18, dentro il risultato 'I'.
+static func _n1_identify_new_german_tf(state: GameState,
+		tf: TaskForce) -> Array[String]:
+	var roll := state.rng.d6("Solitario N1 nuova TF tedesca")
+	var wanted: Array[String] = []
+	if roll <= 2:
+		wanted = ["BC", "BC"]
+	elif roll == 3:
+		wanted = ["BC", "CA"]
+	elif roll == 4:
+		wanted = ["BC"]
+	elif roll == 5:
+		wanted = ["PB", "CL"]
+	else:
+		wanted = ["CA"]
+	return _n1_fill_german_tf(state, tf, wanted, roll, "Nuova TF Tedesca")
+
+
+## La tabella X - Identificazione della TF Tedesca di p.19.
+static func _n1_identify_for_x(state: GameState, tf: TaskForce) -> Array[String]:
+	var roll := state.rng.d6("Solitario N1 X - identificazione")
+	var wanted: Array[String] = []
+	if roll <= 3:
+		wanted = ["BC", "BC"]
+	elif roll == 4:
+		wanted = ["BC", "PB"]
+	elif roll == 5:
+		wanted = ["BC", "CA"]
+	else:
+		wanted = ["PB", "CA"]
+	return _n1_fill_german_tf(state, tf, wanted, roll, "X - Identificazione")
+
+
+## "If two BCs are already in play, treat a 'BC' result as a 'CL' result
+## instead" - la clausola che tutte e tre le tabelle di N1 ripetono.
+static func _n1_fill_german_tf(state: GameState, tf: TaskForce,
+		wanted: Array[String], roll: int, table: String) -> Array[String]:
+	var out: Array[String] = []
+	if tf == null:
+		return out
+	var bc_in_play := _count_ships_of_type(state, TaskForce.Side.KRIEGSMARINE, "BC")
+	var used := _ship_names_in_play(state)
+	var names: Array[String] = []
+	for type_code in wanted:
+		var actual := type_code
+		if actual == "BC" and bc_in_play >= 2:
+			actual = "CL"
+		var ship := _make_available_ship_from_pool(actual, GE_TYPE_POOLS, used)
+		if ship == null:
+			continue
+		if actual == "BC":
+			bc_in_play += 1
+		used[ship.name] = true
+		tf.ships.append(ship)
+		names.append(ship.name)
+	tf.unidentified = false
+	out.append("Solitario AI N1 - %s: 1d6=%d -> %s." % [table, roll,
+		", ".join(names) if not names.is_empty() else "nessuna nave disponibile"])
+	return out
+
+
+## 'M' - AZIONE TRAIETTORIA verso MURMANSK (p.19). I due rimandi di testa sono
+## la parte che si perde piu' facilmente.
+static func _n1_murmansk(state: GameState, graph: MapGraph, engine: ActionEngine,
+		port_control: Dictionary, side: int) -> Dictionary:
+	var murmansk := graph.place_hex("Murmansk")
+	if murmansk != Vector2i.MAX:
+		for tf_in in state.forces_of(side):
+			if not tf_in.trajectory.occupies(murmansk):
+				continue
+			# "If an unidentified TF or a TF with a Convoy is in Murmansk, treat
+			# as 'N' instead."
+			if tf_in.unidentified or _has_convoy(tf_in):
+				var as_n := _n1_trajectory_to(state, graph, port_control, side, "Narvik")
+				(as_n["log"] as Array).push_front(("Solitario AI N1 - M: %s e' gia' IN "
+					+ "Murmansk con un Convoglio o non identificata, quindi si applica "
+					+ "un risultato 'N'.") % tf_in.display_name())
+				return as_n
+			# "If a TF with an undamaged BC (and no Convoy) is in Murmansk, treat
+			# as 'D' instead."
+			if _has_undamaged_type(tf_in, "BC"):
+				var as_d := _n1_denmark_strait(state, graph, port_control, side)
+				(as_d["log"] as Array).push_front(("Solitario AI N1 - M: %s e' IN "
+					+ "Murmansk con un BC integro e senza Convoglio, quindi si applica "
+					+ "un risultato 'D'.") % tf_in.display_name())
+				return as_d
+	var out := _n1_trajectory_to(state, graph, port_control, side, "Murmansk")
+	# "Time Lapse: Remove segments nearest to Kiel." - la 'M' e' l'unica delle
+	# tre che guarda Kiel invece del porto di destinazione.
+	out["time_lapse_goal"] = graph.place_hex("Kiel")
+	out["time_lapse_prefer_near"] = true
+	return out
+
+
+## 'N' e la seconda meta' della 'M' (p.19): stessa scelta, stessa azione, porto
+## diverso.
+static func _n1_trajectory_to(state: GameState, graph: MapGraph,
+		port_control: Dictionary, side: int, place: String) -> Dictionary:
+	var tf := _best_unidentified(state, side)
+	var why := "una TF tedesca non identificata"
+	if tf == null:
+		tf = _shortest_force_with_convoy(state, side)
+		why = "nessuna incognita: una TF con un Convoglio"
+	if tf == null:
+		tf = _create_unidentified_at(state, graph, side, "Kiel")
+		why = "nessuna TF in gioco: ne entra una non identificata a Kiel"
+	if tf == null:
+		var no := _empty("Solitario AI N1 - %s: nessuna TF da scegliere; Passare." % place)
+		no["pass_initiative"] = true
+		return no
+	var out := _complete_or_route_to_port(state, graph, port_control, tf, place,
+		"Solitario AI N1 - %s (%s): Completamento a %s" % [place, why, place])
+	out["time_lapse_goal"] = graph.place_hex(place)
+	if bool(out.get("completion", false)):
+		_n1_international_incident(state, out)
+	return out
+
+
+## 'T' - AZIONE TRAIETTORIA verso TRONDHEIM (p.19). La coda e' diversa da tutte
+## le altre: dopo il Completamento una TF identificata torna a Kiel.
+static func _n1_trondheim(state: GameState, graph: MapGraph,
+		port_control: Dictionary, side: int) -> Dictionary:
+	var tf := _nearest_unidentified_to_place(state, side, graph, "Trondheim")
+	var why := "la TF tedesca non identificata piu' vicina a Trondheim"
+	if tf == null:
+		tf = _shortest_force_with_convoy(state, side)
+		why = "nessuna incognita: una TF con un Convoglio"
+	if tf == null:
+		tf = _create_unidentified_at(state, graph, side, "Kiel")
+		why = "nessuna TF in gioco: ne entra una non identificata a Kiel"
+	if tf == null:
+		var no := _empty("Solitario AI N1 - T: nessuna TF da scegliere; Passare.")
+		no["pass_initiative"] = true
+		return no
+	var was_unidentified := tf.unidentified
+	var out := _complete_or_route_to_port(state, graph, port_control, tf,
+		"Trondheim", "Solitario AI N1 - T (%s): Completamento a Trondheim" % why)
+	out["time_lapse_goal"] = graph.place_hex("Trondheim")
+	if bool(out.get("completion", false)):
+		# "if the selected TF is unidentified, remove the TF; if identified, it
+		# immediately performs a Trajectory action to Kiel, and then a
+		# Completion action in Kiel."
+		if was_unidentified:
+			(out["log"] as Array).append(("Solitario AI N1 - T: %s e' non identificata, "
+				+ "quindi dopo il Completamento esce dal gioco.") % tf.display_name())
+		else:
+			out["follow_up"] = {"kind": "completion", "port_name": "Kiel",
+				"note": "Solitario AI N1 - T: identificata, quindi rientra a Kiel"}
+			(out["log"] as Array).append("Solitario AI N1 - T: %s e' identificata, "
+				% tf.display_name() + "quindi dopo il Completamento punta su Kiel.")
+		_n1_international_incident(state, out)
+	return out
+
+
+## 'X' - PORTARE IN BATTAGLIA (p.19).
+static func _n1_bring_on_battle(state: GameState, graph: MapGraph,
+		engine: ActionEngine, side: int) -> Dictionary:
+	var out := _empty("")
+	_remove_damaged_ships(state, side)
+	for loss in state.remove_eliminated_forces("Solitario AI N1 - X"):
+		(out["log"] as Array).append("Solitario AI N1 - X: %s resta senza navi e "
+			% String(loss.get("tf_name", "Task Force")) + "lascia la mappa.")
+	# "select a German TF with a BC, PB, or CA in it (select a BC before a PB, a
+	# PB before a CA)"
+	var tf := _best_type_priority(state, side, ["BC", "PB", "CA"])
+	if tf == null or _has_convoy(tf):
+		tf = _create_unidentified_at(state, graph, side, "Kiel")
+		if tf != null:
+			for line in _n1_identify_for_x(state, tf):
+				(out["log"] as Array).append(line)
+	if tf == null:
+		(out["log"] as Array).append("Solitario AI N1 - X: nessuna TF disponibile; Passare.")
+		out["pass_initiative"] = true
+		return out
+	# "targeting a British TF nearest a port. To determine which port, roll a
+	# die and refer to the Port Table"
+	var port := _n1_port_table(state, null)
+	var port_hex := graph.place_hex(port)
+	(out["log"] as Array).append("Solitario AI N1 - X: la Tabella del Porto indica %s."
+		% port)
+	var target := _nearest_enemy_to_hex(state, side, port_hex)
+	if target == null:
+		(out["log"] as Array).append("Solitario AI N1 - X: nessuna TF britannica da "
+			+ "portare in Battaglia; Passare.")
+		out["pass_initiative"] = true
+		return out
+	var decision := _attack_or_route_selected(state, graph, engine, tf, target,
+		"Solitario AI N1 - X: Portare in Battaglia %s" % target.display_name())
+	decision["log"] = (out["log"] as Array) + (decision["log"] as Array)
+	decision["time_lapse_goal"] = graph.place_hex("Kiel")
+	decision["time_lapse_prefer_near"] = true
+	return decision
+
+
+## Il riquadro verde 'IC': Incidente Internazionale. In N1 il fascicolo non gli
+## assegna nessun effetto stampato, quindi si conta e si dichiara.
+static func _n1_international_incident(state: GameState, out: Dictionary) -> void:
+	var n := int(state.solo_counters.get("n1_international_incidents", 0)) + 1
+	state.solo_counters["n1_international_incidents"] = n
+	(out["log"] as Array).append(("Incidente Internazionale numero %d. In N1 il "
+		+ "fascicolo non gli assegna nessun effetto stampato.") % n)
+
+
+static func _nearest_unidentified_to_place(state: GameState, side: int,
+		graph: MapGraph, place: String) -> TaskForce:
+	var h := graph.place_hex(place)
+	var best: TaskForce = null
+	var bestd := 1 << 30
+	for tf in state.forces_of(side):
+		if not tf.unidentified:
+			continue
+		var d := Hex.distance(_anchor_hex(tf), h) if h != Vector2i.MAX else 0
+		if d < bestd:
+			bestd = d
+			best = tf
+	return best
 
 
 ## N2 Operazione Weser (nord), Tabelle di Azione Britanniche di p.22 lette
@@ -3473,17 +3830,6 @@ static func _normalize_code(code: String) -> String:
 	return c
 
 
-static func _n1_port_table(state: GameState) -> String:
-	var r := state.rng.d6("Solitario N1 Port Table")
-	if r == 1:
-		return "Murmansk"
-	if r == 2:
-		return "Kiel"
-	if r <= 4:
-		return "Trondheim"
-	return "Narvik"
-
-
 static func _n_complete_with_priority(state: GameState, graph: MapGraph,
 		port_control: Dictionary, side: int, port_name: String,
 		note: String) -> Dictionary:
@@ -4148,21 +4494,6 @@ static func _nearest_eligible_denmark_strait_force(state: GameState,
 
 static func _denmark_strait_reference(graph: MapGraph) -> Vector2i:
 	return _port_hex(graph, "Hvalfjordur")
-
-
-static func _n1_interception_target(state: GameState, graph: MapGraph,
-		side: int) -> TaskForce:
-	for tf in state.forces_of(1 - side):
-		if tf.trajectory.is_station() and tf.trajectory.station_port != "Scapa Flow":
-			return tf
-	var trondheim := _port_hex(graph, "Trondheim")
-	return _nearest_enemy_to_hex(state, side, trondheim)
-
-
-static func _n1_battle_target(state: GameState, graph: MapGraph,
-		side: int) -> TaskForce:
-	var port := _n1_port_table(state)
-	return _nearest_enemy_to_hex(state, side, _port_hex(graph, port))
 
 
 static func _closer_port_to_enemy(graph: MapGraph, state: GameState,

@@ -41,7 +41,7 @@ godot --path . --script res://tools/smoke_solo_flow.gd -- BL1
 godot --path . --script res://tools/smoke_inset_map.gd
 ```
 
-Baseline corrente: **3329 verifiche, 20 suite** (era 2570 su 17 prima della
+Baseline corrente: **3360 verifiche, 20 suite** (era 2570 su 17 prima della
 suite `test_replay.gd`). Il totale non puo' scendere senza una rimozione
 intenzionale di test spiegata nel commit.
 
@@ -61,7 +61,7 @@ i dieci sulla Mappa Operazionale e i cinque sugli inserti - e nessun `SALTATO`, 
 schieramento trascritto.
 
 `audit_solo.gd` verde non significa completo: al passaggio stampa 93 caselle
-uniche, 14 procedure Azione segnaposto, 1 buco dichiarato e 0 blocchi.
+uniche, 0 procedure Azione segnaposto, 1 buco dichiarato e 0 blocchi.
 
 Per le mappe inserto:
 
@@ -146,14 +146,12 @@ quindici `OK` e nessun `SALTATO`. Non c'e' piu' uno scenario da far partire.
 Il prossimo lavoro e' uno dei due, e sono mestieri diversi che conviene NON
 mescolare:
 
-**A. Le 14 procedure segnaposto** delle Tabelle Azione, su 93 caselle uniche.
-Erano 42: N2, N3 e N5 sono chiusi, e resta soltanto N1.
-E' il numero che dice quanto manca al solitario "vero": in quelle caselle il bot
-applica una policy generica invece della procedura stampata. `audit_solo.gd` le
-elenca. E' lettura del fascicolo pagina per pagina, uno o due scenari per
-sessione, col metodo di sempre - pagina renderizzata a risoluzione nativa, mai
-il testo estratto. Non lavorare in parallelo su tutti i JSON: rende impossibile
-capire quale tabella abbia introdotto una regressione.
+**A. ~~Le procedure segnaposto delle Tabelle Azione~~ - CHIUSE.** Erano 42 su
+93 caselle uniche; adesso `audit_solo.gd` stampa zero. L'unico buco che resta e'
+il risultato Mine/Base Aerea di N4, che chiede una forza Furtiva Mine britannica
+e una Base Aerea come FONTE di un Attacco Aereo (RB p.27): `ActionEngine`
+pretende una TF Attiva con una CV integra e non sa partire da un esagono.
+Quello e' il prossimo pezzo di regola, se si vuole chiudere anche quel buco.
 
 **B. Chiudere la duplicazione GUI/SoloRunner.** Le cuciture ci sono gia' -
 `ask_choice`, `ask_modifiers`, `ask_steal`, i rispondenti iniettabili e la

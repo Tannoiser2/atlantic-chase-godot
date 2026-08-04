@@ -116,6 +116,55 @@ func load_inset_from(path: String, key: String) -> bool:
 		MapGraph._inset_lattice(key))
 
 
+## Le caselle fuori mappa che il fascicolo usa come PORTI diventano porti.
+##
+## Sugli inserti Kiel, Murmansk, Scapa Flow e Portsmouth non sono pallini: sono
+## bande stampate ai bordi. Il fascicolo pero' ci fa Completare come in
+## qualunque altro porto - la Tabella dei Porti di N1 (p.18) elenca Murmansk e
+## Kiel accanto a Trondheim e Narvik - e senza questa traduzione il tedesco di
+## N1 non poteva Completare da nessuna parte: `Completion.port_options` cerca in
+## `ports`, e li' quei nomi non c'erano.
+##
+## La NAZIONE viene dalla Mappa Operazionale, dove gli stessi quattro nomi sono
+## porti veri: e' un dato stampato, non una scelta. Una casella il cui nome non
+## e' un porto della mappa grande - Denmark Strait, Norwegian Sea, che sono
+## tratti di mare e non porti di nessuno - resta soltanto una casella: chi la
+## nomina deve dichiarare che cosa ne fa.
+const OFF_MAP_BOX_NATIONS := {
+	"Kiel": "GE",
+	"Murmansk": "USSR",
+	"Scapa Flow": "UK",
+	"Portsmouth": "UK",
+}
+
+
+static func _inset_ports_with_off_map_boxes(d: Dictionary) -> Array:
+	var out: Array = []
+	out.append_array(d.get("ports", []) as Array)
+	var known := {}
+	for p_v: Variant in out:
+		known[String((p_v as Dictionary).get("name", ""))] = true
+	for b_v: Variant in d.get("off_map_boxes", []):
+		var box: Dictionary = b_v
+		var name := String(box.get("name", ""))
+		if known.has(name) or not OFF_MAP_BOX_NATIONS.has(name):
+			continue
+		var hexes: Array = []
+		for h_v: Variant in box.get("hexes", []):
+			var h: Dictionary = h_v
+			hexes.append({"q": int(h["q"]), "r": int(h["r"])})
+		if hexes.is_empty():
+			continue
+		out.append({
+			"name": name,
+			"nation": String(OFF_MAP_BOX_NATIONS[name]),
+			"hexes": hexes,
+			"is_strip": hexes.size() > 1,
+			"from_off_map_box": true,
+		})
+	return out
+
+
 ## Il reticolo sta in core/data/map_insets.json, separato dal grafo perche' e'
 ## una MISURA sull'immagine e non va rigenerato insieme alla topologia.
 static func _inset_lattice(key: String) -> Dictionary:
@@ -170,7 +219,7 @@ func _apply_inset(key: String, d: Dictionary, lattice: Dictionary) -> bool:
 		"lattice": lat,
 		"hexes": d.get("hexes", []),
 		"blocked_edges": blocked,
-		"ports": d.get("ports", []),
+		"ports": _inset_ports_with_off_map_boxes(d),
 	})
 	if not ok:
 		return false

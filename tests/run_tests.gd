@@ -18,7 +18,7 @@ extends SceneTree
 ## quello che e'. Quando si aggiungono test, questi numeri vanno alzati: e'
 ## una seccatura di dieci secondi che compra il non fidarsi di un OK falso.
 const EXPECTED := {
-	"res://tests/unit/test_hex_and_graph.gd": 355,
+	"res://tests/unit/test_hex_and_graph.gd": 359,
 	"res://tests/unit/test_trajectory.gd": 51,
 	"res://tests/unit/test_rules.gd": 129,
 	"res://tests/unit/test_initiative.gd": 16,
@@ -29,7 +29,7 @@ const EXPECTED := {
 	"res://tests/unit/test_scenarios.gd": 228,
 	"res://tests/unit/test_victory.gd": 184,
 	"res://tests/unit/test_reorganize_signal.gd": 138,
-	"res://tests/unit/test_solo.gd": 1006,
+	"res://tests/unit/test_solo.gd": 1033,
 	"res://tests/unit/test_attitude.gd": 167,
 	"res://tests/unit/test_special_effects.gd": 67,
 	"res://tests/unit/test_result_tables.gd": 34,

@@ -255,7 +255,7 @@ davvero la procedura del fascicolo invece di una policy generica.
 | BL1 Raiders of the North Atlantic | Operazionale | 🟢 | audit visivo a mano |
 | BL2 Contain and Destroy | Operazionale | 🟡 | Forbes non automatizzato |
 | BL3 Raiders of the North Sea | Inserto Nord | 🟡 | Sommergibile schierato ma non giocabile; Limiti di Classe |
-| N1 Operazione Wilfred | Inserto Norvegia | 🟡 | le Mine sono l'OBIETTIVO: manca il Completamento in Norvegia |
+| N1 Operazione Wilfred | Inserto Norvegia | 🟢 | sette procedure e cinque tabelle trascritte e implementate |
 | N2 Operazione Weser (nord) | Inserto Norvegia | 🟢 | nove procedure e Identificazione trascritte e implementate; resta la Reazione Norvegese |
 | N3 Operazione Weser (sud) | Inserto Nord | 🟢 | undici procedure trascritte e implementate; resta la Reazione Norvegese |
 | N4 Operazione Weser (nord & sud) | Operazionale | 🟡 | Mine, basi aeree, "Urgenza" |
@@ -495,8 +495,29 @@ davvero la procedura del fascicolo invece di una policy generica.
   i segmenti di Traiettoria iniziali disegnati SULL'INSERTO. Sono per l'inserto
   quello che le 238 pedine del modulo VASSAL sono state per la mappa grande: un
   campione contro cui validare, e va usato invece di posizioni scelte a mano.
-- [ ] **N1 Operazione Wilfred**: 30 procedure testuali nel JSON; completare
-  Azioni, Identificazione, porti, reazioni e setup.
+- [x] **N1 Operazione Wilfred**: le procedure sono trascritte dalle pagine
+  renderizzate (pp.17-20) **e implementate**, con le tabelle di contorno -
+  Porto, Nuova TF Tedesca, Identificazione, Reazione Norvegese - piu' la
+  **X - Identificazione della TF Tedesca**, che era stampata dentro il risultato
+  'X' e nel dato non c'era affatto. Tre difetti veri:
+  la tabella di **Identificazione era scalata di una colonna** - le colonne
+  stampate sono `1 | 2-3 | 4 | 5 | 6` - quindi con un 3 usciva CL/Convoglio
+  invece di BC/BC/Convoglio;
+  i **rimandi di testa della 'M'** non c'erano: se una TF non identificata o con
+  un Convoglio e' gia' IN Murmansk il risultato diventa 'N', e con un BC integro
+  senza Convoglio diventa 'D';
+  la **fine stampata dentro la 'I'** - "if no TF to target, the scenario ends" -
+  non scattava mai.
+  **E il tedesco non poteva Completare da nessuna parte**: la sua Tabella dei
+  Porti elenca Murmansk e Kiel, che sul Mare di Norvegia sono caselle fuori
+  mappa e non pallini, quindi `Completion.port_options` non li trovava. Adesso
+  `MapGraph.load_inset` promuove a porti le caselle fuori mappa il cui nome e'
+  un porto della Mappa Operazionale - Kiel, Murmansk, Scapa Flow, Portsmouth -
+  prendendo da li' la NAZIONE, che e' un dato stampato.
+  **RESTA DICHIARATO** il Denmark Strait della 'D': il fascicolo lo chiama
+  "port hex", ma non e' un porto su nessuna mappa del gioco e non ha un
+  controllo stampato, quindi il Completamento li' non e' risolvibile e la
+  procedura lo dice invece di inventarlo.
 - [x] **N2 Operazione Weser (nord)**: le procedure sono trascritte dalle pagine
   renderizzate (pp.21-24) **e implementate**, comprese le due sotto-tabelle
   stampate DENTRO i risultati che nel dato non c'erano affatto - Nuova TF

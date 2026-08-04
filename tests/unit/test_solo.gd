@@ -118,6 +118,14 @@ func run() -> void:
 	test_n2_r4_becomes_x_the_second_time()
 	test_n2_trondheim_falls_back_to_x_and_n()
 	test_n2_new_british_tf_uses_only_slow_battleships()
+	test_n1_procedures_are_transcribed()
+	test_n1_identify_columns_are_not_shifted()
+	test_n1_port_table_sends_convoys_to_kiel_without_rolling()
+	test_n1_murmansk_redirects_when_already_there()
+	test_n1_interception_ends_the_scenario_without_a_target()
+	test_n1_interception_ignores_stations_in_scapa_flow()
+	test_n1_trondheim_sends_an_identified_tf_home()
+	test_n1_german_can_complete_in_an_off_map_port()
 	test_b2_reinforcement_groups_match_the_printed_display()
 	test_b2_replay_reaches_three_convoys()
 	test_b2_procedures_are_transcribed()
@@ -3123,3 +3131,188 @@ func test_n2_new_british_tf_uses_only_slow_battleships() -> void:
 			if ship.type_code == "BB":
 				found = true
 	true_(found, "ma una BB nella nuova TF c'e'")
+
+
+# ------------------------------------------------------------------------ N1 --
+#
+# N1 Operazione Wilfred, fascicolo pp.17-20 lette sulle pagine renderizzate.
+# Il giocatore e' il BRITANNICO; il tedesco non parte con nessuna Task Force in
+# gioco. Quattro risultati su sette rimandano a un ALTRO risultato in almeno un
+# ramo, e i rimandi sono la parte che si perde piu' facilmente.
+
+
+func _n1_state(seed: int) -> GameState:
+	var scenario := Scenario.load_by_id("N1 Operazione Wilfred")
+	var g := MapGraph.load_inset("map_norwegian_sea")
+	var st := GameState.new(g, seed)
+	st.apply_dict(scenario.to_state_dict())
+	st.solo_end_conditions = scenario.end_conditions()
+	return st
+
+
+func test_n1_procedures_are_transcribed() -> void:
+	_begin("N1: le procedure sono trascritte")
+	var o := SoloOpponent.load_for("N1 Operazione Wilfred")
+	var placeholders := 0
+	for tid in ["actions_early", "actions_late", "identify", "new_german_tf",
+			"port", "x_identify", "norwegian_reaction_narvik"]:
+		var t: SoloTable = o.table(tid)
+		ne(t, null, "la tabella '%s' esiste" % tid)
+		for code_v: Variant in t.legend.keys():
+			if String(t.legend[code_v]).contains("senza automatismi del motore"):
+				placeholders += 1
+	eq(placeholders, 0, "nessuna e' rimasta un segnaposto")
+	# La 'I' porta dentro la propria condizione di fine.
+	true_(String(o.table("actions_early").legend.get("I", "")).contains(
+		"LO SCENARIO FINISCE"), "la 'I' dichiara la propria condizione di fine")
+	# La tabella stampata DENTRO il risultato 'X' non c'era affatto.
+	eq((o.table("x_identify").rows[0]["cells"] as Array).size(), 6,
+		"la tabella X - Identificazione copre tutte e sei le facce")
+
+
+## p.19: le colonne sono 1 | 2-3 | 4 | 5 | 6, e la trascrizione le aveva lette
+## come sei colonne distinte, cioe' scalate di una da un 3 in poi.
+func test_n1_identify_columns_are_not_shifted() -> void:
+	_begin("N1: la tabella di Identificazione non e' piu' scalata di una colonna")
+	var o := SoloOpponent.load_for("N1 Operazione Wilfred")
+	var cells: Array = o.table("identify").rows[0]["cells"]
+	eq(String(cells[1]), "BC/BC/Convoglio", "con un 2 escono due BC e un Convoglio")
+	eq(String(cells[2]), "BC/BC/Convoglio",
+		"e con un 3 pure, perche' la colonna stampata e' '2-3'")
+	eq(String(cells[3]), "CL/Convoglio", "il CL/Convoglio sta nella colonna 4")
+	eq(String(cells[4]), "DD/Convoglio", "il DD/Convoglio nella 5")
+	eq(String(cells[5]), "Convoglio", "e il Convoglio solo nella 6")
+
+
+## La Tabella del Porto di p.18: "If Damaged or a Convoy, do not roll a die:
+## its destination port is Kiel."
+func test_n1_port_table_sends_convoys_to_kiel_without_rolling() -> void:
+	_begin("N1: un Convoglio va a Kiel senza tirare il dado")
+	var st := _n1_state(51)
+	var g := st.graph
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("N1 Operazione Wilfred")
+	var ge := TaskForce.Side.KRIEGSMARINE
+	var tf := TaskForce.new(80, ge)
+	tf.ships.append(ShipRoster.shared().make("Convoy x3"))
+	tf.trajectory.become_station(g.place_hex("Kiel"))
+	st.add_task_force(tf)
+	# Se il dado venisse tirato, questo 6 manderebbe a Narvik.
+	st.rng.push_forced([6])
+	var out := SoloAI.execute_code("C", st, g, engine, scenario.port_control(), ge)
+	true_(_solo_ai_log_contains(out, "Completamento a Kiel"),
+		"la destinazione e' Kiel, senza passare dal dado")
+
+
+## 'M' (p.19): i due rimandi di testa. Sono la parte che si perde piu'
+## facilmente, perche' cambiano procedura prima ancora di scegliere la TF.
+func test_n1_murmansk_redirects_when_already_there() -> void:
+	_begin("N1 M: gia' in Murmansk, il risultato diventa 'N' oppure 'D'")
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("N1 Operazione Wilfred")
+	var ge := TaskForce.Side.KRIEGSMARINE
+
+	var st := _n1_state(52)
+	var murmansk := st.graph.place_hex("Murmansk")
+	ne(murmansk, Vector2i.MAX, "Murmansk e' un luogo dell'inserto")
+	var convoy := TaskForce.new(81, ge)
+	convoy.ships.append(ShipRoster.shared().make("Convoy x3"))
+	convoy.trajectory.become_station(murmansk)
+	st.add_task_force(convoy)
+	var as_n := SoloAI.execute_code("M", st, st.graph, engine,
+		scenario.port_control(), ge)
+	true_(_solo_ai_log_contains(as_n, "si applica un risultato 'N'"),
+		"con un Convoglio gia' in Murmansk si applica una 'N'")
+
+	var st2 := _n1_state(53)
+	var raider := TaskForce.new(82, ge)
+	raider.ships.append(ShipRoster.shared().make("Scharnhorst"))
+	raider.trajectory.become_station(st2.graph.place_hex("Murmansk"))
+	st2.add_task_force(raider)
+	var as_d := SoloAI.execute_code("M", st2, st2.graph, engine,
+		scenario.port_control(), ge)
+	true_(_solo_ai_log_contains(as_d, "si applica un risultato 'D'"),
+		"con un BC integro e senza Convoglio si applica una 'D'")
+
+
+## 'I' (p.18): "If no TF to target, the scenario ends. Proceed to Debriefing."
+func test_n1_interception_ends_the_scenario_without_a_target() -> void:
+	_begin("N1 I: senza bersaglio lo scenario finisce")
+	var st := _n1_state(54)
+	var g := st.graph
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("N1 Operazione Wilfred")
+	var ge := TaskForce.Side.KRIEGSMARINE
+	for tf in st.forces_of(TaskForce.Side.ROYAL_NAVY):
+		st.remove_task_force(tf)
+	var over := SoloAI.execute_code("I", st, g, engine, scenario.port_control(), ge)
+	true_(bool(over.get("end_scenario", false)), "la 'I' dichiara la fine")
+	true_(st.solo_ended, "e lo stato risulta concluso")
+	true_(st.solo_end_reason.contains("intercettare"),
+		"col motivo stampato: %s" % st.solo_end_reason)
+
+
+## 'I' (p.18): "Target an enemy Station (but not one in Scapa Flow)."
+func test_n1_interception_ignores_stations_in_scapa_flow() -> void:
+	_begin("N1 I: una Stazione a Scapa Flow non e' un bersaglio")
+	var st := _n1_state(55)
+	var g := st.graph
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("N1 Operazione Wilfred")
+	var ge := TaskForce.Side.KRIEGSMARINE
+	var scapa := g.place_hex("Scapa Flow")
+	for tf in st.forces_of(TaskForce.Side.ROYAL_NAVY):
+		st.remove_task_force(tf)
+	var parked := TaskForce.new(83, TaskForce.Side.ROYAL_NAVY)
+	parked.ships.append(ShipRoster.shared().make("Renown"))
+	parked.trajectory.become_station(scapa)
+	st.add_task_force(parked)
+	var out := SoloAI.execute_code("I", st, g, engine, scenario.port_control(), ge)
+	true_(bool(out.get("end_scenario", false)),
+		"con la sola Stazione a Scapa Flow non c'e' bersaglio, quindi si finisce")
+
+
+## 'T' (p.19): dopo il Completamento una TF NON identificata esce di scena, una
+## identificata rientra a Kiel. Sono due code diverse per lo stesso risultato.
+func test_n1_trondheim_sends_an_identified_tf_home() -> void:
+	_begin("N1 T: identificata rientra a Kiel, non identificata esce di scena")
+	var st := _n1_state(56)
+	var g := st.graph
+	var engine := ActionEngine.load_default()
+	var scenario := Scenario.load_by_id("N1 Operazione Wilfred")
+	var ge := TaskForce.Side.KRIEGSMARINE
+	var tf := TaskForce.new(84, ge)
+	tf.ships.append(ShipRoster.shared().make("Convoy x3"))
+	tf.trajectory.become_station(g.place_hex("Trondheim"))
+	st.add_task_force(tf)
+	false_(tf.unidentified, "questa TF e' identificata")
+	var out := SoloAI.execute_code("T", st, g, engine, scenario.port_control(), ge)
+	if bool(out.get("completion", false)):
+		eq(String((out.get("follow_up", {}) as Dictionary).get("port_name", "")),
+			"Kiel", "una TF identificata punta su Kiel dopo il Completamento")
+	else:
+		true_(true, "il Completamento non era possibile in questa posizione")
+
+
+## Le caselle fuori mappa che il fascicolo usa come porti sono porti.
+## Senza questa traduzione il tedesco di N1 non poteva Completare da nessuna
+## parte: la sua Tabella dei Porti elenca Murmansk e Kiel, e sul Mare di
+## Norvegia sono bande stampate ai bordi, non pallini.
+func test_n1_german_can_complete_in_an_off_map_port() -> void:
+	_begin("N1: Kiel e Murmansk sono porti anche sull'inserto")
+	var st := _n1_state(57)
+	var g := st.graph
+	var scenario := Scenario.load_by_id("N1 Operazione Wilfred")
+	var ge := TaskForce.Side.KRIEGSMARINE
+	var kiel := g.place_hex("Kiel")
+	ne(kiel, Vector2i.MAX, "Kiel ha un esagono")
+	var tf := TaskForce.new(85, ge)
+	tf.ships.append(ShipRoster.shared().make("Scharnhorst"))
+	tf.trajectory.become_station(kiel)
+	st.add_task_force(tf)
+	var options := Completion.port_options(tf, g, scenario.port_control())
+	var names: Array[String] = []
+	for o_v: Variant in options:
+		names.append(String((o_v as Dictionary)["name"]))
+	true_(names.has("Kiel"),
+		"una TF tedesca nell'esagono di Kiel puo' Completare li': %s" % str(names))
