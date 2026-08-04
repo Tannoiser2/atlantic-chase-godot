@@ -1,27 +1,113 @@
 # TODO della revisione
 
-Aggiornato dopo la chiusura di **R0** (3 agosto 2026). Baseline: **3081
-verifiche su 18 suite**.
+Baseline: **3081 verifiche su 19 suite**, tutte verdi. Replay solitario:
+**quindici `OK`** su quindici scenari, nessuno saltato.
 
-Questo e' il backlog autorevole per continuare la revisione. `STATO.md`
-contiene anche una lunga cronologia: e' utile per capire le decisioni, ma le
-vecchie sezioni "Cosa manca" non devono riaprire lavori gia' completati.
+Questo e' il backlog autorevole. `STATO.md` contiene anche una lunga cronologia:
+utile per capire le decisioni, ma le sue vecchie sezioni "Cosa manca" non devono
+riaprire lavori gia' chiusi.
 
-## Stato sintetico
+## Come leggere lo stato
 
-| Area | Stato reale | Prossima verifica |
+- 🟢 **fatto**: implementato, con la fonte citata e i test che lo difendono.
+  Non va rifatto.
+- 🟡 **da rifinire**: funziona e regge la baseline, ma e' incompleto in un modo
+  DICHIARATO - nel dato, nel log o in un commento. Si puo' giocare sopra.
+- 🔴 **mancante**: non c'e'. Dove serve, il codice lo dichiara invece di
+  arrangiarsi.
+
+La regola che tiene insieme tutto: **un dato assente resta un buco dichiarato**.
+Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
+
+## Quadro d'insieme
+
+| Area | Stato | In una riga |
 |---|---|---|
-| Regole operative base | completa, testata | replay GUI a due giocatori |
-| 22 scenari base/avanzati | dati, setup e vittoria presenti | audit end-to-end |
-| Battaglia base | completa | regressioni GUI e bot solo |
-| Battaglia avanzata | quasi completa | quattro scelte interattive e MS12 |
-| Salvataggio/undo | completo | includere ogni nuovo stato solo |
-| Solitario BL1 | procedure stampate tutte implementate | audit visivo a mano |
-| Solitario BL2 | giocabile, replay end-to-end verde | automatizzare Forbes e Gensoul |
-| Solitario BL3 | tabelle trascritte, non giocabile | calibrare Mappa Inserto Mare del Nord |
-| Altri 12 solitari | setup e testo presenti, automazione parziale | sostituire i segnaposto scenario per scenario |
-| GUI operativa | molto rielaborata | smoke test dei flussi mappa ancora insufficiente |
-| iPad/web | esportabile | prova su dispositivo reale |
+| Reticolo e grafo Mappa Operazionale | 🟢 | 129 esagoni, validati su 238 pedine VASSAL |
+| Reticolo e grafo mappe inserto | 🟢 | misurati, verificati sulle illustrazioni, caricati dal motore |
+| Regole operative base | 🟢 | Traiettorie, Iniziativa, Scorrere del Tempo, Completamento |
+| Battaglia base | 🟢 | completa e testata |
+| Battaglia avanzata | 🟡 | mancano quattro scelte interattive e MS12 |
+| Salvataggio, undo, ricarica | 🟢 | ogni stato persistente ha il suo test |
+| **15 scenari solitari** | 🟡 | **tutti giocabili e tutti chiudono su una fine stampata**; restano procedure segnaposto |
+| Tabelle Azione solitarie | 🟡 | 42 procedure ancora segnaposto su 93 caselle |
+| Forze Furtive (Mine, Sub, U-Boat) | 🟡 | nucleo di regole e posa Mine fatti; manca l'azione che le innesca |
+| Basi aeree | 🟡 | dato completo sugli inserti; nessuna sulla mappa grande, e non giocano |
+| Comandanti | 🟡 | testi trascritti; Forbes e Marschall non automatizzati |
+| Mappa a due giocatori | 🟡 | 22 scenari importati, mai auditati end-to-end |
+| GUI operativa | 🟡 | sei prove di fumo verdi; il flusso solitario duplica `SoloRunner` |
+| iPad / web | 🔴 | esportabile, mai provato su dispositivo |
+
+## Che cosa e' FATTO 🟢
+
+- **Le due mappe inserto, per intero.** Reticolo misurato sull'immagine
+  (`fit_inset_lattice.py`) e risultato che vale la pena ricordare: e' lo stesso
+  della Mappa Operazionale, passo 213.9 px contro 213.5. Esagoni, terreno,
+  adiacenze, porti, Punti di Interesse, caselle fuori mappa, frecce "non
+  adiacente" e basi aeree (`build_inset_graph.py`), verificati contro le
+  illustrazioni del fascicolo (`validate_inset_setups.py`): 46 forme da
+  segmento, tutte dentro esagoni del grafo. Il motore le carica
+  (`MapGraph.load_inset`) e l'interfaccia le disegna come superficie di gioco.
+- **Tutti e quindici gli scenari solitari si giocano** e chiudono su una
+  condizione di fine STAMPATA, con la pagina citata nel dato. Nessun `SALTATO`
+  nel replay.
+- **Gli schieramenti dei cinque scenari inserto**, letti dalle illustrazioni:
+  BL3, N1, N2, N3 dai segmenti disegnati, N5 dal testo (la sua mappa non
+  disegna segmenti perche' "all TFs start in Scapa Flow").
+- **`SoloRunner`**: gioca uno scenario solitario per intero senza GUI, con semi
+  fissi, e `test_replay.gd` ne difende determinismo, terminazione, legalita' dei
+  Completamenti e salvataggio.
+- **Nucleo delle forze Furtive** (RB p.41): tipi, Ricognizione come
+  piazzamento, restrizioni, Informazioni generate, e la restrizione all'attacco
+  che da' senso al segnalino Contatto.
+
+## Che cosa e' DA RIFINIRE 🟡
+
+- **42 procedure delle Tabelle Azione sono segnaposto** su 93 caselle uniche.
+  E' il numero che dice quanto manca al solitario "vero": lo scenario gira, ma
+  in quelle caselle il bot applica una policy generica invece della procedura
+  stampata. `audit_solo.gd` le elenca.
+- **Forze Furtive**: manca l'AZIONE che le usa - il Completamento in un esagono
+  di Norvegia (p.16) che posa le Mine, e il collegamento alla tabella
+  `STEALTH_ATTACK`, che e' gia' trascritta e verificata a ingrandimento 5x.
+- **Reazione Norvegese**: citata da N1, N2, N3 e N5, tabella diversa per
+  ciascuno (pp.19, 24, 27, 34). Nessuna trascritta.
+- **Basi aeree**: sugli inserti sono dato completo con la loro regola (RB p.27,
+  raggio due esagoni, solo Meteo Buono, non bersagliabili); sulla Mappa
+  Operazionale non sono nemmeno trascritte, e in nessun caso il motore le fa
+  giocare.
+- **Comandanti**: gli undici testi sono trascritti da RB p.10 letta a 300 dpi e
+  Gensoul e' implementato; Forbes e Marschall no, e la voce Forbes ha un refuso
+  di traduzione dichiarato.
+- **`ui/main.gd` duplica la sequenza di `SoloRunner`** con le sue attese
+  asincrone: una modifica alla sequenza va fatta in due posti. `SoloSequence`
+  condivide le REGOLE, non l'ordine dei passi.
+- **Battaglia avanzata**: quattro scelte interattive e il mini-scenario MS12.
+- **I 22 scenari a due giocatori** hanno dati, setup e vittoria, ma nessun
+  audit end-to-end.
+
+## Che cosa MANCA 🔴
+
+- **Il rilevatore della banda sui segmenti** funziona solo dove sono marroni e
+  la banda e' bianca (BL3, N1). Su N2 e N3 - segmenti bianchi, banda blu - esce
+  INVERTITO, e il tentativo di sistemarlo cercando il contrasto e' fallito:
+  ogni segmento risulta bandato, perche' e' disegnato in piu' pezzi di colore
+  diverso. Il dato lo dichiara con `band_reliable`; N2 e N3 sono stati letti a
+  occhio.
+- **Il Sommergibile tedesco di N3**: l'illustrazione non lo piazza sulla mappa,
+  quindi il suo esagono non e' noto.
+- **I due marker U-Boat di A2**: il motore ne tiene solo il CONTEGGIO, perche'
+  e' quello che la fine stampata consuma. La pedina sulla mappa non c'e'.
+- **Il disegno delle forze Furtive nella GUI**: esistono nel motore, non si
+  vedono.
+- **I Punti Rinforzo di N5** (una nave = 1 RP), che influenzano l'Esito di p.35.
+- **I due CA "any" di N5** e, in generale, le scelte di schieramento che l'app
+  risolve con un ripiego dichiarato invece di chiederle: BL2 (quattro navi
+  "any"), A2 (acquisto in VP), N5 (organizzazione delle TF).
+- **Tre esagoni inserto restano incerti** - (1,1) e (2,4) del Mare del Nord,
+  (5,-3) del Mare di Norvegia - piu' tre lati "non adiacente" marcati
+  `disputed`. Sono segnati nel dato, non risolti.
+- **Prova su iPad o browser reale.**
 
 ## P0 - Integrita' del progetto
 
@@ -75,6 +161,29 @@ Uno scenario puo' essere marcato completo solo quando:
 - [ ] `audit_solo.gd` non conta piu' segnaposto per lo scenario.
 
 ### Scenari
+
+Tutti e quindici si giocano e chiudono su una fine stampata: quello che
+distingue un 🟢 da un 🟡 e' quante caselle della Tabella Azioni applicano
+davvero la procedura del fascicolo invece di una policy generica.
+
+| Scenario | Mappa | Stato | Che cosa manca |
+|---|---|---|---|
+| BL1 Raiders of the North Atlantic | Operazionale | 🟢 | audit visivo a mano |
+| BL2 Contain and Destroy | Operazionale | 🟡 | Forbes non automatizzato |
+| BL3 Raiders of the North Sea | Inserto Nord | 🟡 | Sommergibile schierato ma non giocabile; Limiti di Classe |
+| N1 Operazione Wilfred | Inserto Norvegia | 🟡 | le Mine sono l'OBIETTIVO: manca il Completamento in Norvegia |
+| N2 Operazione Weser (nord) | Inserto Norvegia | 🟡 | Reazione Norvegese; Completamenti in Norvegia |
+| N3 Operazione Weser (sud) | Inserto Nord | 🟡 | come N2, piu' il Sommergibile tedesco senza esagono |
+| N4 Operazione Weser (nord & sud) | Operazionale | 🟡 | Mine, basi aeree, "Urgenza" |
+| N5 Meglio Tardi che Mai | Inserto Norvegia | 🟡 | Punti Rinforzo; due CA "any"; organizzazione TF di ripiego |
+| N6 Il Dilemma delle Operazioni | Operazionale | 🟡 | procedure segnaposto |
+| B1 Operazione Berlino | Operazionale | 🟡 | procedure segnaposto |
+| B2 La Battaglia dell'Atlantico | Operazionale | 🟡 | -3 VP dei rinforzi |
+| B3 Operazione Reno | Operazionale | 🟡 | procedure segnaposto |
+| B4 Decisione sui Mari | Operazionale | 🟡 | composizione TF iniziale DA VERIFICARE |
+| A1 Convogli PQ | Operazionale | 🟡 | U-Boat, basi aeree, Limiti di Classe, clausola -1 VP |
+| A2 L'Ultima Battaglia | Operazionale | 🟡 | acquisto forze in VP; pedina U-Boat (solo il conteggio) |
+
 
 - [ ] **BL1 Raiders of the North Atlantic**: audit finale pagina per pagina.
   Il replay completo c'e' e arriva al Debriefing. Corretti in R0: la riga della
