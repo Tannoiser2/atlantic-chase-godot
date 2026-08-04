@@ -41,7 +41,7 @@ godot --path . --script res://tools/smoke_solo_flow.gd -- BL1
 godot --path . --script res://tools/smoke_inset_map.gd
 ```
 
-Baseline corrente: **3016 verifiche, 18 suite** (era 2570 su 17 prima della
+Baseline corrente: **3059 verifiche, 19 suite** (era 2570 su 17 prima della
 suite `test_replay.gd`). Il totale non puo' scendere senza una rimozione
 intenzionale di test spiegata nel commit.
 

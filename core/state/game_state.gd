@@ -82,6 +82,12 @@ var solo_phase_reason: String = ""
 ## vivere nello stato perche' il Rifornimento li rimuove o li sposta.
 var rendezvous_markers: Array[Dictionary] = []
 
+## Le forze Furtive in gioco: Mine, Sottomarini, U-Boat (RB p.41). Ognuna e'
+## { "side", "kind", "q", "r", "note" }. Le regole stanno in `Stealth`; qui
+## sta solo il dato, perche' deve entrare nel salvataggio come ogni altro
+## stato persistente.
+var stealth_forces: Array[Dictionary] = []
+
 ## Quante volte e' stato speso ciascun Comandante. Raeder e Pound hanno due
 ## utilizzi, gli altri uno (RB p.10); il dato deve sopravvivere al salvataggio.
 var commander_uses: Dictionary = {}
@@ -347,6 +353,12 @@ func triggers_info(h: Vector2i, mover_side: int) -> bool:
 		if tf.trajectory.is_station() and tf.trajectory.station_port == "" \
 				and tf.trajectory.station_hex == h:
 			return true
+	# Quarta causa di RB p.21, che finora il commento prometteva e il codice non
+	# manteneva: una forza Furtiva nemica nell'esagono.
+	for sf in stealth_forces:
+		if int(sf.get("side", -1)) != mover_side \
+				and Vector2i(int(sf.get("q", 0)), int(sf.get("r", 0))) == h:
+			return true
 	return false
 
 
@@ -441,6 +453,7 @@ func to_dict() -> Dictionary:
 		"solo_phase": solo_phase,
 		"solo_phase_reason": solo_phase_reason,
 		"rendezvous_markers": rendezvous_markers.duplicate(true),
+		"stealth_forces": stealth_forces.duplicate(true),
 		"commander_uses": commander_uses.duplicate(),
 		"commanders": commanders.duplicate(),
 		"casualties": casualties.duplicate(true),
@@ -475,6 +488,10 @@ func apply_dict(d: Dictionary) -> void:
 	for rv_v: Variant in d.get("rendezvous_markers", []):
 		var rv: Dictionary = rv_v
 		rendezvous_markers.append(rv.duplicate(true))
+	stealth_forces.clear()
+	for sf_v: Variant in d.get("stealth_forces", []):
+		var sf: Dictionary = sf_v
+		stealth_forces.append(sf.duplicate(true))
 	commander_uses.clear()
 	var saved_commanders: Dictionary = d.get("commander_uses", {})
 	for name_v: Variant in saved_commanders.keys():

@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Aggiornato dopo la chiusura di **R0** (3 agosto 2026). Baseline: **3016
+Aggiornato dopo la chiusura di **R0** (3 agosto 2026). Baseline: **3059
 verifiche su 18 suite**.
 
 Questo e' il backlog autorevole per continuare la revisione. `STATO.md`
@@ -26,7 +26,7 @@ vecchie sezioni "Cosa manca" non devono riaprire lavori gia' completati.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 3016 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 3059 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
@@ -429,41 +429,30 @@ reticoli.
 
 ## P0 - Sistemi mancanti al solitario
 
-- [ ] **Forze Furtive: Mine, Sottomarini, U-Boat.** E' la lacuna piu' grossa
-  rimasta, ed e' l'OBIETTIVO di N1 (posare Mine in Vestfjorden, Bud e
-  Andalsnes), oltre a comparire nello schieramento di BL3 (Sommergibile
-  britannico in (5,1)), N3 (Sommergibile tedesco) e A2 (due marker U-Boat, di
-  cui il motore tiene solo il conteggio).
-  **La tabella c'e' gia'**: `core/data/actions.json` ha `STEALTH_ATTACK` con
-  tutte e trenta le celle lette a ingrandimento 5x e `verified: true`. Quello
-  che manca e' la PEDINA e le sue regole, tutte in **RB p.41**:
-  - *stato*: parte, tipo (Mine / Sottomarino / U-Boat), esagono; piu'
-    serializzazione, undo e salvataggio come per ogni altro stato persistente;
-  - *Ricognizione* (solo Sottomarini e U-Boat): la forza viene spostata su un
-    esagono qualsiasi della mappa, e "non fa differenza dove la forza Furtiva e'
-    al momento in cui viene annunciata l'azione" - e' un piazzamento, non un
-    movimento;
-  - *restrizione al piazzamento*: mai in un esagono con Base Aerea nemica o
-    porto nemico; PUO' stare in un esagono con una TF nemica che contiene un CV;
-    eccezione tedesca col comandante Prien, che poi si rimuove;
-  - *la Ricognizione genera Informazioni*: piazzando la forza in un esagono con
-    una TF nemica - Stazione o segmento - si assegna un segnalino Informazioni a
-    OGNI TF nemica che ha Stazione o segmento in quell'esagono;
-  - *Attacco Furtivo*: bersaglia una TF nemica nel proprio esagono, con Totale
-    Traiettoria zero per la forza Furtiva; poi Scorrere del Tempo per tutte le
-    TF designate tranne il bersaglio, poi Cercare l'Iniziativa;
-  - *restrizione all'attacco*, ed e' quella che rende utile il segnalino
-    Contatto: si puo' attaccare solo una STAZIONE nemica, oppure una Traiettoria
-    se il segmento bersaglio ha assegnato un Contatto o delle Informazioni;
-  - *modificatori*: +3 in Zona U-Boat (che vale anche per Mine e Sottomarini,
-    non solo U-Boat) e +2 contro un Convoglio disperso; sono gia' nel dato.
-  Sopra questo va poi la procedura di N1 (fascicolo p.17): per posare una Mina,
-  una TF con un Convoglio deve riuscire un Completamento nell'esagono bersaglio;
-  se riesce, si piazza la Mina e si fa Scorrere del Tempo, e se la Mina e'
-  andata nell'esagono di Narvik/Vestfjorden si controlla la Reazione Norvegese
-  (p.19). Una volta posata, la Mina E' una forza Furtiva.
-  Non ho cominciato l'implementazione: e' una feature di motore con stato
-  persistente, e mezza feature non testata sarebbe peggio di una voce aperta.
+- [ ] **Forze Furtive: il NUCLEO c'e', mancano il piazzamento da scenario e la
+  GUI.** `core/rules/stealth.gd` (puro `RefCounted`) e `GameState.stealth_forces`
+  implementano da RB p.41: i tre tipi, la Ricognizione come PIAZZAMENTO - "non
+  fa differenza dove la forza Furtiva e' al momento in cui viene annunciata
+  l'azione" - le restrizioni al piazzamento (mai su porto o Base Aerea nemici,
+  ammesso su una TF nemica con un CV), l'assegnazione di Informazioni a ogni TF
+  nemica nell'esagono, e soprattutto la RESTRIZIONE ALL'ATTACCO: una Traiettoria
+  e' immune finche' il segmento bersaglio non ha un Contatto o delle
+  Informazioni, una Stazione no. Salvataggio compreso. 43 verifiche in
+  `tests/unit/test_stealth.gd`.
+  Chiusa anche una promessa vecchia: il commento di `GameState.triggers_info`
+  elencava da sempre quattro cause di RB p.21 e ne implementava tre, perche' la
+  quarta - "forza Furtiva" - non aveva una pedina. Adesso ce l'ha.
+  **Restano**: piazzare le forze Furtive dallo SCHIERAMENTO degli scenari (il
+  Sommergibile di BL3 in (5,1), quello tedesco di N3, i due marker U-Boat di A2
+  di cui il motore tiene solo il conteggio), la procedura Mine di N1 - una TF
+  con un Convoglio Completa nell'esagono bersaglio, si posa la Mina, Scorrere
+  del Tempo, e se e' Narvik/Vestfjorden si controlla la Reazione Norvegese
+  (p.19) - il collegamento all'azione `STEALTH_ATTACK`, la cui tabella e' gia'
+  trascritta e verificata, e il disegno della pedina nella GUI.
+  Una lacuna dichiarata dentro il nucleo: le Informazioni stanno sui SEGMENTI,
+  quindi una Ricognizione su una TF nemica che e' Stazione le dichiara invece
+  di assegnarle.
+
 - [ ] Trascrivere e modellare le Basi Aeree: posizione, controllo, periodo di
   attivita', raggio e interazione con Attacco Aereo/Informazioni.
 - [ ] Modellare le forze Furtive permanenti che causano Informazioni, solo

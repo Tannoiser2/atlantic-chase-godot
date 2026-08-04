@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **3016 verifiche, 18 suite, headless.**
+Tutti i test passano: **3059 verifiche, 19 suite, headless.**
 
 ---
 
@@ -467,6 +467,25 @@ Tutti i test passano: **3016 verifiche, 18 suite, headless.**
   scenario normale rimetta la Mappa Operazionale coi suoi tile.
   Il testo che i cinque scenari mostravano - "reticolo e coordinate non
   calibrati" - era ormai falso ed e' stato corretto.
+- **Le forze Furtive esistono nel motore.** `core/rules/stealth.gd` e
+  `GameState.stealth_forces` implementano RB p.41: i tre tipi (Mine,
+  Sottomarini, U-Boat), la Ricognizione come PIAZZAMENTO e non movimento - il
+  regolamento dice che "non fa differenza dove la forza Furtiva e' al momento in
+  cui viene annunciata l'azione" - le restrizioni (mai su porto o Base Aerea
+  nemici, ma PERMESSO su una Task Force nemica con un CV, che il regolamento
+  specifica apposta), le Informazioni assegnate a ogni TF nemica nell'esagono,
+  e la restrizione all'attacco: una Traiettoria e' immune finche' il segmento
+  bersaglio non ha un Contatto o delle Informazioni, una Stazione no. E' quella
+  che da' un senso al segnalino Contatto, ed e' la prima cosa che i test
+  difendono. Salvataggio compreso.
+  Chiusa per strada una promessa vecchia: il commento di `triggers_info`
+  elencava le quattro cause di RB p.21 e il codice ne implementava tre, perche'
+  la quarta - la forza Furtiva - non aveva una pedina.
+  Lacuna dichiarata dentro il nucleo: le Informazioni stanno sui SEGMENTI,
+  quindi una Ricognizione su una TF nemica che e' Stazione le dichiara invece di
+  assegnarle. Restano fuori il piazzamento dallo schieramento degli scenari, la
+  procedura Mine di N1, il collegamento alla tabella `STEALTH_ATTACK` (gia'
+  trascritta e verificata) e il disegno nella GUI.
 - **BL3 si gioca sul suo inserto: e' l'undicesimo scenario solitario che chiude
   su una condizione stampata**, e il primo fuori dalla Mappa Operazionale.
   Lo schieramento e' letto dall'illustrazione di p.12: cinque segmenti in fila,
