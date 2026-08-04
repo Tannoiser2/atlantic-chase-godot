@@ -1,7 +1,9 @@
 # TODO della revisione
 
-Baseline: **3329 verifiche su 20 suite**, tutte verdi. Replay solitario:
-**quindici `OK`** su quindici scenari, nessuno saltato.
+Baseline: **3360 verifiche su 20 suite**, tutte verdi. Replay solitario:
+**quindici `OK`** su quindici scenari, nessuno saltato. `audit_solo.gd`:
+**93 caselle azione, zero procedure segnaposto, un buco dichiarato, zero
+blocchi.**
 
 Questo e' il backlog autorevole. `STATO.md` contiene anche una lunga cronologia:
 utile per capire le decisioni, ma le sue vecchie sezioni "Cosa manca" non devono
@@ -27,145 +29,109 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 | Reticolo e grafo mappe inserto | 🟢 | misurati, verificati sulle illustrazioni, caricati dal motore |
 | Regole operative base | 🟢 | Traiettorie, Iniziativa, Scorrere del Tempo, Completamento |
 | Battaglia base | 🟢 | completa e testata |
-| Battaglia avanzata | 🟡 | mancano quattro scelte interattive e MS12 |
 | Salvataggio, undo, ricarica | 🟢 | ogni stato persistente ha il suo test |
-| **15 scenari solitari** | 🟡 | **tutti giocabili e tutti chiudono su una fine stampata**; restano procedure segnaposto |
-| Tabelle Azione solitarie | 🟡 | 14 procedure ancora segnaposto su 93 caselle: resta solo N1 |
-| Forze Furtive (Mine, Sub, U-Boat) | 🟡 | nucleo di regole e posa Mine fatti; manca l'azione che le innesca |
-| Basi aeree | 🟡 | dato completo sugli inserti; nessuna sulla mappa grande, e non giocano |
+| **Tabelle Azione solitarie** | 🟢 | **93 caselle su 93 trascritte e implementate; zero segnaposto** |
+| 15 scenari solitari, end-to-end | 🟢 | tutti giocabili, tutti chiudono su una fine STAMPATA |
+| Attacco Furtivo dalla forza Furtiva | 🟡 | fatto sul lato bot; il percorso del GIOCATORE usa ancora una TF |
+| Forze Furtive (Mine, Sub, U-Boat) | 🟡 | nucleo, posa Mine e attacco fatti; U-Boat di A2 e disegno GUI no |
+| Marcatori Base Aerea | 🟡 | esistono, si salvano, innescano Informazioni; NON lanciano Attacchi Aerei |
+| Reazione Norvegese | 🟡 | quattro tabelle collegate ai due cicli; restano i risultati che spostano Basi Aeree |
+| Battaglia avanzata | 🟡 | mancano quattro scelte interattive e MS12 |
 | Comandanti | 🟡 | testi trascritti; Forbes e Marschall non automatizzati |
+| Basi aeree sulla Mappa Operazionale | 🔴 | non trascritte: sugli inserti si', sulla mappa grande no |
 | Mappa a due giocatori | 🟡 | 22 scenari importati, mai auditati end-to-end |
-| GUI operativa | 🟡 | sei prove di fumo verdi; il flusso solitario duplica `SoloRunner` |
+| GUI operativa | 🟡 | il flusso solitario duplica `SoloRunner`; layout tagliato sotto i 1000 px |
 | iPad / web | 🔴 | esportabile, mai provato su dispositivo |
 
 ## Che cosa e' FATTO 🟢
 
+- **Le 93 caselle delle Tabelle Azione solitarie.** Erano 42 segnaposto: in
+  quelle caselle il bot applicava una policy generica invece della procedura
+  stampata. Adesso `audit_solo.gd` stampa zero. Ogni procedura e' trascritta
+  dalla pagina renderizzata, con la pagina citata nel dato, e il bot sceglie
+  davvero TF, rotta, bersaglio e continuazioni prescritte.
+  La rilettura ha trovato difetti che nessun test poteva prendere, perche'
+  stavano nel DATO: **tre tabelle scalate di una colonna** (Identificazione di
+  N1 e N2, riga '1' di N5 - il fascicolo unisce due facce del dado in una
+  colonna sola e chi trascrive ne legge sei dove ce ne sono cinque), **tre
+  tabelle stampate dentro i risultati e assenti dal dato** (Nuova TF Britannica
+  e esagono delle Mine di N2, X-Identificazione di N1), **una cella vuota** dove
+  N3 stampa il simbolo del CONTATTO, **un modificatore attribuito alla tabella
+  sbagliata** in N2, e **tre fini stampate** che non scattavano mai (C di N3, X
+  di N5, I di N1).
 - **Le due mappe inserto, per intero.** Reticolo misurato sull'immagine
-  (`fit_inset_lattice.py`) e risultato che vale la pena ricordare: e' lo stesso
-  della Mappa Operazionale, passo 213.9 px contro 213.5. Esagoni, terreno,
-  adiacenze, porti, Punti di Interesse, caselle fuori mappa, frecce "non
-  adiacente" e basi aeree (`build_inset_graph.py`), verificati contro le
-  illustrazioni del fascicolo (`validate_inset_setups.py`): 46 forme da
-  segmento, tutte dentro esagoni del grafo. Il motore le carica
-  (`MapGraph.load_inset`) e l'interfaccia le disegna come superficie di gioco.
+  (`fit_inset_lattice.py`): e' lo stesso della Mappa Operazionale, passo 213.9 px
+  contro 213.5. Esagoni, terreno, adiacenze, porti, Punti di Interesse, caselle
+  fuori mappa, frecce "non adiacente" e basi aeree (`build_inset_graph.py`),
+  verificati contro le illustrazioni del fascicolo
+  (`validate_inset_setups.py`): 46 forme da segmento, tutte dentro esagoni del
+  grafo. Il motore le carica e l'interfaccia le disegna come superficie di gioco.
+- **Le caselle fuori mappa che il fascicolo usa come porti SONO porti.** Kiel,
+  Murmansk, Scapa Flow e Portsmouth sugli inserti sono bande stampate ai bordi,
+  non pallini, e `Completion.port_options` non li trovava: il tedesco di N1 non
+  poteva Completare da nessuna parte. `MapGraph.load_inset` li promuove ora a
+  porti prendendo la NAZIONE dal loro omonimo sulla Mappa Operazionale, che e'
+  un dato stampato.
 - **Tutti e quindici gli scenari solitari si giocano** e chiudono su una
   condizione di fine STAMPATA, con la pagina citata nel dato. Nessun `SALTATO`
   nel replay.
 - **Gli schieramenti dei cinque scenari inserto**, letti dalle illustrazioni:
-  BL3, N1, N2, N3 dai segmenti disegnati, N5 dal testo (la sua mappa non
-  disegna segmenti perche' "all TFs start in Scapa Flow").
+  BL3, N1, N2, N3 dai segmenti disegnati, N5 dal testo ("all TFs start in Scapa
+  Flow"). Il **Sommergibile britannico di N3** e' fra questi: la pedina porta la
+  Union Jack, e il suo esagono - (6,-1), Kristiansand - e' MISURATO con la
+  registrazione di `validate_inset_setups.py`, 7.1 px dal centro contro un
+  inraggio di circa 107.
 - **`SoloRunner`**: gioca uno scenario solitario per intero senza GUI, con semi
   fissi, e `test_replay.gd` ne difende determinismo, terminazione, legalita' dei
   Completamenti e salvataggio.
 - **Nucleo delle forze Furtive** (RB p.41): tipi, Ricognizione come
   piazzamento, restrizioni, Informazioni generate, e la restrizione all'attacco
-  che da' senso al segnalino Contatto.
+  che da' senso al segnalino Contatto. **La posa delle Mine e' collegata**: N1
+  posa le sue tre, N2 le posa sull'esagono tirato sul dado stampato.
+- **Lo storico degli sbarchi in Norvegia** (`Norway.landings_of`). Il
+  Completamento in Norvegia non scrive `completed_port`, perche' la Task Force
+  del giocatore resta in gioco: quello storico non esisteva, e serve ai
+  modificatori che guardano indietro (il -1 del dado del Convoglio di N5).
 
 ## Che cosa e' DA RIFINIRE 🟡
 
-- **14 procedure delle Tabelle Azione sono segnaposto** su 93 caselle uniche
-  (erano 42; N2, N3 e N5 sono chiusi, e resta soltanto **N1**). E' il numero che dice quanto manca al solitario
-  "vero": lo scenario gira, ma in quelle caselle il bot applica una policy
-  generica invece della procedura stampata. `audit_solo.gd` le elenca.
-- **Forze Furtive**: il Completamento in Norvegia c'e' (`core/rules/norway.gd`)
-  e la posa delle Mine anche, ma non sono ancora COLLEGATI al ciclo di gioco -
-  ne' `SoloRunner` ne' la GUI offrono l'azione. Manca anche il collegamento
-  alla tabella `STEALTH_ATTACK`, gia' trascritta e verificata a 5x.
-- **Reazione Norvegese**: la regola di quando si tira c'e' (il giocatore si',
-  il bot no, p.16) e le quattro TABELLE sono trascritte in
-  `core/data/solo/norwegian_reaction.json` con innesco, colonne, righe,
-  modificatori e legenda. **Il tiro e l'applicazione sono automatizzati**
-  (`Norway.roll_reaction` e `Norway.apply_reaction`): la riga giusta viene scelta
-  sullo stato - Mine in N2, TF britannica in N3, dentro-o-adiacente in N5 - i
-  modificatori calcolabili si applicano, i Colpi vanno al Convoglio o allo
-  Squadrone DD, il risultato `!` annulla il Completamento e passa l'Iniziativa.
-  **Il ciclo e' collegato**: `SoloRunner` offre il Completamento in Norvegia
-  come PRIMA azione del giocatore negli scenari 'N', posa le Mine se l'esagono
-  e' un bersaglio e tira la Reazione. N1 posa davvero le sue Mine e la Tabella
-  delle Azioni tedesche legge la riga giusta sul loro numero.
-  **Restano dichiarati** i due modificatori di N5 che dipendono da Completamenti
-  precedenti (il motore non tiene quello storico), quello legato alle Basi Aeree
-  tedesche, e i risultati `b`/`g` che spostano marker Base Aerea.
-  **Anche la GUI la offre**: negli scenari 'N', se la Task Force selezionata
-  puo' sbarcare, il Completamento chiede prima quale delle due azioni si vuole -
-  sbarcare tiene la TF in gioco, entrare in porto la toglie - e da li' posa le
-  Mine e tira la Reazione come fa `SoloRunner`.
-- **L'Attacco Furtivo della GUI non usa una forza Furtiva.** Nel registro di
-  una partita BL2 si legge "Attacco Furtivo -> Totale Traiettoria 2": per RB
-  p.41 una forza Furtiva ha Totale Traiettoria ZERO, quindi quell'azione la sta
-  eseguendo una Task Force. Va ricollegata a `Stealth`, che adesso conosce sia
-  i bersagli legali sia la restrizione del segnalino Contatto.
-- **Basi aeree**: sugli inserti sono dato completo con la loro regola (RB p.27,
-  raggio due esagoni, solo Meteo Buono, non bersagliabili); sulla Mappa
-  Operazionale non sono nemmeno trascritte, e in nessun caso il motore le fa
-  giocare.
+- **L'Attacco Furtivo dalla forza Furtiva e' fatto a META'.** Il motore lo
+  sa fare - `Declaration.active_stealth`, Totale Traiettoria zero come RB p.41,
+  restrizione al bersaglio da `Stealth.attack_error` - e il **lato bot** lo usa.
+  Il percorso del **GIOCATORE** in `ui/main.gd` no: `_declare_action`
+  ("STEALTH_ATTACK") passa ancora una Task Force come Attiva. E' la meta' che
+  resta, ed e' piccola: la cucitura c'e' gia'.
+- **Marcatori Base Aerea: la pedina c'e', il suo uso principale no.**
+  `core/rules/air_base.gd` e `GameState.placed_air_bases`: si piazzano, si
+  tolgono, entrano nel salvataggio e - come qualunque base aerea nemica, RB
+  p.21 - innescano Informazioni nel loro esagono. Quattro procedure li usano
+  (BL2 p.11, N4 p.30, N5 p.33, N6 p.37). Quello che NON c'e' e' la Base Aerea
+  come **FONTE di un Attacco Aereo** (RB p.27): `ActionEngine` pretende una TF
+  Attiva con una CV integra e non sa partire da un esagono. Da questo dipendono
+  il passo Bersaglio della 'A' di N5, il risultato Mine/Base Aerea di N4 - **il
+  solo buco che l'audit ancora dichiara** - e i risultati `b`/`g` della Reazione
+  Norvegese, che ora avrebbero la pedina da spostare e continuano a dichiarare
+  la lacuna.
+- **Reazione Norvegese**: le quattro tabelle (pp.19, 24, 27, 34) sono trascritte
+  in `core/data/solo/norwegian_reaction.json` con innesco, colonne, righe,
+  modificatori e legenda, e **il tiro e l'applicazione sono collegati a tutti e
+  due i cicli** - `SoloRunner` e `ui/main.gd` chiamano `Norway.roll_reaction`
+  sul Completamento in Norvegia del giocatore. La riga giusta viene scelta sullo
+  stato, i Colpi vanno al Convoglio o allo Squadrone DD, il risultato `!`
+  annulla il Completamento e passa l'Iniziativa. **Restano dichiarati** i
+  risultati `b`/`g` che spostano marker Base Aerea e il modificatore che dipende
+  dalle Basi Aeree tedesche.
+- **Basi aeree sulla Mappa Operazionale**: sugli inserti sono dato completo con
+  la loro regola; sulla mappa grande non sono nemmeno trascritte.
 - **Comandanti**: gli undici testi sono trascritti da RB p.10 letta a 300 dpi e
   Gensoul e' implementato; Forbes e Marschall no, e la voce Forbes ha un refuso
   di traduzione dichiarato.
-- **`ui/main.gd` duplica la sequenza di `SoloRunner`.** E' la voce piu' cara
-  rimasta, e ogni regola nuova la rende piu' cara: lo sbarco in Norvegia e'
-  adesso scritto in tutti e due i posti.
-  Le cifre, perche' la stima non sia a occhio: `ui/main.gd` e' **4075 righe con
-  141 punti di `await`**, `solo_runner.gd` ne ha 1291 ed e' sincrono,
-  `solo_sequence.gd` ne condivide 133 - le REGOLE della sequenza, non l'ordine
-  dei passi.
-  **PASSO 1 FATTO**: l'ordine della policy del giocatore e' un elenco leggibile
-  (`_player_step_order` / `_run_player_step`) invece di una catena di if, con
-  la ragione di ogni voce accanto e un test che ne difende l'ordine. La
-  trascrizione del replay e' rimasta identica a parita' di seme, che e' la
-  prova che il refactor non ha cambiato il gioco.
-  **PASSO 2 COMINCIATO**: le scelte del giocatore passano da `ask_choice()`,
-  una domanda esplicita, invece di essere risolte con `options[0]` dentro al
-  ciclo. Un guidatore diverso - la GUI - eredita e ridefinisce quel metodo e il
-  resto del ciclo non cambia. **Tutte e tre le scelte sono convertite**: porto
-  di Completamento, segmenti allo Scorrere del Tempo e bersaglio dell'attacco.
-  L'attacco in particolare non esce piu' al primo candidato legale: li raccoglie
-  tutti in ordine di preferenza e poi sceglie, che e' la forma di cui la GUI ha
-  bisogno per mostrarli.
-  **PASSO 4 FATTO: il ciclo si guida a passi.** `step()` gioca un turno del
-  giocatore e si ferma alla prima domanda senza risposta; `answer(indice)`
-  risponde e riprende. Fra i due ci sta l'`await Choice.ask` della GUI, e il
-  ciclo resta sincrono.
-  L'ereditarieta' con una `ask_choice` coroutine NON funzionava, ed e' stato
-  verificato: GDScript rifiuta a compile-time di chiamare una coroutine senza
-  `await`, quindi sarebbe diventato coroutine tutto il collaudo.
-  Come funziona la ripresa, e perche' e' sicura: il turno viene RIGIOCATO da
-  capo con le risposte accumulate. Rigiocare richiede di riportare indietro
-  tutto quello che il primo giro aveva toccato, e sono tre cose, tutte trovate
-  dal test e non a tavolino: i tiri di dado del turno (ricordati), il registro
-  (troncato) e **lo stato del gioco** - il passo Traiettoria allunga la rotta e
-  solo dopo lo Scorrere del Tempo chiede quali segmenti togliere, quindi al
-  secondo giro il mondo era diverso e la partita imboccava un'altra strada. La
-  fotografia usa `to_dict`/`apply_dict`, la stessa strada del salvataggio, che
-  il progetto verifica da sempre.
-  **CORREZIONE, e vale piu' del resto della voce.** I quattro passi sono stati
-  fatti sulla META' SBAGLIATA. La macchina a passi guida `_player_turn()`, cioe'
-  la policy del giocatore SIMULATO - e la GUI quella non la usa, perche' li' il
-  giocatore e' un essere umano che preme i bottoni.
-  La duplicazione vera e' sul LATO BOT, e il codice lo dichiarava da sempre:
-  `solo_runner.gd` ha tre commenti "Mirror headless di `ui/main.gd::...`" sopra
-  `_bot_turn`, `_apply_bot_result` e `_apply_bot_decision`, che rispecchiano
-  `_solo_roll_action`, `_apply_solo_ai_result` e `_apply_solo_ai_decision`.
-  Quelle tre coppie sono le righe scritte due volte.
-  **Cosa resta buono dei quattro passi**: la cucitura `ask_choice`, il
-  rispondente iniettabile e soprattutto il MECCANISMO della ripresa - fotografia
-  dello stato, tiri ricordati, registro troncato - che serve identico al lato
-  bot, dove le domande sono i modificatori da spuntare e le scelte di esagono.
-  Non e' lavoro buttato, e' lavoro fatto prima sull'altro lato.
-  **Sul lato bot le cuciture ci sono**: `ask_modifiers` (spunta MULTIPLA, che
-  `ask_choice` non poteva coprire: il fascicolo stampa condizioni indipendenti
-  che valgono tutte insieme) e `ask_steal` per il tentativo di Sottrarre
-  l'Iniziativa. Senza rispondente valgono i modificatori dedotti dallo stato e
-  la policy che rinuncia a Sottrarre, cioe' il comportamento di prima.
-  **Resta la parte che ripaga**: far guidare `ui/main.gd` da `SoloRunner` e
-  cancellare le sue 211 righe rispecchiate. Le quattro coppie misurate sono
-  `_bot_turn`/`_solo_roll_action` (24 contro 42 righe),
-  `_apply_bot_result`/`_apply_solo_ai_result` (13 contro 11),
-  `_apply_bot_decision`/`_apply_solo_ai_decision` (52 contro 68) e
-  `_resolve_bot_action`/`_resolve_solo_ai_action` (57 contro 90). E' una
-  sessione a se': li' vivono l'asincrono e il riscontro visivo.
-  **Non e' un lavoro da una sessione**, ed e' sul file piu' rischioso del
-  progetto: e' quello che oggi si gioca davvero.
+- **Il layout non regge un viewport piu' basso di quanto chiede.**
+  `project.godot` chiede 1600x1000; se lo schermo concede meno - qui un
+  rettangolo utilizzabile di 1920x980 - Godot riduce la finestra a 1600x947 e la
+  fascia inferiore sfora di circa 53 px. **Oggi fa fallire
+  `tools/smoke_map_workspace.gd`**, ed e' l'unica delle sei prove di fumo rossa.
+  Non e' una regressione: si riproduce identico al commit `4aa1ee6`.
 - **Battaglia avanzata**: quattro scelte interattive e il mini-scenario MS12.
 - **I 22 scenari a due giocatori** hanno dati, setup e vittoria, ma nessun
   audit end-to-end.
@@ -178,12 +144,14 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
   ogni segmento risulta bandato, perche' e' disegnato in piu' pezzi di colore
   diverso. Il dato lo dichiara con `band_reliable`; N2 e N3 sono stati letti a
   occhio.
-- **Il Sommergibile tedesco di N3**: l'illustrazione non lo piazza sulla mappa,
-  quindi il suo esagono non e' noto.
 - **I due marker U-Boat di A2**: il motore ne tiene solo il CONTEGGIO, perche'
   e' quello che la fine stampata consuma. La pedina sulla mappa non c'e'.
-- **Il disegno delle forze Furtive nella GUI**: esistono nel motore, non si
-  vedono.
+- **Il disegno delle forze Furtive e dei marcatori Base Aerea nella GUI**:
+  esistono nel motore e nel salvataggio, non si vedono sulla mappa.
+- **Il Denmark Strait come porto.** La 'D' di N1 manda a Completare "in nearest
+  Denmark Strait port hex", ma il Denmark Strait non e' un porto su nessuna
+  mappa del gioco - e' un tratto di mare - e non ha un controllo stampato. La
+  procedura lo dichiara invece di inventarlo.
 - **I Punti Rinforzo di N5** (una nave = 1 RP), che influenzano l'Esito di p.35.
 - **I due CA "any" di N5** e, in generale, le scelte di schieramento che l'app
   risolve con un ripiego dichiarato invece di chiederle: BL2 (quattro navi
@@ -196,7 +164,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 3329 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 3360 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
@@ -254,16 +222,16 @@ davvero la procedura del fascicolo invece di una policy generica.
 |---|---|---|---|
 | BL1 Raiders of the North Atlantic | Operazionale | 🟢 | audit visivo a mano |
 | BL2 Contain and Destroy | Operazionale | 🟡 | Forbes non automatizzato |
-| BL3 Raiders of the North Sea | Inserto Nord | 🟡 | Sommergibile schierato ma non giocabile; Limiti di Classe |
+| BL3 Raiders of the North Sea | Inserto Nord | 🟡 | Limiti di Classe |
 | N1 Operazione Wilfred | Inserto Norvegia | 🟢 | sette procedure e cinque tabelle trascritte e implementate |
-| N2 Operazione Weser (nord) | Inserto Norvegia | 🟢 | nove procedure e Identificazione trascritte e implementate; resta la Reazione Norvegese |
-| N3 Operazione Weser (sud) | Inserto Nord | 🟢 | undici procedure trascritte e implementate; resta la Reazione Norvegese |
-| N4 Operazione Weser (nord & sud) | Operazionale | 🟡 | Mine, basi aeree, "Urgenza" |
-| N5 Meglio Tardi che Mai | Inserto Norvegia | 🟡 | dieci procedure trascritte e implementate; restano Punti Rinforzo, due CA "any", Base Aerea come fonte di Attacco Aereo |
-| N6 Il Dilemma delle Operazioni | Operazionale | 🟡 | procedure segnaposto |
-| B1 Operazione Berlino | Operazionale | 🟡 | procedure segnaposto |
+| N2 Operazione Weser (nord) | Inserto Norvegia | 🟢 | procedure e tabelle trascritte e implementate; Mine posate |
+| N3 Operazione Weser (sud) | Inserto Nord | 🟢 | undici procedure implementate; Sommergibile britannico schierato in (6,-1) |
+| N4 Operazione Weser (nord & sud) | Operazionale | 🟡 | il solo buco dichiarato che resta: Mine britanniche e Base Aerea come fonte; "Urgenza" |
+| N5 Meglio Tardi che Mai | Inserto Norvegia | 🟡 | procedure implementate; restano Punti Rinforzo, due CA "any", Base Aerea come fonte di Attacco Aereo |
+| N6 Il Dilemma delle Operazioni | Operazionale | 🟡 | Basi Aeree tedesche, Invasione della Norvegia, T-Seconda Azione |
+| B1 Operazione Berlino | Operazionale | 🟡 | Tabella del Rifornimento di B1, Verifica della Scorta, basi aeree |
 | B2 La Battaglia dell'Atlantico | Operazionale | 🟡 | -3 VP dei rinforzi |
-| B3 Operazione Reno | Operazionale | 🟡 | procedure segnaposto |
+| B3 Operazione Reno | Operazionale | 🟡 | Tabella del Rifornimento di B3, Tabella di Scelta della X, limiti di classe |
 | B4 Decisione sui Mari | Operazionale | 🟡 | composizione TF iniziale DA VERIFICARE |
 | A1 Convogli PQ | Operazionale | 🟡 | U-Boat, basi aeree, Limiti di Classe, clausola -1 VP |
 | A2 L'Ultima Battaglia | Operazionale | 🟡 | acquisto forze in VP; pedina U-Boat (solo il conteggio) |
@@ -705,13 +673,13 @@ riga dice che cosa manca.
 
 | esito | scenari | che cosa serve |
 |---|---|---|
-| finisce per condizione stampata | BL1, BL2, N4, N6, B1, B2, B3, B4, A1, A2 | niente: chiudere le procedure segnaposto |
-| non giocabile, mappa inserto | BL3, N1, N2, N3, N5 | calibrare i reticoli inserto |
+| finisce per condizione stampata | tutti e quindici | niente: il ciclo e' completo |
 
-**Tutti e dieci gli scenari sulla Mappa Operazionale chiudono su una
-condizione stampata.** Gli unici cinque che non si giocano sono i cinque
-dell'inserto, e il lavoro che li sblocca e' uno solo: calibrare i due
-reticoli.
+**Tutti e quindici chiudono su una condizione stampata**, i dieci della Mappa
+Operazionale e i cinque degli inserti. Non c'e' piu' uno scenario da far
+partire, e non c'e' piu' una casella della Tabella Azioni che applichi una
+policy generica: quello che resta e' DENTRO gli scenari, ed e' elencato qui
+sopra scenario per scenario.
 
 ## P0 - Sistemi mancanti al solitario
 
@@ -736,14 +704,14 @@ reticoli.
   Andalsnes (6,1) - e la regola impone una TF CON UN CONVOGLIO, un solo marker
   per esagono, lo Scorrere del Tempo con la TF che NON viene rimossa, e la
   Reazione Norvegese sul solo Narvik.
-  **Restano**: l'AZIONE che innesca la posa, cioe' il Completamento in un
-  esagono di Norvegia di p.16 (con Convoglio o Squadrone DD nella TF); la
-  Tabella di Reazione Norvegese, diversa per ogni scenario (pp.19, 24, 27, 34);
-  il Sommergibile tedesco di N3, di cui non conosco l'esagono perche'
-  l'illustrazione non lo piazza; i due marker U-Boat di A2, di cui il motore
-  tiene solo il conteggio; il collegamento all'azione `STEALTH_ATTACK`, la cui
-  tabella e' gia' trascritta e verificata; e il disegno della pedina nella
-  GUI.
+  **FATTI da allora**: il Completamento in un esagono di Norvegia (p.16) che
+  innesca la posa; le quattro Tabelle di Reazione Norvegese (pp.19, 24, 27, 34),
+  collegate a tutti e due i cicli; il Sommergibile di N3, che si e' rivelato
+  **britannico** e sta in (6,-1), misurato sull'illustrazione; e il collegamento
+  all'azione `STEALTH_ATTACK`, che ora una forza Furtiva puo' eseguire davvero.
+  **Restano**: i due marker U-Boat di A2, di cui il motore tiene solo il
+  conteggio; il percorso del GIOCATORE per l'Attacco Furtivo in `ui/main.gd`,
+  che passa ancora una Task Force; e il disegno della pedina nella GUI.
   Una lacuna dichiarata dentro il nucleo: le Informazioni stanno sui SEGMENTI,
   quindi una Ricognizione su una TF nemica che e' Stazione le dichiara invece
   di assegnarle.
