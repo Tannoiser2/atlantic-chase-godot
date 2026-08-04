@@ -308,8 +308,18 @@ func test_inset_graphs_load() -> void:
 	# Senza questa traduzione il tedesco di N1 non poteva Completare da nessuna
 	# parte: la sua Tabella dei Porti (p.18) elenca Murmansk e Kiel, e sul Mare
 	# di Norvegia sono bande stampate ai bordi, non pallini.
-	ne(nw.port_hex("Kiel"), Vector2i.MAX, "Kiel e' un porto anche qui")
-	ne(nw.port_hex("Murmansk"), Vector2i.MAX, "e Murmansk pure")
+	# ATTENZIONE: qui il primo test controllava solo "diverso da MAX", e passava
+	# mentre il porto stava in (0,0) - un esagono che sulla mappa non esiste.
+	# Il difetto si vedeva solo nel replay, come Task Force che chiedevano per
+	# sempre una rotta verso (0, 0). Un porto va controllato per ESAGONO.
+	eq(nw.port_hex("Kiel"), Vector2i(5, 3), "Kiel e' un porto anche qui, in 5,3")
+	eq(nw.port_hex("Murmansk"), Vector2i(5, -3), "e Murmansk in 5,-3")
+	eq(nw.port_hex("Scapa Flow"), Vector2i(2, 5), "e Scapa Flow in 2,5")
+	for name in ["Kiel", "Murmansk", "Scapa Flow"]:
+		var h := nw.port_hex(name)
+		true_(nw.is_playable(h), "%s sta in un esagono giocabile" % name)
+		true_(nw.adjacent_hexes(h).size() > 0,
+			"%s e' raggiungibile: senza vicini sarebbe un'isola" % name)
 	eq(nw.port_hex("Denmark Strait"), Vector2i.MAX,
 		"il Denmark Strait invece NON e' un porto: non lo e' su nessuna mappa, "
 		+ "e chi lo nomina deve dichiarare che cosa ne fa")

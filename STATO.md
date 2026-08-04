@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **3360 verifiche, 20 suite, headless.**
+Tutti i test passano: **3379 verifiche, 20 suite, headless.**
 
 ---
 
@@ -171,8 +171,8 @@ Tutti i test passano: **3360 verifiche, 20 suite, headless.**
   Mappa Operazionale sbagliata;
 - riepilogo persistente nel pannello di stato e procedura espandibile nel log
   mostrano tabella, tiro, TF scelta, bersaglio, risultato e ragione della policy;
-- `tools/audit_solo.gd`: 93 caselle azione, 0 blocchi, **0 testi segnaposto**
-  e 1 buco dichiarato (Mine/Base Aerea N4).
+- `tools/audit_solo.gd`: 93 caselle azione, 0 blocchi, **0 testi segnaposto e
+  0 buchi dichiarati**.
 | **M11** Effetti di Battaglia | ✅ **completo** | Suoni sintetizzati, vampe, traccianti, schizzi, esplosioni, incendi, siluri, affondamenti |
 
 ### Cosa e' cambiato nell'ultima sessione (le procedure segnaposto, chiuse)

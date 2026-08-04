@@ -1937,17 +1937,28 @@ func _resolve_solo_ai_action(decision: Dictionary) -> String:
 	var target := dec.target
 	# RB p.41: l'Attacco Furtivo puo' essere eseguito dalla forza Furtiva, e
 	# allora una TF Attiva non c'e'. Ogni riga che la nominava deve saperlo.
-	var actor_name := active.display_name() if active != null \
-		else "la forza Furtiva %s" % Stealth.kind_name(
+	var actor_name := "la Task Force"
+	if active != null:
+		actor_name = active.display_name()
+	elif not dec.active_air_base.is_empty():
+		actor_name = "la base aerea in %s" % str(AirBase.hex_of(dec.active_air_base))
+	else:
+		actor_name = "la forza Furtiva %s" % Stealth.kind_name(
 			int(dec.active_stealth.get("kind", -1)))
+	if not dec.active_air_base.is_empty():
+		_msg("Solitario AI: l'Attacco Aereo parte da %s (Totale Traiettoria zero, "
+			% actor_name + "RB p.27).")
 	if not dec.active_stealth.is_empty():
 		_msg("Solitario AI: l'azione la esegue %s (Totale Traiettoria zero, RB p.41)."
 			% actor_name)
 	if dec.active_coordinating != null:
 		_msg("Solitario AI: %s coordina l'azione."
 			% dec.active_coordinating.display_name())
-	if key == "AIR_STRIKE" and active != null:
-		traj_layer.set_air_action_markers(active.side, dec.launch_hex, dec.target_hex)
+	if key == "AIR_STRIKE":
+		# I segnalini Lancio e Attacco si vedono anche quando la fonte e' una
+		# base aerea: li' non c'e' una TF Attiva da cui leggere la parte.
+		traj_layer.set_air_action_markers(dec.acting_side(), dec.launch_hex,
+			dec.target_hex)
 		await get_tree().create_timer(0.55).timeout
 	var res := engine.resolve(dec, state)
 	var label := String(engine.action(key).get("label", key))

@@ -1,8 +1,8 @@
 # TODO della revisione
 
-Baseline: **3360 verifiche su 20 suite**, tutte verdi. Replay solitario:
+Baseline: **3379 verifiche su 20 suite**, tutte verdi. Replay solitario:
 **quindici `OK`** su quindici scenari, nessuno saltato. `audit_solo.gd`:
-**93 caselle azione, zero procedure segnaposto, un buco dichiarato, zero
+**93 caselle azione, zero procedure segnaposto, ZERO buchi dichiarati, zero
 blocchi.**
 
 Questo e' il backlog autorevole. `STATO.md` contiene anche una lunga cronologia:
@@ -34,11 +34,12 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 | 15 scenari solitari, end-to-end | 🟢 | tutti giocabili, tutti chiudono su una fine STAMPATA |
 | Attacco Furtivo dalla forza Furtiva | 🟡 | fatto sul lato bot; il percorso del GIOCATORE usa ancora una TF |
 | Forze Furtive (Mine, Sub, U-Boat) | 🟡 | nucleo, posa Mine e attacco fatti; U-Boat di A2 e disegno GUI no |
-| Marcatori Base Aerea | 🟡 | esistono, si salvano, innescano Informazioni; NON lanciano Attacchi Aerei |
-| Reazione Norvegese | 🟡 | quattro tabelle collegate ai due cicli; restano i risultati che spostano Basi Aeree |
+| Basi Aeree | 🟢 | lanciano Attacchi Aerei (RB p.27); stampate e piazzate in partita |
+| Reazione Norvegese | 🟡 | quattro tabelle collegate ai due cicli; restano i risultati b/g |
 | Battaglia avanzata | 🟡 | mancano quattro scelte interattive e MS12 |
 | Comandanti | 🟡 | testi trascritti; Forbes e Marschall non automatizzati |
 | Basi aeree sulla Mappa Operazionale | 🔴 | non trascritte: sugli inserti si', sulla mappa grande no |
+| Linea Artica | 🔴 | non e' un dato di mappa: i vincoli di RB p.27 non sono controllabili |
 | Mappa a due giocatori | 🟡 | 22 scenari importati, mai auditati end-to-end |
 | GUI operativa | 🟡 | il flusso solitario duplica `SoloRunner`; layout tagliato sotto i 1000 px |
 | iPad / web | 🔴 | esportabile, mai provato su dispositivo |
@@ -101,17 +102,11 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
   Il percorso del **GIOCATORE** in `ui/main.gd` no: `_declare_action`
   ("STEALTH_ATTACK") passa ancora una Task Force come Attiva. E' la meta' che
   resta, ed e' piccola: la cucitura c'e' gia'.
-- **Marcatori Base Aerea: la pedina c'e', il suo uso principale no.**
-  `core/rules/air_base.gd` e `GameState.placed_air_bases`: si piazzano, si
-  tolgono, entrano nel salvataggio e - come qualunque base aerea nemica, RB
-  p.21 - innescano Informazioni nel loro esagono. Quattro procedure li usano
-  (BL2 p.11, N4 p.30, N5 p.33, N6 p.37). Quello che NON c'e' e' la Base Aerea
-  come **FONTE di un Attacco Aereo** (RB p.27): `ActionEngine` pretende una TF
-  Attiva con una CV integra e non sa partire da un esagono. Da questo dipendono
-  il passo Bersaglio della 'A' di N5, il risultato Mine/Base Aerea di N4 - **il
-  solo buco che l'audit ancora dichiara** - e i risultati `b`/`g` della Reazione
-  Norvegese, che ora avrebbero la pedina da spostare e continuano a dichiarare
-  la lacuna.
+- **Basi Aeree: restano i risultati `b`/`g` della Reazione Norvegese.** Tutto
+  il resto e' fatto - la pedina, il salvataggio, le Informazioni innescate, e
+  soprattutto l'Attacco Aereo lanciato dalla base (RB p.27) - ma i due risultati
+  della Reazione che SPOSTANO un marcatore continuano a dichiarare la lacuna,
+  perche' scritti quando la pedina non esisteva. Adesso si possono scrivere.
 - **Reazione Norvegese**: le quattro tabelle (pp.19, 24, 27, 34) sono trascritte
   in `core/data/solo/norwegian_reaction.json` con innesco, colonne, righe,
   modificatori e legenda, e **il tiro e l'applicazione sono collegati a tutti e
@@ -127,11 +122,13 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
   Gensoul e' implementato; Forbes e Marschall no, e la voce Forbes ha un refuso
   di traduzione dichiarato.
 - **Il layout non regge un viewport piu' basso di quanto chiede.**
-  `project.godot` chiede 1600x1000; se lo schermo concede meno - qui un
+  `project.godot` chiede 1600x1000; se lo schermo concede meno - per esempio un
   rettangolo utilizzabile di 1920x980 - Godot riduce la finestra a 1600x947 e la
-  fascia inferiore sfora di circa 53 px. **Oggi fa fallire
-  `tools/smoke_map_workspace.gd`**, ed e' l'unica delle sei prove di fumo rossa.
-  Non e' una regressione: si riproduce identico al commit `4aa1ee6`.
+  fascia inferiore sfora di circa 53 px, facendo fallire
+  `tools/smoke_map_workspace.gd`. **Dipende da quanto spazio lo schermo concede
+  in quel momento**: con la barra e il Dock in una posizione passa, in un'altra
+  no. Non e' una regressione - si riproduce al commit `4aa1ee6` - ma e' una
+  prova di fumo che non e' deterministica, e questo da solo vale il lavoro.
 - **Battaglia avanzata**: quattro scelte interattive e il mini-scenario MS12.
 - **I 22 scenari a due giocatori** hanno dati, setup e vittoria, ma nessun
   audit end-to-end.
@@ -164,7 +161,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 3360 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 3379 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne

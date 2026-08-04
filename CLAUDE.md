@@ -41,7 +41,7 @@ godot --path . --script res://tools/smoke_solo_flow.gd -- BL1
 godot --path . --script res://tools/smoke_inset_map.gd
 ```
 
-Baseline corrente: **3360 verifiche, 20 suite** (era 2570 su 17 prima della
+Baseline corrente: **3379 verifiche, 20 suite** (era 2570 su 17 prima della
 suite `test_replay.gd`). Il totale non puo' scendere senza una rimozione
 intenzionale di test spiegata nel commit.
 
@@ -61,7 +61,7 @@ i dieci sulla Mappa Operazionale e i cinque sugli inserti - e nessun `SALTATO`, 
 schieramento trascritto.
 
 `audit_solo.gd` verde non significa completo: al passaggio stampa 93 caselle
-uniche, 0 procedure Azione segnaposto, 1 buco dichiarato e 0 blocchi.
+uniche, 0 procedure Azione segnaposto, 0 buchi dichiarati e 0 blocchi.
 
 Per le mappe inserto:
 

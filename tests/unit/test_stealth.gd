@@ -27,6 +27,8 @@ func run() -> void:
 	test_stealth_force_performs_the_attack()
 	test_decision_carries_stealth_and_modifier()
 	test_time_lapse_preference_reads_both_directions()
+	test_air_base_can_launch_an_air_strike()
+	test_air_base_best_strike_picks_the_shortest_trajectory()
 
 
 func _state() -> GameState:
@@ -392,3 +394,85 @@ func test_time_lapse_preference_reads_both_directions() -> void:
 		"senza obiettivo si tiene la prima opzione, senza inventare un criterio")
 	eq(SoloSequence.time_lapse_preference([], tf.trajectory, goal), -1,
 		"e senza opzioni non c'e' niente da preferire")
+
+
+## L'ATTACCO AEREO LANCIATO DA UNA BASE AEREA (RB p.27).
+##
+## "Una Task Force con una CV non danneggiata, O UNA BASE AEREA, possono essere
+## designate come TF Attiva." Fino a ieri il motore conosceva solo la prima
+## meta', e quattro procedure solitarie dichiaravano la lacuna e passavano.
+func test_air_base_can_launch_an_air_strike() -> void:
+	_begin("un Attacco Aereo puo' partire da una base aerea")
+	var st := _state()
+	var engine := ActionEngine.load_default()
+	var ge := TaskForce.Side.KRIEGSMARINE
+	var uk := TaskForce.Side.ROYAL_NAVY
+	st.weather = TimeLapse.Weather.GOOD
+	var base_hex := Vector2i(9, 3)
+	var target := _tf(st, uk, [Vector2i(9, 3), Vector2i(10, 3)])
+	var base := AirBase.place(st, ge, base_hex, "base di prova")
+
+	var dec := ActionEngine.Declaration.new()
+	dec.action_key = "AIR_STRIKE"
+	dec.active_air_base = base
+	dec.target = target
+	dec.launch_hex = base_hex
+	dec.target_hex = base_hex
+	eq(engine.legality_error(dec, st), "",
+		"senza TF Attiva l'azione e' legale, perche' la fonte e' la base aerea")
+	eq(dec.acting_side(), ge, "e la parte si legge dalla base")
+	var res := engine.resolve(dec, st)
+	true_(bool(res["ok"]), "l'azione si risolve")
+	eq(int(res["trajectory_total"]), 2,
+		"Totale Traiettoria: zero dalla base piu' i due segmenti del bersaglio")
+
+	# "L'Attacco Aereo origina dall'esagono della base aerea."
+	dec.launch_hex = Vector2i(4, 5)
+	true_(engine.legality_error(dec, st).contains("esagono della base aerea"),
+		"il Punto di Lancio non puo' essere altrove")
+	dec.launch_hex = base_hex
+
+	# "Il bersaglio non puo' essere a piu' di due esagoni dal Punto di Lancio."
+	var far := _tf(st, uk, [Vector2i(4, 5)])
+	dec.target = far
+	dec.target_hex = Vector2i(4, 5)
+	true_(engine.legality_error(dec, st).contains("due esagoni"),
+		"oltre il raggio di due esagoni l'azione e' rifiutata")
+
+	# "Good weather only" vale come per una CV.
+	dec.target = target
+	dec.target_hex = base_hex
+	st.weather = TimeLapse.Weather.BAD
+	true_(engine.legality_error(dec, st).contains("Meteo"),
+		"col Meteo Cattivo non si vola, base aerea o CV che sia")
+
+	# Base aerea e TF Attiva insieme sono un errore dichiarato.
+	st.weather = TimeLapse.Weather.GOOD
+	dec.active = _tf(st, ge, [base_hex])
+	true_(engine.legality_error(dec, st).contains("non entrambe"),
+		"la fonte e' una sola: base aerea OPPURE Task Force")
+
+
+## `AirBase.best_strike` enumera i candidati e lascia la legalita' al motore.
+func test_air_base_best_strike_picks_the_shortest_trajectory() -> void:
+	_begin("fra piu' bersagli a portata si sceglie la Traiettoria piu' corta")
+	var st := _state()
+	var graph2 := MapGraph.load_default()
+	var engine := ActionEngine.load_default()
+	var ge := TaskForce.Side.KRIEGSMARINE
+	var uk := TaskForce.Side.ROYAL_NAVY
+	st.weather = TimeLapse.Weather.GOOD
+	var base_hex := Vector2i(9, 3)
+	AirBase.place(st, ge, base_hex, "base di prova")
+	var long_tf := _tf(st, uk, [Vector2i(8, 3), Vector2i(9, 3), Vector2i(10, 3)])
+	var short_tf := _tf(st, uk, [Vector2i(9, 3)])
+
+	var strike := AirBase.best_strike(st, graph2, engine, ge)
+	false_(strike.is_empty(), "un Attacco Aereo legale c'e'")
+	eq(strike["target"], short_tf, "e prende la Traiettoria piu' corta")
+	ne(strike["target"], long_tf, "non quella piu' lunga")
+
+	# Col Meteo Cattivo non ce n'e' nessuno: la ricerca lo dice tacendo.
+	st.weather = TimeLapse.Weather.BAD
+	true_(AirBase.best_strike(st, graph2, engine, ge).is_empty(),
+		"col Meteo Cattivo non c'e' nessun Attacco Aereo legale")

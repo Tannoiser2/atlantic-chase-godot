@@ -149,17 +149,34 @@ static func _inset_ports_with_off_map_boxes(d: Dictionary) -> Array:
 		var name := String(box.get("name", ""))
 		if known.has(name) or not OFF_MAP_BOX_NATIONS.has(name):
 			continue
-		var hexes: Array = []
-		for h_v: Variant in box.get("hexes", []):
-			var h: Dictionary = h_v
-			hexes.append({"q": int(h["q"]), "r": int(h["r"])})
-		if hexes.is_empty():
+		# La forma di un porto e' `q`/`r` in cima piu' `extra_hexes`: scriverla
+		# come un array `hexes` faceva leggere q=0 e r=0, cioe' un porto
+		# nell'esagono (0,0), che sulla mappa non esiste. Il replay lo ha
+		# mostrato come Task Force che chiedevano per sempre una rotta verso
+		# (0, 0); la prima stesura di questo codice sbagliava proprio qui.
+		#
+		# La banda puo' toccare piu' esagoni: si prende come esagono principale
+		# quello che tocca DI PIU', misurato nel dato, e gli altri restano come
+		# esagoni della striscia - "Port Strip: each hex is a port".
+		var boxes: Array = box.get("hexes", [])
+		if boxes.is_empty():
 			continue
+		var sorted_hexes := boxes.duplicate()
+		sorted_hexes.sort_custom(func(x: Variant, y: Variant) -> bool:
+			return float((x as Dictionary).get("contact", 0.0)) \
+				> float((y as Dictionary).get("contact", 0.0)))
+		var main: Dictionary = sorted_hexes[0]
+		var extra: Array = []
+		for i in range(1, sorted_hexes.size()):
+			var e: Dictionary = sorted_hexes[i]
+			extra.append({"q": int(e["q"]), "r": int(e["r"])})
 		out.append({
 			"name": name,
 			"nation": String(OFF_MAP_BOX_NATIONS[name]),
-			"hexes": hexes,
-			"is_strip": hexes.size() > 1,
+			"q": int(main["q"]),
+			"r": int(main["r"]),
+			"extra_hexes": extra,
+			"kind": "strip" if not extra.is_empty() else "",
 			"from_off_map_box": true,
 		})
 	return out

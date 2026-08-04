@@ -109,3 +109,71 @@ static func target_in_range(state: GameState, base_side: int,
 
 static func hex_of(marker: Dictionary) -> Vector2i:
 	return Vector2i(int(marker.get("q", 0)), int(marker.get("r", 0)))
+
+
+## Le basi aeree STAMPATE sulla mappa, nella stessa forma di quelle piazzate.
+##
+## `MapGraph.air_bases` scrive la parte come sigla - "UK", "GE" - perche' viene
+## dal colore della lettera sulla mappa; qui diventa la parte del gioco, cosi'
+## chi lancia un Attacco Aereo non deve sapere da dove viene il marcatore.
+static func printed_of(graph: MapGraph, side: int) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for b in graph.air_bases:
+		if _side_from_tag(String(b.get("side", ""))) != side:
+			continue
+		out.append({
+			"side": side,
+			"q": int(b.get("q", 0)),
+			"r": int(b.get("r", 0)),
+			"note": "base aerea stampata sulla mappa",
+			"printed": true,
+		})
+	return out
+
+
+static func _side_from_tag(tag: String) -> int:
+	return TaskForce.Side.ROYAL_NAVY if tag == "UK" else TaskForce.Side.KRIEGSMARINE
+
+
+## Tutte le basi aeree da cui una parte puo' lanciare: quelle stampate sulla
+## mappa piu' quelle piazzate in partita.
+static func sources_for(state: GameState, graph: MapGraph,
+		side: int) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	out.append_array(printed_of(graph, side))
+	out.append_array(of_side(state, side))
+	return out
+
+
+## L'Attacco Aereo migliore che una base aerea di `side` puo' dichiarare, come
+## coppia { "base", "launch_hex", "target", "target_hex" }, o {} se non ce n'e'
+## nessuno legale. Le regole restano di `ActionEngine`: qui si enumerano solo i
+## candidati, perche' la legalita' la decide una sola funzione.
+static func best_strike(state: GameState, graph: MapGraph, engine: ActionEngine,
+		side: int) -> Dictionary:
+	var best := {}
+	var best_length := 1 << 30
+	for base in sources_for(state, graph, side):
+		var h := hex_of(base)
+		for target in state.forces_of(1 - side):
+			if target.completed:
+				continue
+			var hexes := target.trajectory.hexes()
+			if target.trajectory.is_station():
+				hexes = [target.trajectory.station_hex] as Array[Vector2i]
+			for th in hexes:
+				var dec := ActionEngine.Declaration.new()
+				dec.action_key = "AIR_STRIKE"
+				dec.active_air_base = base
+				dec.target = target
+				dec.launch_hex = h
+				dec.target_hex = th
+				if engine.legality_error(dec, state) != "":
+					continue
+				# "if more than one target, choose the shortest Trajectory"
+				# e' la formula che le procedure solitarie usano piu' spesso.
+				if target.length() < best_length:
+					best_length = target.length()
+					best = {"base": base, "launch_hex": h, "target": target,
+						"target_hex": th}
+	return best

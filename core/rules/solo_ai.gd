@@ -2117,7 +2117,7 @@ static func _n4(code: String, state: GameState, graph: MapGraph,
 			return _complete_or_route_to_port(state, graph, port_control, convoy,
 				"Methil", "Solitario AI N4: Convoglio britannico")
 		"MINE":
-			return _marker_not_modeled("Solitario AI N4: Mine/Base Aerea britannica")
+			return _n4_mines(state, graph, engine, port_control, side)
 		"R4":
 			return _n4_r4(state, graph, engine, port_control, side)
 		"SA":
@@ -2131,6 +2131,133 @@ static func _n4(code: String, state: GameState, graph: MapGraph,
 		"X":
 			return _n4_x(state, graph, engine, port_control, side)
 	return _air_or_attack(state, graph, engine, side)
+
+
+## 'Mine' di N4 (p.30): l'ultima casella che l'audit dichiarava come buco.
+##
+## La procedura ha tre gradini, e ognuno aspettava un pezzo che adesso c'e': la
+## forza Furtiva Mine, il marcatore Base Aerea, e la Base Aerea come fonte di un
+## Attacco Aereo.
+static func _n4_mines(state: GameState, graph: MapGraph, engine: ActionEngine,
+		port_control: Dictionary, side: int) -> Dictionary:
+	var out := _empty("")
+	var roll := state.rng.d6("Solitario N4 esagono delle Mine")
+	var place := "Bergen" if roll == 1 else ("Trondheim" if roll <= 3 else "Narvik")
+	var h := graph.place_hex(place)
+	(out["log"] as Array).append("Solitario AI N4 - Mine: 1d6=%d -> l'esagono e' %s."
+		% [roll, place])
+	if h == Vector2i.MAX:
+		(out["log"] as Array).append("Solitario AI N4 - Mine: %s non e' un luogo di "
+			% place + "questa mappa; il britannico Passa.")
+		out["pass_initiative"] = true
+		return out
+	# "se l'esagono scelto non ha una forza furtiva Mine britannica, piazzane una"
+	var mines: Dictionary = {}
+	for f in Stealth.forces_of(state, side):
+		if int(f.get("kind", -1)) == Stealth.Kind.MINES \
+				and Vector2i(int(f.get("q", 0)), int(f.get("r", 0))) == h:
+			mines = f
+	if mines.is_empty():
+		var placed := Stealth.place(state, side, Stealth.Kind.MINES, h,
+			"Mine britanniche posate dal risultato Mine di N4 (p.30)")
+		(out["log"] as Array).append_array(
+			_recon_informs(state, graph, port_control, placed, h))
+		_n4_international_incident(state, out)
+		out["ok"] = true
+		out["pass_initiative"] = true
+		state.changed.emit()
+		return out
+	# "Se ha gia' una forza Mine, quella forza esegue un Attacco Furtivo contro
+	# una TF tedesca NELL'esagono."
+	var targets := Stealth.targets_for(state, mines)
+	if not targets.is_empty():
+		var target := targets[0]
+		for t in targets:
+			if _target_score(t) > _target_score(target):
+				target = t
+		out["ok"] = true
+		out["action_key"] = "STEALTH_ATTACK"
+		out["active"] = null
+		out["active_stealth"] = mines
+		out["target"] = target
+		out["target_hex"] = h
+		(out["log"] as Array).append(("Solitario AI N4 - Mine: le Mine ci sono gia', "
+			+ "quindi eseguono un Attacco Furtivo contro %s in %s.")
+			% [target.display_name(), str(h)])
+		return out
+	# "Se non c'e' nessuna TF tedesca nell'esagono, o se l'attacco non e'
+	# eseguibile, piazza un marcatore di base aerea britannica nell'esagono."
+	if not AirBase.at(state, h):
+		AirBase.place(state, side, h,
+			"Base Aerea britannica posata dal risultato Mine di N4 (p.30)")
+		(out["log"] as Array).append("Solitario AI N4 - Mine: nessun bersaglio per le "
+			+ "Mine, quindi entra un marcatore Base Aerea britannica in %s." % str(h))
+		_n4_international_incident(state, out)
+		out["ok"] = true
+		out["pass_initiative"] = true
+		state.changed.emit()
+		return out
+	# "Se nell'esagono c'e' gia' un marcatore di base aerea, piazza invece un
+	# segnalino Contatto sul bersaglio."
+	var nearest: Array[TaskForce] = []
+	var best := 1 << 30
+	for tf in state.forces_of(1 - side):
+		if tf.completed:
+			continue
+		var d := Hex.distance(_anchor_hex(tf), h)
+		if d < best:
+			best = d
+			nearest = [tf] as Array[TaskForce]
+		elif d == best:
+			nearest.append(tf)
+	for tf in nearest:
+		var where := _closest_hex_of(tf, h)
+		tf.trajectory.set_contact_at(where, true)
+		(out["log"] as Array).append("Solitario AI N4 - Mine: segnalino Contatto su "
+			+ "%s in %s." % [tf.display_name(), str(where)])
+	if nearest.is_empty():
+		(out["log"] as Array).append("Solitario AI N4 - Mine: base aerea gia' "
+			+ "presente e nessuna TF tedesca a cui attaccare un Contatto.")
+	_n4_international_incident(state, out)
+	out["ok"] = true
+	out["pass_initiative"] = true
+	state.changed.emit()
+	return out
+
+
+static func _n4_international_incident(state: GameState, out: Dictionary) -> void:
+	var n := int(state.solo_counters.get("n4_international_incidents", 0)) + 1
+	state.solo_counters["n4_international_incidents"] = n
+	(out["log"] as Array).append("Incidente Internazionale numero %d." % n)
+
+
+## La Ricognizione che accompagna una posa: assegna Informazioni alle TF nemiche
+## nell'esagono. N2 lo vieta esplicitamente ("this is not Recon"), N4 no.
+static func _recon_informs(state: GameState, graph: MapGraph,
+		port_control: Dictionary, force: Dictionary, h: Vector2i) -> Array[String]:
+	var out: Array[String] = []
+	var done := Stealth.recon(state, graph, port_control, force, h)
+	for line_v: Variant in done.get("log", []):
+		out.append(String(line_v))
+	return out
+
+
+## L'Attacco Aereo dichiarato da una base aerea, nella forma che il ciclo sa
+## risolvere. RB p.27: la base e' la TF Attiva, il Punto di Lancio e' il suo
+## esagono, e non c'e' nessuna Traiettoria da accorciare.
+static func _air_strike_from_base(strike: Dictionary, out: Dictionary,
+		note: String) -> Dictionary:
+	var target: TaskForce = strike["target"]
+	out["ok"] = true
+	out["action_key"] = "AIR_STRIKE"
+	out["active"] = null
+	out["active_air_base"] = strike["base"]
+	out["target"] = target
+	out["launch_hex"] = strike["launch_hex"]
+	out["target_hex"] = strike["target_hex"]
+	(out["log"] as Array).append("%s in %s contro %s."
+		% [note, str(strike["launch_hex"]), target.display_name()])
+	return out
 
 
 ## Quante volte e' gia' uscito il risultato R4 di N4. Tre procedure diverse
@@ -2255,25 +2382,18 @@ static func _n5_air_strike(state: GameState, graph: MapGraph,
 		out["pass_initiative"] = true
 		state.changed.emit()
 		return out
-	# "Target: Select a British TF in range of a German air base... If none in
-	# range, treat this as an 'X' result instead."
-	var target := AirBase.target_in_range(state, side, british)
-	if target == null:
+	# "Target: Select a British TF in range of a German air base (if more than
+	# one target, choose the shortest Trajectory). If none in range, treat this
+	# as an 'X' result instead."
+	var strike := AirBase.best_strike(state, graph, engine, side)
+	if strike.is_empty():
 		var as_x := _n5_bring_on_battle(state, graph, engine, side)
 		(as_x["log"] as Array).push_front("Solitario AI N5 - A: nessuna TF "
 			+ "britannica a portata di una base aerea tedesca, quindi il risultato "
 			+ "vale come 'X'.")
 		return as_x
-	# Qui il fascicolo farebbe partire l'Attacco Aereo DALLA BASE AEREA, e il
-	# motore non sa farlo: `ActionEngine` pretende una TF Attiva con una CV
-	# integra, e non parte da un esagono. Si dichiara invece di inventarlo.
-	(out["log"] as Array).append(("Solitario AI N5 - A: la procedura manda un "
-		+ "Attacco Aereo dalla base aerea tedesca contro %s, ma una Base Aerea "
-		+ "come FONTE di un Attacco Aereo (RB p.27) non e' ancora modellata: "
-		+ "l'azione resta dichiarata e il tedesco Passa.") % target.display_name())
-	out["ok"] = true
-	out["pass_initiative"] = true
-	return out
+	return _air_strike_from_base(strike, out,
+		"Solitario AI N5 - A: Attacco Aereo dalla base aerea tedesca")
 
 
 ## "place a Contact marker on one British TF in Air Strike range" (p.33).

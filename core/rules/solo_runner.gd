@@ -381,6 +381,10 @@ func _resolve_bot_action(decision: Dictionary) -> void:
 			% [Stealth.kind_name(int(dec.active_stealth.get("kind", -1))),
 				str(Vector2i(int(dec.active_stealth.get("q", 0)),
 					int(dec.active_stealth.get("r", 0))))])
+	if not dec.active_air_base.is_empty():
+		_line("BOT   l'Attacco Aereo parte dalla base aerea in %s: Totale "
+			% str(AirBase.hex_of(dec.active_air_base))
+			+ "Traiettoria zero, e non c'e' nessuna Traiettoria da accorciare (RB p.27).")
 	if dec.active_coordinating != null:
 		_line("BOT   %s coordina l'azione." % dec.active_coordinating.display_name())
 	var res := engine.resolve(dec, state)
@@ -1519,6 +1523,13 @@ func _player_goal(tf: TaskForce) -> Vector2i:
 		if not _carries_convoy(enemy):
 			continue
 		var h := _anchor(enemy)
+		# Una Task Force che non e' ne' Stazione ne' Traiettoria - tutti i
+		# segmenti rimossi senza diventare Stazione - da' ancora (0,0), che non
+		# e' un esagono della mappa. Puntarci significa chiedere per sempre una
+		# rotta che non esiste: il replay lo ha mostrato come una partita di 120
+		# turni in cui il giocatore Passava a ogni turno "verso (0, 0)".
+		if not graph.has_hex(h):
+			continue
 		var d := Hex.distance(from, h)
 		if d < bestd and h != from:
 			bestd = d

@@ -200,6 +200,13 @@ class Declaration extends RefCounted:
 	## E' il Dictionary di `GameState.stealth_forces`, non una copia.
 	var active_stealth: Dictionary = {}
 
+	## La base aerea che esegue l'azione, quando a eseguirla NON e' una Task
+	## Force. RB p.27 la mette sullo stesso piano: "Una Task Force con una CV non
+	## danneggiata, O UNA BASE AEREA, possono essere designate come TF Attiva".
+	## E' il Dictionary di `GameState.placed_air_bases` oppure quello che
+	## `AirBase.printed_of` ricava da `MapGraph.air_bases`.
+	var active_air_base: Dictionary = {}
+
 	## Di chi e' l'azione. Serve perche' con un attaccante Furtivo non c'e' una
 	## TF Attiva da cui leggere la parte, e la traccia dei Modificatori e
 	## l'Iniziativa hanno comunque bisogno di saperlo.
@@ -208,6 +215,8 @@ class Declaration extends RefCounted:
 			return active.side
 		if not active_stealth.is_empty():
 			return int(active_stealth.get("side", -1))
+		if not active_air_base.is_empty():
+			return int(active_air_base.get("side", -1))
 		return -1
 
 	func designated_active() -> Array[TaskForce]:
@@ -244,7 +253,13 @@ func legality_error(dec: Declaration, state: GameState) -> String:
 		var stealth_why := Stealth.attack_error(state, dec.active_stealth, dec.target)
 		if stealth_why != "":
 			return stealth_why
-	elif dec.active == null:
+	# Stessa cosa per l'Attacco Aereo lanciato da una base aerea (RB p.27): la
+	# fonte e' la base, e una base non e' una Task Force.
+	var by_air_base := dec.action_key == "AIR_STRIKE" \
+		and not dec.active_air_base.is_empty()
+	if by_air_base and dec.active != null:
+		return "un Attacco Aereo ha una base aerea OPPURE una TF Attiva, non entrambe"
+	if not by_stealth and not by_air_base and dec.active == null:
 		return "manca la Task Force Attiva"
 	if not is_verified(dec.action_key):
 		return "tabella non ancora trascritta per '%s': %s" \
@@ -266,14 +281,18 @@ func legality_error(dec: Declaration, state: GameState) -> String:
 	if bool(a.get("requires_good_weather", false)) and state.weather != TimeLapse.Weather.GOOD:
 		return "%s richiede Condizioni Meteo Buone" % String(a.get("label", dec.action_key))
 	if dec.action_key == "AIR_STRIKE":
-		if not _has_usable_cv(dec.active):
-			return ("Attacco Aereo richiede una TF Attiva con CV non danneggiata; "
-				+ "le basi aeree non sono ancora modellate")
+		if not by_air_base and not _has_usable_cv(dec.active):
+			return "Attacco Aereo richiede una TF Attiva con CV non danneggiata o una base aerea"
 		if dec.target == null:
 			return "Attacco Aereo richiede una Task Force Bersaglio"
 		if dec.launch_hex == Vector2i.MAX:
 			return "Attacco Aereo richiede di scegliere il Punto di Lancio"
-		if not dec.active.trajectory.occupies(dec.launch_hex):
+		# "L'Attacco Aereo origina dall'esagono della Stazione o BASE AEREA o,
+		# se Traiettoria, da uno degli esagoni dove vi sono i suoi segmenti."
+		if by_air_base:
+			if AirBase.hex_of(dec.active_air_base) != dec.launch_hex:
+				return "il Punto di Lancio deve essere l'esagono della base aerea"
+		elif not dec.active.trajectory.occupies(dec.launch_hex):
 			return "il Punto di Lancio deve essere un esagono della TF con la CV"
 		if dec.target_hex == Vector2i.MAX:
 			return "Attacco Aereo richiede di scegliere l'esagono Bersaglio"
@@ -281,6 +300,11 @@ func legality_error(dec: Declaration, state: GameState) -> String:
 			return "l'esagono Bersaglio non appartiene alla TF bersaglio"
 		if Hex.distance(dec.launch_hex, dec.target_hex) > 2:
 			return "il bersaglio dell'Attacco Aereo e' oltre il raggio di due esagoni"
+		# LACUNA DICHIARATA, e vale anche per l'Attacco Aereo da una CV: RB p.27
+		# vieta al Punto di Lancio e al bersaglio di stare sulla Linea Artica, e
+		# vieta all'attacco di attraversarla. La Linea Artica non e' un dato di
+		# mappa in questo progetto - compare solo come testo negli scenari e
+		# nella Verifica Snafu - quindi quel vincolo non e' controllabile qui.
 	for coordinating in [dec.active_coordinating, dec.target_coordinating]:
 		if coordinating != null and (dec.target_hex == Vector2i.MAX \
 				or not coordinating.trajectory.occupies(dec.target_hex)):
@@ -290,7 +314,8 @@ func legality_error(dec: Declaration, state: GameState) -> String:
 	# una Task Force con un Convoglio ha le mani legate: niente Attacco Aereo,
 	# Ingaggiare o Ricerca Navale (RB p.11). Sta scortando, non cacciando.
 	# Una forza Furtiva non scorta niente, quindi la regola non la tocca.
-	if not by_stealth:
+	# Una base aerea non scorta niente, come la forza Furtiva.
+	if not by_stealth and not by_air_base:
 		var convoy_why := Convoy.action_refusal(dec.active, dec.action_key)
 		if convoy_why != "":
 			return convoy_why

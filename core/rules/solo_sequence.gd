@@ -91,18 +91,20 @@ static func declaration_for(decision: Dictionary) -> ActionEngine.Declaration:
 	var active: TaskForce = decision.get("active", null)
 	var target: TaskForce = decision.get("target", null)
 	var stealth: Dictionary = decision.get("active_stealth", {})
+	var air_base: Dictionary = decision.get("active_air_base", {})
 	if key == "" or target == null:
 		return null
 	# Un Attacco Furtivo eseguito da una forza Furtiva non ha TF Attiva (RB
 	# p.41): li' l'attaccante e' la forza, e pretenderne una sarebbe il difetto
 	# gia' visto nel registro BL2, dove "Attacco Furtivo -> Totale Traiettoria
 	# 2" tradiva che a eseguirlo era una Task Force.
-	if active == null and stealth.is_empty():
+	if active == null and stealth.is_empty() and air_base.is_empty():
 		return null
 	var dec := ActionEngine.Declaration.new()
 	dec.action_key = key
 	dec.active = active
 	dec.active_stealth = stealth
+	dec.active_air_base = air_base
 	dec.target = target
 	dec.launch_hex = decision.get("launch_hex", Vector2i.MAX)
 	dec.target_hex = decision.get("target_hex", Vector2i.MAX)
