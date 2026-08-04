@@ -241,11 +241,24 @@ Uno scenario puo' essere marcato completo solo quando:
   "no Task Forces in play, or two Convoys and/or Unidentified TFs Completed or
   destroyed". Il marker Sommergibile britannico e' in (5,1) - posizione letta,
   ma le forze Furtive non sono ancora modellate, quindi resta lacuna dichiarata.
-  **Restano quattro schieramenti**: N1, N2, N3 e N5. Le posizioni dei segmenti
-  ci sono gia' in `core/data/inset_setups.json` - N1 ne ha 18, N2 dieci, N3
-  dodici, N5 nessuno perche' la sua mappa e' solo sfondo dei riquadri - ma
-  l'appartenenza no: quale segmento e' di quale Task Force e in che ordine forma
-  la Traiettoria va letto dalle pagine, una per una.
+  **Restano quattro schieramenti**: N1, N2, N3 e N5.
+  **N1 e' meta' strada.** La geometria e' risolta: i 18 segmenti disegnati
+  formano due catene esatte, e la striscia bianca sui segmenti - che adesso il
+  programma rileva e salva come `convoy_stripe` - dice quale delle due porta
+  Convogli.
+  - catena LISCIA, 8 segmenti in fila: (5,-2) (4,-1) (3,0) (3,1) (3,2) (2,3)
+    (2,4) (2,5), da Vestfjorden giu' verso Scapa Flow, e finisce su un cilindro
+    Stazione in basso a sinistra. Sono navi da guerra.
+  - catena STRIATA, 8 segmenti: (6,1), (5,2) x2, (4,3) x2, (3,4) x2, (2,5).
+    Gli esagoni doppi vogliono dire piu' di una Traiettoria sullo stesso
+    percorso. Sono Convogli.
+  Quello che **manca a N1** e' l'assegnazione: quali navi stanno su quale
+  Traiettoria, e come si concili con "Enemy: No German TFs at start" il fatto
+  che l'illustrazione mostri Convogli anche sul lato norvegese. Va letto sulla
+  pagina, e non l'ho fatto: meglio fermarsi che indovinare un'assegnazione.
+  Per N2 (dieci segmenti, sei striati), N3 (dodici, otto striati) e N5 (nessun
+  segmento: la sua mappa e' solo sfondo dei riquadri di regola, e lo
+  schieramento va ricavato tutto dal testo) resta tutto da leggere.
   Tre test hanno cambiato premessa insieme al fatto, e vale la pena saperlo:
   controllavano che gli scenari inserto NON avessero schieramento, e adesso
   controllano che le loro TF stiano sulla PROPRIA mappa - che e' il difetto

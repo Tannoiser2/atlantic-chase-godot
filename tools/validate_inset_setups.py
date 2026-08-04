@@ -112,6 +112,22 @@ def segments_on_page(doc, page_no, base_xref):
             if r.width * scale * r.height * scale > PANEL_MIN_AREA:
                 masks.append(r)
 
+    # La striscia bianca in mezzo a un segmento dice che quella Traiettoria
+    # porta un CONVOGLIO. Si vede a occhio sull'illustrazione, e distingue due
+    # tipi di forza senza bisogno di leggere il testo: in N1 la Traiettoria
+    # lunga in diagonale e' liscia (navi da guerra) e quelle in basso sono
+    # striate (Convogli).
+    stripes = []
+    for drawing in page.get_drawings():
+        fill = drawing.get("fill")
+        if not fill or tuple(round(v, 2) for v in fill) != (1.0, 1.0, 1.0):
+            continue
+        r = drawing["rect"]
+        w, h = r.width * scale, r.height * scale
+        if not (4.0 <= min(w, h) <= 26.0 and 8.0 <= max(w, h) <= 60.0):
+            continue
+        stripes.append(((r.x0 + r.x1) / 2.0, (r.y0 + r.y1) / 2.0))
+
     raw = []
     for drawing in page.get_drawings():
         if not drawing.get("fill"):
@@ -126,18 +142,20 @@ def segments_on_page(doc, page_no, base_xref):
         if min(w, h) < SEG_MIN_SIDE or max(w, h) > SEG_MAX_SIDE:
             continue
         covered = any(m.x0 <= cx <= m.x1 and m.y0 <= cy <= m.y1 for m in masks)
-        raw.append(((cx - box.x0) * scale, (cy - box.y0) * scale, covered))
+        striped = any(math.hypot(sx - cx, sy - cy) * scale <= 34.0
+                      for sx, sy in stripes)
+        raw.append(((cx - box.x0) * scale, (cy - box.y0) * scale, covered, striped))
     # Faccia superiore e ombra sono due tracciati quasi sovrapposti: uno solo.
     clusters = []
-    for px, py, covered in sorted(raw):
+    for px, py, covered, striped in sorted(raw):
         for c in clusters:
             if math.hypot(px - c[0][0], py - c[0][1]) <= CLUSTER_PX:
-                c.append((px, py, covered))
+                c.append((px, py, covered, striped))
                 break
         else:
-            clusters.append([(px, py, covered)])
+            clusters.append([(px, py, covered, striped)])
     return [(sum(p[0] for p in c) / len(c), sum(p[1] for p in c) / len(c),
-             all(p[2] for p in c)) for c in clusters]
+             all(p[2] for p in c), any(p[3] for p in c)) for c in clusters]
 
 
 def hex_of(lattice, origin_hex, px, py):
@@ -186,19 +204,21 @@ def main():
         live = {(h["q"], h["r"]) for h in g["hexes"]}
         segs = segments_on_page(doc, page_no, base_xref)
         placed, outside = [], []
-        for px, py, covered in segs:
+        for px, py, covered, striped in segs:
             q, r, dist = hex_of(lattice, i0j0, px, py)
             entry = {"q": q, "r": r, "map_px": [round(px, 1), round(py, 1)],
-                     "inside_callout": covered}
+                     "inside_callout": covered, "convoy_stripe": striped}
             if (q, r) in live:
                 placed.append(entry)
             else:
                 entry["problem"] = "l'esagono non e' nel grafo"
                 outside.append(entry)
         in_callout = sum(1 for e in placed + outside if e["inside_callout"])
-        print("%-34s p%-3d  %2d candidati (%d dentro un riquadro), "
-              "%2d in esagoni del grafo, %2d fuori"
-              % (scenario, page_no, len(segs), in_callout, len(placed), len(outside)))
+        striped_n = sum(1 for e in placed + outside if e["convoy_stripe"])
+        print("%-34s p%-3d  %2d candidati (%d dentro un riquadro, %d con la "
+              "striscia del Convoglio), %2d in esagoni del grafo, %2d fuori"
+              % (scenario, page_no, len(segs), in_callout, striped_n,
+                 len(placed), len(outside)))
         for e in outside:
             print("      FUORI: segmento a (%s) -> (%d,%d)"
                   % (", ".join(str(v) for v in e["map_px"]), e["q"], e["r"]))
@@ -292,7 +312,7 @@ def _overlay(dest, key, scenario, lattice, g, segs, live, i0j0):
                        c[1] + circumradius * math.sin(th + n * math.pi / 3.0))
                       for n in range(6)], outline=(0, 160, 0))
         draw.text((c[0] - 16, c[1] - 6), "%d,%d" % (h["q"], h["r"]), fill=(0, 110, 0))
-    for px, py, covered in segs:
+    for px, py, covered, _striped in segs:
         q, r, _d = hex_of(lattice, i0j0, px, py)
         col = (255, 0, 0) if (q, r) not in live else ((150, 150, 150) if covered
                                                       else (0, 0, 255))

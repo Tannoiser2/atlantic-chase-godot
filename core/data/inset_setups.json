@@ -15,7 +15,8 @@
       67.7,
       503.5
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": false
     },
     {
      "q": 2,
@@ -24,7 +25,8 @@
       231.4,
       445.4
      ],
-     "inside_callout": true
+     "inside_callout": true,
+     "convoy_stripe": false
     },
     {
      "q": 3,
@@ -33,7 +35,8 @@
       435.0,
       386.8
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": false
     },
     {
      "q": 4,
@@ -42,7 +45,8 @@
       645.7,
       322.0
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": false
     },
     {
      "q": 5,
@@ -51,7 +55,8 @@
       830.8,
       265.5
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": false
     }
    ],
    "hexes_used": [
@@ -94,7 +99,8 @@
       7.1,
       1209.5
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": false
     },
     {
      "q": 2,
@@ -103,7 +109,8 @@
       73.3,
       1265.7
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": true
     },
     {
      "q": 2,
@@ -112,7 +119,8 @@
       99.7,
       1064.5
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": false
     },
     {
      "q": 2,
@@ -121,7 +129,8 @@
       183.9,
       883.5
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": false
     },
     {
      "q": 3,
@@ -130,7 +139,8 @@
       223.5,
       1183.4
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": true
     },
     {
      "q": 3,
@@ -139,7 +149,8 @@
       262.1,
       1216.1
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": true
     },
     {
      "q": 3,
@@ -148,7 +159,8 @@
       288.9,
       735.6
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": false
     },
     {
      "q": 3,
@@ -157,7 +169,8 @@
       371.2,
       581.8
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": false
     },
     {
      "q": 4,
@@ -166,7 +179,8 @@
       419.8,
       1104.8
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": true
     },
     {
      "q": 3,
@@ -175,7 +189,8 @@
       428.6,
       164.4
      ],
-     "inside_callout": true
+     "inside_callout": true,
+     "convoy_stripe": false
     },
     {
      "q": 4,
@@ -184,7 +199,8 @@
       458.8,
       1155.0
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": true
     },
     {
      "q": 3,
@@ -193,7 +209,8 @@
       481.4,
       420.1
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": false
     },
     {
      "q": 3,
@@ -202,7 +219,8 @@
       514.7,
       123.0
      ],
-     "inside_callout": true
+     "inside_callout": true,
+     "convoy_stripe": false
     },
     {
      "q": 5,
@@ -211,7 +229,8 @@
       625.8,
       1023.7
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": true
     },
     {
      "q": 4,
@@ -220,7 +239,8 @@
       645.3,
       317.7
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": false
     },
     {
      "q": 5,
@@ -229,7 +249,8 @@
       649.1,
       1094.5
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": true
     },
     {
      "q": 5,
@@ -238,7 +259,8 @@
       832.9,
       260.7
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": false
     },
     {
      "q": 6,
@@ -247,7 +269,8 @@
       842.2,
       983.6
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": true
     }
    ],
    "hexes_used": [
@@ -330,7 +353,8 @@
       595.6,
       1249.6
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": true
     },
     {
      "q": 5,
@@ -339,7 +363,8 @@
       595.5,
       1062.1
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": true
     },
     {
      "q": 5,
@@ -348,7 +373,8 @@
       618.2,
       1254.3
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": false
     },
     {
      "q": 5,
@@ -357,7 +383,8 @@
       642.8,
       856.8
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": true
     },
     {
      "q": 5,
@@ -366,7 +393,8 @@
       660.4,
       1082.3
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": false
     },
     {
      "q": 5,
@@ -375,7 +403,8 @@
       718.1,
       658.3
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": true
     },
     {
      "q": 5,
@@ -384,7 +413,8 @@
       740.6,
       903.9
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": false
     },
     {
      "q": 5,
@@ -393,7 +423,8 @@
       788.5,
       447.0
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": true
     },
     {
      "q": 5,
@@ -402,7 +433,8 @@
       857.5,
       266.5
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": true
     },
     {
      "q": 6,
@@ -411,7 +443,8 @@
       873.5,
       816.0
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": false
     }
    ],
    "hexes_used": [
@@ -464,7 +497,8 @@
       591.3,
       1263.0
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": true
     },
     {
      "q": 5,
@@ -473,7 +507,8 @@
       598.5,
       1295.8
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": false
     },
     {
      "q": 6,
@@ -482,7 +517,8 @@
       744.4,
       1201.8
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": true
     },
     {
      "q": 6,
@@ -491,7 +527,8 @@
       780.5,
       1228.8
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": false
     },
     {
      "q": 5,
@@ -500,7 +537,8 @@
       795.4,
       447.3
      ],
-     "inside_callout": true
+     "inside_callout": true,
+     "convoy_stripe": true
     },
     {
      "q": 5,
@@ -509,7 +547,8 @@
       806.0,
       648.1
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": true
     },
     {
      "q": 6,
@@ -518,7 +557,8 @@
       813.3,
       1022.8
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": true
     },
     {
      "q": 6,
@@ -527,7 +567,8 @@
       827.9,
       814.4
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": true
     },
     {
      "q": 6,
@@ -536,7 +577,8 @@
       848.1,
       1030.1
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": false
     },
     {
      "q": 5,
@@ -545,7 +587,8 @@
       883.2,
       307.7
      ],
-     "inside_callout": true
+     "inside_callout": true,
+     "convoy_stripe": true
     },
     {
      "q": 6,
@@ -554,7 +597,8 @@
       898.3,
       817.5
      ],
-     "inside_callout": false
+     "inside_callout": false,
+     "convoy_stripe": false
     },
     {
      "q": 6,
@@ -563,7 +607,8 @@
       931.9,
       637.2
      ],
-     "inside_callout": true
+     "inside_callout": true,
+     "convoy_stripe": true
     }
    ],
    "hexes_used": [
@@ -621,7 +666,8 @@
       252.9,
       1243.4
      ],
-     "inside_callout": true
+     "inside_callout": true,
+     "convoy_stripe": false
     }
    ],
    "hexes_used": [

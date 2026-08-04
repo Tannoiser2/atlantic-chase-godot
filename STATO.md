@@ -487,8 +487,17 @@ Tutti i test passano: **3016 verifiche, 18 suite, headless.**
   stiano sulla PROPRIA mappa. E' il difetto vero da cui erano nati - le
   posizioni inventate su porti sostitutivi - espresso in un modo che sopravvive
   al progresso.
-  **Restano quattro schieramenti**: N1 (18 segmenti disegnati), N2 (dieci), N3
-  (dodici), N5 (nessuno, la sua mappa e' solo sfondo dei riquadri di regola).
+  **Restano quattro schieramenti**, e di N1 e' fatta la geometria: i suoi 18
+  segmenti formano due catene esatte, e la striscia bianca stampata in mezzo a
+  un segmento - che il programma adesso rileva e salva come `convoy_stripe` -
+  dice quale porta Convogli. Otto lisci in fila da Vestfjorden a Scapa Flow, che
+  finiscono su un cilindro Stazione, e otto striati lungo la costa norvegese con
+  esagoni doppi, cioe' piu' Traiettorie sullo stesso percorso. Manca
+  l'assegnazione delle navi, e non l'ho fatta: va letta sulla pagina, e
+  indovinarla sarebbe peggio che lasciarla aperta.
+  N2 ha dieci segmenti (sei striati), N3 dodici (otto striati), N5 nessuno - la
+  sua mappa e' solo lo sfondo dei riquadri di regola, quindi il suo schieramento
+  va ricavato interamente dal testo.
 - **I Comandanti dicono la loro condizione stampata.** Gli undici testi sono
   trascritti da RB p.10 letta a 300 dpi: la scheda TF mostra la regola vera e
   non un riassunto, ed e' quella che decide se il beneficio si puo' usare
