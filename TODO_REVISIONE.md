@@ -149,8 +149,8 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
   screenshot a 1600x948 mostra la fascia intera, col suo margine sotto. Il
   controllo passava o falliva a seconda di dove stavano barra e Dock, ed e' cosi'
   che si e' notato. Adesso confronta il viewport logico.
-  **Resta aperta la verifica vera**: provare 1280x720, 1600x900 e un viewport
-  stretto, che nessuno ha ancora fatto.
+  **La verifica e' stata fatta**: 1280x720, 1600x900 e 1920x1080 passano tutte
+  e tre, prova di fumo e screenshot. Resta il viewport stretto.
 - **Battaglia avanzata**: quattro scelte interattive e il mini-scenario MS12.
 - **I 22 scenari a due giocatori** hanno dati, setup e vittoria, ma nessun
   audit end-to-end.
@@ -793,8 +793,12 @@ sopra scenario per scenario.
   selezionabili/copiabili Registro e stato.
 - [ ] Mostrare sempre l'azione effettiva del bot in evidenza, separata dai
   calcoli tecnici.
-- [ ] Verificare layout a 1280x720, 1600x900, 1920x1080 e viewport stretto;
-  nessun pannello o pedina deve essere tagliato.
+- [x] Verificare layout a 1280x720, 1600x900, 1920x1080: **fatto**, con
+  `godot --resolution WxH --path . --script res://tools/screenshot.gd` e la
+  prova di fumo del workspace a ciascuna delle tre. Verdi tutte e tre, e gli
+  screenshot mostrano barra, mappa, Registro, stato e scheda TF interi. Resta
+  da provare un **viewport stretto** (finestra molto piu' alta che larga), che
+  e' il caso che il rapporto d'aspetto puo' rompere davvero.
   **HA GIA' UNA MISURA, e oggi fa fallire `smoke_map_workspace.gd`**:
   `project.godot` chiede 1600x1000, ma se lo schermo concede meno - qui un
   rettangolo utilizzabile di 1920x980 - Godot riduce la finestra a 1600x947 e la
