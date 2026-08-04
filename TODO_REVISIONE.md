@@ -85,8 +85,11 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
   delle Azioni tedesche legge la riga giusta sul loro numero.
   **Restano dichiarati** i due modificatori di N5 che dipendono da Completamenti
   precedenti (il motore non tiene quello storico), quello legato alle Basi Aeree
-  tedesche, e i risultati `b`/`g` che spostano marker Base Aerea. Manca l'azione
-  nella GUI: la offre solo `SoloRunner`.
+  tedesche, e i risultati `b`/`g` che spostano marker Base Aerea.
+  **Anche la GUI la offre**: negli scenari 'N', se la Task Force selezionata
+  puo' sbarcare, il Completamento chiede prima quale delle due azioni si vuole -
+  sbarcare tiene la TF in gioco, entrare in porto la toglie - e da li' posa le
+  Mine e tira la Reazione come fa `SoloRunner`.
 - **L'Attacco Furtivo della GUI non usa una forza Furtiva.** Nel registro di
   una partita BL2 si legge "Attacco Furtivo -> Totale Traiettoria 2": per RB
   p.41 una forza Furtiva ha Totale Traiettoria ZERO, quindi quell'azione la sta

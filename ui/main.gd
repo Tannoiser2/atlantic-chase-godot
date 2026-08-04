@@ -2565,7 +2565,80 @@ func _do_signal() -> void:
 
 ## Completamento (RB p.29): le navi entrano in porto e lasciano il gioco.
 ## Se la Task Force tocca piu' di un porto amico, la scelta e' del giocatore.
+## Sbarco in Norvegia, se lo scenario e la posizione lo permettono. Ritorna vero
+## se ha gestito l'azione: il chiamante allora non prova il Completamento in
+## porto.
+##
+## L'offerta e' esplicita e si puo' rifiutare, perche' le due azioni portano a
+## esiti diversi e la scelta e' del giocatore: sbarcare tiene la Task Force in
+## gioco, entrare in porto la toglie.
+func _try_norway_completion() -> bool:
+	if selected_tf == null or not scenario.id.begins_with("N"):
+		return false
+	var h := selected_tf.trajectory.station_hex if selected_tf.trajectory.is_station() \
+		else Vector2i.MAX
+	if h == Vector2i.MAX:
+		return false
+	if not Norway.can_complete(graph, selected_tf, h):
+		return false
+	var targets: Array = scenario.mines_targets()
+	var lays_mines := not targets.is_empty() \
+		and Stealth.can_lay_mines(state, targets, selected_tf, h)
+	var detail := "La Task Force resta in gioco e fa Scorrere del Tempo."
+	if lays_mines:
+		detail += " Posa anche le Mine in questo esagono."
+	var pick: int = await Choice.ask(self, "Completamento in Norvegia",
+		"%s puo' sbarcare qui invece di entrare in porto. %s"
+			% [selected_tf.display_name(), detail],
+		[{"label": "Sbarca in Norvegia", "detail": detail},
+			{"label": "No, cerca un porto",
+				"detail": "Completamento normale: la Task Force esce di scena."}])
+	if pick != 0:
+		return false
+
+	var acting := selected_tf
+	if await _offer_steal_initiative("Completamento in Norvegia"):
+		_msg("Sbarco impedito: l'Inattivo ha preso l'Iniziativa.")
+		await _do_time_lapse_for(acting)
+		await _maybe_run_solo_opponent_turn("Sbarco impedito")
+		return true
+
+	var done := Norway.complete(state, graph, acting, h, false)
+	for line_v: Variant in done.get("log", []):
+		_msg(String(line_v))
+	if not bool(done.get("ok", false)):
+		return true
+	if lays_mines:
+		var mines := Stealth.lay_mines(state, targets, acting, h)
+		for line_v: Variant in mines.get("log", []):
+			_msg(String(line_v))
+	if bool(done.get("check_reaction", false)):
+		var reaction := Norway.roll_reaction(state, graph, state.rng, scenario.id,
+			acting, h)
+		if bool(reaction.get("ok", false)):
+			for line_v: Variant in reaction.get("log", []):
+				_msg(String(line_v))
+			var applied := Norway.apply_reaction(state, reaction, acting)
+			for line_v: Variant in applied.get("log", []):
+				_msg(String(line_v))
+			if int(applied.get("initiative_to", -1)) >= 0:
+				state.initiative = int(applied["initiative_to"])
+				_msg("L'Iniziativa passa a %s." % Initiative.side_name(state.initiative))
+		else:
+			_msg("Reazione Norvegese non tirata: %s" % String(reaction.get("reason", "")))
+	if bool(done.get("time_lapse", false)):
+		await _do_time_lapse_for(acting)
+	_refresh()
+	await _maybe_run_solo_opponent_turn("Sbarco in Norvegia")
+	return true
+
+
 func _do_completion() -> void:
+	# Negli scenari 'N' un Completamento puo' essere uno SBARCO IN NORVEGIA, che
+	# e' un'altra cosa: serve un Convoglio o uno Squadrone DD, la Task Force NON
+	# esce di scena, e dopo si tira la Reazione Norvegese (fascicolo p.16).
+	if await _try_norway_completion():
+		return
 	var opts := Completion.port_options(selected_tf, graph, _port_control())
 	if opts.is_empty():
 		_msg("Completamento: nessun porto amico raggiunto")

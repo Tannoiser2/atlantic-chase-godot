@@ -467,6 +467,21 @@ Tutti i test passano: **3150 verifiche, 20 suite, headless.**
   scenario normale rimetta la Mappa Operazionale coi suoi tile.
   Il testo che i cinque scenari mostravano - "reticolo e coordinate non
   calibrati" - era ormai falso ed e' stato corretto.
+- **Il Completamento in Norvegia si gioca, nel ciclo headless e nella GUI.**
+  `core/rules/norway.gd` ha le tre differenze stampate a p.16 - serve un
+  Convoglio o uno Squadrone DD, la Task Force NON viene rimossa ma fa Scorrere
+  del Tempo, e l'avversario immaginario invece la perde - piu' le quattro
+  tabelle di Reazione Norvegese (pp.19, 24, 27, 34) col tiro e l'applicazione.
+  N1 posa davvero le sue Mine, che erano l'obiettivo dello scenario.
+  Nella GUI l'azione e' una SCELTA esplicita, non un automatismo: le due strade
+  portano a esiti diversi - sbarcare tiene la Task Force in gioco, entrare in
+  porto la toglie - e la scelta e' del giocatore.
+  Due difetti li ha trovati il replay, non io: la regola vale solo per gli
+  scenari 'N' (senza il vincolo, A1 e N5 sbarcavano a ogni turno perche' hanno
+  Narvik e Trondheim sulla loro mappa), e siccome la TF non viene rimossa lo
+  sbarco si poteva ripetere all'infinito. Il secondo divieto e' della policy,
+  non della regola: il fascicolo non ne ha bisogno perche' un giocatore non lo
+  farebbe.
 - **Le forze Furtive esistono nel motore.** `core/rules/stealth.gd` e
   `GameState.stealth_forces` implementano RB p.41: i tre tipi (Mine,
   Sottomarini, U-Boat), la Ricognizione come PIAZZAMENTO e non movimento - il
