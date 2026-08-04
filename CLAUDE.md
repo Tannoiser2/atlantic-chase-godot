@@ -40,7 +40,7 @@ godot --path . --script res://tools/smoke_solo_flow.gd
 godot --path . --script res://tools/smoke_solo_flow.gd -- BL1
 ```
 
-Baseline corrente: **2957 verifiche, 18 suite** (era 2570 su 17 prima della
+Baseline corrente: **3001 verifiche, 18 suite** (era 2570 su 17 prima della
 suite `test_replay.gd`). Il totale non puo' scendere senza una rimozione
 intenzionale di test spiegata nel commit.
 
@@ -90,9 +90,15 @@ dei cinque scenari e controlla che cadano tutti in esagoni del grafo. Esce con
 codice 1 se qualcuno cade fuori: sarebbe un difetto del grafo, non
 dell'illustrazione.
 
-**Il dato di mappa degli inserti e' completo e verificato.** I cinque scenari
-inserto restano dichiarati non giocabili per un motivo solo, ed e' codice:
-manca un secondo `MapGraph` nel motore e il disegno dell'inserto nella GUI.
+**Il dato di mappa degli inserti e' completo e verificato, e il motore lo
+carica**: `MapGraph.load_inset("map_north_sea")` o `"map_norwegian_sea"`.
+Attenzione a due convenzioni del dato inserto, che il caricatore traduce e i
+test sorvegliano: `theta_deg` e' l'angolo dei VERTICI (la mappa grande usa la
+direzione di BASE, 30 gradi piu' avanti) e le `(q,r)` sono ribasate
+sull'angolo della cornice, non sulla cella (0,0) del fit.
+I cinque scenari inserto restano dichiarati non giocabili per due cose:
+il disegno dell'inserto nella GUI e lo schieramento iniziale, che va letto
+dalle pagine del fascicolo.
 
 ## Metodo di revisione
 

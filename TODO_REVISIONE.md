@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Aggiornato dopo la chiusura di **R0** (3 agosto 2026). Baseline: **2957
+Aggiornato dopo la chiusura di **R0** (3 agosto 2026). Baseline: **3001
 verifiche su 18 suite**.
 
 Questo e' il backlog autorevole per continuare la revisione. `STATO.md`
@@ -26,7 +26,7 @@ vecchie sezioni "Cosa manca" non devono riaprire lavori gia' completati.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 2957 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 3001 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
@@ -204,9 +204,26 @@ Uno scenario puo' essere marcato completo solo quando:
   disegna una Traiettoria e' giocabile - e' un dato stampato, e batte una
   soglia di colore. Restano aperti (1,1) e (2,4) del Mare del Nord, (5,-3) del
   Mare di Norvegia, e i tre lati `disputed`.
-  **Resta, ed e' l'ultima cosa che blocca i cinque scenari**: un secondo
-  `MapGraph` nel motore e il disegno dell'inserto come superficie di gioco
-  nella GUI. Tutto il dato di mappa c'e'.
+  **Il motore carica le due mappe inserto.** Non e' una classe nuova:
+  `MapGraph` era gia' generico, e ora ha `load_inset(chiave)` che traduce la
+  forma del dato inserto in quella che sa gia' leggere. Geometria, adiacenze e
+  porti restano un solo pezzo di codice, perche' il reticolo dell'inserto e'
+  quello della mappa grande. Le frecce "non adiacente" diventano
+  `blocked_edges`: sono la stessa regola con un altro nome. Basi aeree, Punti
+  di Interesse e caselle fuori mappa sono esposti come DATO, non come regole
+  implementate.
+  Due trappole prese e chiuse, nessuna delle quali si vedeva nei numeri perche'
+  i centri degli esagoni vengono dal JSON: il dato inserto salva `theta_deg`
+  come angolo dei VERTICI mentre `hex_corners()` lo vuole come direzione di
+  BASE (30 gradi di differenza), e le sue `(q,r)` sono ribasate sull'angolo
+  della cornice, quindi serviva scrivere nel dato l'origine ribasata o
+  `hex_to_pixel` sbagliava di una cella e mezzo. Cinque test nuovi in
+  `test_hex_and_graph.gd` li inchiodano misurando circumraggio, inraggio e
+  l'allineamento dei vertici rispetto ai vicini.
+  **Resta, ed e' l'ultima cosa che blocca i cinque scenari**: il disegno
+  dell'inserto come superficie di gioco nella GUI, e lo schieramento iniziale
+  dei cinque scenari - quale segmento e' di quale Task Force e in che ordine
+  forma la Traiettoria, che va letto dalle pagine.
   **Otto esagoni sono marcati `needs_check`**: hanno terra e mare quasi in
   parti uguali, e il colore non basta a decidere. Gli esagoni scartati per un
   soffio restano scritti in `excluded_near_miss`, col motivo: nessuno sparisce

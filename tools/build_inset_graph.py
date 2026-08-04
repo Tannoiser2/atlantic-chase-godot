@@ -775,6 +775,12 @@ def build(key, meta, rgb, overlay_dir=None):
         "image_size": meta["image_size"],
         "scenarios": meta["scenarios"],
         "frame_px": list(FRAME),
+        # L'origine del reticolo RIBASATA sui nomi usati qui. `map_insets.json`
+        # da' l'origine della cella (0,0) del fit; questi nomi partono invece
+        # dalla cella piu' vicina all'angolo della cornice, quindi il motore ha
+        # bisogno del centro del SUO (0,0) o `hex_to_pixel` non ritrova i centri.
+        "lattice_origin_px": [round(float(v), 4)
+                              for v in (origin + i0 * e1 + j0 * e2)],
         "origin_hex": ("(0,0) e' la cella il cui centro e' piu' vicino "
                        "all'angolo in alto a sinistra della cornice stampata"),
         "sea_min": SEA_MIN,

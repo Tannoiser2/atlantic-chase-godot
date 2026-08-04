@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **2957 verifiche, 18 suite, headless.**
+Tutti i test passano: **3001 verifiche, 18 suite, headless.**
 
 ---
 
@@ -435,9 +435,29 @@ Tutti i test passano: **2957 verifiche, 18 suite, headless.**
   del Nord e uno del Mare di Norvegia hanno un segmento stampato dentro, e un
   esagono in cui il fascicolo disegna una Traiettoria e' giocabile - e' un dato
   stampato, e batte una soglia di colore.
-  I cinque scenari restano dichiarati non giocabili per un motivo solo, ed e'
-  codice, non piu' dato: manca un secondo `MapGraph` nel motore e il disegno
-  dell'inserto nella GUI.
+- **Il motore carica le due mappe inserto.** Non e' servita una classe nuova:
+  `MapGraph` era gia' generico e ora ha `load_inset(chiave)`, che traduce la
+  forma del dato inserto in quella che sa gia' leggere. Geometria, adiacenze e
+  porti restano un solo pezzo di codice, perche' il reticolo dell'inserto e'
+  quello della mappa grande; le frecce "non adiacente" diventano
+  `blocked_edges`, che e' la stessa regola con un altro nome. Basi aeree, Punti
+  di Interesse e caselle fuori mappa sono esposti come dato: il motore non
+  gioca ancora gli Attacchi Aerei da base aerea, e i Punti di Interesse per
+  regola non fanno nulla.
+  Scrivendo il caricatore ho preso due trappole, e vale la pena scriverle
+  perche' **nessuna delle due si vedeva nei numeri**: i centri degli esagoni
+  arrivano dal JSON e restavano giusti in entrambi i casi. La prima: il dato
+  inserto salva `theta_deg` come angolo dei VERTICI, mentre `hex_corners()` lo
+  intende come direzione di BASE - 30 gradi di differenza, esagoni ruotati, e
+  si vede solo guardando la mappa. La seconda: le `(q,r)` dell'inserto sono
+  ribasate sull'angolo della cornice, quindi senza scrivere nel dato l'origine
+  ribasata `hex_to_pixel` sbagliava di una cella e mezzo. Adesso cinque test le
+  inchiodano misurando circumraggio, inraggio e l'allineamento dei vertici
+  rispetto ai vicini: se theta e' sbagliato di 30 gradi un vertice punta dritto
+  su un vicino e il coseno passa da 0.866 a 1.
+  Resta il disegno dell'inserto nella GUI, e lo schieramento iniziale dei cinque
+  scenari: quale segmento sia di quale Task Force e in che ordine formi la
+  Traiettoria va letto dalle pagine, non si ricava dalle posizioni.
 - **I Comandanti dicono la loro condizione stampata.** Gli undici testi sono
   trascritti da RB p.10 letta a 300 dpi: la scheda TF mostra la regola vera e
   non un riassunto, ed e' quella che decide se il beneficio si puo' usare

@@ -13,6 +13,10 @@ extends RefCounted
 
 const DATA_PATH := "res://core/data/map_graph.json"
 
+## Le due mappe inserto, generate da tools/build_inset_graph.py e verificate
+## contro le illustrazioni del fascicolo da tools/validate_inset_setups.py.
+const INSET_PATH := "res://core/data/inset_graphs.json"
+
 var map_size: Vector2i
 var map_image: String
 
@@ -37,6 +41,14 @@ var _blocked: Dictionary = {}       # "q,r|q,r" -> true
 var _restricted: Dictionary = {}
 var ports: Dictionary = {}          # String -> Dictionary
 
+## Vuoto sulla Mappa Operazionale, valorizzato sulle mappe inserto. Sono dati
+## che l'inserto stampa e la mappa grande no, o che il motore non usa ancora:
+## tenerli qui li rende disponibili senza fingere che siano implementati.
+var inset_key: String = ""          ## "" = Mappa Operazionale
+var air_bases: Array[Dictionary] = []
+var points_of_interest: Array[Dictionary] = []
+var off_map_boxes: Array[Dictionary] = []
+
 var load_error: String = ""
 
 
@@ -44,6 +56,135 @@ static func load_default() -> MapGraph:
 	var g := MapGraph.new()
 	g.load_from(DATA_PATH)
 	return g
+
+
+## Una delle due mappe inserto: "map_north_sea" o "map_norwegian_sea".
+##
+## Il dato dell'inserto ha una forma sua, perche' l'inserto stampa cose che la
+## mappa grande non ha - punti di interesse, caselle fuori mappa, basi aeree - e
+## chiama `not_adjacent_edges` quelli che sulla mappa grande sono
+## `blocked_edges`. Sono la stessa cosa: RB p.4 dice che una freccia "non
+## adiacente" nega la Traiettoria fra i due esagoni che collega, ed e'
+## esattamente quello che `blocked_edges` fa qui.
+##
+## Il resto della classe non cambia: geometria, adiacenze e porti funzionano
+## uguale, perche' il reticolo dell'inserto e' lo stesso della mappa grande -
+## passo 213.9 px contro 213.5, misurato, non supposto.
+static func load_inset(key: String) -> MapGraph:
+	var g := MapGraph.new()
+	g.load_inset_from(INSET_PATH, key)
+	return g
+
+
+## Gli identificativi delle mappe inserto disponibili.
+static func inset_keys() -> Array[String]:
+	var out: Array[String] = []
+	var f := FileAccess.open(INSET_PATH, FileAccess.READ)
+	if f == null:
+		return out
+	var parsed: Variant = JSON.parse_string(f.get_as_text())
+	f.close()
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return out
+	var insets: Variant = (parsed as Dictionary).get("insets", {})
+	if typeof(insets) != TYPE_DICTIONARY:
+		return out
+	for k_v: Variant in (insets as Dictionary).keys():
+		out.append(String(k_v))
+	out.sort()
+	return out
+
+
+func load_inset_from(path: String, key: String) -> bool:
+	var f := FileAccess.open(path, FileAccess.READ)
+	if f == null:
+		load_error = "impossibile aprire %s" % path
+		push_error(load_error)
+		return false
+	var parsed: Variant = JSON.parse_string(f.get_as_text())
+	f.close()
+	if typeof(parsed) != TYPE_DICTIONARY:
+		load_error = "JSON non valido in %s" % path
+		push_error(load_error)
+		return false
+	var insets: Variant = (parsed as Dictionary).get("insets", {})
+	if typeof(insets) != TYPE_DICTIONARY or not (insets as Dictionary).has(key):
+		load_error = "inserto sconosciuto: %s" % key
+		push_error(load_error)
+		return false
+	return _apply_inset(key, (insets as Dictionary)[key] as Dictionary,
+		MapGraph._inset_lattice(key))
+
+
+## Il reticolo sta in core/data/map_insets.json, separato dal grafo perche' e'
+## una MISURA sull'immagine e non va rigenerato insieme alla topologia.
+static func _inset_lattice(key: String) -> Dictionary:
+	var f := FileAccess.open("res://core/data/map_insets.json", FileAccess.READ)
+	if f == null:
+		return {}
+	var parsed: Variant = JSON.parse_string(f.get_as_text())
+	f.close()
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return {}
+	var insets: Variant = (parsed as Dictionary).get("insets", {})
+	if typeof(insets) != TYPE_DICTIONARY or not (insets as Dictionary).has(key):
+		return {}
+	var rec: Dictionary = (insets as Dictionary)[key]
+	var lat: Variant = rec.get("lattice", {})
+	return lat if typeof(lat) == TYPE_DICTIONARY else {}
+
+
+## Traduce il dato dell'inserto nella forma che `_apply` gia' sa leggere, cosi'
+## la logica di geometria e adiacenza resta una sola.
+func _apply_inset(key: String, d: Dictionary, lattice: Dictionary) -> bool:
+	if lattice.is_empty():
+		load_error = "reticolo mancante per l'inserto %s" % key
+		push_error(load_error)
+		return false
+	var blocked: Array = []
+	for e_v: Variant in d.get("not_adjacent_edges", []):
+		var e: Dictionary = e_v
+		blocked.append({
+			"aq": e["aq"], "ar": e["ar"], "bq": e["bq"], "br": e["br"],
+			"where": e.get("where", ""),
+		})
+	# TRAPPOLA, e ci sono cascato scrivendo questo metodo: il dato dell'inserto
+	# salva `theta_deg` come angolo dei VERTICI, mentre `map_graph.json` - e
+	# quindi `hex_corners()` qui sotto, che ci somma 30 gradi - lo intende come
+	# direzione di BASE. Passare quello sbagliato non rompe niente di visibile:
+	# i centri restano giusti perche' vengono da basis_e1/basis_e2, e solo i
+	# vertici escono ruotati di 30 gradi. Si vede a occhio sulla mappa, non nei
+	# numeri.
+	var lat := lattice.duplicate(true)
+	if lat.has("basis_theta_deg"):
+		lat["theta_deg"] = lat["basis_theta_deg"]
+	# Le (q,r) dell'inserto sono RIBASATE sull'angolo della cornice, non sulla
+	# cella (0,0) del fit: senza la sua origine, `hex_to_pixel` sbaglierebbe di
+	# una cella e mezzo. Anche questo non rompe niente di visibile finche' si
+	# guardano solo i `center` presi dal JSON.
+	if d.has("lattice_origin_px"):
+		lat["origin_px"] = d["lattice_origin_px"]
+	var ok := _apply({
+		"map_image": d.get("image", ""),
+		"map_size": d.get("image_size", [0, 0]),
+		"lattice": lat,
+		"hexes": d.get("hexes", []),
+		"blocked_edges": blocked,
+		"ports": d.get("ports", []),
+	})
+	if not ok:
+		return false
+	inset_key = key
+	air_bases.clear()
+	for a_v: Variant in d.get("air_bases", []):
+		air_bases.append((a_v as Dictionary).duplicate(true))
+	points_of_interest.clear()
+	for p_v: Variant in d.get("points_of_interest", []):
+		points_of_interest.append((p_v as Dictionary).duplicate(true))
+	off_map_boxes.clear()
+	for b_v: Variant in d.get("off_map_boxes", []):
+		off_map_boxes.append((b_v as Dictionary).duplicate(true))
+	return true
 
 
 func load_from(path: String) -> bool:
@@ -303,3 +444,78 @@ func all_hexes() -> Array:
 
 func hex_count() -> int:
 	return hexes.size()
+
+
+# ------------------------------------------------------------- solo inserti --
+#
+# Queste tre cose le stampa solo l'inserto. Il motore le espone come DATO: le
+# basi aeree non sono ancora una pedina giocabile ne' qui ne' sulla Mappa
+# Operazionale, e i Punti di Interesse per regola non fanno nulla. Averli qui
+# evita che chi scrive lo scenario debba rileggersi il fascicolo, e non finge
+# che siano implementati.
+
+func is_inset() -> bool:
+	return inset_key != ""
+
+
+## Le basi aeree di una parte ("UK" o "GE"), o tutte se `side` e' vuoto.
+## RB p.27: una base aerea e' la fonte di un Attacco Aereo, che parte dal suo
+## esagono, si fa solo col Meteo Buono e arriva al massimo a due esagoni; una
+## base aerea non puo' essere il bersaglio.
+func air_bases_of(side: String = "") -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for b in air_bases:
+		if side == "" or String(b.get("side", "")) == side:
+			out.append(b)
+	return out
+
+
+func air_base_at(h: Vector2i) -> Dictionary:
+	for b in air_bases:
+		if Vector2i(int(b.get("q", 0)), int(b.get("r", 0))) == h:
+			return b
+	return {}
+
+
+## Gli esagoni che una casella fuori mappa designa. Il fascicolo parla di
+## "nearest Denmark Strait port hex" al plurale: una casella puo' designarne
+## piu' d'uno.
+func off_map_box_hexes(name: String) -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	for b in off_map_boxes:
+		if String(b.get("name", "")) != name:
+			continue
+		for h_v: Variant in b.get("hexes", []):
+			var h: Dictionary = h_v
+			out.append(Vector2i(int(h["q"]), int(h["r"])))
+	return out
+
+
+func off_map_box_names() -> Array[String]:
+	var out: Array[String] = []
+	for b in off_map_boxes:
+		out.append(String(b.get("name", "")))
+	return out
+
+
+## Le caselle fuori mappa che toccano un esagono. Puo' essercene piu' d'una.
+func off_map_boxes_at(h: Vector2i) -> Array[String]:
+	var out: Array[String] = []
+	for b in off_map_boxes:
+		for h_v: Variant in b.get("hexes", []):
+			var e: Dictionary = h_v
+			if Vector2i(int(e["q"]), int(e["r"])) == h:
+				out.append(String(b.get("name", "")))
+				break
+	return out
+
+
+## I Punti di Interesse in un esagono. Fascicolo p.16: "no effect on game play,
+## except to orient the player". Non sono porti: servono a dire al giocatore
+## dove sono Bud e Andalsnes, non a permettere un Completamento in quanto porto.
+func points_of_interest_in(h: Vector2i) -> Array[String]:
+	var out: Array[String] = []
+	for p in points_of_interest:
+		if Vector2i(int(p.get("q", 0)), int(p.get("r", 0))) == h:
+			out.append(String(p.get("name", "")))
+	return out

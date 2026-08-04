@@ -25,6 +25,11 @@ func run() -> void:
 	test_manual_unplayable_hexes()
 	test_kiel_canal()
 	test_ports()
+	test_inset_graphs_load()
+	test_inset_geometry_is_exact()
+	test_inset_not_adjacent_arrows_block_trajectory()
+	test_inset_extras_are_data()
+	test_loading_an_inset_does_not_touch_the_main_map()
 
 
 func test_graph_loads() -> void:
@@ -273,3 +278,134 @@ func test_ports() -> void:
 		"il segmento e' rifiutato nella Casella Porto")
 	eq(t.extend_error(nb[0], 1, graph, {}), "",
 		"lo stesso esagono e' legale fuori dalla Casella")
+
+
+## Le due mappe inserto passano dalla stessa classe della Mappa Operazionale:
+## il reticolo e' lo stesso - passo misurato 213.9 px contro 213.5 - e cambiano
+## solo origine, esagoni e dati che l'inserto stampa in piu'.
+func test_inset_graphs_load() -> void:
+	_begin("caricamento delle mappe inserto")
+	var keys := MapGraph.inset_keys()
+	eq(keys.size(), 2, "ci sono due mappe inserto")
+	true_(keys.has("map_north_sea"), "c'e' il Mare del Nord")
+	true_(keys.has("map_norwegian_sea"), "c'e' il Mare di Norvegia")
+	var ns := MapGraph.load_inset("map_north_sea")
+	eq(ns.load_error, "", "il Mare del Nord si carica")
+	true_(ns.is_inset(), "e si dichiara inserto")
+	eq(ns.hex_count(), 34, "34 esagoni sul Mare del Nord")
+	eq(ns.port_count(), 5, "5 porti: i cerchi vuoti sono Punti di Interesse, non porti")
+	eq(ns.port_hex("Scapa Flow"), Vector2i(1, 0), "Scapa Flow e' in 1,0")
+	var nw := MapGraph.load_inset("map_norwegian_sea")
+	eq(nw.load_error, "", "il Mare di Norvegia si carica")
+	eq(nw.hex_count(), 33, "33 esagoni sul Mare di Norvegia")
+	eq(nw.port_hex("Narvik"), Vector2i(5, -2), "Narvik e' in 5,-2")
+	var bad := MapGraph.load_inset("map_del_mare_inventato")
+	true_(bad.load_error != "", "un inserto che non esiste da' un errore, non un grafo vuoto")
+
+
+## Due trappole prese scrivendo il caricatore, e nessuna delle due si vedeva
+## nei numeri: il dato dell'inserto salva `theta_deg` come angolo dei VERTICI
+## mentre `hex_corners()` lo vuole come direzione di BASE (30 gradi di
+## differenza), e le sue (q,r) sono ribasate sull'angolo della cornice, quindi
+## senza l'origine ribasata `hex_to_pixel` sbaglia di una cella e mezzo.
+## I centri restavano giusti in tutti e due i casi, perche' vengono dal JSON.
+func test_inset_geometry_is_exact() -> void:
+	_begin("geometria delle mappe inserto")
+	for key_v: Variant in MapGraph.inset_keys():
+		var g := MapGraph.load_inset(String(key_v))
+		var worst_center := 0.0
+		var worst_corner := 0.0
+		var worst_mid := 0.0
+		var worst_align := 0.0
+		for h_v: Variant in g.all_hexes():
+			var h: Vector2i = h_v
+			worst_center = maxf(worst_center, g.center_of(h).distance_to(g.hex_to_pixel(h)))
+			var c := g.center_of(h)
+			var corners := g.hex_corners(h)
+			for p in corners:
+				worst_corner = maxf(worst_corner, absf(c.distance_to(p) - g.circumradius))
+			for i in 6:
+				var mid := (corners[i] + corners[(i + 1) % 6]) * 0.5
+				worst_mid = maxf(worst_mid, absf(c.distance_to(mid) - g.inradius))
+			for n in g.adjacent_hexes(h):
+				var dir := (g.center_of(n) - c).normalized()
+				for p2 in corners:
+					worst_align = maxf(worst_align, absf(dir.dot((p2 - c).normalized())))
+		true_(worst_center < 1.0,
+			"hex_to_pixel ritrova i centri salvati (errore %.2f px)" % worst_center)
+		true_(worst_corner < 1.0,
+			"i vertici stanno sul circumraggio (errore %.2f px)" % worst_corner)
+		true_(worst_mid < 1.0,
+			"i punti medi dei lati stanno sull'inraggio (errore %.2f px)" % worst_mid)
+		# Un vertice punta a meta' strada fra due vicini: cos(30) = 0.866. Se
+		# theta fosse sbagliato di 30 gradi verrebbe 1.0, cioe' un vertice
+		# puntato dritto su un vicino.
+		true_(worst_align < 0.9,
+			"i vertici puntano fra i vicini, non verso di essi (%.3f)" % worst_align)
+
+
+## RB p.4 e FAQ p.44: la freccia "non adiacente" nega la Traiettoria fra i due
+## esagoni che collega. Sono i `blocked_edges` della mappa grande con un altro
+## nome, e il caricatore li deve trattare uguale.
+func test_inset_not_adjacent_arrows_block_trajectory() -> void:
+	_begin("le frecce non adiacente degli inserti negano l'adiacenza")
+	var ns := MapGraph.load_inset("map_north_sea")
+	eq(ns.blocked_edge_count(), 6, "sei frecce sul Mare del Nord")
+	true_(Hex.are_adjacent(Vector2i(1, 1), Vector2i(1, 2)),
+		"1,1 e 1,2 sono vicini geometrici")
+	false_(ns.is_adjacent(Vector2i(1, 1), Vector2i(1, 2)),
+		"ma la freccia in Scozia nega l'adiacenza")
+	false_(ns.adjacent_hexes(Vector2i(1, 1)).has(Vector2i(1, 2)),
+		"e il vicino sparisce anche dall'elenco")
+	true_(ns.is_adjacent(Vector2i(2, 0), Vector2i(3, 0)),
+		"un lato senza freccia resta adiacente")
+	var nw := MapGraph.load_inset("map_norwegian_sea")
+	eq(nw.blocked_edge_count(), 3, "tre frecce sul Mare di Norvegia")
+	false_(nw.is_adjacent(Vector2i(6, 1), Vector2i(6, 0)),
+		"la freccia a Trondheim nega l'adiacenza")
+
+
+## Basi aeree, Punti di Interesse e caselle fuori mappa sono DATO esposto, non
+## regole implementate: il motore non gioca ancora gli Attacchi Aerei da base
+## aerea, e i Punti di Interesse per regola non fanno nulla (p.16).
+func test_inset_extras_are_data() -> void:
+	_begin("i dati in piu' delle mappe inserto")
+	var ns := MapGraph.load_inset("map_north_sea")
+	eq(ns.air_bases_of("UK").size(), 5, "cinque basi aeree britanniche")
+	eq(ns.air_bases_of("GE").size(), 2, "due basi aeree tedesche")
+	eq(ns.air_bases_of().size(), 7, "sette in tutto")
+	eq(int(ns.air_base_at(Vector2i(2, 0)).get("range_hexes", 0)), 2,
+		"e il raggio stampato e' due esagoni (RB p.27)")
+	true_(ns.air_base_at(Vector2i(3, 1)).is_empty(),
+		"dove non c'e' base aerea non si inventa niente")
+	eq(ns.off_map_box_hexes("Portsmouth"), [Vector2i(3, 4)] as Array[Vector2i],
+		"la Casella di Portsmouth tocca 3,4")
+	true_(ns.off_map_box_names().has("Norwegian Sea"), "c'e' il passaggio al Mare di Norvegia")
+
+	var nw := MapGraph.load_inset("map_norwegian_sea")
+	eq(nw.air_bases_of().size(), 0,
+		"il Mare di Norvegia non stampa basi aeree, e zero e' il numero giusto")
+	# "nearest Denmark Strait port hex" (p.18) e' al plurale, e infatti sono due.
+	eq(nw.off_map_box_hexes("Denmark Strait").size(), 2,
+		"lo Stretto di Danimarca designa due esagoni")
+	eq(nw.points_of_interest_in(Vector2i(6, 1)), ["Andalsnes"] as Array[String],
+		"Andalsnes e' un Punto di Interesse, non un porto")
+	true_(nw.port_hex("Andalsnes") == Vector2i.MAX,
+		"e infatti non risulta fra i porti")
+	true_(nw.off_map_boxes_at(Vector2i(2, 5)).has("Scapa Flow"),
+		"2,5 tocca la Casella di Scapa Flow, dove in N1 Completano i Convogli")
+
+
+## Caricare un inserto non deve cambiare la Mappa Operazionale: sono due
+## istanze separate, e la mappa grande e' quella che gioca oggi.
+func test_loading_an_inset_does_not_touch_the_main_map() -> void:
+	_begin("le due mappe convivono")
+	var before := graph.hex_count()
+	var ns := MapGraph.load_inset("map_north_sea")
+	var main := MapGraph.load_default()
+	eq(main.hex_count(), before, "la mappa grande ha sempre i suoi esagoni")
+	false_(main.is_inset(), "e non si dichiara inserto")
+	eq(main.air_bases_of().size(), 0,
+		"la mappa grande non porta basi aeree: non sono trascritte per lei")
+	true_(main.hex_count() != ns.hex_count(), "le due mappe restano distinte")
+	true_(main.port_count() > ns.port_count(), "e hanno porti diversi")
