@@ -255,9 +255,24 @@ Uno scenario puo' essere marcato completo solo quando:
   Lacuna dichiarata: le Mine sono l'OBIETTIVO di N1 - una in Vestfjorden, una a
   Bud, una ad Andalsnes - ma le forze Furtive non sono modellate, quindi la posa
   non e' automatizzata.
-  **Restano tre schieramenti**: N2 (dieci segmenti, sei striati), N3 (dodici,
-  otto striati) e N5 (nessun segmento: la sua mappa e' solo sfondo dei riquadri
-  di regola, quindi lo schieramento va ricavato tutto dal testo).
+  **N2 e' fermo a meta', e per un motivo che vale la pena sapere.** La geometria
+  c'e': dieci segmenti in due catene, (5,-2) (5,-1) (5,0) (5,1) (5,2) (5,3) e
+  (6,0) (5,1) (5,2) (5,3), cioe' una che arriva a Narvik e una a Trondheim - e
+  l'obiettivo stampato manda il Convoglio a Narvik e lo Squadrone DD a
+  Trondheim. Sembrava fatta.
+  Il pannello Task Force di p.21 dice pero' un'altra cosa: lo slot con la BANDA
+  BLU tiene Hipper e lo Squadrone DD, e sulla mappa il segmento a Namsos (6,0)
+  ha la banda, mentre il rilevatore lo dava liscio. Il flag della banda **non
+  funziona su N2 e N3**: li' i segmenti sono bianchi e la banda e' blu, quindi
+  cercare forme bianche trova le due meta' del segmento invece della banda. Su
+  BL3 e N1, dove i segmenti sono marroni e la banda bianca, funziona - ed e'
+  per questo che era passato inosservato.
+  Il dato adesso lo dichiara (`band_reliable`), e su N2/N3 la banda va letta a
+  occhio finche' il rilevatore non cerchera' il CONTRASTO col segmento invece
+  del bianco assoluto. Non ho scritto lo schieramento di N2 su un flag che
+  avevo appena visto sbagliare.
+  **Restano tre schieramenti**: N2, N3 e N5 (che non disegna segmenti: la sua
+  mappa e' solo sfondo dei riquadri di regola, quindi va ricavato dal testo).
   Tre test hanno cambiato premessa insieme al fatto, e vale la pena saperlo:
   controllavano che gli scenari inserto NON avessero schieramento, e adesso
   controllano che le loro TF stiano sulla PROPRIA mappa - che e' il difetto

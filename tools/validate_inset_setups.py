@@ -62,6 +62,11 @@ PAGES = [
 ]
 
 MAP_W, MAP_H = 1020, 1320
+
+# Su quali pagine la banda dei segmenti e' BIANCA, cioe' rilevabile col metodo
+# di sotto. Altrove i segmenti sono chiari e la banda e' scura: il flag
+# `convoy_stripe` non va usato.
+WHITE_STRIPE_PAGES = {12, 17}
 SEG_DIAG = (95.0, 140.0)
 SEG_MIN_SIDE = 15.0
 SEG_MAX_SIDE = 130.0
@@ -112,11 +117,16 @@ def segments_on_page(doc, page_no, base_xref):
             if r.width * scale * r.height * scale > PANEL_MIN_AREA:
                 masks.append(r)
 
-    # La striscia bianca in mezzo a un segmento dice che quella Traiettoria
-    # porta un CONVOGLIO. Si vede a occhio sull'illustrazione, e distingue due
-    # tipi di forza senza bisogno di leggere il testo: in N1 la Traiettoria
-    # lunga in diagonale e' liscia (navi da guerra) e quelle in basso sono
-    # striate (Convogli).
+    # La banda in mezzo a un segmento distingue due Task Force diverse sulla
+    # stessa illustrazione. Qui si cerca una banda BIANCA, che e' quella dei
+    # segmenti marroni di BL3 e N1.
+    #
+    # ATTENZIONE, verificato e sbagliato una volta: NON vale su N2 e N3, dove i
+    # segmenti sono bianchi e la banda e' BLU. Li' questa ricerca trova le due
+    # meta' chiare del segmento invece della banda, e il flag esce invertito -
+    # il segmento a Namsos (6,0) di N2 ha la banda e risultava liscio. Il flag
+    # e' quindi attendibile solo dove `stripe_reliable` e' vero, e altrove va
+    # letto a occhio sull'illustrazione.
     stripes = []
     for drawing in page.get_drawings():
         fill = drawing.get("fill")
@@ -207,17 +217,22 @@ def main():
         for px, py, covered, striped in segs:
             q, r, dist = hex_of(lattice, i0j0, px, py)
             entry = {"q": q, "r": r, "map_px": [round(px, 1), round(py, 1)],
-                     "inside_callout": covered, "convoy_stripe": striped}
+                     "inside_callout": covered,
+                     "band": striped if page_no in WHITE_STRIPE_PAGES else None,
+                     "band_reliable": page_no in WHITE_STRIPE_PAGES}
             if (q, r) in live:
                 placed.append(entry)
             else:
                 entry["problem"] = "l'esagono non e' nel grafo"
                 outside.append(entry)
         in_callout = sum(1 for e in placed + outside if e["inside_callout"])
-        striped_n = sum(1 for e in placed + outside if e["convoy_stripe"])
-        print("%-34s p%-3d  %2d candidati (%d dentro un riquadro, %d con la "
-              "striscia del Convoglio), %2d in esagoni del grafo, %2d fuori"
-              % (scenario, page_no, len(segs), in_callout, striped_n,
+        reliable = page_no in WHITE_STRIPE_PAGES
+        striped_n = sum(1 for e in placed + outside if e["band"])
+        print("%-34s p%-3d  %2d candidati (%d dentro un riquadro%s), "
+              "%2d in esagoni del grafo, %2d fuori"
+              % (scenario, page_no, len(segs), in_callout,
+                 ", %d con la banda" % striped_n if reliable
+                 else ", banda non rilevabile: segmenti chiari",
                  len(placed), len(outside)))
         for e in outside:
             print("      FUORI: segmento a (%s) -> (%d,%d)"
