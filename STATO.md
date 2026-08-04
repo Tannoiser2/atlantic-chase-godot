@@ -509,7 +509,15 @@ Tutti i test passano: **3016 verifiche, 18 suite, headless.**
   dalla banda. Tentativo annullato, flag lasciato dichiarato inaffidabile, e
   l'assegnazione letta a occhio sull'illustrazione - che e' il metodo che il
   progetto usa per le tabelle.
-  **Restano due schieramenti**: N3 e N5.
+  **Anche N3 si gioca**, gemello di N2 sull'altro inserto: due Traiettorie che
+  salgono dai porti tedeschi condividendo la coda, una a Bergen e una a
+  Kristiansand, con Konigsberg/Koln/Convoglio nello slot liscio e
+  Karlsruhe/Squadrone DD in quello con la banda blu. Il segnalino Informazioni
+  che la pagina prescrive "in Kristiansand" e' nel campo info del segmento
+  (6,-1). Anche qui la banda e' letta a occhio, perche' il rilevatore su questa
+  pagina esce invertito.
+  **Quattro dei cinque scenari inserto si giocano. Resta N5**, che non disegna
+  segmenti: il suo schieramento va ricavato interamente dal testo.
 - **I Comandanti dicono la loro condizione stampata.** Gli undici testi sono
   trascritti da RB p.10 letta a 300 dpi: la scheda TF mostra la regola vera e
   non un riassunto, ed e' quella che decide se il beneficio si puo' usare

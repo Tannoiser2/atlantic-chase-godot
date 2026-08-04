@@ -268,9 +268,18 @@ Uno scenario puo' essere marcato completo solo quando:
   banda. Ho annullato il tentativo e lasciato il flag dichiarato inaffidabile:
   l'assegnazione di N2 e' letta a occhio sull'illustrazione, che e' il metodo
   che questo progetto usa per le tabelle e che qui funziona.
-  **Restano due schieramenti**: N3 (dodici segmenti, stessa banda blu da
-  leggere a occhio) e N5, che non ne disegna nessuno - la sua mappa e' solo
-  sfondo dei riquadri di regola, quindi va ricavato dal testo.
+  **N3 e' schierato e si gioca**, gemello di N2 sull'altro inserto. Dodici
+  segmenti in due Traiettorie che salgono dai porti tedeschi e condividono la
+  coda: (5,3) (6,2) (6,1) (6,0) (5,0) (5,-1) (5,-2) fino a Bergen e (5,3) (6,2)
+  (6,1) (6,0) (6,-1) fino a Kristiansand. Il Pannello Task Force Tedesco di
+  p.25 mette Konigsberg, Koln e il Convoglio nello slot LISCIO e Karlsruhe con
+  lo Squadrone DD in quello con la BANDA BLU - e l'obiettivo stampato manda il
+  Convoglio a Bergen e lo Squadrone DD a Kristiansand. Il segnalino Informazioni
+  prescritto "in Kristiansand" e' nel campo `info` del segmento (6,-1), non in
+  una nota. Anche qui la banda e' stata letta a occhio: il rilevatore automatico
+  su questa pagina esce invertito.
+  **Resta un solo schieramento, N5**, e non ne disegna nessuno: la sua mappa e'
+  solo sfondo dei riquadri di regola, quindi va ricavato interamente dal testo.
   mappa e' solo sfondo dei riquadri di regola, quindi va ricavato dal testo).
   Tre test hanno cambiato premessa insieme al fatto, e vale la pena saperlo:
   controllavano che gli scenari inserto NON avessero schieramento, e adesso

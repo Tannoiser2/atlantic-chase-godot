@@ -41,5 +41,20 @@
  ],
  "rules": {
   "convoy_dispersal": "vedi raw_victory_text e scenario_text"
+ },
+ "end_conditions": {
+  "_source": "AC_Solo_scenarios_2022 p.25, riquadro 'The End', letto sulla pagina renderizzata",
+  "_text": "The scenario ends when the Germans have no Task Forces in play.",
+  "any": [
+   {
+    "reason": "Il tedesco non ha piu' Task Force in gioco.",
+    "all": [
+     {
+      "kind": "no_task_forces",
+      "side": "KRIEGSMARINE"
+     }
+    ]
+   }
+  ]
  }
 }

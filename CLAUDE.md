@@ -56,8 +56,8 @@ godot --headless --path . --script res://tools/replay_solo.gd
 `replay_solo.gd` gioca tutti e quindici gli scenari solitari dall'inizio alla
 fine con `SoloRunner` e distingue tre esiti: `OK` (fine stampata), `STALLO`
 (lacuna dichiarata del fascicolo) e `FALLITO` (il ciclo non converge: un
-difetto). Al passaggio: **tredici `OK`** - i dieci sulla Mappa Operazionale piu'
-BL3, N1 e N2 sui loro inserti - e due `SALTATO`, gli scenari inserto a cui manca lo
+difetto). Al passaggio: **quattordici `OK`** - i dieci sulla Mappa Operazionale piu'
+BL3, N1, N2 e N3 sui loro inserti - e uno solo `SALTATO`, gli scenari inserto a cui manca lo
 schieramento trascritto.
 
 `audit_solo.gd` verde non significa completo: al passaggio stampa 93 caselle
@@ -103,7 +103,7 @@ Attenzione a due convenzioni del dato inserto, che il caricatore traduce e i
 test sorvegliano: `theta_deg` e' l'angolo dei VERTICI (la mappa grande usa la
 direzione di BASE, 30 gradi piu' avanti) e le `(q,r)` sono ribasate
 sull'angolo della cornice, non sulla cella (0,0) del fit.
-**BL3, N1 e N2 si giocano sui loro inserti.** Agli altri due - N3 e N5 - manca lo **schieramento iniziale**: quale segmento di
+**Quattro dei cinque scenari inserto si giocano.** Al solo N5 manca lo **schieramento iniziale**: quale segmento di
 Traiettoria sia di quale Task Force e in che ordine la formi. Le posizioni ci
 sono gia' (`core/data/inset_setups.json`), l'appartenenza no, e va letta dalle
 pagine una per una.

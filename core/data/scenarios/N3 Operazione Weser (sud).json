@@ -6,7 +6,7 @@
  "round": 1,
  "_map": {
   "name": "Mappa Inserto del Mare del Nord",
-  "status": "reticolo, esagoni, porti, caselle fuori mappa, frecce 'non adiacente' e basi aeree sono misurati e verificati contro le illustrazioni del fascicolo, e il motore carica la mappa; manca lo SCHIERAMENTO INIZIALE, cioe' quale segmento di Traiettoria sia di quale Task Force e in che ordine la formi, che va letto dalle pagine dello scenario",
+  "status": "mappa misurata e verificata, motore e interfaccia la caricano; lo schieramento e' trascritto dall'illustrazione di p.25",
   "source": "AC_Solo_scenarios_2022 p.25 'Map: North Sea Inset Map'",
   "inset": "map_north_sea"
  },
@@ -90,7 +90,123 @@
    }
   }
  ],
- "task_forces": [],
+ "task_forces": [
+  {
+   "id": 1,
+   "side": 0,
+   "color": "GE",
+   "slot": 0,
+   "name": "Konigsberg/Koln + Convoglio",
+   "ships": [
+    "Konigsberg",
+    "Koln",
+    "Convoy x2"
+   ],
+   "leader": "Raeder",
+   "speed": 2,
+   "trajectory": {
+    "segments": [
+     {
+      "q": 5,
+      "r": 3,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 6,
+      "r": 2,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 6,
+      "r": 1,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 6,
+      "r": 0,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 5,
+      "r": 0,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 5,
+      "r": -1,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 5,
+      "r": -2,
+      "info": false,
+      "contact": false
+     }
+    ],
+    "station_q": 0,
+    "station_r": 0,
+    "station_contact": false,
+    "station_port": ""
+   }
+  },
+  {
+   "id": 2,
+   "side": 0,
+   "color": "GE",
+   "slot": 1,
+   "name": "Karlsruhe + Squadrone DD",
+   "ships": [
+    "Karlsruhe",
+    "DD Squadron"
+   ],
+   "leader": "",
+   "speed": 2,
+   "trajectory": {
+    "segments": [
+     {
+      "q": 5,
+      "r": 3,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 6,
+      "r": 2,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 6,
+      "r": 1,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 6,
+      "r": 0,
+      "info": false,
+      "contact": false
+     },
+     {
+      "q": 6,
+      "r": -1,
+      "info": true,
+      "contact": false
+     }
+    ],
+    "station_q": 0,
+    "station_r": 0,
+    "station_contact": false,
+    "station_port": ""
+   }
+  }
+ ],
  "reinforcements": {},
  "info_triggers": [],
  "briefing": {
@@ -102,7 +218,11 @@
  "setup_notes": [
   "Mappa Inserto del Mare del Nord: questo scenario NON si gioca sulla Mappa Operazionale. Le Task Force trascritte restano in 'unplaced_forces' finche' il reticolo dell'inserto non e' calibrato; gli esagoni che avevano prima erano porti della mappa grande usati come sostituti, cioe' posizioni inventate. Fonte: AC_Solo_scenarios_2022 p.25 'Map: North Sea Inset Map'.",
   "Meteo Sfavorevole; iniziativa tedesca con conta iniziativa a 2; mappa aggiuntiva Mare del Nord. Nessuna TF britannica iniziale. Convoglio tedesco per Bergen e Squadrone DD per Kristiansand; segmento tedesco a Kristiansand con Informazioni; Raeder presente.",
-  "Kristiansand non e un porto calibrato sulla mappa principale: la TF DD parte in Kiel e la rotta va disegnata a mano sull'inserto."
+  "Kristiansand non e un porto calibrato sulla mappa principale: la TF DD parte in Kiel e la rotta va disegnata a mano sull'inserto.",
+  "Schieramento trascritto dall'illustrazione di p.25. Dodici segmenti in due Traiettorie che salgono dai porti tedeschi e condividono la coda: (5,3) (6,2) (6,1) (6,0) (5,0) (5,-1) (5,-2) fino a Bergen, e (5,3) (6,2) (6,1) (6,0) (6,-1) fino a Kristiansand. L'assegnazione viene dal Pannello Task Force Tedesco della stessa pagina: lo slot LISCIO tiene Konigsberg, Koln e il Convoglio, quello con la BANDA BLU tiene Karlsruhe e lo Squadrone DD. Combacia con l'obiettivo stampato, che manda il Convoglio a Bergen e lo Squadrone DD a Kristiansand.",
+  "Il segnalino Informazioni e' attaccato al segmento in Kristiansand, cioe' (6,-1), come prescrive la pagina: nel dato e' il campo info del segmento, non una nota.",
+  "ATTENZIONE, stessa trappola di N2: su questa pagina i segmenti sono BIANCHI e la banda e' BLU, e il rilevatore automatico di tools/validate_inset_setups.py cerca bande bianche, quindi da' un risultato INVERTITO. Questa assegnazione e' letta a occhio sull'illustrazione.",
+  "LACUNA DICHIARATA: il marker Sommergibile tedesco e' fra le pedine dello scenario ma le forze Furtive permanenti non sono ancora modellate, quindi non viene schierato. Restano fuori anche la Reazione Norvegese (p.27) e i Completamenti in Norvegia. Il Convoglio tedesco e' reso con Convoy x2: la sua regola dei 4 Colpi resta nelle note."
  ],
  "setup_status": "Manuale da AC_Solo_scenarios_2022: gli scenari solitari non esistono nel modulo VASSAL. Le rotte stampate come lunghezze non sono tradotte in esagoni inventati."
 }
