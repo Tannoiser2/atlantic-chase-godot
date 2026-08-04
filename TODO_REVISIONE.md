@@ -79,10 +79,14 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
   sullo stato - Mine in N2, TF britannica in N3, dentro-o-adiacente in N5 - i
   modificatori calcolabili si applicano, i Colpi vanno al Convoglio o allo
   Squadrone DD, il risultato `!` annulla il Completamento e passa l'Iniziativa.
+  **Il ciclo e' collegato**: `SoloRunner` offre il Completamento in Norvegia
+  come PRIMA azione del giocatore negli scenari 'N', posa le Mine se l'esagono
+  e' un bersaglio e tira la Reazione. N1 posa davvero le sue Mine e la Tabella
+  delle Azioni tedesche legge la riga giusta sul loro numero.
   **Restano dichiarati** i due modificatori di N5 che dipendono da Completamenti
   precedenti (il motore non tiene quello storico), quello legato alle Basi Aeree
-  tedesche, e i risultati `b`/`g` che spostano marker Base Aerea. Manca il
-  collegamento al ciclo: nessuno chiama ancora `roll_reaction`.
+  tedesche, e i risultati `b`/`g` che spostano marker Base Aerea. Manca l'azione
+  nella GUI: la offre solo `SoloRunner`.
 - **L'Attacco Furtivo della GUI non usa una forza Furtiva.** Nel registro di
   una partita BL2 si legge "Attacco Furtivo -> Totale Traiettoria 2": per RB
   p.41 una forza Furtiva ha Totale Traiettoria ZERO, quindi quell'azione la sta

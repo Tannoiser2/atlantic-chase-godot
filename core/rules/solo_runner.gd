@@ -444,6 +444,12 @@ func _player_turn() -> void:
 	# soltanto quando non resta niente da fare. Un giocatore che Completa alla
 	# prima occasione toglie dalla mappa proprio le navi che devono agire, e il
 	# replay non arriverebbe mai a meta' partita.
+	# Prima di tutto lo sbarco in Norvegia, quando lo scenario lo prevede: e'
+	# l'OBIETTIVO di N1 (posare le Mine) e di N2/N3 (consegnare truppe), non un
+	# ripiego. Un giocatore che Completa in porto per primo si porta via le
+	# navi che devono ancora sbarcare.
+	if _player_norway_completion():
+		return
 	if _player_completion(true):
 		return
 	# Alcuni scenari chiedono piu' Convogli Completati di quanti ne siano in
@@ -605,6 +611,86 @@ func _player_reinforce() -> bool:
 ## `convoys_only` distingue le due occasioni in cui il giocatore simulato
 ## Completa: la prima e' il mestiere di un Convoglio, la seconda e' il rientro
 ## quando non c'e' piu' niente da fare.
+## Completamento in Norvegia (fascicolo p.16), con quello che ne consegue: la
+## posa delle Mine se l'esagono e' un bersaglio dichiarato (N1 p.17) e il tiro
+## della Reazione Norvegese, che tocca al giocatore e non all'avversario
+## immaginario.
+##
+## La differenza che conta rispetto a un Completamento in porto: la Task Force
+## NON esce di scena, fa Scorrere del Tempo e resta in gioco. E' per questo che
+## una sola TF puo' posare tre Mine in tre esagoni diversi.
+func _player_norway_completion() -> bool:
+	# Vale solo per gli scenari 'N'. Il fascicolo apre il capitolo con "'N'
+	# SCENARIOS: NORWAY ... Each of these scenarios allows for Completion
+	# actions in Norway" (p.16): e' una regola di QUEL gruppo, non del gioco.
+	# Senza questo vincolo A1 e N5 - che hanno Narvik e Trondheim sulla loro
+	# mappa come porti qualsiasi - sbarcavano in Norvegia a ogni turno e il
+	# replay non finiva piu': la Task Force non viene rimossa, quindi si poteva
+	# ripetere all'infinito. Se ne sono accorti i due replay, non io.
+	if not scenario.id.begins_with("N"):
+		return false
+	var targets: Array = scenario.mines_targets()
+	for tf in state.forces_of(player_side):
+		if not _player_may_declare(tf, "COMPLETION"):
+			continue
+		if not Norway.carries_landing_force(tf):
+			continue
+		var h := _anchor(tf)
+		if not Norway.can_complete(graph, tf, h):
+			continue
+		# Sbarcare due volte nello stesso esagono con la stessa Task Force non
+		# aggiunge niente, e siccome la TF non viene rimossa si ripeterebbe per
+		# sempre. Il fascicolo non lo vieta perche' non ne ha bisogno: un
+		# giocatore non lo farebbe. La policy harness si', quindi glielo si dice.
+		var done_here: Array = tf.solo_flags.get("norway_done", [])
+		if done_here.has(str(h)):
+			continue
+		# E se in questo esagono le Mine ci sono gia', non c'e' niente da posare.
+		if not targets.is_empty() and not Stealth.can_lay_mines(state, targets, tf, h):
+			continue
+		_line("GIOCATORE (policy harness): Completamento in Norvegia di %s in %s."
+			% [tf.display_name(), str(h)])
+		if _inactive_steals("Completamento in Norvegia"):
+			_line("GIOCATORE   Impedito dal cambio d'Iniziativa.")
+			return true
+		var done := Norway.complete(state, graph, tf, h, false)
+		for line_v: Variant in done.get("log", []):
+			_line("GIOCATORE   " + String(line_v))
+		if not bool(done.get("ok", false)):
+			return true
+		completions += 1
+		var seen: Array = tf.solo_flags.get("norway_done", [])
+		seen.append(str(h))
+		tf.solo_flags["norway_done"] = seen
+		if not targets.is_empty():
+			var mines := Stealth.lay_mines(state, targets, tf, h)
+			for line_v: Variant in mines.get("log", []):
+				_line("GIOCATORE   " + String(line_v))
+		# "roll a die and check the result on the Norwegian Reaction Table":
+		# tocca al giocatore, mai all'avversario immaginario.
+		if bool(done.get("check_reaction", false)):
+			var reaction := Norway.roll_reaction(state, graph, state.rng,
+				scenario.id, tf, h)
+			if bool(reaction.get("ok", false)):
+				for line_v: Variant in reaction.get("log", []):
+					_line("GIOCATORE   " + String(line_v))
+				var applied := Norway.apply_reaction(state, reaction, tf)
+				for line_v: Variant in applied.get("log", []):
+					_line("GIOCATORE   " + String(line_v))
+				if int(applied.get("initiative_to", -1)) >= 0:
+					state.initiative = int(applied["initiative_to"])
+					_line("GIOCATORE   L'Iniziativa passa a %s."
+						% Initiative.side_name(state.initiative))
+			else:
+				_line("GIOCATORE   Reazione Norvegese non tirata: %s"
+					% String(reaction.get("reason", "")))
+		# "do not remove the TF or its ships. Instead, perform Time Lapse."
+		if bool(done.get("time_lapse", false)):
+			_player_time_lapse(tf)
+		return true
+	return false
+
+
 func _player_completion(convoys_only: bool) -> bool:
 	for tf in state.forces_of(player_side):
 		if not _player_may_declare(tf, "COMPLETION"):
