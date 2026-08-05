@@ -275,8 +275,10 @@ func test_reaction_roll() -> void:
 	var n5 := Norway.roll_reaction(st3, inset, st3.rng, "N5 Meglio Tardi che Mai",
 		uk_conv, narvik)
 	eq(String(n5["result"]), "two_hits", "nell'esagono, 2-3 -> due Colpi")
-	true_((n5["undeclared"] as Array).size() >= 2,
-		"e i modificatori che dipendono dallo storico sono dichiarati, non taciuti")
+	# I modificatori che dipendono dallo storico adesso si CALCOLANO:
+	# `landings_of` esisteva proprio per loro e non era collegato a nessuno.
+	eq((n5["undeclared"] as Array).size(), 0,
+		"N5 non ha piu' modificatori dichiarati: si calcolano tutti")
 
 	# Uno scenario senza tabella lo dice invece di inventarne una.
 	var none := Norway.roll_reaction(st, inset, st.rng, "BL1 Raiders of the North Atlantic",

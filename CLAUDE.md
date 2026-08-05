@@ -67,7 +67,7 @@ godot --headless --path . --script res://tools/replay_solo.gd
 `replay_solo.gd` gioca tutti e quindici gli scenari solitari dall'inizio alla
 fine con `SoloRunner` e distingue tre esiti: `OK` (fine stampata), `STALLO`
 (lacuna dichiarata del fascicolo) e `FALLITO` (il ciclo non converge: un
-difetto). Al passaggio: **quindici `OK`: tutti** - i dieci sulla Mappa Operazionale piu'
+difetto). Al passaggio: **quattordici `OK` e uno `STALLO` dichiarato (N5)** - i dieci sulla Mappa Operazionale piu'
 i dieci sulla Mappa Operazionale e i cinque sugli inserti - e nessun `SALTATO`, gli scenari inserto a cui manca lo
 schieramento trascritto.
 

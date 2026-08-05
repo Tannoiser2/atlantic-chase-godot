@@ -83,6 +83,11 @@ var stopped_reason: String = ""
 ## per un difetto del ciclo. Serve a distinguere "il regolamento non prevede
 ## questa posizione" da "il replay non converge".
 var declared_gap: bool = false
+
+## Turni di fila in cui lo stato di gioco non e' cambiato di niente.
+var _no_progress_turns: int = 0
+const NO_PROGRESS_LIMIT := 8
+var _last_progress_signature: String = ""
 var load_error: String = ""
 
 ## Se il giocatore simulato tenta di Sottrarre l'Iniziativa quando il bot
@@ -170,6 +175,12 @@ func run(max_turns: int = MAX_TURNS) -> Dictionary:
 			_player_turn()
 		if SoloAI.enforce_scenario_end(state):
 			_line("FINE SCENARIO: %s" % state.solo_end_reason)
+		var signature := _progress_signature()
+		if signature == _last_progress_signature:
+			_no_progress_turns += 1
+		else:
+			_no_progress_turns = 0
+			_last_progress_signature = signature
 		var stall := _declared_stall()
 		if stall != "" and not state.solo_ended:
 			stopped_reason = stall
@@ -226,7 +237,36 @@ func run(max_turns: int = MAX_TURNS) -> Dictionary:
 ## sul tabellone per sempre. Il fascicolo non prevede questo caso: il replay lo
 ## dichiara invece di girare a vuoto, e la riga resta nel registro come lacuna
 ## nota, non come un difetto del motore.
+## Un'impronta di quello che nella partita puo' cambiare: chi ha l'Iniziativa,
+## dove sono le Task Force e quanto sono lunghe. Se non cambia per otto turni,
+## non sta succedendo niente.
+func _progress_signature() -> String:
+	var parts: Array[String] = ["i%d" % state.initiative]
+	for tf in state.task_forces:
+		if tf.completed:
+			continue
+		var t := tf.trajectory
+		parts.append("%d:%s:%d" % [tf.id,
+			str(t.station_hex if t.is_station() else t.end_hex(0)), tf.length()])
+	return ",".join(parts)
+
+
 func _declared_stall() -> String:
+	# Lo stallo della PROCEDURA STAMPATA: la Traiettoria si allunga di un
+	# segmento verso il bersaglio e lo Scorrere del Tempo se lo riprende, perche'
+	# la stessa riga dice di togliere i segmenti piu' LONTANI dal porto da cui
+	# la TF e' partita - cioe' proprio quello appena messo. Col Limite di
+	# Informazioni che tiene la rimozione a uno, i due passi si annullano e la
+	# partita gira a vuoto.
+	#
+	# Non c'e' niente da correggere nel motore: fa quello che c'e' scritto. Si
+	# dichiara, perche' e' il fascicolo a non dire come uscirne.
+	if _no_progress_turns >= NO_PROGRESS_LIMIT:
+		return ("la procedura si annulla da sola: la Traiettoria si allunga "
+			+ "verso il bersaglio e lo Scorrere del Tempo toglie lo stesso "
+			+ "segmento, perche' la riga stampata prescrive di rimuovere i piu' "
+			+ "LONTANI dal porto di partenza. Ripetuto %d turni di fila senza "
+			+ "che nulla cambi.") % _no_progress_turns
 	if not state.forces_of(player_side).is_empty():
 		return ""
 	if _has_available_reinforcements():

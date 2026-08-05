@@ -433,8 +433,35 @@ static func automatic_modifiers(table: SoloTable, state: GameState,
 				explanations.append("%s x%d (%+d)" % [label, count,
 					int(modifier["value"]) * count])
 			continue
-		if lower.contains("base aerea") or lower.contains("mine") \
-				or lower.contains("puo' essere intercettata"):
+		# Basi Aeree e Mine: la pedina c'e', quindi il conto si fa. Erano
+		# dichiarate quando non esisteva ne' l'una ne' l'altra, e sono rimaste
+		# dichiarate dopo. "in Norvegia" restringe: la pagina distingue fra
+		# "sulla mappa" (N5) e "in Norvegia" (N6), e non e' la stessa cosa.
+		if lower.contains("base aerea"):
+			for m in AirBase.of_side(state, side):
+				if lower.contains("norvegia") \
+						and not Norway.is_norway_hex(state.graph, AirBase.hex_of(m)):
+					continue
+				count += 1
+			for i in count:
+				active.append(label)
+			if count > 0:
+				explanations.append("%s x%d (%+d)" % [label, count,
+					int(modifier["value"]) * count])
+			continue
+		if lower.contains("mine"):
+			# N2 p.23, letta a 300 dpi: "each Mines stealth force in play",
+			# senza nazionalita'. Si contano tutte.
+			for f in state.stealth_forces:
+				if int(f.get("kind", -1)) == Stealth.Kind.MINES:
+					count += 1
+			for i in count:
+				active.append(label)
+			if count > 0:
+				explanations.append("%s x%d (%+d)" % [label, count,
+					int(modifier["value"]) * count])
+			continue
+		if lower.contains("puo' essere intercettata"):
 			unresolved.append(label)
 			continue
 		for i in count:

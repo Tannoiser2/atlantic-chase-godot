@@ -1068,15 +1068,31 @@ sopra scenario per scenario.
   Aggressive Reaction" per due risultati: quel controllo li avrebbe contati al
   contrario, e sono proprio i due che non devono contare. Adesso ogni tabella
   porta la sua mappa `aggressive`, risultato per risultato, come la pagina.
-- [ ] **Restano sei modificatori dichiarati non applicati, e cinque sono ormai
-  calcolabili.** Tabelle Azione: N2 `actions_late` "ogni forza furtiva Mine in
-  gioco" (la pagina dice "each Mines stealth force in play", senza
-  nazionalita': letta a 300 dpi), N5 `actions` "ogni base aerea tedesca sulla
-  mappa", N6 `actions` "ogni Base Aerea tedesca in Norvegia". Tabelle di
-  Reazione: N5 dichiara tre modificatori che `Norway.landings_of` e `AirBase`
-  sanno gia' calcolare - due Completamenti britannici precedenti e la Base
-  Aerea tedesca in Norvegia. Il sesto, A2 "nessuna TF tedesca puo' essere
-  intercettata", chiede la legalita' dell'Intercettazione ed e' vero lavoro.
+- [x] **Cinque modificatori su sei adesso si calcolano.** Tabelle Azione: le
+  Mine di N2 ("each Mines stealth force in play", p.23 letta a 300 dpi: senza
+  nazionalita', quindi si contano tutte) e le Basi Aeree di N5 e N6 - dove
+  "sulla mappa" e "in Norvegia" NON sono la stessa cosa e la pagina le
+  distingue. Tabelle di Reazione: i tre di N5 che dipendono dallo storico, che
+  `Norway.landings_of` sapeva gia' calcolare e non erano collegati a nessuno.
+  **N4 e N6 non avevano nemmeno un ramo** nei modificatori di Reazione: i loro
+  non erano applicati ne' dichiarati. Adesso ci sono.
+  Resta il sesto, A2 "nessuna TF tedesca puo' essere intercettata": chiede la
+  legalita' dell'Intercettazione, ed e' vero lavoro.
+- [ ] **DA VERIFICARE SULLA PAGINA: "ogni base aerea tedesca sulla mappa" (N5)
+  conta anche quelle STAMPATE?** Il codice conta i marcatori PIAZZATI
+  (`AirBase.of_side`), non quelli stampati sulla mappa (`AirBase.printed_of`).
+  Se la riga stampata intende tutte e due, il conto e' basso. Non l'ho
+  verificato, e cambia il numero.
+- [ ] **N5 al seme predefinito adesso dichiara uno STALLO** invece di arrivare
+  alla fine stampata: i replay sono quattordici `OK` e uno `STALLO`. Lo stallo
+  e' vero e sta nella regola stampata - la Traiettoria si allunga di un
+  segmento verso il bersaglio e lo Scorrere del Tempo se lo riprende, perche'
+  la stessa riga prescrive di togliere i piu' LONTANI dal porto di partenza,
+  che e' proprio quello appena messo; col Limite di Informazioni che tiene la
+  rimozione a uno, i due passi si annullano. Il motore fa quello che c'e'
+  scritto, e adesso lo dichiara dopo otto turni fermi invece di consumarne
+  centoventi. **Resta da capire se il fascicolo dica come uscirne**: e' la
+  prima cosa da guardare, insieme alla domanda qui sopra.
 - [ ] **Uno scenario che usa DUE mappe insieme non e' supportato.** L'utente lo
   ha chiesto ("se lo scenario ne usa due allora si devono vedere entrambe") e
   oggi non serve a nessuno: dei ventidue scenari, cinque usano un inserto e

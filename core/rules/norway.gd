@@ -290,16 +290,72 @@ static func _reaction_modifiers(state: GameState, graph: MapGraph,
 		if _has_type_in(state, uk, h, "BB") or _has_type_in(state, uk, h, "BC"):
 			total += 1
 			applied.append("+1 una BB o BC britannica e' nell'esagono del Convoglio")
-		undeclared.append("+1 se c'e' stato un precedente Completamento "
-			+ "britannico nell'esagono o in uno adiacente")
-		undeclared.append("+1 se c'e' stato un precedente Completamento "
-			+ "britannico a Trondheim")
-		undeclared.append("-1 (o -2) se un marker Base Aerea tedesca e' in "
-			+ "Norvegia: le Basi Aeree non sono ancora pedine giocabili")
+		# "+1 if previous successful British Completion action in or adjacent
+		# to the Convoy's hex" e "+1 ... in Trondheim". Lo storico degli
+		# sbarchi (`landings_of`) e' stato scritto proprio per questi due, e
+		# non era collegato a nessuno dei due.
+		if landed_in_or_next_to(state, uk, h):
+			total += 1
+			applied.append("+1 un precedente Completamento britannico e' "
+				+ "nell'esagono o in uno adiacente")
+		var trondheim := graph.place_hex("Trondheim")
+		for landed in landings_of(state, uk):
+			if landed == trondheim:
+				total += 1
+				applied.append("+1 c'e' gia' stato un Completamento britannico "
+					+ "a Trondheim")
+				break
+		var air := _airbase_modifier(state, graph, ge, h, "tedesca")
+		total += int(air[0])
+		if String(air[1]) != "":
+			applied.append(String(air[1]))
 		if state.convoys_completed_for(ge) >= 2:
 			total -= 1
 			applied.append("-1 due o piu' Convogli tedeschi hanno Completato")
+	elif scenario_id.begins_with("N4"):
+		# p.30. Nessun ramo esisteva: i modificatori di N4 non erano applicati
+		# ne' dichiarati, perche' la sua tabella non era raggiungibile.
+		if not landings_of(state, ge).is_empty():
+			total += 1
+			applied.append("+1 un Convoglio o un DD tedesco ha gia' Completato "
+				+ "in Norvegia")
+		if _has_type_in(state, ge, h, "BC") or _has_type_in(state, ge, h, "CA") \
+				or _has_type_in(state, ge, h, "CL"):
+			total += 1
+			applied.append("+1 una BC, CA o CL tedesca e' nell'esagono")
+		var air4 := _airbase_modifier(state, graph, uk, h, "britannica")
+		total += int(air4[0])
+		if String(air4[1]) != "":
+			applied.append(String(air4[1]))
+		for other in state.task_forces:
+			if other.side == uk and not other.completed \
+					and other.trajectory.is_station() \
+					and other.trajectory.station_hex == h:
+				total -= 1
+				applied.append("-1 una Stazione di TF britannica e' nell'esagono")
+				break
+	elif scenario_id.begins_with("N6"):
+		# p.39, stesso motivo: la tabella non c'era, il ramo nemmeno.
+		if _has_type_in(state, uk, h, "BB") or _has_type_in(state, uk, h, "BC"):
+			total += 1
+			applied.append("+1 una BB o BC britannica e' nell'esagono del Convoglio")
+		var air6 := _airbase_modifier(state, graph, ge, h, "tedesca")
+		total += int(air6[0])
+		if String(air6[1]) != "":
+			applied.append(String(air6[1]))
 	return {"total": total, "applied": applied, "undeclared": undeclared}
+
+
+## Il modificatore della Base Aerea, che tre tabelle scrivono nello stesso modo:
+## -1 se un marcatore di quella parte e' in Norvegia, -2 INVECE se sta proprio
+## nell'esagono del Completamento. Sono alternativi, non cumulativi.
+static func _airbase_modifier(state: GameState, graph: MapGraph, side: int,
+		h: Vector2i, who: String) -> Array:
+	if AirBase.at(state, h, side):
+		return [-2, "-2 un marcatore Base Aerea %s e' nell'esagono del Completamento" % who]
+	if not _nearest_airbase_in_norway(state, graph, side, h).is_empty():
+		return [-1, "-1 un marcatore Base Aerea %s e' in Norvegia" % who]
+	return [0, ""]
 
 
 static func _has_type_in(state: GameState, side: int, h: Vector2i,
