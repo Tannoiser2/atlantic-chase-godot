@@ -794,8 +794,23 @@ sopra scenario per scenario.
   La prova di fumo `tools/smoke_ms12.gd` apre il gioco vero e pretende tre
   Parti di due Round: **verificata rompendola di proposito**, togliendo il
   passaggio alla Parte successiva.
-- [ ] Audit visivo di attitudini, rotazione navi, Acquiring, Closing, Fog,
-  Confusion, siluri, inseguimento e Disingaggio in tutti i Round.
+- [x] **Audit visivo della Battaglia avanzata**: `tools/audit_battle_visual.gd`
+  percorre una Battaglia intera, fotografa ogni fase di ogni Round e stampa
+  accanto a ogni scatto lo stato che il motore aveva in quel momento - se
+  immagine e stato divergono, si vede subito quale dei due sbaglia. Guardando i
+  31 scatti sono usciti **cinque difetti veri, tutti corretti**: il quarto
+  pulsante finiva fuori dallo schermo (regressione dei comandi avanzati appena
+  aggiunti), le etichette del raggio si sovrapponevano sulle linee di fuoco che
+  si incrociano, il badge dei Colpi copriva il Valore dei Cannoni, lo sfondo
+  della Battaglia lasciava trasparire la mappa nonostante il suo commento
+  dicesse il contrario, e i numeri sui segnalini del Round erano bianchi su una
+  pedina gia' scritta in bianco.
+  Una cosa che SEMBRAVA un difetto e non lo era, verificata nel codice prima di
+  segnalarla: le pedine britanniche appaiono ruotate e quelle tedesche no, ma e'
+  la convenzione dell'attitudine - chi e' in Acquisizione resta dritto.
+  **Resta** l'audit delle situazioni che una partita automatica non produce:
+  Fumo, Inseguimento, Disingaggio e i tre usi della Confusione vanno guardati
+  giocando a mano.
 - [ ] Verificare in solitario che il bot controlli soltanto le proprie navi e
   prenda ogni decisione di battaglia senza input umano.
 

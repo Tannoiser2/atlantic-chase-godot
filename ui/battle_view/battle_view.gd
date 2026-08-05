@@ -132,7 +132,7 @@ var _maneuvered: Array[Ship] = []
 var _log: RichTextLabel
 var _header: RichTextLabel
 var _hint: Label
-var _buttons: HBoxContainer
+var _buttons: HFlowContainer
 
 
 func setup(p_battle: Battle, p_solo_player_side: int = -1) -> void:
@@ -204,13 +204,19 @@ func _build_ui() -> void:
 	# bastava: chi apre la Battaglia per la prima volta non ha modo di sapere
 	# che il gioco aspetta un tasto, e resta fermo a guardare. I pulsanti
 	# dicono cosa si puo' fare ADESSO, e cambiano a ogni fase.
-	_buttons = HBoxContainer.new()
+	# Un `HBoxContainer` non va a capo: quando le voci non ci stanno, l'ultima
+	# esce dallo schermo e non si vede piu'. E' successo appena le Regole
+	# Avanzate hanno aggiunto i loro comandi - Plancia, divisione del fuoco,
+	# Confusione - e con quattro pulsanti il quarto finiva tagliato dal bordo.
+	# Un `HFlowContainer` manda a capo invece di perdere il comando.
+	_buttons = HFlowContainer.new()
 	_buttons.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	_buttons.offset_left = -820
+	_buttons.offset_left = -1000
 	_buttons.offset_right = -16
 	_buttons.offset_top = 88
-	_buttons.alignment = BoxContainer.ALIGNMENT_END
-	_buttons.add_theme_constant_override("separation", 8)
+	_buttons.alignment = FlowContainer.ALIGNMENT_END
+	_buttons.add_theme_constant_override("h_separation", 8)
+	_buttons.add_theme_constant_override("v_separation", 6)
 	add_child(_buttons)
 
 
@@ -827,9 +833,11 @@ static func _panel_style() -> StyleBoxFlat:
 func _draw() -> void:
 	if state == null:
 		return
-	# fondo pieno: la Battaglia occupa tutto lo schermo, la mappa operazionale
-	# non deve trasparire e confondere
-	draw_rect(Rect2(Vector2.ZERO, size), Color(0.04, 0.06, 0.09, 0.97))
+	# Fondo PIENO: la Battaglia occupa tutto lo schermo e la mappa operazionale
+	# non deve trasparire. Il commento diceva gia' cosi', ma l'alfa era 0.97 e
+	# quel 3% bastava: nell'audit visivo si leggeva "Norvegia" - la linguetta
+	# delle mappe inserto - dietro i segnalini del Round.
+	draw_rect(Rect2(Vector2.ZERO, size), Color(0.04, 0.06, 0.09, 1.0))
 	var area := Rect2(Vector2(40, 142), size - Vector2(80, 356))
 	# la fascia Ravvicinata e' piu' stretta delle altre, come sulla mappa
 	var weights := [1.0, 1.0, 0.55, 0.55, 1.0, 1.0]
@@ -921,6 +929,8 @@ func _draw_targeting() -> void:
 	# messe tutte a meta' si accavallano, perche' le linee si incrociano
 	# proprio li' in mezzo.
 	var idx := 0
+	# I rettangoli delle etichette gia' disegnate, per non sovrapporle.
+	var placed: Array[Rect2] = []
 	for f_v: Variant in targeting.keys():
 		var f: Ship = f_v
 		var t: Ship = targeting[f_v]
@@ -938,9 +948,33 @@ func _draw_targeting() -> void:
 		var tip := p2 - dir * 14.0
 		draw_colored_polygon([p2 - dir * 2.0, tip + perp * 7.0,
 			tip - perp * 7.0], col)
-		var t_pos := 0.30 + 0.13 * float(idx % 4)
-		draw_string(font, p1 + (p2 - p1) * t_pos + Vector2(6, -6),
-			_range_label(f, t), HORIZONTAL_ALIGNMENT_LEFT, -1, 14,
+		# Le etichette non si possono separare "sperando": due linee che si
+		# INCROCIANO portano le loro etichette nello stesso punto anche a
+		# distanze diverse dall'origine, e si leggeva "EstremoEstremo 0". Uno
+		# scarto fisso, lungo la linea o di lato, sposta il problema senza
+		# risolverlo - provato con due scarti diversi, e la coppia in mezzo
+		# continuava a sovrapporsi.
+		#
+		# Qui invece si tiene il conto di quelle gia' disegnate e si scende
+		# finche' non si toccano piu': e' deterministico e vale per qualunque
+		# numero di linee.
+		var label := _range_label(f, t)
+		var size := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 14)
+		var at := p1 + (p2 - p1) * (0.34 + 0.10 * float(idx % 3)) + Vector2(6, -6)
+		var guard := 0
+		while guard < 40:
+			var box := Rect2(at - Vector2(4, size.y), size + Vector2(8, 6))
+			var hit := false
+			for r_v: Variant in placed:
+				if (r_v as Rect2).intersects(box):
+					hit = true
+					break
+			if not hit:
+				placed.append(box)
+				break
+			at.y += size.y + 6.0
+			guard += 1
+		draw_string(font, at, label, HORIZONTAL_ALIGNMENT_LEFT, -1, 14,
 			Color(1, 0.9, 0.75, 0.95))
 		idx += 1
 
@@ -1015,10 +1049,19 @@ func _draw_ships_in(band: Rect2, is_active: bool, zone: int) -> void:
 		if s.smoke:
 			_draw_small_counter(SMOKE_COUNTER, r.position + Vector2(4, 4), 30.0)
 		if s.hits > 0:
+			# Il badge dei Colpi stava in alto a destra, cioe' ESATTAMENTE sopra
+			# il Valore dei Cannoni stampato sulla pedina: nell'audit visivo il
+			# "4/2" della Bismarck si leggeva "4". E' il numero che serve per
+			# sparare, quindi il badge scende sulla sagoma della nave, dove non
+			# copre niente che si debba leggere.
 			var hit_tex: Texture2D = HIT_COUNTERS[1] if s.hits >= 2 else HIT_COUNTERS[0]
-			_draw_small_counter(hit_tex, r.position + Vector2(cw - 34, 4), 30.0)
+			# Sotto la pedina, sul fianco destro: le pastiglie degli effetti
+			# pendono a sinistra, quindi i due non si incontrano. Sopra la
+			# sagoma copriva il nome, e in alto a destra copriva i cannoni.
+			var hit_at := r.position + Vector2(cw - 32.0, r.size.y + 3.0)
+			_draw_small_counter(hit_tex, hit_at, 30.0)
 			if s.hits > 2:
-				draw_string(font, r.position + Vector2(cw - 18, 25), str(s.hits),
+				draw_string(font, hit_at + Vector2(15, 21), str(s.hits),
 					HORIZONTAL_ALIGNMENT_CENTER, -1, 14, Color.WHITE)
 
 		if state.advanced:
@@ -1101,15 +1144,27 @@ func _draw_small_counter(texture: Texture2D, pos: Vector2, side: float) -> void:
 	draw_texture_rect(texture, Rect2(pos, Vector2(side, side)), false)
 
 
+## Il numero sui segnalini del Round, leggibile sopra qualunque pedina.
+##
+## Erano scritti in bianco su una pedina che dice gia' "Battle Round" e "Last
+## Round" in bianco diagonale: il numero c'era e non si vedeva - trovato
+## guardando l'audit visivo ingrandito. Un contorno nero lo stacca dal disegno
+## qualunque esso sia.
+func _draw_marker_number(font: Font, pos: Vector2, value: int) -> void:
+	var at := pos + Vector2(16, 31)
+	draw_string_outline(font, at, str(value), HORIZONTAL_ALIGNMENT_CENTER, -1,
+		16, 4, Color(0, 0, 0, 0.95))
+	draw_string(font, at, str(value), HORIZONTAL_ALIGNMENT_CENTER, -1, 16,
+		Color.WHITE)
+
+
 func _draw_battle_markers(font: Font) -> void:
 	var p := Vector2(20, 88)
 	_draw_small_counter(ROUND_COUNTER, p, 44.0)
-	draw_string(font, p + Vector2(16, 31), str(state.round_number),
-		HORIZONTAL_ALIGNMENT_CENTER, -1, 16, Color.WHITE)
+	_draw_marker_number(font, p, state.round_number)
 	p.x += 50
 	_draw_small_counter(LAST_ROUND_COUNTER, p, 44.0)
-	draw_string(font, p + Vector2(16, 31), str(state.last_round),
-		HORIZONTAL_ALIGNMENT_CENTER, -1, 16, Color.WHITE)
+	_draw_marker_number(font, p, state.last_round)
 	p.x += 50
 	if not battle.snafu.is_empty() \
 			and int(battle.snafu.get("result", -1)) == Snafu.Result.FOG:

@@ -42,6 +42,16 @@ godot --path . --script res://tools/smoke_inset_map.gd
 godot --path . --script res://tools/smoke_ms12.gd
 ```
 
+Per guardare la Battaglia invece che misurarla:
+
+```bash
+godot --path . --script res://tools/audit_battle_visual.gd -- reports/battaglia
+```
+
+Percorre una Battaglia avanzata intera, salva un PNG per fase e stampa accanto
+a ogni scatto lo stato del motore. Non giudica: serve a mettere l'immagine e lo
+stato uno accanto all'altro. Cinque difetti visivi sono usciti cosi'.
+
 Baseline corrente: **3489 verifiche, 21 suite** (era 2570 su 17 prima della
 suite `test_replay.gd`). Il totale non puo' scendere senza una rimozione
 intenzionale di test spiegata nel commit.
