@@ -380,6 +380,20 @@ static func apply_reaction(state: GameState, result: Dictionary,
 	var out := {"hits": 0, "cancelled": false, "initiative_to": -1,
 		"declared_gap": false, "log": [] as Array[String]}
 	var key := String(result.get("result", ""))
+	# Reazione Aggressiva. Serve DUE volte, e finora non veniva contata
+	# nessuna delle due: e' il modificatore -1 della Tabella di Azione
+	# Britannica di N2/N3/N4 ("each Aggressive Reaction"), ed e' la condizione
+	# della riga 'Operazione a sud secondo i piani' dell'Esito di N3 ("se non
+	# c'e' stata nessuna Reazione Aggressiva... sali di una riga"). Quali
+	# risultati lo siano lo dice il dato, che li marca uno per uno: qui non si
+	# indovina, si legge.
+	if bool(result.get("aggressive", false)):
+		state.solo_counters["aggressive_reactions"] = int(
+			state.solo_counters.get("aggressive_reactions", 0)) + 1
+		(out["log"] as Array[String]).append(
+			"E' una Reazione Aggressiva (%d in tutto): -1 alla Tabella di "
+			% int(state.solo_counters["aggressive_reactions"])
+			+ "Azione Britannica, e conta nell'Esito.")
 	match key:
 		"none":
 			(out["log"] as Array[String]).append("Nessuna reazione.")

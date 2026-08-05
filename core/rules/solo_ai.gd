@@ -418,8 +418,20 @@ static func automatic_modifiers(table: SoloTable, state: GameState,
 		if state.scenario_name.begins_with("BL2") \
 				and table.id == "actions_late" and count > 0:
 			count = 1
+		# "each Aggressive Reaction". Non e' piu' un buco: quali risultati della
+		# Reazione Norvegese siano Aggressivi lo dice il dato, che li marca uno
+		# per uno, e `Norway.apply_reaction` li conta man mano. Prima il
+		# registro dichiarava "modificatore non applicato" a OGNI tiro della
+		# partita, anche quando la risposta era semplicemente zero.
+		if lower.contains("reazione aggressiva"):
+			count = int(state.solo_counters.get("aggressive_reactions", 0))
+			for i in count:
+				active.append(label)
+			if count > 0:
+				explanations.append("%s x%d (%+d)" % [label, count,
+					int(modifier["value"]) * count])
+			continue
 		if lower.contains("base aerea") or lower.contains("mine") \
-				or lower.contains("reazione aggressiva") \
 				or lower.contains("puo' essere intercettata"):
 			unresolved.append(label)
 			continue
@@ -2048,10 +2060,10 @@ static func _n3_x(state: GameState, graph: MapGraph, engine: ActionEngine,
 	# force is not on the map, nearest to Bergen instead)"
 	var force := _n3_submarine(state, side)
 	var origin := graph.place_hex("Bergen")
-	var origin_note := "Bergen, perche' il Sommergibile non e' sulla mappa"
+	var origin_note := "a Bergen, perche' il Sommergibile non e' sulla mappa"
 	if not force.is_empty():
 		origin = Vector2i(int(force.get("q", 0)), int(force.get("r", 0)))
-		origin_note = "il Sommergibile in %s" % str(origin)
+		origin_note = "al Sommergibile in %s" % str(origin)
 	var target := _nearest_enemy_to_hex(state, side, origin)
 	if target == null:
 		var none := _empty("Solitario AI N3 - X: nessuna TF tedesca da portare in "
@@ -2060,7 +2072,7 @@ static func _n3_x(state: GameState, graph: MapGraph, engine: ActionEngine,
 		none["pass_initiative"] = true
 		return none
 	var decision := _attack_or_route_selected(state, graph, engine, tf, target,
-		"Solitario AI N3 - X: bersaglio piu' vicino a %s" % origin_note)
+		"Solitario AI N3 - X: bersaglio piu' vicino %s" % origin_note)
 	(decision["log"] as Array).append_array(out_log)
 	# "Time Lapse: Remove segments nearest to Scapa Flow." E' la frase al
 	# contrario di tutte le altre, ed e' il motivo per cui la preferenza dello

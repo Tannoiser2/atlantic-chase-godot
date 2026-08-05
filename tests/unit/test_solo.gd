@@ -2626,7 +2626,7 @@ func test_n3_bring_on_battle_measures_from_the_submarine() -> void:
 	var uk := TaskForce.Side.ROYAL_NAVY
 
 	var out := SoloAI.execute_code("X", st, g, engine, scenario.port_control(), uk)
-	true_(_solo_ai_log_contains(out, "il Sommergibile in"),
+	true_(_solo_ai_log_contains(out, "al Sommergibile in"),
 		"col Sommergibile sulla mappa, la distanza si misura da lui")
 	eq(out.get("time_lapse_goal", Vector2i.MAX), g.place_hex("Scapa Flow"),
 		"e lo Scorrere del Tempo guarda Scapa Flow")

@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Baseline: **3648 verifiche su 21 suite**, tutte verdi. Replay solitario:
+Baseline: **3657 verifiche su 21 suite**, tutte verdi. Replay solitario:
 **quindici `OK`** su quindici scenari, nessuno saltato. `audit_solo.gd`:
 **93 caselle azione, zero procedure segnaposto, ZERO buchi dichiarati, zero
 blocchi.**
@@ -176,7 +176,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 3648 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 3657 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
@@ -944,6 +944,18 @@ sopra scenario per scenario.
   ne' contenere il centro della mappa - ed e' stato verificato rimettendo
   l'ancora sbagliata: fallisce con "la maniglia GrabLog e' un pannello
   1608x644, non un bordo".
+- [x] **La Reazione Aggressiva Norvegese si conta.** Trovata leggendo il
+  registro di una partita a N3 mandato dall'utente: a OGNI tiro della Tabella
+  delle Azioni - dodici volte in trentacinque mosse - stampava "Dato non
+  modellato, modificatore non applicato: ogni Reazione Aggressiva Norvegese".
+  Il fascicolo la chiede in due posti: e' il -1 della Tabella di Azione
+  Britannica di N2/N3/N4 ("each Aggressive Reaction") ed e' la condizione della
+  riga 'Operazione a sud secondo i piani' dell'Esito di N3 ("se non c'e' stata
+  nessuna Reazione Aggressiva... sali di una riga"). Quali risultati siano
+  Aggressivi non si indovina: la legenda del dato li marca uno per uno, e
+  `Norway.apply_reaction` li somma in `solo_counters` - quindi nel salvataggio.
+  Il conto e' UNO solo, letto da tutti e due: contarlo due volte in due posti
+  vuol dire vederlo divergere.
 - [ ] **Uno scenario che usa DUE mappe insieme non e' supportato.** L'utente lo
   ha chiesto ("se lo scenario ne usa due allora si devono vedere entrambe") e
   oggi non serve a nessuno: dei ventidue scenari, cinque usano un inserto e

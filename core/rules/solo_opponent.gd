@@ -146,7 +146,9 @@ func action_row_selector_label(state: GameState, player_side: int,
 	var value := action_row_selector(state, player_side, tid)
 	if scenario_id.begins_with("BL1"):
 		return "%d Completamenti di Convoglio britannici e Convogli distrutti" % value
-	return "%d Completamenti riusciti" % value
+	# "1 Completamenti riusciti" si leggeva in ogni partita.
+	return "%d Completamento riuscito" % value if value == 1 \
+		else "%d Completamenti riusciti" % value
 
 
 ## L'azione dell'avversario immaginario, letta sulla tabella giusta.

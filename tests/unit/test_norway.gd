@@ -24,6 +24,7 @@ func run() -> void:
 	test_norwegian_reaction_tables()
 	test_reaction_roll()
 	test_reaction_effects()
+	test_aggressive_reactions_are_counted()
 
 
 func _tf(st: GameState, side: int, h: Vector2i, ships: Array) -> TaskForce:
@@ -312,3 +313,60 @@ func test_reaction_effects() -> void:
 	var gh := Norway.apply_reaction(st, {"result": "g_and_hit"}, conv)
 	eq(int(gh["hits"]), 1, "'g_and_hit' il Colpo lo da' davvero")
 	true_(bool(gh["declared_gap"]), "ma la parte della Base Aerea resta dichiarata")
+
+
+## La Reazione Aggressiva si conta, e la stessa cifra serve in due posti.
+##
+## Il fascicolo la chiede due volte: e' il modificatore -1 della Tabella di
+## Azione Britannica di N2/N3/N4 ("each Aggressive Reaction"), ed e' la
+## condizione di una riga dell'Esito di N3 ("se non c'e' stata nessuna Reazione
+## Aggressiva... sali di una riga"). Finora non veniva contata ne' per l'una ne'
+## per l'altra: il registro dichiarava "modificatore non applicato" a OGNI tiro
+## della partita, anche quando la risposta era zero.
+##
+## Quali risultati siano Aggressivi non si indovina: il dato li marca uno per
+## uno nella legenda, e il conto viene da li'.
+func test_aggressive_reactions_are_counted() -> void:
+	_begin("le Reazioni Aggressive si contano, e contano due volte")
+	var ge := TaskForce.Side.KRIEGSMARINE
+	var narvik := inset.port_hex("Narvik")
+	var st := GameState.new(inset, 1)
+	var conv := _tf(st, ge, narvik, ["Convoy x2", "Hipper"])
+	eq(int(st.solo_counters.get("aggressive_reactions", 0)), 0,
+		"si parte da zero")
+
+	# 'none' non e' una Reazione Aggressiva e non deve contare.
+	Norway.apply_reaction(st, {"result": "none", "aggressive": false}, conv)
+	eq(int(st.solo_counters.get("aggressive_reactions", 0)), 0,
+		"'nessuna reazione' non conta")
+
+	Norway.apply_reaction(st, {"result": "hit", "aggressive": true}, conv)
+	eq(int(st.solo_counters.get("aggressive_reactions", 0)), 1, "un Colpo conta")
+	Norway.apply_reaction(st, {"result": "cancel", "aggressive": true}, conv)
+	eq(int(st.solo_counters.get("aggressive_reactions", 0)), 2,
+		"e il Completamento annullato pure")
+
+	# Il conto sopravvive al salvataggio: una partita ripresa non puo' leggere
+	# la Tabella delle Azioni su una colonna diversa.
+	var reloaded := GameState.new()
+	reloaded.apply_dict(st.to_dict())
+	eq(int(reloaded.solo_counters.get("aggressive_reactions", 0)), 2,
+		"e sta nel salvataggio")
+
+	# Primo uso: il modificatore della Tabella di Azione Britannica.
+	var solo := SoloOpponent.load_for("N3 Operazione Weser (sud)")
+	var table := solo.table("actions")
+	ne(table, null, "N3 ha la sua Tabella delle Azioni")
+	st.scenario_name = "N3 Operazione Weser (sud)"
+	var mods := SoloAI.automatic_modifiers(table, st, TaskForce.Side.ROYAL_NAVY)
+	var still_open: Array = mods["unresolved"]
+	for line_v: Variant in still_open:
+		false_(String(line_v).to_lower().contains("reazione aggressiva"),
+			"la Reazione Aggressiva non e' piu' un buco dichiarato")
+	eq((mods["active"] as Array).count("ogni Reazione Aggressiva Norvegese"), 2,
+		"due Reazioni Aggressive, due volte il modificatore")
+	eq(table.modifier_total(mods["active"]), -2, "che vale -1 ciascuna")
+
+	# Secondo uso: la riga dell'Esito di N3.
+	eq(int(Victory.debriefing_flags(st).get("aggressive_reactions", -1)), 2,
+		"e l'Esito legge lo stesso numero, non un suo conto separato")

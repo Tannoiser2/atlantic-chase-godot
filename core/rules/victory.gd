@@ -377,6 +377,12 @@ static func debriefing_flags(state: GameState) -> Dictionary:
 		var k := String(k_v)
 		if k.begins_with("debriefing_"):
 			out[k.substr(11)] = state.solo_counters[k]
+	# Le Reazioni Aggressive le conta gia' `Norway.apply_reaction` per il
+	# modificatore della Tabella delle Azioni; la stessa cifra la chiede
+	# l'Esito di N3 ("se non c'e' stata nessuna Reazione Aggressiva..."), e
+	# contarla due volte in due posti diversi vuol dire vederla divergere.
+	out["aggressive_reactions"] = int(
+		state.solo_counters.get("aggressive_reactions", 0))
 	return out
 
 
