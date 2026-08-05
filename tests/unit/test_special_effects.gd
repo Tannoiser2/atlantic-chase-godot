@@ -22,6 +22,7 @@ func run() -> void:
 	test_wired_into_battle()
 	test_bridge_choice()
 	test_rudder_control_changes_hands()
+	test_split_fire()
 
 
 func _ship(n: String = "Bismarck") -> Ship:
@@ -364,3 +365,66 @@ func test_rudder_control_changes_hands() -> void:
 	b.ensure_rudder_rolled()
 	eq(b.controller_side(drifting), after_first,
 		"chiamata due volte nella stessa fase, il tiro resta quello")
+
+
+## LA DIVISIONE DEL FUOCO (Regole Avanzate, in cima alla Tabella del Fuoco).
+##
+## "If Acquiring AND Gunnery Value is 1 or more, may distribute G.V. to attack
+## two targets (Splitting column)." La regola stava in `split_refusal()` e non
+## la chiamava nessuno: il fuoco non si poteva dividere.
+func test_split_fire() -> void:
+	_begin("dividere il fuoco costa la colonna Acquisizione")
+	var st := BattleState.new(BattleState.Kind.BATTLE, TimeLapse.Weather.GOOD)
+	st.advanced = true
+	var km := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
+	var firer := _ship("Bismarck")
+	firer.attitude = Attitude.Kind.ACQUIRING
+	firer.battle_zone = BattleState.Zone.NEAR
+	km.ships = [firer] as Array[Ship]
+	var rn := TaskForce.new(2, TaskForce.Side.ROYAL_NAVY)
+	var a := _ship("Hood")
+	var b2 := _ship("Repulse")
+	a.battle_zone = BattleState.Zone.NEAR
+	b2.battle_zone = BattleState.Zone.NEAR
+	rn.ships = [a, b2] as Array[Ship]
+	st.active_tf = km
+	st.target_tf = rn
+	var rng := DiceRNG.new(11)
+	var b := Battle.new(st, rng)
+
+	var band := Gunnery.band_for(Gunnery.range_between(firer.battle_zone,
+		a.battle_zone))
+	var gv := int(firer.gun_value(band))
+	true_(gv >= 2, "la nave di prova ha cannoni da dividere (gv=%d)" % gv)
+
+	# Le parti devono sommare al Valore dei Cannoni: non si inventa potenza.
+	true_(b.set_split_fire(firer, [{"target": a, "gv": gv}, {"target": b2, "gv": 1}])
+		.contains("sommare"), "due parti che sommano piu' del valore sono rifiutate")
+	# E i due bersagli devono essere diversi.
+	true_(b.set_split_fire(firer, [{"target": a, "gv": 1}, {"target": a, "gv": gv - 1}])
+		.contains("DIVERSI"), "sparare due volte allo stesso bersaglio non e' dividere")
+	# Solo in Acquisizione.
+	firer.attitude = Attitude.Kind.CLOSING
+	true_(b.set_split_fire(firer, [{"target": a, "gv": 1}, {"target": b2, "gv": gv - 1}])
+		.contains("Acquisizione"), "chi non e' in Acquisizione non divide")
+
+	firer.attitude = Attitude.Kind.ACQUIRING
+	eq(b.set_split_fire(firer, [{"target": a, "gv": 1}, {"target": b2, "gv": gv - 1}]),
+		"", "la divisione legale si registra")
+
+	# Due attacchi, uno per bersaglio, e la colonna non e' piu' quella
+	# dell'Acquisizione: e' il prezzo stampato della divisione.
+	eq(AdvancedGunnery.column_for(firer, 2), AdvancedGunnery.COLUMN_CLOSING,
+		"chi divide perde la colonna Acquisizione")
+	var results := b.gunnery_phase({})
+	eq(results.size(), 2, "escono due attacchi, uno per bersaglio")
+	var hit_targets := {}
+	for r_v: Variant in results:
+		hit_targets[(r_v as Dictionary)["target"]] = true
+	eq(hit_targets.size(), 2, "e i bersagli sono due diversi")
+
+	# La divisione vale un Round solo.
+	st.round_number = 1
+	st.last_round = 5
+	b.end_round()
+	eq(st.split_fire.size(), 0, "nel Round dopo va dichiarata di nuovo")

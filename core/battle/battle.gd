@@ -194,6 +194,43 @@ func bridge_choices_pending() -> Array[Ship]:
 	return out
 
 
+## LA DIVISIONE DEL FUOCO (Regole Avanzate, in cima alla Tabella del Fuoco).
+##
+## "If Acquiring AND Gunnery Value is 1 or more, may distribute G.V. to attack
+## two targets (Splitting column)." La regola stava in
+## `AdvancedGunnery.split_refusal()` e non la chiamava nessuno: il fuoco non si
+## poteva dividere, e la colonna Splitting non veniva mai usata.
+##
+## `parts` e' [ { "target": Ship, "gv": int }, { "target": Ship, "gv": int } ].
+## Ritorna il motivo del rifiuto, o "" se la divisione e' stata registrata.
+func set_split_fire(firer: Ship, parts: Array) -> String:
+	if firer == null or firer.sunk:
+		return "nave assente"
+	if not state.advanced:
+		return "la divisione del fuoco e' una regola avanzata"
+	var band := Gunnery.band_for(Gunnery.range_between(firer.battle_zone,
+		(parts[0]["target"] as Ship).battle_zone)) if parts.size() > 0 else ""
+	var values: Array = []
+	for p_v: Variant in parts:
+		var p: Dictionary = p_v
+		var t: Ship = p.get("target", null)
+		if t == null or t.sunk:
+			return "un bersaglio non e' in gioco"
+		values.append(int(p.get("gv", 0)))
+	var why := AdvancedGunnery.split_refusal(firer, band, values)
+	if why != "":
+		return why
+	# Due attacchi allo stesso bersaglio non sono una divisione: sono lo stesso
+	# attacco contato due volte.
+	if (parts[0]["target"] as Ship) == (parts[1]["target"] as Ship):
+		return "il fuoco si divide fra due bersagli DIVERSI"
+	state.split_fire[firer] = parts.duplicate(true)
+	state.note("%s divide il fuoco: %d su %s, %d su %s (rinuncia alla colonna Acquisizione)."
+		% [firer.name, int(parts[0]["gv"]), (parts[0]["target"] as Ship).name,
+			int(parts[1]["gv"]), (parts[1]["target"] as Ship).name])
+	return ""
+
+
 ## IL TIMONE FUORI USO (Regole Avanzate). Si tira a ogni Manovra e a ogni
 ## Attitudine: DISPARI e la nave la muove l'avversario, PARI resta al
 ## proprietario. Il tiro va rifatto ogni volta - non e' uno stato che dura.
@@ -314,6 +351,13 @@ func gunnery_phase(targeting: Dictionary) -> Array[Dictionary]:
 func _resolve_wave(firers: Array[Ship], targeting: Dictionary) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	for firer in firers:
+		# Chi ha dichiarato la divisione non passa da `targeting`: i suoi due
+		# bersagli e le due parti del Valore dei Cannoni stanno nella
+		# dichiarazione, e ogni attacco usa la SUA parte.
+		if state.split_fire.has(firer) and not firer.sunk:
+			for r_v: Variant in _resolve_split(firer):
+				out.append(r_v)
+			continue
 		if firer.sunk or not targeting.has(firer):
 			continue
 		if blocked_by_damage_control(firer):
@@ -343,6 +387,28 @@ func _resolve_wave(firers: Array[Ship], targeting: Dictionary) -> Array[Dictiona
 			extra)
 		state.note(Gunnery.describe(a))
 		out.append(a)
+	return out
+
+
+## I due attacchi di una nave che divide il fuoco. Usano `targets = 2`, che e'
+## quello che fa perdere la colonna Acquisizione (`AdvancedGunnery.column_for`),
+## e ciascuno il proprio pezzo di Valore dei Cannoni.
+func _resolve_split(firer: Ship) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for p_v: Variant in state.split_fire[firer] as Array:
+		var p: Dictionary = p_v
+		var target: Ship = p.get("target", null)
+		if target == null or target.sunk:
+			continue
+		var st := Maneuver.is_obscured(state, target)
+		var sf := Maneuver.is_obscured(state, firer)
+		var a := Gunnery.attack(firer, target, rng, st, sf, true, 2,
+			[] as Array[Dictionary], int(p.get("gv", 0)))
+		if bool(a.get("ok", false)):
+			state.note(Gunnery.describe(a))
+			out.append(a)
+		else:
+			state.note(String(a.get("reason", "attacco non riuscito")))
 	return out
 
 
@@ -601,6 +667,8 @@ func end_round() -> bool:
 	for s_v: Variant in state.bridge_choice.keys():
 		(s_v as Ship).round_stopped = false
 	state.bridge_choice.clear()
+	# Anche la divisione del fuoco vale un Round solo: si dichiara ogni volta.
+	state.split_fire.clear()
 	state.round_number += 1
 	state.phase = state.first_phase()
 	state.note("--- Round %d ---" % state.round_number)

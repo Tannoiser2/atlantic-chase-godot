@@ -64,6 +64,14 @@ var fixed_setup_attitudes: Dictionary = {}
 ## Eccezioni dichiarate dal fascicolo dei mini-scenari. Restano dati dello
 ## scenario: il motore applica la regola senza riconoscere nomi come "MS3".
 var skip_snafu: bool = false
+## La DIVISIONE DEL FUOCO dichiarata per il Round corrente:
+## nave -> [ { "target": Ship, "gv": int }, { ... } ].
+##
+## Regole Avanzate, in cima alla Tabella del Fuoco: "If Acquiring AND Gunnery
+## Value is 1 or more, may distribute G.V. to attack two targets (Splitting
+## column)". Chi divide rinuncia alla colonna Acquisizione, che e' il prezzo.
+var split_fire: Dictionary = {}
+
 ## Chi comanda una nave col TIMONE FUORI USO, per la fase corrente:
 ## nave -> true se la muove l'AVVERSARIO.
 ##

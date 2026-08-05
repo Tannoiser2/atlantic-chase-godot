@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Baseline: **3410 verifiche su 20 suite**, tutte verdi. Replay solitario:
+Baseline: **3419 verifiche su 20 suite**, tutte verdi. Replay solitario:
 **quindici `OK`** su quindici scenari, nessuno saltato. `audit_solo.gd`:
 **93 caselle azione, zero procedure segnaposto, ZERO buchi dichiarati, zero
 blocchi.**
@@ -172,7 +172,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 3410 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 3419 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
@@ -762,7 +762,12 @@ sopra scenario per scenario.
   Nel solitario il vincolo si fa rispettare; a due giocatori allo stesso tavolo
   resta scritto nel registro, perche' li' comandano tutti e due.
 - [ ] Esporre correttamente i tre usi del segnalino Confusione.
-- [ ] Implementare la divisione del fuoco in Acquisizione.
+- [x] **Divisione del fuoco in Acquisizione**: `Battle.set_split_fire()`
+  distribuisce il Valore dei Cannoni fra due bersagli DIVERSI, le parti devono
+  sommare al valore intero, e chi divide **perde la colonna Acquisizione** -
+  e' il prezzo stampato. Manca ancora il modo di dichiararla dalla vista: il
+  motore la sa fare e la regola e' difesa dai test, ma il giocatore non ha
+  ancora un comando per farlo.
 - [ ] Implementare MS12 come struttura speciale in tre parti; non trattarlo
   come una singola Battaglia ordinaria.
 - [ ] Audit visivo di attitudini, rotazione navi, Acquiring, Closing, Fog,

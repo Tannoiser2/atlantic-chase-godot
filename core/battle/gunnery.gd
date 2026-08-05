@@ -123,7 +123,8 @@ static func result_label(hits: int) -> String:
 static func attack(firer: Ship, target: Ship, rng: DiceRNG,
 		smoke_target: bool = false, smoke_firer: bool = false,
 		advanced: bool = false, targets: int = 1,
-		extra_modifiers: Array[Dictionary] = []) -> Dictionary:
+		extra_modifiers: Array[Dictionary] = [],
+		gun_value_override: int = -1) -> Dictionary:
 	var r := range_between(firer.battle_zone, target.battle_zone)
 	var band := band_for(r)
 	# un incendio o un allagamento gravi zittiscono la nave del tutto
@@ -135,7 +136,12 @@ static func attack(firer: Ship, target: Ship, rng: DiceRNG,
 		return {"ok": false, "reason": "%s non puo' sparare a raggio %s ('na' sulla pedina)"
 			% [firer.name, RANGE_LABELS[r]], "hits": 0, "range": r}
 
-	var gv := int(firer.gun_value(band))
+	# DIVISIONE DEL FUOCO (Regole Avanzate): chi e' in Acquisizione puo'
+	# distribuire il proprio Valore dei Cannoni fra due bersagli, e ogni
+	# attacco usa la SUA parte, non il valore intero. Senza questo la divisione
+	# sarebbe un raddoppio: due attacchi a piena potenza.
+	var gv := gun_value_override if gun_value_override >= 0 \
+		else int(firer.gun_value(band))
 	var roll := roll_for_range(r, rng, "cannoni %s -> %s" % [firer.name, target.name])
 	var mods := modifiers(target, gv, smoke_target, smoke_firer)
 	# le penalita' degli Effetti Speciali dell'ATTACCANTE (Torrette a ogni
