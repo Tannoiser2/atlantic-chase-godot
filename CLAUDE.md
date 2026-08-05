@@ -52,7 +52,7 @@ Percorre una Battaglia avanzata intera, salva un PNG per fase e stampa accanto
 a ogni scatto lo stato del motore. Non giudica: serve a mettere l'immagine e lo
 stato uno accanto all'altro. Cinque difetti visivi sono usciti cosi'.
 
-Baseline corrente: **3872 verifiche, 21 suite** (era 2570 su 17 prima della
+Baseline corrente: **3881 verifiche, 21 suite** (era 2570 su 17 prima della
 suite `test_replay.gd`). Il totale non puo' scendere senza una rimozione
 intenzionale di test spiegata nel commit.
 

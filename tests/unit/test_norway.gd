@@ -26,6 +26,8 @@ func run() -> void:
 	test_reaction_effects()
 	test_aggressive_reactions_are_counted()
 	test_airbase_reaction_results_move_markers()
+	test_n4_airbase_result_locks_out_the_british()
+	test_aggressive_flag_comes_from_the_data()
 
 
 func _tf(st: GameState, side: int, h: Vector2i, ships: Array) -> TaskForce:
@@ -143,19 +145,20 @@ func test_n5_adjacent_landing() -> void:
 		"l'esagono del porto non e' adiacente a se stesso")
 
 
-## Le cinque tabelle di Reazione Norvegese, da pp.19, 24, 27, 34 e 39.
+## Le sei tabelle di Reazione Norvegese, da pp.19, 24, 27, 30, 34 e 39.
 ##
 ## Non hanno la stessa forma, ed e' il motivo per cui questo test esiste: N1 ha
 ## una riga sola, N2 si divide sulle Mine britanniche, N3 su una TF britannica,
 ## N5 su "nell'esagono o adiacente", N6 di nuovo una riga sola ma con i
-## risultati che spostano le Basi Aeree. Trattarle come copie della stessa
+## risultati che spostano le Basi Aeree, N4 di nuovo su una TF britannica ma
+## con un risultato che nessun'altra ha. Trattarle come copie della stessa
 ## tabella e' l'errore facile.
 ##
-## Quella di N6 mancava del tutto: le tabelle erano quattro e la p.39 ne stampa
-## una anche per lui, quindi in N6 il Completamento britannico a Trondheim o
-## Narvik non innescava nessuna Reazione.
+## DUE mancavano. Quella di N6 non c'era proprio; quella di N4 era trascritta
+## nel suo file di scenario, dove `Norway.reaction_table` non guarda - quindi
+## in tutti e due un Completamento in Norvegia non innescava nessuna Reazione.
 func test_norwegian_reaction_tables() -> void:
-	_begin("le cinque tabelle di Reazione Norvegese")
+	_begin("le sei tabelle di Reazione Norvegese")
 	var f := FileAccess.open("res://core/data/solo/norwegian_reaction.json",
 		FileAccess.READ)
 	true_(f != null, "il file delle tabelle c'e'")
@@ -166,11 +169,12 @@ func test_norwegian_reaction_tables() -> void:
 	true_(typeof(parsed) == TYPE_DICTIONARY, "ed e' JSON valido")
 	var doc: Dictionary = parsed
 	var tables: Dictionary = doc.get("tables", {})
-	eq(tables.size(), 5, "cinque tabelle, una per scenario che la stampa")
+	eq(tables.size(), 6, "sei tabelle, una per scenario che la stampa")
 
 	var pages := {"N1 Operazione Wilfred": 19, "N2 Operazione Weser (nord)": 24,
 		"N3 Operazione Weser (sud)": 27, "N5 Meglio Tardi che Mai": 34,
-		"N6 Il Dilemma delle Operazioni": 39}
+		"N6 Il Dilemma delle Operazioni": 39,
+		"N4 Operazione Weser (nord & sud)": 30}
 	var missing: Array[String] = []
 	var unsourced: Array[String] = []
 	var bad_shape: Array[String] = []
@@ -460,3 +464,70 @@ func test_airbase_reaction_results_move_markers() -> void:
 	var blind := Norway.apply_reaction(st7, {"result": "b"}, conv7)
 	true_(bool(blind["declared_gap"]),
 		"senza la mappa il risultato resta dichiarato invece di indovinare")
+
+
+## N4 (p.30) ha un risultato che nessun'altra tabella stampa: piazza una Base
+## Aerea tedesca E vieta per il resto della partita che ne compaia una
+## britannica in Norvegia. Il divieto e' permanente, quindi va nello stato.
+##
+## La sua legenda e' anche il motivo per cui `aggressive` sta nel DATO e non si
+## deduce piu' dal testo: N4 scrive "This is NOT an Aggressive Reaction" per
+## due risultati, e cercare la parola nella legenda li contava al contrario -
+## proprio i due che non devono contare.
+func test_n4_airbase_result_locks_out_the_british() -> void:
+	_begin("il risultato Base Aerea di N4 e il suo divieto permanente")
+	var ge := TaskForce.Side.KRIEGSMARINE
+	var uk := TaskForce.Side.ROYAL_NAVY
+	var narvik := inset.port_hex("Narvik")
+	var trondheim := inset.port_hex("Trondheim")
+	var st := GameState.new(inset, 1)
+	var conv := _tf(st, ge, narvik, ["Convoy x2"])
+	AirBase.place(st, uk, trondheim, "prova")
+	AirBase.place(st, uk, narvik, "prova")
+	eq(AirBase.count_of(st, uk), 2, "due basi britanniche in Norvegia")
+
+	var out := Norway.apply_reaction(st, {"result": "g_lock"}, conv, inset,
+		"N4 Operazione Weser (nord & sud)", narvik)
+	eq(AirBase.count_of(st, uk), 0, "il risultato le toglie TUTTE, non la piu' vicina")
+	true_(AirBase.at(st, narvik, ge), "e piazza quella tedesca nell'esagono")
+	false_(bool(out["declared_gap"]), "non e' piu' una lacuna")
+
+	# "Henceforth, no British Air Base markers may be placed in Norway."
+	Norway.apply_reaction(st, {"result": "b"}, conv, inset,
+		"N5 Meglio Tardi che Mai", narvik)
+	eq(AirBase.count_of(st, uk), 0,
+		"e da li' in poi una 'B' non ne piazza piu' in Norvegia")
+
+	# "Unless one is already in Norway": non se ne aggiunge una seconda.
+	var st2 := GameState.new(inset, 1)
+	var conv2 := _tf(st2, ge, narvik, ["Convoy x2"])
+	AirBase.place(st2, ge, trondheim, "prova")
+	Norway.apply_reaction(st2, {"result": "g_lock"}, conv2, inset,
+		"N4 Operazione Weser (nord & sud)", narvik)
+	eq(AirBase.count_of(st2, ge), 1,
+		"con una base tedesca gia' in Norvegia non se ne aggiunge un'altra")
+
+	# Il divieto sta nel salvataggio: dura tutta la partita, non un turno.
+	var reloaded := GameState.new()
+	reloaded.apply_dict(st.to_dict())
+	true_(bool(reloaded.solo_counters.get("no_british_airbase_in_norway", false)),
+		"il divieto sopravvive a salvataggio e ricarica")
+
+
+## `aggressive` viene dal dato, risultato per risultato.
+func test_aggressive_flag_comes_from_the_data() -> void:
+	_begin("quali risultati siano Aggressivi lo dice la pagina, non il testo")
+	var ge := TaskForce.Side.KRIEGSMARINE
+	var narvik := inset.port_hex("Narvik")
+	var st := GameState.new(inset, 1)
+	var conv := _tf(st, ge, narvik, ["Convoy x2"])
+	# Il risultato Base Aerea di N4 NON e' una Reazione Aggressiva: la pagina
+	# lo scrive, e non deve entrare nel conto che vale -1 alla Tabella Azioni.
+	Norway.apply_reaction(st, {"result": "g_lock", "aggressive": false}, conv,
+		inset, "N4 Operazione Weser (nord & sud)", narvik)
+	eq(int(st.solo_counters.get("aggressive_reactions", 0)), 0,
+		"il risultato Base Aerea di N4 non conta come Reazione Aggressiva")
+	Norway.apply_reaction(st, {"result": "hit", "aggressive": true}, conv,
+		inset, "N4 Operazione Weser (nord & sud)", narvik)
+	eq(int(st.solo_counters.get("aggressive_reactions", 0)), 1,
+		"un Colpo invece si'")

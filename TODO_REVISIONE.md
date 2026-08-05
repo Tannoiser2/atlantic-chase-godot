@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Baseline: **3872 verifiche su 21 suite**, tutte verdi. Replay solitario:
+Baseline: **3881 verifiche su 21 suite**, tutte verdi. Replay solitario:
 **quindici `OK`** su quindici scenari, nessuno saltato. `audit_solo.gd`:
 **93 caselle azione, zero procedure segnaposto, ZERO buchi dichiarati, zero
 blocchi.**
@@ -187,7 +187,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 3872 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 3881 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
@@ -1054,6 +1054,29 @@ sopra scenario per scenario.
   uccise da un timeout, e le due volte e' bastato `pkill -9 -f godot` prima di
   rilanciare. Lasciare scritto "i test grossi bloccano" sarebbe stato peggio di
   non scrivere niente: avrebbe fatto evitare test legittimi.
+- [x] **Anche N4 non aveva la Reazione Norvegese, e per un motivo diverso da
+  N6**: la sua tabella ERA trascritta, ma nel file dello scenario, dove
+  `Norway.reaction_table` non guarda - legge solo
+  `core/data/solo/norwegian_reaction.json`. Trascritta bene e mai raggiunta.
+  Adesso le tabelle sono sei.
+  N4 (p.30) porta un risultato che nessun'altra stampa: piazza una Base Aerea
+  tedesca nell'esagono, toglie TUTTI i marcatori britannici dalla Norvegia e
+  vieta per il resto della partita che ne compaia un altro. Il divieto e'
+  permanente, quindi sta nello stato e nel salvataggio.
+- [x] **`aggressive` viene dal DATO, non dal testo.** Era dedotto cercando
+  "Reazione Aggressiva" nella legenda. La legenda di N4 scrive "This is NOT an
+  Aggressive Reaction" per due risultati: quel controllo li avrebbe contati al
+  contrario, e sono proprio i due che non devono contare. Adesso ogni tabella
+  porta la sua mappa `aggressive`, risultato per risultato, come la pagina.
+- [ ] **Restano sei modificatori dichiarati non applicati, e cinque sono ormai
+  calcolabili.** Tabelle Azione: N2 `actions_late` "ogni forza furtiva Mine in
+  gioco" (la pagina dice "each Mines stealth force in play", senza
+  nazionalita': letta a 300 dpi), N5 `actions` "ogni base aerea tedesca sulla
+  mappa", N6 `actions` "ogni Base Aerea tedesca in Norvegia". Tabelle di
+  Reazione: N5 dichiara tre modificatori che `Norway.landings_of` e `AirBase`
+  sanno gia' calcolare - due Completamenti britannici precedenti e la Base
+  Aerea tedesca in Norvegia. Il sesto, A2 "nessuna TF tedesca puo' essere
+  intercettata", chiede la legalita' dell'Intercettazione ed e' vero lavoro.
 - [ ] **Uno scenario che usa DUE mappe insieme non e' supportato.** L'utente lo
   ha chiesto ("se lo scenario ne usa due allora si devono vedere entrambe") e
   oggi non serve a nessuno: dei ventidue scenari, cinque usano un inserto e

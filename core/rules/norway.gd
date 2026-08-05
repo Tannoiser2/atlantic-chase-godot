@@ -345,7 +345,40 @@ static func _apply_airbase_result(state: GameState, graph: MapGraph,
 			+ "Aerea, ma la mappa non e' stata passata alla Reazione.")
 		return out
 
+	if key == "g_lock":
+		# N4 (p.30): "Unless one is already in Norway, place a German Air Base
+		# marker in the hex. Remove ALL British Air Base markers from Norway
+		# (if any). Henceforth, no British Air Base markers may be placed in
+		# Norway." Il divieto e' permanente, quindi va scritto nello stato:
+		# vale per tutto il resto della partita, non per questo turno.
+		if _nearest_airbase_in_norway(state, graph, ge, h).is_empty():
+			AirBase.place(state, ge, h, "Reazione Norvegese N4")
+			lines.append("Reazione: piazzato un marcatore Base Aerea tedesca in %s."
+				% str(h))
+		else:
+			lines.append("Reazione: c'e' gia' una Base Aerea tedesca in Norvegia, "
+				+ "quindi non se ne aggiunge un'altra.")
+		var removed := 0
+		for m in AirBase.of_side(state, uk):
+			var mh := AirBase.hex_of(m)
+			if is_norway_hex(graph, mh):
+				AirBase.remove_at(state, mh, uk)
+				removed += 1
+		if removed > 0:
+			lines.append("Tolti %d marcatori Base Aerea britannici dalla Norvegia."
+				% removed)
+		state.solo_counters["no_british_airbase_in_norway"] = true
+		lines.append("Da adesso in poi non si possono piu' piazzare marcatori "
+			+ "Base Aerea britannici in Norvegia.")
+		return out
+
 	if key == "b":
+		# Il divieto di N4 vale per tutta la partita, quindi anche qui.
+		if bool(state.solo_counters.get("no_british_airbase_in_norway", false)) \
+				and is_norway_hex(graph, h):
+			lines.append("Reazione 'B': in Norvegia non si possono piu' piazzare "
+				+ "Basi Aeree britanniche.")
+			return out
 		# "Place a British Airbase marker in the hex. However, if a German
 		# Airbase marker is in Norway, remove that marker instead."
 		var german := _nearest_airbase_in_norway(state, graph, ge, h)
@@ -445,7 +478,13 @@ static func roll_reaction(state: GameState, graph: MapGraph, rng: DiceRNG,
 	out["total"] = total
 	out["result"] = key
 	out["text"] = String(legend.get(key, key))
-	out["aggressive"] = String(out["text"]).contains("Reazione Aggressiva")
+	# Quali risultati siano Reazioni Aggressive lo dice la PAGINA, uno per uno,
+	# e adesso sta nel dato. Prima si cercava la parola nel testo della
+	# legenda: N4 scrive "This is NOT an Aggressive Reaction" per due dei suoi
+	# risultati, e quel controllo li avrebbe contati al contrario - proprio nei
+	# due che non devono contare.
+	out["aggressive"] = bool((table.get("aggressive", {}) as Dictionary).get(
+		key, false))
 	out["undeclared"] = mods["undeclared"]
 	var label := String(row.get("label", ""))
 	(out["log"] as Array[String]).append(
@@ -524,7 +563,7 @@ static func apply_reaction(state: GameState, result: Dictionary,
 			(out["log"] as Array[String]).append(
 				"Le forze norvegesi resistono ma vengono sopraffatte: Reazione Aggressiva.")
 			return out
-		"b", "g":
+		"b", "g", "g_lock":
 			var moved := _apply_airbase_result(state, graph, key, scenario_id, h)
 			(out["log"] as Array[String]).append_array(moved["log"] as Array[String])
 			out["declared_gap"] = bool(moved["declared_gap"])
