@@ -1089,16 +1089,20 @@ sopra scenario per scenario.
   Aerea in Norvegia" (N6, p.39) no. Oggi il risultato coincide; se un domani
   qualcuno aggiunge una base tedesca stampata al Mare di Norvegia, coincidera'
   ancora per il motivo giusto.
-- [ ] **N5 al seme predefinito adesso dichiara uno STALLO** invece di arrivare
-  alla fine stampata: i replay sono quattordici `OK` e uno `STALLO`. Lo stallo
-  e' vero e sta nella regola stampata - la Traiettoria si allunga di un
-  segmento verso il bersaglio e lo Scorrere del Tempo se lo riprende, perche'
-  la stessa riga prescrive di togliere i piu' LONTANI dal porto di partenza,
-  che e' proprio quello appena messo; col Limite di Informazioni che tiene la
-  rimozione a uno, i due passi si annullano. Il motore fa quello che c'e'
-  scritto, e adesso lo dichiara dopo otto turni fermi invece di consumarne
-  centoventi. **Resta da capire se il fascicolo dica come uscirne**: e' la
-  prima cosa da guardare, insieme alla domanda qui sopra.
+- [x] **Dieci scenari su tredici non identificavano la Task Force ignota.**
+  Segnalato dall'utente su una partita a B3: quindici volte la tabella
+  `identify` ha tirato, il registro ha scritto perfino la composizione uscita
+  ("La Task Force contiene una CV e due CA"), e poi la TF restava ignota e la
+  Battaglia non si apriva. Schermaglie, Battaglie e perfino una Sorpresa,
+  tutte buttate via. `apply_table_result` smistava solo BL1, BL2 e BL3.
+  Adesso c'e' un identificatore generale: i codici degli altri dieci sono
+  tutti tipi separati da "/", piu' due casi a parte - "Convoglio", che non e'
+  un tipo del ruolino, e "F.R." di B4 (p.57, "False report. Remove the Task
+  Force"), che non identifica niente e toglie la TF. La parte da cui pescare
+  e' quella della TF stessa.
+  **Effetto collaterale buono**: lo stallo di N5 al seme predefinito e'
+  sparito e i replay tornano a quindici `OK`. Non e' un caso - una partita in
+  cui nessuno viene mai identificato e' una partita che non progredisce.
 - [ ] **Uno scenario che usa DUE mappe insieme non e' supportato.** L'utente lo
   ha chiesto ("se lo scenario ne usa due allora si devono vedere entrambe") e
   oggi non serve a nessuno: dei ventidue scenari, cinque usano un inserto e

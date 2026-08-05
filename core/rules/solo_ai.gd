@@ -35,6 +35,9 @@ const GE_TYPE_POOLS := {
 	"AC": ["Orion", "Widder"],
 	"CL": ["Karlsruhe", "Koln", "Konigsberg", "Leipzig", "Nurnburg"],
 	"CONVOY": ["Convoy x2"],
+	"BB": ["Bismarck", "Tirpitz"],
+	"DD": ["DD Squadron"],
+	"CV": ["Grzeppelin"],
 }
 
 
@@ -248,6 +251,14 @@ static func apply_table_result(table_id: String, result: Dictionary,
 		return _bl2_table_result(table_id, result, state, subject)
 	if state.scenario_name.begins_with("BL3") and table_id == "identify":
 		return _bl3_identify(state, subject, String(result.get("code", "")))
+	# Tutti gli altri: tredici scenari stampano una tabella di identificazione e
+	# solo tre erano collegati. Negli altri dieci la tabella TIRAVA, il registro
+	# scriveva perfino la composizione uscita, e poi la Task Force restava
+	# ignota e la Battaglia non si apriva. In una partita a B3 e' successo
+	# quindici volte: Schermaglie, Battaglie e perfino una Sorpresa, tutte
+	# buttate via.
+	if table_id == "identify":
+		return _identify_generic(state, subject, String(result.get("code", "")))
 	var out := _empty("Solitario AI: la tabella '%s' e' trascritta ma non ha ancora effetti automatici." % table_id)
 	out["pass_initiative"] = false
 	return out
@@ -722,6 +733,52 @@ static func _identify_unidentified_tf(state: GameState, tf: TaskForce,
 	tf.recompute_speed()
 	var out := _empty("%s: %s rivela %s." % [note, tf.display_name(),
 		", ".join(_ship_names(ships))])
+	out["ok"] = true
+	out["active"] = tf
+	return out
+
+
+## L'identificazione generale, per i dieci scenari che non hanno una regola
+## propria stampata.
+##
+## I codici sono tutti dello stesso genere - tipi separati da "/" - piu' due
+## casi a parte: "Convoglio", che non e' un tipo del ruolino, e "F.R.", il
+## falso rapporto di B4, che non identifica niente e toglie la Task Force.
+## La parte da cui pescare e' quella della TF stessa.
+static func _identify_generic(state: GameState, tf: TaskForce,
+		code: String) -> Dictionary:
+	if tf == null or not tf.unidentified:
+		return _empty("Identificazione: nessuna Task Force ignota da identificare.")
+	if code.to_upper().begins_with("F.R") or code.to_upper() == "FR":
+		# B4 p.57: "F.R.: False report. Remove the Task Force."
+		var gone := _empty("Falso rapporto: %s viene tolta dal gioco."
+			% tf.display_name())
+		state.remove_task_force(tf)
+		gone["ok"] = true
+		return gone
+	var pools: Dictionary = UK_TYPE_POOLS \
+		if tf.side == TaskForce.Side.ROYAL_NAVY else GE_TYPE_POOLS
+	var ships: Array[Ship] = []
+	var used := _ship_names_in_play(state)
+	for raw_v: Variant in code.replace("+", "/").split("/", false):
+		var spec := String(raw_v).strip_edges().to_upper()
+		if spec == "":
+			continue
+		if spec == "CONVOGLIO":
+			spec = "CONVOY"
+		var sh := _make_available_ship_from_pool(spec, pools, used)
+		if sh == null:
+			return _empty(("Identificazione: nessuna nave disponibile per il "
+				+ "tipo %s; composizione non inventata.") % spec)
+		ships.append(sh)
+		used[sh.name] = true
+	if ships.is_empty():
+		return _empty("Identificazione: codice '%s' non interpretabile." % code)
+	tf.ships = ships
+	tf.unidentified = false
+	tf.recompute_speed()
+	var out := _empty("Identificazione: %s rivela %s."
+		% [tf.display_name(), ", ".join(_ship_names(ships))])
 	out["ok"] = true
 	out["active"] = tf
 	return out
