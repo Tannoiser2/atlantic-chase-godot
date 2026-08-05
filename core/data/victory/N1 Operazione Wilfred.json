@@ -3,35 +3,187 @@
  "_source": "Fascicolo Scenari in Solitario, seconda edizione INGLESE (AC_Solo_scenarios_2022.pdf), pp.17-20. Trascritta a mano da render/testo del PDF aggiornato.",
  "mode": "DEBRIEFING",
  "solo_side": "ROYAL_NAVY",
- "_status": "Tabella degli Esiti verificata contro la seconda edizione inglese 2022; premi manuali conservati dove il motore non puo' valutare da solo.",
+ "_status": "Determine Outcome e Debriefing trascritti da AC_Solo_scenarios_2022 p.20, letta sulla pagina renderizzata a 200 dpi. La Tabella di Debriefing di N1 e' l'unica delle quindici stampata su DUE colonne: le soglie cambiano secondo la Reazione Norvegese (8+/1-7/-4..0/-5 senza reazione adirata, 6+/1-5/0 con). La colonna si sceglie da sola: Norway.apply_reaction scrive 'debriefing_norwegian_reaction' in solo_counters, che sta nel salvataggio. Le voci a punti restano da spuntare a mano: il motore vede i Colpi e gli affondamenti, ma non sa da solo dove sono i marker Mine ne' quale nave e' 'ogni' nave della riga, e assegnare a meta' darebbe un totale che sembra completo e non lo e'.",
  "awards": [
   {
    "side": "ROYAL_NAVY",
    "event": "CUSTOM",
-   "points": 0,
-   "label": "Calcolare i VP dalle tabelle stampate nello scenario e nel campo raw_victory_text; il motore non automatizza queste righe.",
+   "points": 3,
+   "label": "Marker Mine a Vestfjorden",
+   "manual": true
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CUSTOM",
+   "points": -2,
+   "label": "NESSUN marker Mine a Vestfjorden",
+   "manual": true
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CUSTOM",
+   "points": 2,
+   "label": "Marker Mine ad Andalsnes",
+   "manual": true
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CUSTOM",
+   "points": -1,
+   "label": "NESSUN marker Mine ad Andalsnes",
+   "manual": true
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CUSTOM",
+   "points": 2,
+   "label": "Marker Mine a Bud",
+   "manual": true
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CUSTOM",
+   "points": -1,
+   "label": "NESSUN marker Mine a Bud",
+   "manual": true
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CUSTOM",
+   "points": -5,
+   "label": "Una TF tedesca ha Completato nello Stretto di Danimarca",
+   "manual": true
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CUSTOM",
+   "points": -1,
+   "label": "ogni Convoglio o Squadrone DD britannico con 1 Colpo",
+   "manual": true
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CUSTOM",
+   "points": -2,
+   "label": "ogni Convoglio o Squadrone DD britannico con 2 Colpi",
+   "manual": true
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CUSTOM",
+   "points": -2,
+   "label": "ogni BB, BC o CA britannica Danneggiata",
+   "manual": true
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CUSTOM",
+   "points": -5,
+   "label": "ogni BB, BC o CA britannica affondata",
+   "manual": true
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CUSTOM",
+   "points": 3,
+   "label": "ogni Convoglio tedesco con 1-3 Colpi",
+   "manual": true
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CUSTOM",
+   "points": 5,
+   "label": "ogni Convoglio tedesco con 4-5 Colpi",
+   "manual": true
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CUSTOM",
+   "points": 6,
+   "label": "ogni Convoglio tedesco distrutto",
+   "manual": true
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CUSTOM",
+   "points": 2,
+   "label": "ogni BB, BC, PB o CA tedesca Danneggiata",
+   "manual": true
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CUSTOM",
+   "points": 3,
+   "label": "ogni BB, BC, PB o CA tedesca affondata",
+   "manual": true
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CUSTOM",
+   "points": -3,
+   "label": "Rinforzi britannici entrati in gioco: Gruppo A",
+   "manual": true
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CUSTOM",
+   "points": -1,
+   "label": "Rinforzi britannici entrati in gioco: Gruppo B",
+   "manual": true
+  },
+  {
+   "side": "ROYAL_NAVY",
+   "event": "CUSTOM",
+   "points": -1,
+   "label": "Reazione Norvegese adirata",
    "manual": true
   }
  ],
  "debriefing": [
   {
+   "variant": "se c'e' stata una Reazione Norvegese adirata:",
+   "when": {
+    "norwegian_reaction": "angry"
+   },
+   "min": 6,
    "label": "Operazione Wilfred riuscita",
-   "text": "Testo completo della riga nel campo raw_victory_text; soglia trascritta dalla Tabella dell'Esito di N1 Operazione Wilfred.",
-   "min": 8
+   "text": "Forbes e' soddisfatto, ma Churchill e' sconcertato dalla risposta della Norvegia. Ordina che l'Operazione R4 proceda (se pero' una TF tedesca ha Completato in Norvegia, la sconfitta britannica e' probabile)."
   },
   {
+   "variant": "se c'e' stata una Reazione Norvegese adirata:",
+   "when": {
+    "norwegian_reaction": "angry"
+   },
+   "min": 1,
    "label": "Successo sufficiente",
-   "text": "Testo completo della riga nel campo raw_victory_text; soglia trascritta dalla Tabella dell'Esito di N1 Operazione Wilfred.",
-   "min": 1
+   "text": "Se ci sono Mine a Vestfjorden, l'operazione e' riuscita quanto basta. Se pero' una BB o una BC britannica e' stata affondata, l'Operazione R4 viene annullata. L'invasione tedesca della Norvegia e' forse stata disturbata (se un Convoglio tedesco ha subito un Colpo), ma Churchill e' esasperato dall'inettitudine di Forbes."
   },
   {
+   "variant": "se c'e' stata una Reazione Norvegese adirata:",
+   "when": {
+    "norwegian_reaction": "angry"
+   },
+   "label": "Che cosa e' andato storto?",
+   "text": "Se una BB o una BC britannica e' stata affondata, non e' stata solo una catastrofe: la Norvegia ha chiesto ufficialmente alla Germania protezione contro la Gran Bretagna. Se non ne e' stata affondata nessuna, i norvegesi tardano a contrastare l'invasione tedesca del loro paese."
+  },
+  {
+   "min": 8,
+   "label": "Operazione Wilfred riuscita",
+   "text": "Se una nave tedesca e' stata affondata o e' stato messo a segno un Colpo su un Convoglio tedesco, l'invasione tedesca della Norvegia e' interrotta e l'Operazione R4 si mette in moto. L'invasione tedesca della Francia e' rimandata."
+  },
+  {
+   "min": 1,
+   "label": "Successo sufficiente",
+   "text": "Se ci sono Mine a Vestfjorden, l'operazione e' riuscita quanto basta. Se una BC ha Completato nello Stretto di Danimarca, Churchill si consulta con Pound in cerca di un sostituto per Forbes."
+  },
+  {
+   "min": -4,
    "label": "Situazione instabile",
-   "text": "Testo completo della riga nel campo raw_victory_text; soglia trascritta dalla Tabella dell'Esito di N1 Operazione Wilfred.",
-   "min": -4
+   "text": "La situazione sembra instabile. Churchill contava di installare truppe a Narvik, ma annulla l'Operazione R4. L'ammiraglio Forbes e' palesemente pronto per la pensione."
   },
   {
-   "label": "I razziatori fuggono",
-   "text": "Testo completo della riga nel campo raw_victory_text; soglia trascritta dalla Tabella dell'Esito di N1 Operazione Wilfred."
+   "label": "Il razziatore e' fuggito",
+   "text": "Se una TF tedesca ha Completato nello Stretto di Danimarca, l'ammiraglio Forbes deve distaccare mezzi della Home Fleet per inseguirla. Ai convogli dal Nord America, dalla Sierra Leone e dal Mediterraneo viene ordinato di rientrare in porto finche' i razziatori tedeschi non sono stati affrontati. E' un disastro politico. E adesso arrivano notizie di attivita' tedesca sul confine belga."
   }
  ],
  "raw_victory_text": "--- AC_Solo_scenarios_2022.pdf page 18 ---\n17\n\n       N1:Operation Wilfred                                                                                                          British player\n      Early April 1940. Admiralty intends to rob the Germans of untroubled access to Norway’s “inner leads,” laying mines in\n      key places along the convoy route from Narvik to Germany. There is some concern, however, that Norway may retali-\n      ate or move towards Germany politically, or that Germany will use this operation as an excuse to launch an invasion.\n      Objective\n      Establish mines in Vestfjorden, Bud, and Andalsnes. Do not lose British ships in the effort, nor Damage any. And, above\n      all, do not allow a German Task Force to enter the Denmark Strait (where it might attack convoys in the Atlantic).\n      Set-Up                                                                     The End\n      Weather: Bad                                                               The scenario ends when the British have no Convoys in play (they have\n      Initiative: British (the player)                                           Completed in Scapa Flow or been destroyed).\n      Map: Norwegian Sea Inset Map;\n      Enemy: No German TFs at start\n      Special Instructions\n      Mines: Up to 3 Mines stealth force markers may be placed (one in the Narvik/Vestfjorden hex, one in the Bud                                     m\n      hex, and one in the Andalsnes hex). To place a Mines marker, a TF with a Convoy must successfully perform                                       in e\n                                                                                                                                                          s\n      a Completion action in the target hex (see p. 16, “Norwegian Completion Actions”). If successful, place the\n      Mines marker and perform Time Lapse (once placed, it is a Stealth force). Then, if the Mines was placed in the\n      Narvik (Vestfjorden) hex, check Norwegian Reaction (see p. 19).\n C\n\n\n\n M\n                                                                                                                B\n                                                                                                                 Reinforcem\n                 -2/na                    -2/na                     -2/na\n                                                                                                         A                 ent\n Y\n\n\n            CONVOY                 CONVOY                      CONVOY                                         orcemen t\nCM\n                  vs                     vs                          vs                                  Reinf\n\n              Each British Convoy is destroyed when it\nMY\n\n\n\nCY\n              suffers 2 Hits. They may not disperse.\nCMY\n\n\n\n K\n                               BC                  3/1\n                                     Renown\n                               2                         f\n                                    DD    0/na\n                                    SQUADRON\n                                                         s\n                                                                                                                    German Convoys\n                                DD Squadron is\n                                                                                                                    May not disperse. Are destroyed\n                              destroyed by 4 Hits\n                                                                                                                    when they suffer 6 Hits.\n                                                              Poun\n                                                                       d\n                         BB              3/1\n                              Valiant                                                                        For Norwegian Reaction, see p. 19.\n                         2                     s         start with Pound\n                  BC           3/1\n                         Repulse\n                  2                  f                                                              Germans will always opt for\n                         BB              3/2\n                                                                                                    a Seize Initiative attempt\n                         2    Rodney                         CA            1/0\n                                               s                                                    when the opportunity arises.\n            CA       1/0\n                                   Fo\n                                                             1 Birmingham f\n            1 Sheffield f            rbes\n\n--- AC_Solo_scenarios_2022.pdf page 19 ---\n18\n\n      German Actions\n      When the Germans have the Initiative, use the German Action Tables to determine their actions. Start by using the\n      “Early” table. Use the “Late” table after a Battle has occurred (caused by Battle, Closing In, Skirmish results), or after an\n      ‘I’ result on the action table.\n\n\n                                                                                German Action Tables\n                                                           Early                                                                         Late\n                                     1d6        1     2       3       4         5   6                         1d6          1        2        3         4         5        6\n\n\n\n\n           Number of Mines on map?\n                                        0      M      T       N       D         C   C                  Good    W           D        X        X         C         C        C\n\n                                        1       I     M       T       N         C   C                  Bad    W\n                                                                                                              BAD\n                                                                                                                           D        D        X         X         C        C\n\n                                       2+       I     I      M        T         N   C\n\n\n      Legend of Action Table Results:\n C\n                                      COMPLETION ACTION to...where?                                           INTERCEPTION.\n M                                    Selection: Select a German TF. If more than one,                        Selection: Select a German TF. If more than one is in\n Y\n                                      select the TF with a Damaged ship or Convoy, and if                     play, select the nearest to Narvik. If none in play,\n                                      none, select the shortest Trajectory. If no TF in play,                 create a new German TF in Kiel. If unidentified or\nCM\n                                      apply an ‘M’ result instead.                                            new, roll a die to determine the ships in the TF:\nMY\n\n                                      Action: Selected TF attempts to Complete in a port.                                           New German TF\nCY\n                                      Roll another die to determine the destination port                                                no modifiers\nCMY\n                                      (use the Port Table on this page; do so even if you\n                                                                                                                1d6             1       2         3         4        5        6\n K\n         C                            already did so before for the selected TF - its destina-\n                                      tion can change). The selected TF may need to\n                                                                                                   I                           BC       BC       BC                  PB\n                                                                                                                                                           BC                 CA\n                                      perform a Trajectory action first (most direct route),                                   BC       BC       CA                  CL\n                                      and will avoid enemy ports and airbases (but not\n                                                                                                                           If two BCs are already in play, treat a ‘BC’\n                                      enemy Stations). If trajectory length or Intel attach-                               result as a ‘CL’ result instead.\n                                      ment prevents Completion, Pass instead.\n                                      Time Lapse: Remove segments farthest from the                           Action: Selected TF attempts to bring a British TF to\n                                      destination port.                                                       Battle. Target an enemy Station (but not one in Scapa\n                                      After successful Completion action: IC                                  Flow). If none, target a Trajectory nearest to Trond-\n                                                                                                              heim).\n                                      COMPLETION ACTION to DENMARK STRAIT.\n                                                                                                              Time Lapse: Remove segments nearest to Kiel.\n                                      Selection: Select the German TF nearest a Denmark\n                                      St. port hex. The selected TF may not have a Convoy                     If no TF to target, the scenario ends. Proceed to\n                                      or Damaged ship. If no eligible TF may be selected,                     Debriefing.\n                                      create a new TF and PB in it and place it in Kiel (it is\n                                      the selected TF).\n                                      Action: Selected TF attempts to Complete in nearest                                               Port Table\n         D                            Denmark Strait port hex. The TF may need to perform                                               no modifiers\n                                      a Trajectory action (most direct route). If Comple-\n                                                                                                                1d6             1       2        3-4       5-6\n                                      tion is prevented by Trajectory length or Intel attach-\n                                      ment, it performs a Pass action instead.                                        an\n                                                                                                                           sk                m\n                                                                                                                                            ei        ik         If Damaged or a\n                                      Time Lapse: Remove segments farthest from the                                 ur\n                                                                                                                                el\n                                                                                                                               Ki       dh        rv             Convoy, do not\n                                                                                                                       m            Tr       Na                  roll a die: its\n                                      Denmark Strait port hex.                                                    M                   on\n                                      After successful Completion action: IC\n                                                                                                                                                                 destination\n                                                                                                                                                                 port is Kiel.\n\n--- AC_Solo_scenarios_2022.pdf page 20 ---\n19\n              TRAJECTORY ACTION to MURMANSK.                                        BRING ON BATTLE.\n              In Murmansk? If an unidentified TF or a TF with a                     Selection: Remove Damaged ships from all German TFs.\n              Convoy is in Murmansk, treat as ‘N’ instead. If a TF with             Then, select a German TF with a BC, PB, or CA in it (if\n              an undamaged BC (and no Convoy) is in Murmansk,                       more than one choice is available, select a BC before a\n              treat as a ‘D’ instead.                                               PB, a PB before a CA). If none or if the selected TF has a\n              Selection: Select a German TF. If more than one to                    Convoy in it, create and select a new TF in Kiel. Use this\n              choose, select an unidentified TF, or if none, one with               table to identify its ships now:\n              a Convoy. If no TF in play, create and select an uniden-\n              tified TF in Kiel.                                                                   X – Identify German TF\n                                                                                                              no modifiers\n        M     Action: Selected TF performs a Completion action in              X\n              Murmansk. It may first perform a Trajectory action                         1d6         1       2       3        4        5       6\n              using the most direct route. If an Intel marker or length                             BC      BC BC             BC BC        PB\n              of Trajectory prevents a Completion action, it performs                               BC      BC BC             PB CA        CA\n              a Pass action instead.\n                                                                                                  If two BCs are already in play, treat a ‘BC’\n              Time Lapse: Remove segments nearest to Kiel.                                        result as a ‘CL’ result instead.\n               After successful Completion action:          IC                      Action: Selected TF performs actions designed to bring\n              Note: This TF may be a tanker or troop ship (Convoy)                  on Battle targeting a British TF nearest a port. To deter-\n              intended to invade Norway or support the invasion, or, it             mine which port, roll a die and refer to the Port Table on\n              could be a raider intending to turn west to attack British            page 18 (target hex should be closest to that port).\n              merchant shipping, or, it may be looking for your ships               Time Lapse: Remove segments nearest to Kiel.\n              and spoiling for a fight.\n C\n\n\n\n              TRAJECTORY ACTION to NARVIK.\n M\n\n\n              Selection: Select a German TF. If more than one to                                    Identify German TF\n Y\n                                                                                                              no modifiers\n              choose, select an unidentified TF, or if none, one with a\nCM\n              Convoy. If none, create a new TF (unidentified) in Kiel.                   1d6         1       2-3         4         5             6\nMY\n\n              Action: Selected TF performs a Completion action in\n                                                                                                   BC        BC          CL       DD       Convoy\nCY\n\n              Narvik. If necessary, it first performs a Trajectory action                          BC        BC     Convoy Convoy\nCMY\n        N     using the most direct route. If an Intel marker or length                                   Convoy\n K            of Trajectory prevents a Completion action, it performs                             If two BCs are already in play, treat a ‘BC’\n              a Pass action instead.                                                              result as a ‘CL’ result instead. If a DD is\n                                                                                                  already in play, replace with a CL.\n              Time Lapse: Remove segments farthest from Narvik.\n                                                                                         Note: Do not use this table during an ‘I’ or an ‘X’\n               After successful Completion action:          IC                           result on the German Action Table. An ‘I’ or an ‘X’\n                                                                                         result will identify German ships using the table\n              TRAJECTORY ACTION to TRONDHEIM.                                            specific to that action.\n              Selection: Select an unidentified German TF (if more\n              than one to choose, select the nearest to Trondheim).\n              If none, select a German TF with a Convoy. If none,\n              create a new unidentified TF in Kiel.                                 Norwegian Reaction: Narvik\n                                                                                    When a British Convoy performs a Completion action in\n              Action: Selected TF performs a Completion action in                   a hex with Narvik, check for a reaction by rolling a die\n              Trondheim. If necessary, it first performs a Trajectory               and referring to the table below. The reaction will not\n              action using the most direct route. If an Intel marker or             affect game play, but will influence the Debriefing\n              length of Trajectory prevents a Completion action, it                 Table.\n        T     performs a Pass action instead.\n                                                                                                   Norwegian Reaction\n              Time Lapse: Remove segments farthest from Trond-\n              heim.                                                                      1d6                  1-2                  3-6 or higher\n              After successful Completion action: If the selected TF                                Angry reaction                No reaction\n              is unidentified, remove the TF; if identified, it\n              immediately performs a Trajectory action to Kiel,                             Modifier: +1 if British BB is in the Narvik hex.\n              and then a Completion action in Kiel. Then,\n                                                                   IC\n\n--- AC_Solo_scenarios_2022.pdf page 21 ---\n20\n\n         Determine Outcome\n         When the scenario ends, use the following tables to tally Victory Points (VP). Then, refer to the N1 Debriefing Table for the\n         outcome.\n\n                  Mission objectives...\n                   Mines marker                       Mines marker                     Mines marker                        German TF completed\n                  in Vestfjorden?     VP              in Andalsnes?         VP           in Bud?            VP                in Denmark St?            VP\n                       yes            3                     yes             2             yes               2                        yes                -5\n                       no             -2                     no             -1            no                -1                        no                0\n\n\n                  Admiralty assets...                                                         German casualties...\n                  British Convoy &                          British                             German                           German\n                   DD Squadron                           BB, BC, & CA                           Convoys                      BB, BC, PB, & CA\n                       suffered:      VP                  suffered:              VP             suffered:          VP            suffered:         VP\n                    no Hits           0                  no Hits                 0             no Hits             0           no Hits             0\n                      1 Hit           -1             Damaged                     -2            1-3 Hits            3          Damaged               2\n                      2 Hits          -2               Sunk                      -5            4-5 Hits            5            Sunk                3\n                                                                                              destroyed            6             Score for each ship.\n                    Score for each ship.                  Score for each ship.\n\n C                Diverted assets...                                Diplomatic concerns...                   Mission Accomplished? If you scored 5 or\n                                                                                                             more VP, and installed mines in three\n                   British Reinforcements\n M\n                                                                              Angry                          hexes, well done. If you managed to\n Y                       entered play?               VP                 Norwegian Reaction?        VP        Damage or sink a German BC or PB,\nCM                  yes (Group A)                -3                              yes              -1         regardless of mines or VP, you should be\nMY                  yes (Group B)                -1                               no               0         commended. In either case, check the N1\nCY\n                             no                      0                                                       Debriefing Table for the rest of the story.\nCMY\n\n\n\n K\n\n\n      N1 Debriefing Table\n                                  O U T C O M E if                                                                 O U T C O M E if\n         VP                        no angry reaction                                                VP            angry Norwegian reaction\n                    Operation Wilfred was successful. If a German ship was                                       Operation Wilfred was successful. Forbes is\n                    sunk or a Hit scored on a German Convoy, the German                                          pleased, but Churchill is baffled by Norway’s\n         8+         invasion of Norway is interrupted and Operation R4 is set                       6+           response. He orders Operation R4 to proceed\n                    into motion. The German invasion of France is delayed.                                       (if a German TF Completed in Norway,\n                                                                                                                 however, British defeat is likely).\n                    If mines in Vestfjorden, the operation was successful\n         1-7        enough. If a BC completed in Denmark Strait, Churchill                                       If mines in Vestfjorden, the operation was\n                    confers with Pound, seeking a replacement for Forbes.                                        successful enough. If British BB or BC was\n                                                                                                                 sunk, however, Operation R4 is called off. The\n                    The situation seems unstable. Churchill planned to install                      1-5\n        -4 to       troops in Narvik, but he calls off Operation R4. Admiral\n                                                                                                                 German invasion of Norway was perhaps\n                                                                                                                 interfered with (if a German Convoy suffered\n         0          Forbes is obviously ready for retirement.                                                    a Hit), but Churchill is frustrated by Forbes’\n                                                                                                                 ineptitude.\n                    Escaped Raider! If a German TF completed in the\n                    Denmark Strait, Admiral Forbes must despatch Home                                            What went wrong? If a British BB or BC was\n                    Fleet assets to chase it. Convoys from North America,\n          -5        Sierra Leone, and the Mediterranean are instructed to\n                                                                                                                 sunk, it was not only a catastrophe, Norway\n        or less\n                    return to port until the German raiders are dealt with. This\n                                                                                                       0         has officially appealed to Germany for\n                                                                                                   or less       protection against Britain. If none were sunk,\n                    is a political disaster. And now, reports indicate German                                    the Norwegians are slow to contest the\n                    activity on the Belgian border.                                                              German invasion of their country.",
@@ -56,5 +208,7 @@
     ]
    }
   ]
- }
+ },
+ "_debriefing_note": "Ordine del dato, non della pagina: le righe della colonna 'reazione adirata' stanno PRIMA perche' Victory.debriefing_row scorre dall'alto e prende la prima riga applicabile. Senza reazione adirata quelle righe vengono saltate dal filtro `when` e restano le quattro senza condizione, che sono la colonna stampata a sinistra.",
+ "_mission_accomplished": "Riquadro 'Mission Accomplished?' di p.20, che non e' una riga a punti: \"If you scored 5 or more VP, and installed mines in three hexes, well done. If you managed to Damage or sink a German BC or PB, regardless of mines or VP, you should be commended.\""
 }

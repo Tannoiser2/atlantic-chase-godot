@@ -38,6 +38,9 @@ func run() -> void:
 	test_battle_scores()
 	test_debriefing()
 	test_manual_awards_are_claimable_and_counted()
+	test_two_axis_debriefing()
+	test_reinforcement_points_are_counted_and_saved()
+	test_no_solo_table_is_still_a_placeholder()
 
 
 func _v(id: String) -> Victory:
@@ -620,3 +623,120 @@ func test_manual_awards_are_claimable_and_counted() -> void:
 		"la spunta sopravvive a salvataggio e ricarica")
 	almost(victory2.manual_claimed_points(reloaded, side), float(first["points"]),
 		0.001, "e con lei i suoi punti")
+
+
+## Tabelle di Esito a due assi.
+##
+## Tredici delle quindici tabelle solitarie sono una colonna di soglie e basta.
+## Due no, e sono i due modi diversi di non esserlo:
+##
+##   N1 e' DUE tabelle affiancate, e a scegliere non e' il punteggio ma se c'e'
+##      stata una Reazione Norvegese adirata. Le soglie cambiano: 8+ senza,
+##      6+ con.
+##   N5 e' UNA tabella in cui dentro la riga di VP si cerca ancora la banda di
+##      Punti Rinforzo spesi, e le tre bande hanno esiti diversi.
+##
+## Senza questo, la riga letta sarebbe quella della colonna sbagliata: non un
+## errore che si vede, ma un finale diverso da quello stampato.
+func test_two_axis_debriefing() -> void:
+	_begin("le tabelle di Esito a due assi leggono la riga giusta")
+	var n1 := Victory.from_scenario(Scenario.load_by_id("N1 Operazione Wilfred"))
+	var quiet := GameState.new()
+	eq(String(n1.debriefing_row(8.0, Victory.debriefing_flags(quiet))["label"]),
+		"Operazione Wilfred riuscita", "senza reazione servono 8 VP")
+	eq(String(n1.debriefing_row(7.0, Victory.debriefing_flags(quiet))["label"]),
+		"Successo sufficiente", "con 7 si scende di una riga")
+	eq(String(n1.debriefing_row(-5.0, Victory.debriefing_flags(quiet))["label"]),
+		"Il razziatore e' fuggito", "e in fondo c'e' il razziatore fuggito")
+
+	# La reazione adirata non tocca la partita: cambia SOLO la colonna.
+	var angry := GameState.new()
+	angry.solo_counters["debriefing_norwegian_reaction"] = "angry"
+	eq(String(n1.debriefing_row(6.0, Victory.debriefing_flags(angry))["label"]),
+		"Operazione Wilfred riuscita", "con la reazione adirata bastano 6 VP")
+	eq(String(n1.debriefing_row(0.0, Victory.debriefing_flags(angry))["label"]),
+		"Che cosa e' andato storto?",
+		"e la colonna adirata finisce con una riga che l'altra non ha")
+	# La riga di fondo dell'altra colonna non deve mai comparire qui.
+	ne(String(n1.debriefing_row(-9.0, Victory.debriefing_flags(angry))["label"]),
+		"Il razziatore e' fuggito",
+		"le due colonne non si mescolano")
+
+	var n5 := Victory.from_scenario(Scenario.load_by_id("N5 Meglio Tardi che Mai"))
+	for probe: Array in [[16.0, 0, "Narvik e' al sicuro"],
+			[16.0, 3, "Narvik e' in mani britanniche"],
+			[10.0, 3, "La Norvegia e' un campo di battaglia"],
+			[10.0, 4, "La battaglia per la Norvegia continua"],
+			[10.0, 7, "La Gran Bretagna ha il vantaggio"],
+			[3.0, 0, "La Battaglia per la Norvegia e' una sconfitta"],
+			[3.0, 1, "La Norvegia e' perduta"],
+			[3.0, 5, "Riportateli a casa"],
+			[0.0, 9, "Disastro!"]]:
+		var st := GameState.new()
+		st.solo_counters["debriefing_rp"] = int(probe[1])
+		eq(String(n5.debriefing_row(float(probe[0]),
+			Victory.debriefing_flags(st))["label"]), String(probe[2]),
+			"N5 con %d VP e %d RP" % [int(probe[0]), int(probe[1])])
+
+
+## I Punti Rinforzo li conta il motore, e devono sopravvivere al salvataggio:
+## una partita ripresa non puo' dare un Esito diverso.
+func test_reinforcement_points_are_counted_and_saved() -> void:
+	_begin("i Punti Rinforzo si contano da soli e stanno nel salvataggio")
+	var st := _state()
+	eq(int(st.solo_counters.get("debriefing_rp", 0)), 0,
+		"si parte da zero: nessun rinforzo entrato")
+
+	# Il tentativo fallito non fa entrare nessuno, quindi non costa RP.
+	st.rng.push_forced([1, 1])
+	var port := Vector2i(0, 0)
+	var failed := Reorganize.attempt_reinforcement(st, TaskForce.Side.ROYAL_NAVY,
+		port, ["Renown"], "A")
+	if bool(failed["ok"]) and not bool(failed["success"]):
+		eq(int(st.solo_counters.get("debriefing_rp", 0)), 0,
+			"un tentativo fallito non costa Punti Rinforzo")
+
+	st.rng.push_forced([6, 6])
+	var ok := Reorganize.attempt_reinforcement(st, TaskForce.Side.ROYAL_NAVY,
+		port, ["Renown", "Rodney"], "A")
+	if bool(ok["success"]):
+		eq(int(st.solo_counters.get("debriefing_rp", 0)), 2,
+			"due navi entrate, due RP: \"Each ship = 1 RP\"")
+		var reloaded := GameState.new()
+		reloaded.apply_dict(st.to_dict())
+		eq(int(reloaded.solo_counters.get("debriefing_rp", 0)), 2,
+			"e il conto sopravvive a salvataggio e ricarica")
+
+
+## Tutte e quindici le tabelle solitarie sono trascritte: nessuna riga rimanda
+## piu' al fascicolo per il testo che dovrebbe avere lei.
+func test_no_solo_table_is_still_a_placeholder() -> void:
+	_begin("nessuno dei quindici Esiti solitari e' rimasto un segnaposto")
+	var ids := ["BL1 Raiders of the North Atlantic", "BL2 Contain and Destroy",
+		"BL3 Raiders of the North Sea", "N1 Operazione Wilfred",
+		"N2 Operazione Weser (nord)", "N3 Operazione Weser (sud)",
+		"N4 Operazione Weser (nord & sud)", "N5 Meglio Tardi che Mai",
+		"N6 Il Dilemma delle Operazioni", "B1 Operazione Berlino",
+		"B2 La Battaglia dell'Atlantico", "B3 Operazione Reno",
+		"B4 Decisione sui Mari", "A1 Convogli PQ", "A2 L'Ultima Battaglia"]
+	for id in ids:
+		var sc := Scenario.load_by_id(id)
+		ne(sc, null, "%s si carica" % id)
+		if sc == null:
+			continue
+		var v := Victory.from_scenario(sc)
+		true_(v.debriefing.size() >= 3,
+			"%s ha una tabella di Esito con almeno tre righe" % id)
+		for row_v: Variant in v.debriefing:
+			var row: Dictionary = row_v
+			var text := String(row.get("text", ""))
+			false_(text.begins_with("Testo completo della riga"),
+				"%s: la riga '%s' ha il suo testo, non un rimando"
+					% [id, String(row.get("label", ""))])
+		var lonely := v.awards.size() == 1 and String(v.awards[0]["label"]).begins_with(
+			"Calcolare i VP dalle tabelle stampate")
+		false_(lonely, "%s ha le sue voci a punti, non un rimando al fascicolo" % id)
+		# Il briefing deve saperle mostrare: e' li' che il giocatore le legge.
+		var printed := sc.printed_rules_text()
+		true_(String(printed["victory"]).contains("Tabella dell'Esito"),
+			"%s stampa la Tabella dell'Esito nel briefing" % id)

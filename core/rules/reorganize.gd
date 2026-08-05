@@ -249,6 +249,17 @@ static func attempt_reinforcement(state: GameState, side: int,
 		names.append(nm)
 	tf.recompute_speed()
 
+	# Punti Rinforzo. N5 (fascicolo solitario p.33): "keep track of the
+	# Reinforcement Points (RP) of the ships in the Reinforcement Group. RP will
+	# influence the Outcome (on page 35). Each ship = 1 RP." Il Comandante non
+	# costa RP: "Forbes is attached to any reinforcement ship and he does not
+	# cost RP" - e i Comandanti non sono navi, quindi non entrano in `ships`.
+	# Si conta sempre, per ogni scenario: costa niente, e la sola tabella che li
+	# legge e' quella di N5. Sta in `solo_counters` perche' e' nel salvataggio:
+	# una partita ripresa deve dare lo stesso Esito.
+	state.solo_counters["debriefing_rp"] = int(
+		state.solo_counters.get("debriefing_rp", 0)) + names.size()
+
 	out["success"] = true
 	out["tf"] = tf
 	lines.append("Rinforzi %s: 2d6 = %d, riuscito. %s entrano in gioco%s."

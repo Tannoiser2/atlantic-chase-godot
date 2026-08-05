@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Baseline: **3489 verifiche su 21 suite**, tutte verdi. Replay solitario:
+Baseline: **3648 verifiche su 21 suite**, tutte verdi. Replay solitario:
 **quindici `OK`** su quindici scenari, nessuno saltato. `audit_solo.gd`:
 **93 caselle azione, zero procedure segnaposto, ZERO buchi dichiarati, zero
 blocchi.**
@@ -176,7 +176,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 3489 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 3648 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
@@ -768,13 +768,30 @@ sopra scenario per scenario.
   (9), DUE GIOCATORI - Battaglie (12), ALTRO. `_ids` tiene una stringa vuota
   sulle righe di intestazione, cosi' l'indice della lista e quello dello
   scenario non possono divergere - era il modo naturale di sbagliare qui.
-- [ ] **Trascrivere le Tabelle dell'Esito degli 11 solitari rimasti.** N3 e'
-  fatto (p.27: 13 voci a punti e 3 righe di Debriefing). Restano A1, A2, B1,
-  B2, B3, B4, N1, N2, N4, N5, N6, che portano ancora i segnaposto
-  `"Testo completo della riga nel campo raw_victory_text"` e `"Calcolare i VP
-  dalle tabelle stampate..."`. Ognuna va letta sulla PAGINA RENDERIZZATA di
-  `AC_Solo_scenarios_2022.pdf`: il testo estratto ha gia' sbagliato l'ordine
-  dei risultati a p.19.
+- [x] **Le Tabelle dell'Esito di tutti e quindici i solitari sono trascritte.**
+  Erano dodici file con righe segnaposto (`"Testo completo della riga nel campo
+  raw_victory_text"`) e un unico premio finto (`"Calcolare i VP dalle tabelle
+  stampate..."`); adesso sono zero. Ogni tabella e' stata letta sulla PAGINA
+  RENDERIZZATA a 200-260 dpi, mai sul testo estratto.
+  Due tabelle su quindici non sono una colonna di soglie, e il motore adesso
+  sa leggerle:
+  - **N1** e' DUE tabelle affiancate, scelte non dal punteggio ma dalla
+    Reazione Norvegese: 8+/1-7/-4..0/-5 senza reazione adirata, 6+/1-5/0 con.
+    La reazione si tirava gia' e poi si dimenticava; `Norway.apply_reaction`
+    ora scrive `debriefing_norwegian_reaction` in `solo_counters`.
+  - **N5** e' a DUE assi: dentro la riga di VP si cerca la banda di Punti
+    Rinforzo spesi. Gli RP li conta `Reorganize.attempt_reinforcement` (una
+    nave = 1 RP, fascicolo p.33), e stanno nel salvataggio.
+  Il meccanismo generale sta in `Victory.debriefing_row(score, flags)`: una
+  riga puo' portare un `when`, o un valore da uguagliare o una banda `{min,max}`.
+  Trascritto anche il costo in VP delle navi di A2 (sette navi per sei colonne,
+  p.65) e stampato nel briefing: e' la scelta piu' importante di quello
+  scenario e si faceva alla cieca.
+- [ ] Le voci a punti dei quindici Esiti restano tutte `manual: true`. Il
+  motore vede Colpi, danni e affondamenti, ma non sa dov'e' un marker Mine ne'
+  quale nave e' "ogni" nave della riga; assegnarne meta' in automatico darebbe
+  un totale che sembra completo e non lo e'. Automatizzare le righe che il
+  motore SA valutare e' un lavoro a se', e va fatto tutto o niente per riga.
 
 ## P1 - Battaglia avanzata
 

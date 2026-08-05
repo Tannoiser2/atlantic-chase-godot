@@ -3928,12 +3928,18 @@ func _toggle_editor() -> void:
 func _build_briefing(root: Control) -> void:
 	_briefing_panel = PanelContainer.new()
 	_briefing_panel.set_anchor(SIDE_LEFT, 0.14)
-	_briefing_panel.set_anchor(SIDE_TOP, 0.13)
+	_briefing_panel.set_anchor(SIDE_TOP, 0.08)
 	_briefing_panel.set_anchor(SIDE_RIGHT, 0.86)
-	_briefing_panel.set_anchor(SIDE_BOTTOM, 0.78)
+	_briefing_panel.set_anchor(SIDE_BOTTOM, 0.92)
 	_briefing_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	_briefing_panel.visible = false
-	_briefing_panel.add_theme_stylebox_override("panel", _panel_style())
+	# Gli altri pannelli sono HUD e stanno sopra la mappa a 0.88: si guarda la
+	# mappa attraverso. Questo invece si LEGGE - adesso porta la condizione di
+	# fine, la Tabella dell'Esito e tutte le voci a punti - e leggere un
+	# regolamento con la mappa che traspare dietro e' faticoso. Fondo pieno.
+	var style := _panel_style()
+	style.bg_color = Color(0.05, 0.07, 0.10, 1.0)
+	_briefing_panel.add_theme_stylebox_override("panel", style)
 	root.add_child(_briefing_panel)
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 8)

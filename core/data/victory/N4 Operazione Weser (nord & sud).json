@@ -10,40 +10,166 @@
   "Wilhelmshaven": "KRIEGSMARINE",
   "Kiel": "KRIEGSMARINE"
  },
- "_status": "Tabella degli Esiti verificata contro la seconda edizione inglese 2022; premi manuali conservati dove il motore non puo' valutare da solo.",
+ "_status": "Determine Outcome e Debriefing trascritti da AC_Solo_scenarios_2022 p.31, letta sulla pagina renderizzata a 200 dpi. Le voci a punti restano da spuntare a mano: il motore vede i Colpi e gli affondamenti, ma non sa da solo dove sono i marker ne' quale nave e' 'ogni' nave della riga, e assegnare a meta' darebbe un totale che sembra completo e non lo e'.",
  "awards": [
   {
    "side": "KRIEGSMARINE",
    "event": "CUSTOM",
-   "points": 0,
-   "label": "Calcolare i VP dalle tabelle stampate nello scenario e nel campo raw_victory_text; il motore non automatizza queste righe.",
+   "points": 4,
+   "label": "Convoglio Completato a Narvik",
+   "manual": true
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "CUSTOM",
+   "points": -1,
+   "label": "Convoglio NON Completato a Narvik",
+   "manual": true
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "CUSTOM",
+   "points": 5,
+   "label": "Squadrone DD Completato a Trondheim",
+   "manual": true
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "CUSTOM",
+   "points": -2,
+   "label": "Squadrone DD NON Completato a Trondheim",
+   "manual": true
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "CUSTOM",
+   "points": 5,
+   "label": "Convoglio Completato a Bergen",
+   "manual": true
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "CUSTOM",
+   "points": -3,
+   "label": "Convoglio NON Completato a Bergen",
+   "manual": true
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "CUSTOM",
+   "points": 2,
+   "label": "ogni marker Base Aerea tedesca in Norvegia",
+   "manual": true
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "CUSTOM",
+   "points": -3,
+   "label": "ogni marker Base Aerea britannica in Norvegia",
+   "manual": true
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "CUSTOM",
+   "points": -3,
+   "label": "ogni Colpo sul Convoglio tedesco",
+   "manual": true
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "CUSTOM",
+   "points": -4,
+   "label": "ogni Colpo sullo Squadrone DD tedesco",
+   "manual": true
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "CUSTOM",
+   "points": -4,
+   "label": "ogni CA o CL tedesca affondata",
+   "manual": true
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "CUSTOM",
+   "points": -1,
+   "label": "ogni CA o CL tedesca danneggiata",
+   "manual": true
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "CUSTOM",
+   "points": -5,
+   "label": "ogni BC tedesca affondata",
+   "manual": true
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "CUSTOM",
+   "points": -3,
+   "label": "ogni BC tedesca danneggiata",
+   "manual": true
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "CUSTOM",
+   "points": 3,
+   "label": "Convogli britannici: 1-3 Colpi in tutto",
+   "manual": true
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "CUSTOM",
+   "points": 5,
+   "label": "Convogli britannici: 4 o piu' Colpi in tutto",
+   "manual": true
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "CUSTOM",
+   "points": 1,
+   "label": "ogni BB, BC o CV britannica Danneggiata",
+   "manual": true
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "CUSTOM",
+   "points": 2,
+   "label": "ogni BB, BC o CV britannica affondata",
+   "manual": true
+  },
+  {
+   "side": "KRIEGSMARINE",
+   "event": "CUSTOM",
+   "points": 1,
+   "label": "ogni CA o CL britannica affondata",
    "manual": true
   }
  ],
  "debriefing": [
   {
-   "label": "Disastro britannico in Norvegia",
-   "text": "Testo completo della riga nel campo raw_victory_text; soglia trascritta dalla Tabella dell'Esito di N4 Operazione Weser (nord & sud).",
-   "min": 15
+   "min": 15,
+   "label": "Operazione Weser riuscita",
+   "text": "Mentre la Wehrmacht lancia il suo attacco su Belgio, Paesi Bassi e Francia, la Gran Bretagna e' sotto shock. Chamberlain non e' piu' primo ministro e si chiede che Winston Churchill lo sostituisca, ma e' stata proprio l'inettitudine di Churchill a portare alla caduta della Norvegia. In Parlamento ne segue una battaglia politica aspra e affannosa. Intanto il governo francese esorta l'alleato a mandare rinforzi oltre la Manica."
   },
   {
-   "label": "Norvegia sotto pressione",
-   "text": "Testo completo della riga nel campo raw_victory_text; soglia trascritta dalla Tabella dell'Esito di N4 Operazione Weser (nord & sud).",
-   "min": 11
+   "min": 11,
+   "label": "Operazione Weser riuscita (di misura)",
+   "text": "Se c'e' una base aerea britannica in Norvegia, scendi di una riga (a 'La Battaglia per la Norvegia e' indecisa'). Se un Convoglio o lo Squadrone DD hanno Completato a Bergen o a Trondheim, i tedeschi dominano adesso i cieli sulla Norvegia. Le truppe tedesche possono non aver messo in sicurezza ogni porto critico, ma e' solo questione di tempo. Se una BC tedesca e' stata danneggiata o affondata, la Kriegsmarine non potra' lanciare nuove operazioni aggressive per un po' di tempo."
   },
   {
-   "label": "Operazione contesa",
-   "text": "Testo completo della riga nel campo raw_victory_text; soglia trascritta dalla Tabella dell'Esito di N4 Operazione Weser (nord & sud).",
-   "min": 6
+   "min": 6,
+   "label": "La Battaglia per la Norvegia e' indecisa",
+   "text": "Se i Convogli tedeschi e lo Squadrone DD hanno Completato in Norvegia, i tedeschi hanno il sopravvento. L'invasione della Francia e dei Paesi Bassi puo' essere rimandata per permettere alla Luftwaffe di continuare a sostenere la battaglia in Scandinavia. Se hanno Completato solo due Convogli, Trondheim si e' rivelata un caposaldo duro, ma il suo destino e' segnato. Se un Convoglio tedesco non ha Completato a Narvik, i britannici potrebbero riuscire a resistere, ma solo se hanno una base aerea li'."
   },
   {
-   "label": "Successo incerto",
-   "text": "Testo completo della riga nel campo raw_victory_text; soglia trascritta dalla Tabella dell'Esito di N4 Operazione Weser (nord & sud).",
-   "min": 0
+   "min": 0,
+   "label": "Che cosa e' andato storto?",
+   "text": "Se le navi tedesche danneggiate o affondate sono piu' di quelle britanniche, il posto dell'ammiraglio Raeder e' a rischio. Se entrambi i Convogli tedeschi non sono riusciti a Completare in Norvegia, Raeder viene sostituito. Se un Convoglio britannico ha Completato a Narvik o a Trondheim, l'invasione della Francia e' rimandata. Se tre o piu' navi tedesche sono danneggiate o affondate E ha Completato in Norvegia un solo Convoglio o lo Squadrone DD, l'invasione della Francia e' annullata finche' le forze tedesche a terra non vengono recuperate per via aerea."
   },
   {
-   "label": "Fallimento",
-   "text": "Testo completo della riga nel campo raw_victory_text; soglia trascritta dalla Tabella dell'Esito di N4 Operazione Weser (nord & sud)."
+   "label": "Disastro!",
+   "text": "Se un Convoglio e lo Squadrone DD hanno Completato con successo in Norvegia, la battaglia si puo' ancora vincere. Se i britannici non hanno una base aerea in Norvegia E le navi britanniche danneggiate o affondate sono piu' di quelle tedesche E nessuna delle due BC tedesche e' stata affondata, alla fine la Norvegia cade in mano tedesca. L'ammiraglio Raeder viene pero' presto destituito, e l'invasione della Francia e' rimandata a luglio o agosto, o alla primavera del 1941."
   }
  ],
  "raw_victory_text": "--- AC_Solo_scenarios_2022.pdf page 29 ---\n28\n\n       N4: Operation Weser (north & south)                                                                                        German player\n      April, 1940. The Kriegsmarine is ordered to facilitate the occupation of Norway. In the face of superior enemy assets,\n      its surface fleet must risk ferrying the Wehrmacht to multiple ports along the coast. Surprise is crucial, and speed is\n      essential.\n      Objective\n      Two Convoys and one DD Squadron must perform Completion actions in Bergen, Trondheim, and Narvik. All ships\n      must ultimately perform Completion actions in Wilhelmshaven or Kiel. Do not allow German ships to be damaged or\n      sunk.\n      Set-Up                                                              Set-Up Alternative\n      Weather: Bad                                                        If you prefer, you may organize German at-start ships in task forces as you\n      Initiative: British                                                 like. They all start as stations in Wilhelmshaven. Germans start with Initia-\n      Map: Operations Map                                                 tive, but set the Initiative Tally marker at ‘2’.\n      Enemy: Three TFs at start.\n       The End                                                            Urgency (British SI opportunities)\n       The scenario ends when the Germans                                 When the British have the opportunity to make a Seize Initiative attempt,\n       have no Task Forces in play (or possibly                           they always make the attempt and do not elect to take the Evasive\n       by Action Table result ‘X’)                                        maneuvers marker.\n\n C\n                                                                                                         For Norwegian Reaction, see p. 30.\n M\n\n\n\n Y\n         BC           3/2               CL           1/0                           1/0\n                                            1   Karlsruhe\n                                                        f                CA    ipper  f\n         2 Gneisenau                                                          H\nCM\n\n                                            CL        1/0                1\n                       3/2f\n                                                                                      a\n         BC                                                                        0/n             Raeder\nMY\n\n\n                                            1 Konigsbergf                            N\n         2 Scharnhorst                                                             RO s\n                                                                          DD UAD\nCY\n\n\n                               f            CL        1/0\n                                                Köln                          SQ\nCMY\n\n\n                    -2/n\n                           a\n                                             1          f\n                                                       na\n                                                                                                 start with Raeder\n K\n\n                     VOY vs                           -2/\n               CON                                        VOY vs\n                                                 CON\n\n      German Convoys and the DD Squadron are\n      destroyed when they suffer 4 Hits. They can’t\n      disperse.\n\n               British Convoys\n               May not disperse. Are destroyed\n               when they suffer 3 Hits.                                                                                                           BW\n                                                                                                                                                   AD\n\n\n\n\n                                            BB             3/1\n                                                  Valiant\n          CA        1/0                     2                    s\n                                   BC               3/1\n          1  Sheffield\n                       f\n                                   2\n                                            Repulse                       BC           3/1\n                                                           f                   Renown\n          CA        1/0                                                   2                  f\n                                            BB                 3/2\n          1 Birmingham f                          Rodney\n                                            2                     s\n                                   CA       1/0 Forb\n                                                    es\n      The British use              1 Belfast\n                                               f\n      Forbes’ leader benefit\n      only during an Engage action.\n\n--- AC_Solo_scenarios_2022.pdf page 30 ---\n29\n\n        British Actions                                                                                             British Action Table\n        When the British have Initiative, use the British Action                                     1d6             1or less   2     3     4        5     6+\n        Table to determine their actions.\n                                                                                                             none     R4\n                                                                                                                           conv  oy              in       in\n\n\n\n                                                                                    Number of successful\n                                                                                                                            m ines                 es       es\n                                                                                                                            m ines               m       m\n\n\n                                                                                                                      R4        X                          C\n                                                                                                                                    conv         in\n                   Modifiers (British Action Table):                                                         1                      m\n                                                                                                                                          oy       es\n                                                                                                                                       in        m\n                    +2 each damaged British ship\n                                                                                                                                         es\n                        (count only those currently in play)\n\n\n\n                                                                                 German Completion actions\n                    +1 each sunk British ship                                                                2        R4        X     X     SA   ines      C\n                    -1 each Aggressive Norwegian Reaction                                                                                        m\n\n\n                                                                                                             3+        X        X     X     SA       C     C\n        Legend of Action Table Results:\n                  COMPLETION ACTION to...?                                         BRITISH LAY MINES OR ESTABLISH AN AIR BASE.\n                  Selection: Select a British TF with a Convoy. If                 Selection: Select a hex on the map (roll a die):\n                  none, select a TF with a Damaged ship. If none,                    1d6                         1                  2-3           4-6\n                  perform an Air Strike action instead (if Bad\n                                                                                                              Bergen            Trondheim        Narvik\n                  Weather or no German TF in range, select the\n                  British TF with the longest Trajectory).                         Action: If the selected hex does not have a British Mines\n                                                                                   stealth force in it, place one (attach Intel markers to\n                                                                                   German TF segments in the hex). Then IC .\n C\n                  Action: Selected TF performs a Completion\n M\n                  action. It may first need to perform a Trajectory                If it already has a Mines force, that force performs a\n                  action avoiding Intel triggers (if possible),                    Stealth Attack action against a German TF in its hex. If\n           C\n Y\n\n\n\nCM\n                  using the most direct route.                             es      there is no German TF in its hex, or if it is unable to\n                                                                           in\n                                                                           m       perform the action, place a British air base marker in the\n                  Completion Where? The port where the select-\n                                                                                   hex, then IC . If an air base marker (British or\nMY\n\n\n                  ed TF attempts to complete depends on the\nCY\n                                                                                   German) is already in the hex, place a Contact marker on\n                  nature of the TF, as follows: If the TF contains a\nCMY                                                                                the target instead (that is, attach it to a German Station\n                  Convoy it completes in Methil; all other TFs\n                                                                                   or segment in the selected hex or nearest to that hex; if\n K\n                  attempt to complete in Scapa Flow.\n                                                                                   more than one German TF is ‘nearest,’ attach a Contact\n                  Time Lapse: Remove segments farthest from                        marker to all nearest TFs). Then IC\n                  the port where it is attempting to complete.\n                                                                                   Air Base marker: Remove the marker when a\n                  After Completion action:        IC                               German Convoy or DD Squadron successful-\n                                                                                   ly completes in the hex.\n                  CONVOY\n                  Selection: Select the British TF with a Convoy in               STEALTH ATTACK.\n                  it. If the R4 Action Table result was garnered                  First SA result: British perform Stealth Recon\n                                                                                                                                                            bm\n                  previously, treat this as ‘R4’ instead. If there is no          – place a Submarine in Bergen’s hex (attach                            Su\n                                                                                                                                                             ar\n                  British TF with a Convoy, create a new TF                       Intel markers to all German Trajectory                                       in e\n\n                  (Station) in Bergen (place a Convoy in it).                     segments in that hex).\n\n                  Action: Selected TF performs a Completion                       Second SA result...and beyond:\n                  action in Methil. It may first need to perform a                Selection: Select the British Submarine stealth force. If\n      co                                                                          not in play, select the British air base (or TF with CV)\n         nv\n           oy     Trajectory action avoiding Intel triggers (if            SA     nearest a German TF.\n                  possible), using the most direct route. If\n                  prevented by Intel or Trajectory length, it Passes              Action: Submarine performs a Stealth attack (if the British\n                  instead (it performs Time Lapse).                               maintain Initiative afterwards, they perform a Signals\n                                                                                  action targeting the nearest German Intel marker to\n                  Time Lapse: Remove segments farthest from                       Bergen). If no target, the British perform an All Pass. If no\n                  Methil.                                                         Submarine force is in play, the air base performs an Air\n                                                                                  Strike. If bad weather or no eligible target, the British\n                  After Completion action:        IC                              perform an All Pass.\n\n--- AC_Solo_scenarios_2022.pdf page 31 ---\n30\n\n                 OPERATION R4.\n                 The British launch an operation intended to capture               Norwegian Reaction:\n                 Norway. The effect of this result depends on whether R4           German Completion Actions\n                 has been garnered before.                                         When a German Convoy or DD performs a successful\n                                                                                   Completion action in a hex with Bergen, Trondheim, or\n                 First R4 Result...                                                Narvik, check for a reaction by rolling a die and\n                 Selection: Create two new task forces:                            referring to the Norwegian Reaction table below.\n                 TF4: in Clyde/Liverpool (Convoy and 1 CA).\n                 TF5: in Scapa Flow (Furious (CV), French CL, and a British                             Norwegian Reaction\n                 CA).\n                 If a German DD Squadron has not yet completed in                     1d6               1 or less   2       3-4      5-6      7-8\n                 Trondheim, create a third new British TF in Methil (TF6 –\n                 Convoy).                                                                                                                      –\n                                                                                                  YES       !       !\n                 Actions: TF4 and TF5 perform Trajectory actions to                  British TF\n                 Narvik. TF6 (if in play) performs a Trajectory action to\n                 Trondheim. They take the most direct route while                     in hex?\n                 avoiding Intel triggers if possible.                                             NO        !                          –\n                 Then: TF6 performs a Completion action in Trondheim,\n        R4       then IC . If not in play, or if not eligible due to\n                 Trajectory length or Intel attachment, TF4 performs a               Modifiers:\n                 Completion action in Narvik (if not eligible, the British           +1 if a German Convoy or DD already Completed in\n                 Pass instead and TF4 performs Time Lapse removing                    Norway;\n                 segments farthest from Narvik). Then IC                              +1 if one or more German BC, CA, or CL is in the hex;\n C                                                                                    -1 if a British Air Base marker is in Norway (-2 instead\n                 Second R4 Result...and beyond                                            if it is in the Completion hex);\n M\n                 Selection: Select a British TF with a Convoy. If more than           -1 if one or more British TF Station is in the hex..\n Y\n                 one, choose a TF in Narvik. If no Convoy in play, select a\nCM               TF with a CV. If none, treat as an ‘X’ Action Table result        Legend of results...\nMY\n                 instead.                                                             –      No additional effect. This is not an Aggressive\nCY               Action: If a Convoy, the selected TF performs a Comple-                            Reaction.\n\nCMY\n                 tion action in Narvik. If a British TF already successfully                Hit     Convoy or DD suffers a Hit. This is an Aggres-\n                 completed in Narvik, it will attempt to complete in                                sive Reaction.\n K\n                 Scapa Flow instead. If the selected TF has a CV in it,\n                                                                                                    Convoy or DD suffers two Hits. You may\n                 perform an Air Strike action (if Bad Weather, it performs\n                                                                                     Two Hits       redirect one of the Hits to another German\n                 a Completion action in Scapa Flow). The selected TF will                           ship in the hex. This is an Aggressive Reaction.\n                 take the most direct rout, regardless of Intel triggers.\n                 Time Lapse: Remove segments nearest to Scapa Flow.                     !           The Completion action is cancelled. The\n                                                                                                    German Convoy or DD suffers two Hits and it\n                                                                                                    may only Complete in Kiel or Wilhelmshaven.\n                 BRING ON BATTLE.                                                                   This is an Aggressive Reaction. British have\n                 If R4 result was garnered previously, roll a die: if EVEN,                         Initiative.\n                 treat as an R4 result, if ODD treat as an X result.\n                                                                                                    Unless one is already in Norway, place a\n                 Selection: Select the British TF with Forbes. If Forbes is                         German Air Base marker in the hex. Remove\n                 killed or has used his leader benefit, or is not in play,                          all British Air Base markers from Norway (if\n                 select the Renown’s TF, or the TF with the largest                                 any). Henceforth, no British Air Base markers\n                 combined Gun Values). If no British TF, create a new TF                            may be placed in Norway. This is not an\n                 in Scapa Flow with 2 slow BBs (it is selected).                                    Aggressive Reaction.\n\n         X       Action: First, remove all Damaged British ships (if this      Historical Note:\n                 empties a TF, remove that TF from play). Then, selected       Admiralty concocted several schemes involving Norway: Wilfred,\n                 TF performs actions designed to bring to Battle the           Hammer, and R4. Wilfred was intended to push German merchant\n                 German TF nearest to Narvik (if the target is a Trajecto-     traffic off the coast where British cruisers could intercept. Hammer\n                 ry, it targets its nearest segment, not necessarily the       was Churchill’s plan to send the Home Fleet into the Skagerrak, or the\n                 nearest to Narvik). If no target, the scenario ends.          Inner Leads near Bergen, to smash the Kriegsmarine. R4 was a\n                                                                               contingency plan to invade Norway should it appear that the\n                 Time Lapse: Remove segments farthest from the target          Germans were acting aggressively or that the Norwegians were in\n                 hex (that is, the hex where the British are trying to bring   league with the Germans. None of these operations were conceived\n                 on a battle).                                                 with the knowledge that Germany had actually initiated its invasion.\n\n--- AC_Solo_scenarios_2022.pdf page 32 ---\n31\n\n\n         Determine Outcome\n         When the scenario ends, use the following tables to tally Victory Points (VP). Then, refer to the N4 Debriefing Table for the\n         outcome.\n\n                  Mission objectives...\n                  Convoy completed                 DD completed                     Convoy completed                       Each air base\n                      in Narvik?          VP       in Trondheim?          VP           in Bergen?         VP             marker in Norway?       VP\n                          yes             4               yes             5               yes             5                  German              2\n                           no            -1               no              -2               no             -3                   British           -3\n\n                                                                                                                       Kriegsmarine assets...\n                                                          Each Hit on a                       Each                             Each\n                                                           German...           VP        German CA or CL... VP              German BC...        VP\n                                                           Convoy              -3               sunk           -4               sunk            -5\n                                                                 DD            -4            damaged           -1             damaged           -3\n           British casualties...\n                  British Convoys suffered:    VP                Each British BB, BC, CV suffered:   VP         Each British CA, CL suffered:   VP\n                                no Hits            0                       Damaged                   1                   Damaged                0\n               total Hits of\n                                1-3 Hits           3                           Sunk                  2                       Sunk                1\n               all Convoys\n C\n                                4+ Hits            5\n M\n\n\n\n Y\n\n\n\nCM    N4 Debriefing Table\nMY\n\n\n\nCY\n         VP                                                           O U T C O M E\nCMY                 Operation Weser was successful. As the Wehrmacht launches its attack on Belgium, the Netherlands, and France,\n                    Britain is in a state of shock. Chamberlain is no longer Prime Minister and there are calls for Winston Churchill to\n K\n        15 +        replace him, but it was Churchill’s ineptitude that led to the fall of Norway. A bitter and frantic political battle ensues\n                    in Parliament. Meanwhile, the French government urges its ally to send reinforcements across the Channel.\n\n                    Operation Weser was successful. If there is a British air base in Norway, reduce this outcome one row (to “The Battle\n                    for Norway us undecided”). If a Convoy or DD Squadron completed in either Bergen or Trondheim, the Germans now\n      11-14         command the skies over Norway. German troops may not have secured every critical port, but it is only a matter of\n                    time. If a German BC was damaged or sunk, the Kriegsmarine will be unable to launch aggressive new operations for\n                    some time.\n\n                    The Battle for Norway is undecided. If German Convoys and the DD Squadron completed in Norway, the Germans\n                    have the upper hand. The invasion of France and the Low Countries may be delayed, in order to allow the Luftwaffe\n       6-10         to continue to support the battle in Scandinavia. If only two Convoys completed, Trondheim has proven to be a\n                    tough stronghold, but its fate is clear. If a German Convoy did not complete in Narvik, the British may be able to hold\n                    out but only if there is a British air base there.\n                    What went wrong? If more German ships are damaged or sunk than British ships, Admiral Raeder’s job may be in\n                    jeopardy. If both German Convoys failed to complete in Norway, Raeder is replaced. If a British Convoy completed in\n         0-5        Narvik or Trondheim, the invasion of France is delayed. If three or more German ships are damaged or sunk, AND only\n                    one Convoy or DD Squadron completed in Norway, the invasion of France is called off until German forces on the\n                    ground are rescued by airlift.\n\n                    Disaster! If one Convoy and the DD Squadron completed successfully in Norway, the battle may still be won. If the\n          -1        British do not have an air base in Norway AND more British ships were damaged or sunk than German ships, AND\n        or less     neither German BC was sunk, Norway eventually falls to the Germans. Admiral Raeder is soon cashiered, however,\n                    and the invasion of France is postponed until July or August, or until the spring of 1941.",

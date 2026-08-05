@@ -447,18 +447,38 @@ func printed_rules_text() -> Dictionary:
 			+ "Si conta UN punteggio e lo si cerca nella tabella qui sotto.")
 		lines2.append("")
 		lines2.append("[b]Tabella dell'Esito[/b]")
+		# Alcune tabelle sono due tabelle affiancate, scelte da una condizione e
+		# non dal punteggio (N1: reazione norvegese adirata oppure no), con
+		# soglie diverse. Stamparle di seguito senza dirlo darebbe due righe
+		# "8 o piu'" e "6 o piu'" che sembrerebbero in conflitto.
+		var variant := ""
 		for row_v: Variant in victory_data.get("debriefing", []):
 			var row: Dictionary = row_v
+			var this_variant := String(row.get("variant", ""))
+			if this_variant != variant:
+				variant = this_variant
+				lines2.append("  [i]%s[/i]" % (variant if variant != ""
+					else "altrimenti:"))
 			# `str()` su un numero JSON stampa "10.0": la soglia di una tabella
 			# di Esito e' un punteggio, non una misura.
 			var threshold := "%d o piu'" % int(row["min"]) if row.has("min") \
 				else "sotto"
+			# N5 e' l'unica tabella a due assi: dentro la riga di VP si cerca
+			# ancora la banda di Punti Rinforzo spesi. Senza scriverlo, tre
+			# righe con la stessa soglia sembrerebbero un errore di stampa.
+			var note := String(row.get("threshold_note", ""))
+			if note != "":
+				threshold += ", " + note
 			lines2.append("  [b]%s[/b]  %s" % [threshold, String(row.get("label", ""))])
 			var text := String(row.get("text", "")).strip_edges()
 			if text != "" and not text.begins_with("Testo completo della riga"):
 				lines2.append("     %s" % text)
 		lines2.append("")
 		lines2.append(_awards_text())
+		var cost := _ship_cost_text()
+		if cost != "":
+			lines2.append("")
+			lines2.append(cost)
 	elif mode_name == "VP":
 		lines2.append("Si contano i Punti Vittoria; vince chi ne ha di piu'.")
 		lines2.append(_awards_text())
@@ -515,3 +535,37 @@ func _awards_text() -> String:
 			+ "trascritti nel dato: vanno letti sulla pagina dello scenario e "
 			+ "contati a mano.[/color]")
 	return "[b]Punti[/b]\n" + "\n".join(lines)
+
+
+## Il costo in VP delle navi schierate, quando lo scenario ne ha uno.
+##
+## Lo ha un solo scenario dei quindici: A2 L'Ultima Battaglia, dove la
+## Kriegsmarine paga al Debriefing ogni nave che ha messo in campo, e il prezzo
+## cambia con il porto da cui parte (una BB a Kiel costa 2, a Brest 5). Il
+## giocatore deve poterlo leggere PRIMA di schierare, se no la scelta piu'
+## importante dello scenario la fa alla cieca.
+func _ship_cost_text() -> String:
+	var cost: Dictionary = victory_data.get("_ship_vp_cost", {})
+	if cost.is_empty():
+		return ""
+	var cols: Array = cost.get("columns", [])
+	var ships: Dictionary = cost.get("ships", {})
+	if cols.is_empty() or ships.is_empty():
+		return ""
+	# Una riga per nave con le colonne scritte per esteso, non incolonnate: il
+	# briefing si legge in un font proporzionale, dove gli spazi non allineano
+	# niente e una griglia diventa un pasticcio.
+	var lines: Array[String] = ["[b]Costo in VP delle navi schierate[/b]"]
+	for name_v: Variant in ships.keys():
+		var cells: Array[String] = []
+		var values: Array = ships[name_v]
+		for i in mini(cols.size(), values.size()):
+			cells.append("%s %d" % [String(cols[i]), int(values[i])])
+		lines.append("  [b]%s[/b]  %s" % [String(name_v), ",  ".join(cells)])
+	var rv := String(cost.get("rv_markers", "")).strip_edges()
+	if rv != "":
+		lines.append("  " + rv)
+	var src := String(cost.get("_source", "")).strip_edges()
+	if src != "":
+		lines.append("[color=#9a9a9a]%s[/color]" % src)
+	return "\n".join(lines)

@@ -384,6 +384,18 @@ static func apply_reaction(state: GameState, result: Dictionary,
 		"none":
 			(out["log"] as Array[String]).append("Nessuna reazione.")
 			return out
+		"angry":
+			# N1: "The reaction will not affect game play, but will influence
+			# the Debriefing Table." Non tocca la partita, quindi non c'e'
+			# niente da applicare - ma la Tabella di Debriefing di N1 ha DUE
+			# colonne, e sceglie fra loro proprio questo. Se non lo si scrive
+			# da qualche parte, al Debriefing la reazione non e' mai avvenuta.
+			state.solo_counters["debriefing_norwegian_reaction"] = "angry"
+			(out["log"] as Array[String]).append(
+				"Reazione Adirata: non tocca la partita, ma al Debriefing si "
+				+ "legge la colonna 'reazione norvegese adirata'.")
+			state.changed.emit()
+			return out
 		"hit":
 			out["hits"] = 1
 		"two_hits":

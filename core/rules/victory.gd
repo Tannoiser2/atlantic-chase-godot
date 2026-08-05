@@ -325,12 +325,59 @@ func apply_event(state: GameState, event: int, ship: Ship = null,
 ## Le righe sono ordinate dalla migliore alla peggiore e ognuna ha una soglia
 ## `min`: si scende finche' il punteggio la raggiunge. L'ultima riga fa da
 ## fondo ("-3 o meno"), quindi non ha soglia. Ritorna {} se la tabella non c'e'.
-func debriefing_row(score: float) -> Dictionary:
+##
+## Alcune tabelle sono DUE tabelle affiancate, scelte da una condizione e non
+## dal punteggio: N1 stampa una colonna "no angry reaction" e una "angry
+## Norwegian reaction", con soglie diverse (8+ contro 6+). Una riga puo' quindi
+## portare un `when`, e vale solo se `flags` lo soddisfa. Una riga senza `when`
+## vale sempre, cosi' le tabelle a colonna sola non cambiano.
+func debriefing_row(score: float, flags: Dictionary = {}) -> Dictionary:
 	for r_v: Variant in debriefing:
 		var r: Dictionary = r_v
+		if not _row_applies(r, flags):
+			continue
 		if not r.has("min") or score >= float(r["min"]):
 			return r
 	return {}
+
+
+## Una condizione di `when` e' o un valore da uguagliare (N1: la reazione
+## norvegese e' "angry" oppure non c'e'), o una banda numerica `{min, max}`
+## (N5: i Punti Rinforzo spesi, 0-2 / 3+ dentro la riga 15+). Le due forme
+## bastano per tutte e quindici le tabelle stampate.
+func _row_applies(row: Dictionary, flags: Dictionary) -> bool:
+	var when: Variant = row.get("when", null)
+	if typeof(when) != TYPE_DICTIONARY:
+		return true
+	for k_v: Variant in (when as Dictionary).keys():
+		var k := String(k_v)
+		var want: Variant = (when as Dictionary)[k]
+		var have: Variant = flags.get(k, null)
+		if typeof(want) == TYPE_DICTIONARY:
+			var n := 0.0 if have == null else float(have)
+			var band: Dictionary = want
+			if band.has("min") and n < float(band["min"]):
+				return false
+			if band.has("max") and n > float(band["max"]):
+				return false
+		elif String(have if have != null else "") != String(want):
+			return false
+	return true
+
+
+## Le condizioni, non di punteggio, che scelgono quale riga del Debriefing si
+## legge. Stanno in `solo_counters` perche' sono cose successe durante la
+## partita e devono sopravvivere a un salvataggio: una partita ripresa non puo'
+## dare un Esito diverso.
+static func debriefing_flags(state: GameState) -> Dictionary:
+	var out := {}
+	if state == null:
+		return out
+	for k_v: Variant in state.solo_counters.keys():
+		var k := String(k_v)
+		if k.begins_with("debriefing_"):
+			out[k.substr(11)] = state.solo_counters[k]
+	return out
 
 
 ## Esito finale. Ritorna:
@@ -382,7 +429,7 @@ func outcome(state: GameState) -> Dictionary:
 		out["tie"] = false
 		out["winner"] = -1
 		out["score"] = state.vp_of(solo_side) + manual_claimed_points(state, solo_side)
-		var row := debriefing_row(float(out["score"]))
+		var row := debriefing_row(float(out["score"]), debriefing_flags(state))
 		out["row"] = row
 		out["resolved"] = not row.is_empty()
 		return out
