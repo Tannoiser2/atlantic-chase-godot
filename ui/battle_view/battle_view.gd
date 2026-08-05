@@ -111,6 +111,15 @@ var targeting: Dictionary = {}
 ## bersaglio. Null = nessuna in attesa.
 var _assigning: Ship = null
 
+## LA DIVISIONE DEL FUOCO (Regole Avanzate). Chi e' in Acquisizione puo'
+## distribuire il Valore dei Cannoni fra due bersagli, e rinuncia alla colonna
+## Acquisizione. Qui si raccoglie la dichiarazione: la nave che divide, i due
+## bersagli scelti a clic, e quanti cannoni vanno al PRIMO. Il resto va al
+## secondo, perche' le parti devono sommare al valore intero.
+var _split_firer: Ship = null
+var _split_targets: Array[Ship] = []
+var _split_first_gv: int = 1
+
 ## Le navi che hanno dichiarato il Controllo Danni per gli Effetti Duraturi:
 ## tirano tre dadi e tengono i due piu' alti, ma non spareranno nel Round
 ## successivo. Si dichiara PRIMA di tirare, e per questo va raccolto qui.
@@ -275,6 +284,29 @@ func _rebuild_buttons() -> void:
 					if solo_player_side < 0 or state.target_tf.side == solo_player_side:
 						items.append(["Fuga: %s" % _side_label(false), "G",
 							func() -> void: _do_break_away(false, true), false])
+
+	# La divisione del fuoco ha tre stati, e i pulsanti li rispecchiano: da
+	# aprire, da riempire coi due bersagli, da confermare.
+	if state.phase == BattleState.Phase.GUNNERY and state.advanced \
+			and not state.ended:
+		if _split_firer == null:
+			if selected != null and _can_control_ship(selected) \
+					and selected.attitude == Attitude.Kind.ACQUIRING:
+				items.append(["Dividi il fuoco di %s" % selected.name, "D",
+					_split_toggle, false])
+		else:
+			var gv := _split_gun_value(_split_firer, _split_targets[0]) \
+				if _split_targets.size() > 0 else 0
+			if _split_targets.size() < 2:
+				items.append(["Divisione di %s: clicca %d bersagli" % [
+					_split_firer.name, 2 - _split_targets.size()], "D",
+					_split_toggle, false])
+			else:
+				items.append(["Ripartizione: %d su %s, %d su %s" % [
+					_split_first_gv, _split_targets[0].name,
+					gv - _split_first_gv, _split_targets[1].name], "D",
+					_split_toggle, false])
+				items.append(["Conferma la divisione", "Z", _split_confirm, true])
 
 	# I TRE USI DELLA CONFUSIONE non sono tre pulsanti: sono lo stesso jolly, e
 	# quale sia disponibile lo decide la fase. Per questo la voce e' una sola e
@@ -497,6 +529,101 @@ func _side_label(active: bool) -> String:
 ## giocatori guardano lo stesso schermo.
 ## La scelta della Plancia, per la prima nave che deve ancora farla. Sono due
 ## mali, e il fascicolo non lascia scampo: o non spari, o non ti muovi.
+## Il Valore dei Cannoni della nave selezionata al raggio del primo bersaglio,
+## o -1 se non puo' sparare. Serve a sapere se c'e' qualcosa da dividere.
+func _split_gun_value(firer: Ship, target: Ship) -> int:
+	if firer == null or target == null:
+		return -1
+	var band := Gunnery.band_for(Gunnery.range_between(firer.battle_zone,
+		target.battle_zone))
+	var v: Variant = firer.gun_value(band)
+	return -1 if v == null else int(round(float(v)))
+
+
+## `D` apre e chiude la divisione del fuoco. Con la divisione gia' aperta e i
+## due bersagli scelti, `D` fa scorrere la ripartizione: 1 e resto, 2 e resto...
+func _split_toggle() -> void:
+	if state.phase != BattleState.Phase.GUNNERY or not state.advanced:
+		return
+	if _split_firer != null and _split_targets.size() == 2:
+		var gv := _split_gun_value(_split_firer, _split_targets[0])
+		if gv >= 2:
+			_split_first_gv = _split_first_gv + 1
+			if _split_first_gv > gv - 1:
+				_split_first_gv = 1
+			state.note("Divisione: %d cannoni su %s, %d su %s."
+				% [_split_first_gv, _split_targets[0].name,
+					gv - _split_first_gv, _split_targets[1].name])
+		refresh()
+		return
+	if _split_firer != null:
+		_split_cancel("divisione annullata")
+		return
+	if selected == null or not _can_control_ship(selected):
+		state.note("Divisione del fuoco: seleziona prima una tua nave.")
+		refresh()
+		return
+	if selected.attitude != Attitude.Kind.ACQUIRING:
+		state.note("Divisione del fuoco: solo una nave in Acquisizione puo' dividere.")
+		refresh()
+		return
+	_split_firer = selected
+	_split_targets.clear()
+	_split_first_gv = 1
+	state.note("%s divide il fuoco: clicca i DUE bersagli, poi Z per confermare."
+		% selected.name)
+	refresh()
+
+
+func _split_pick(clicked: Ship) -> void:
+	if _split_targets.has(clicked):
+		_split_targets.erase(clicked)
+		state.note("%s non e' piu' un bersaglio della divisione." % clicked.name)
+	elif _split_targets.size() >= 2:
+		state.note("La divisione ha gia' due bersagli: Z conferma, D annulla.")
+	elif not _legal_targets(_split_firer).has(clicked):
+		state.note("%s non puo' colpire %s da qui."
+			% [_split_firer.name, clicked.name])
+	else:
+		_split_targets.append(clicked)
+		state.note("Divisione: bersaglio %d, %s."
+			% [_split_targets.size(), clicked.name])
+	queue_redraw()
+	refresh()
+
+
+func _split_confirm() -> void:
+	if _split_firer == null:
+		return
+	if _split_targets.size() != 2:
+		state.note("La divisione vuole due bersagli: ne hai scelti %d."
+			% _split_targets.size())
+		refresh()
+		return
+	var gv := _split_gun_value(_split_firer, _split_targets[0])
+	var why := battle.set_split_fire(_split_firer, [
+		{"target": _split_targets[0], "gv": _split_first_gv},
+		{"target": _split_targets[1], "gv": gv - _split_first_gv},
+	])
+	if why != "":
+		state.note("Divisione del fuoco: %s" % why)
+		refresh()
+		return
+	# Chi divide non passa piu' dal bersaglio singolo.
+	targeting.erase(_split_firer)
+	_split_cancel("")
+	refresh()
+
+
+func _split_cancel(note: String) -> void:
+	if note != "":
+		state.note("Divisione del fuoco: %s." % note)
+	_split_firer = null
+	_split_targets.clear()
+	_split_first_gv = 1
+	refresh()
+
+
 ## I TRE USI DEL SEGNALINO CONFUSIONE (Regole Avanzate).
 ##
 ## Sono tre cose molto diverse, e quale sia disponibile dipende dalla FASE: nel
@@ -1102,6 +1229,9 @@ func _gui_input(event: InputEvent) -> void:
 				# Nelle fasi di fuoco il clic serve a DECIDERE: primo clic
 				# sulla nave che spara, secondo sul bersaglio. Ricliccare la
 				# stessa coppia toglie l'assegnazione.
+				if _split_firer != null and _is_targeting_phase():
+					_split_pick(clicked)
+					return
 				if _is_targeting_phase():
 					if _assigning != null and _assigning != clicked:
 						_assign_target(_assigning, clicked)
@@ -1295,6 +1425,12 @@ func handle_key(k: InputEventKey) -> bool:
 			return true
 		KEY_K:
 			_use_confusion()
+			return true
+		KEY_D:
+			_split_toggle()
+			return true
+		KEY_Z:
+			_split_confirm()
 			return true
 		KEY_M:
 			_bridge_stopped()

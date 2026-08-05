@@ -23,6 +23,7 @@ func run() -> void:
 	test_bridge_choice()
 	test_rudder_control_changes_hands()
 	test_split_fire()
+	test_split_fire_ui_distribution_is_always_legal()
 
 
 func _ship(n: String = "Bismarck") -> Ship:
@@ -428,3 +429,44 @@ func test_split_fire() -> void:
 	st.last_round = 5
 	b.end_round()
 	eq(st.split_fire.size(), 0, "nel Round dopo va dichiarata di nuovo")
+
+
+## La divisione del fuoco dichiarata dalla vista passa dallo stesso controllo
+## del motore: qui si verifica che le parti scelte a schermo - una al primo
+## bersaglio, il resto al secondo - siano sempre una ripartizione legale.
+func test_split_fire_ui_distribution_is_always_legal() -> void:
+	_begin("ogni ripartizione offerta dalla vista e' legale")
+	var st := BattleState.new(BattleState.Kind.BATTLE, TimeLapse.Weather.GOOD)
+	st.advanced = true
+	var km := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
+	var firer := _ship("Bismarck")
+	firer.attitude = Attitude.Kind.ACQUIRING
+	firer.battle_zone = BattleState.Zone.NEAR
+	km.ships = [firer] as Array[Ship]
+	var rn := TaskForce.new(2, TaskForce.Side.ROYAL_NAVY)
+	var a := _ship("Hood")
+	var b2 := _ship("Repulse")
+	a.battle_zone = BattleState.Zone.NEAR
+	b2.battle_zone = BattleState.Zone.NEAR
+	rn.ships = [a, b2] as Array[Ship]
+	st.active_tf = km
+	st.target_tf = rn
+	var b := Battle.new(st, DiceRNG.new(21))
+
+	var band := Gunnery.band_for(Gunnery.range_between(firer.battle_zone,
+		a.battle_zone))
+	var gv := int(firer.gun_value(band))
+	# La vista cicla il primo pezzo da 1 a gv-1: ogni valore deve produrre una
+	# dichiarazione accettata, se no il pulsante offrirebbe scelte illegali.
+	for first in range(1, gv):
+		st.split_fire.clear()
+		eq(b.set_split_fire(firer, [{"target": a, "gv": first},
+			{"target": b2, "gv": gv - first}]), "",
+			"ripartizione %d/%d accettata" % [first, gv - first])
+	# Il ciclo della vista va da 1 a gv-1, quindi non offre MAI zero cannoni a
+	# un bersaglio. Il motore invece una parte da zero la accetta, e resta
+	# cosi': il fascicolo dice "may distribute G.V. to attack two targets" e non
+	# vieta da nessuna parte una parte nulla. Vietarla qui sarebbe una regola
+	# inventata; a non offrirla basta l'interfaccia.
+	eq(b.set_split_fire(firer, [{"target": a, "gv": 0}, {"target": b2, "gv": gv}]),
+		"", "il motore non vieta una parte da zero: il fascicolo non lo dice")

@@ -3962,6 +3962,19 @@ func _build_help(root: Control) -> void:
   F / G                      tenta la Fuga (Attivo / Bersaglio)
   ESC                        torna alla mappa
 
+[b]In Battaglia, Regole Avanzate[/b]
+  A                          cambia attitudine (fase Attitudine)
+  P / M                      Plancia: rinuncia al Fuoco / resta Ferma
+  D                          divide il fuoco su due bersagli, poi cicla
+	  la ripartizione dei cannoni; Z conferma
+  K                          usa il segnalino Confusione: nel Fuoco sposta
+	  un danno su una nave TUA, nella Manovra e nell'Attitudine comanda
+	  una nave nemica
+  C                          dichiara il Controllo Danni (Effetti Duraturi)
+  I                          Inseguimento (fase Manovra)
+	  Col Timone Fuori Uso si tira a ogni Attitudine e Manovra: con un
+	  DISPARI quella nave la comanda l'avversario.
+
 [b]Touch (iPad)[/b]
   due dita             sposta la mappa e zooma (pinch)
   un dito              seleziona; dopo 5 disegna la Traiettoria
