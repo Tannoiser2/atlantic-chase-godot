@@ -20,8 +20,8 @@ Tutti i test passano: **3489 verifiche, 21 suite, headless.**
 | **M6** Scenari | ✅ **completo** | 22 scenari con navi, comandanti, rinforzi e briefing |
 | **M7** Regole complete | ✅ **completo** | Tutte e 9 le azioni, Convogli, finale di partita, salvataggio; tutti e 22 gli scenari hanno le condizioni di vittoria |
 | **M9** Battaglia decisa dal giocatore | ✅ **completo** | Bersagli scelti a mano, linee di fuoco con raggio e valore dei cannoni |
-| **M10** Regole Avanzate | 🟡 **quasi completo** | Attitudini, Fuoco a due colonne, Siluri, Tabelle dei Risultati, Effetti Duraturi, Disingaggio, Snafu e Battaglia Estesa sono collegati. Restano le scelte interattive di Plancia/Timone/Confusione e la divisione del fuoco |
-| **M8** Solitario | 🟡 **in corso** | 15 setup e tabelle presenti; bot attivo con Iniziativa, popup e audit. BL1 e BL2 hanno un replay end-to-end deterministico (`SoloRunner`). Restano 82 testi procedura segnaposto e Mine/Base Aerea di N2/N4 non modellate. |
+| **M10** Regole Avanzate | ✅ **completo** | Attitudini, Fuoco a due colonne, Siluri, Tabelle dei Risultati, Effetti Duraturi, Disingaggio, Snafu e Battaglia Estesa sono collegati; Plancia (`P`/`M`), Timone, Confusione (`K`) e divisione del fuoco (`D`/`Z`) sono scelte del giocatore. MS12 e' tre Parti di due Round con il tiro delle Forze |
+| **M8** Solitario | 🟡 **in corso** | 15 setup e tabelle presenti; bot attivo con Iniziativa, popup e audit; tutti e 15 gli scenari hanno un replay end-to-end deterministico (`SoloRunner`). `audit_solo.gd`: 93 caselle, **0 segnaposto, 0 buchi dichiarati**. Restano da trascrivere le Tabelle dell'Esito di 11 scenari su 15 |
 
 ### Ultima revisione del solitario
 

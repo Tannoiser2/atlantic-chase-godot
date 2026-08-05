@@ -69,7 +69,7 @@ func _build() -> void:
 	right.add_child(body)
 
 	_list = ItemList.new()
-	_list.custom_minimum_size = Vector2(330, 0)
+	_list.custom_minimum_size = Vector2(360, 0)
 	_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_list.item_selected.connect(_on_selected)
 	_list.item_activated.connect(func(_i: int) -> void: _start())
@@ -150,29 +150,60 @@ static func _panel_style() -> StyleBoxFlat:
 	return sb
 
 
+## Gli scenari non sono tutti la stessa cosa, e un elenco piatto lo nascondeva:
+## un solitario, una Operazione a due giocatori e un mini-scenario si giocano in
+## modi diversi e durano tempi diversi. Qui sono in quattro gruppi, con
+## un'intestazione non selezionabile davanti a ciascuno.
+##
+## `_ids` resta allineato all'elenco: le righe di intestazione hanno "" al loro
+## posto, cosi' l'indice della lista e quello dello scenario non divergono - il
+## difetto piu' facile da introdurre qui.
 func _populate() -> void:
-	_ids = Scenario.list_ids()
+	var all := Scenario.list_ids()
+	var solo: Array[String] = []
+	var operations: Array[String] = []
+	var battles: Array[String] = []
+	var other: Array[String] = []
+	for id in all:
+		if id.begins_with("MS"):
+			battles.append(id)
+		elif id.begins_with("Op"):
+			operations.append(id)
+		elif SoloOpponent.load_for(id) != null:
+			solo.append(id)
+		else:
+			other.append(id)
+
+	_ids = [] as Array[String]
 	var default_index := 0
-	for i in _ids.size():
-		var sc := Scenario.load_by_id(_ids[i])
-		var label := sc.title if sc.title != "" else _ids[i]
-		# I mini-scenari sono Battaglie gia' schierate; i solitari invece
-		# vengono dal fascicolo, non dai salvataggi VASSAL.
-		var tag := ""
-		if _ids[i].begins_with("MS"):
-			tag = "  [mini]"
-		elif SoloOpponent.load_for(_ids[i]) != null:
-			tag = "  [solo]"
-		_list.add_item("%s%s" % [label, tag])
-		if _ids[i].begins_with("Op5"):
-			default_index = i
-	if not _ids.is_empty():
+	for group_v: Variant in [
+		["SOLITARIO  (15)", solo],
+		["DUE GIOCATORI - Operazioni  (9)", operations],
+		["DUE GIOCATORI - Battaglie  (12)", battles],
+		["ALTRO", other],
+	]:
+		var group: Array = group_v
+		var ids: Array[String] = group[1]
+		if ids.is_empty():
+			continue
+		_list.add_item("---  %s  ---" % String(group[0]))
+		var header := _list.item_count - 1
+		_list.set_item_selectable(header, false)
+		_list.set_item_custom_fg_color(header, Color(0.62, 0.80, 0.95))
+		_ids.append("")
+		for id in ids:
+			var sc := Scenario.load_by_id(id)
+			_list.add_item("   %s" % (sc.title if sc.title != "" else id))
+			_ids.append(id)
+			if id.begins_with("Op5"):
+				default_index = _ids.size() - 1
+	if default_index > 0:
 		_list.select(default_index)
 		_on_selected(default_index)
 
 
 func _on_selected(index: int) -> void:
-	if index < 0 or index >= _ids.size():
+	if index < 0 or index >= _ids.size() or _ids[index] == "":
 		return
 	var sc := Scenario.load_by_id(_ids[index])
 	_show_art(_ids[index])
@@ -207,6 +238,11 @@ func _show_art(scenario_id: String) -> void:
 func _start() -> void:
 	var i := _list.get_selected_items()
 	if i.is_empty() or _ids.is_empty():
+		return
+	# Le intestazioni di gruppo non sono selezionabili, ma un doppio clic o
+	# INVIO potrebbero comunque arrivare qui: senza questo controllo si
+	# avvierebbe uno scenario con id vuoto.
+	if _ids[i[0]] == "":
 		return
 	Session.advanced_battle = _adv.button_pressed
 	Session.start(_ids[i[0]])

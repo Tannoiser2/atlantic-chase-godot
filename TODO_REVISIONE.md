@@ -750,6 +750,31 @@ sopra scenario per scenario.
   designata nell'Azione successiva.
 - [ ] Completare la schermata di Debriefing per condizioni oggi elencate ma da
   spuntare a mano; non assegnare automaticamente dati non modellati.
+- [x] **Come finisce e come si vince, scritto nell'app**: il briefing rimandava
+  al fascicolo ("Vedi le istruzioni Fine dello scenario nel file solo e nel
+  fascicolo"), cioe' diceva al giocatore di andare a leggere altrove proprio la
+  cosa che stava chiedendo. Adesso `Scenario.printed_rules_text()` costruisce le
+  due sezioni dal dato di vittoria: la condizione di fine STAMPATA in inglese,
+  come l'app la applica, la pagina da cui viene, e la Tabella dell'Esito con
+  tutte le righe e i loro punteggi. Le voci a punti si stampano una per una,
+  marcate `[spunta a mano]` quando il motore non le valuta, cosi' il giocatore
+  sa in anticipo che cosa dovra' spuntare con `Shift+V`.
+  Nel percorso c'era un difetto di stampa: `str()` su un numero JSON dava
+  `10.0`, e la soglia di una tabella di Esito e' un punteggio, non una misura.
+- [x] **Elenco degli scenari raggruppato**: la schermata iniziale era una lista
+  unica di 36 voci in cui un solitario e uno scenario a due giocatori si
+  distinguevano solo dal nome. Adesso ci sono quattro gruppi con l'intestazione
+  non selezionabile e il conteggio: SOLITARIO (15), DUE GIOCATORI - Operazioni
+  (9), DUE GIOCATORI - Battaglie (12), ALTRO. `_ids` tiene una stringa vuota
+  sulle righe di intestazione, cosi' l'indice della lista e quello dello
+  scenario non possono divergere - era il modo naturale di sbagliare qui.
+- [ ] **Trascrivere le Tabelle dell'Esito degli 11 solitari rimasti.** N3 e'
+  fatto (p.27: 13 voci a punti e 3 righe di Debriefing). Restano A1, A2, B1,
+  B2, B3, B4, N1, N2, N4, N5, N6, che portano ancora i segnaposto
+  `"Testo completo della riga nel campo raw_victory_text"` e `"Calcolare i VP
+  dalle tabelle stampate..."`. Ognuna va letta sulla PAGINA RENDERIZZATA di
+  `AC_Solo_scenarios_2022.pdf`: il testo estratto ha gia' sbagliato l'ordine
+  dei risultati a p.19.
 
 ## P1 - Battaglia avanzata
 

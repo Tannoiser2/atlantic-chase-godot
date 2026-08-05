@@ -389,10 +389,129 @@ func briefing_text() -> String:
 	parts.append("Iniziativa: [b]%s[/b]    Meteo iniziale: [b]%s[/b]" % [
 		"Kriegsmarine" if initiative == TaskForce.Side.KRIEGSMARINE else "Royal Navy",
 		"cattivo" if weather == TimeLapse.Weather.BAD else "buono"])
+	var printed := printed_rules_text()
 	for key_v: Variant in [["objective", "OBIETTIVO"], ["end", "FINE DELLO SCENARIO"],
 			["victory", "VITTORIA"], ["historical", "ESITO STORICO"]]:
 		var pair: Array = key_v
+		# Le sezioni FINE e VITTORIA hanno la precedenza sul testo importato
+		# quando il dato di vittoria le contiene davvero: il briefing dei
+		# solitari diceva "vedi il fascicolo", che e' l'unica cosa che chi
+		# gioca non puo' fare mentre gioca.
+		var replacement := String(printed.get(pair[0], ""))
+		if replacement != "":
+			parts.append("\n[b]%s[/b]\n%s" % [pair[1], replacement])
+			continue
 		var txt := String(briefing.get(pair[0], "")).strip_edges()
 		if txt != "":
 			parts.append("\n[b]%s[/b]\n%s" % [pair[1], txt])
 	return "\n".join(parts)
+
+
+## Le regole di fine e di vittoria come sono STAMPATE, ricavate dal dato di
+## vittoria invece che dal testo importato.
+##
+## Il briefing dei quindici solitari rimandava al fascicolo - "Vedi le
+## istruzioni Fine dello scenario nel file solo e nel fascicolo" - cioe'
+## chiedeva di alzarsi dal tavolo proprio per la cosa che serve sapere PRIMA di
+## cominciare. Il dato invece c'era gia': in `core/data/victory/` stanno la
+## condizione di fine stampata con la sua pagina, la Tabella dell'Esito e i
+## premi in VP.
+##
+## Ritorna { "end": String, "victory": String }; una chiave vuota significa
+## "non trascritta", e allora il briefing tiene il testo importato.
+func printed_rules_text() -> Dictionary:
+	var out := {"end": "", "victory": ""}
+	var ec := end_conditions()
+	if not ec.is_empty():
+		var lines: Array[String] = []
+		var printed := String(ec.get("_text", "")).strip_edges()
+		if printed != "":
+			lines.append("[i]%s[/i]" % printed)
+		var reasons: Array[String] = []
+		for rule_v: Variant in ec.get("any", []):
+			var reason := String((rule_v as Dictionary).get("reason", "")).strip_edges()
+			if reason != "":
+				reasons.append("  - " + reason)
+		if not reasons.is_empty():
+			lines.append("L'app la applica cosi':")
+			lines.append_array(reasons)
+		var src := String(ec.get("_source", "")).strip_edges()
+		if src != "":
+			lines.append("[color=#9a9a9a]%s[/color]" % src)
+		out["end"] = "\n".join(lines)
+
+	var mode_name := String(victory_data.get("mode", ""))
+	var lines2: Array[String] = []
+	if mode_name == "DEBRIEFING":
+		lines2.append("Scenario in solitario: non si vince, si legge l'Esito. "
+			+ "Si conta UN punteggio e lo si cerca nella tabella qui sotto.")
+		lines2.append("")
+		lines2.append("[b]Tabella dell'Esito[/b]")
+		for row_v: Variant in victory_data.get("debriefing", []):
+			var row: Dictionary = row_v
+			# `str()` su un numero JSON stampa "10.0": la soglia di una tabella
+			# di Esito e' un punteggio, non una misura.
+			var threshold := "%d o piu'" % int(row["min"]) if row.has("min") \
+				else "sotto"
+			lines2.append("  [b]%s[/b]  %s" % [threshold, String(row.get("label", ""))])
+			var text := String(row.get("text", "")).strip_edges()
+			if text != "" and not text.begins_with("Testo completo della riga"):
+				lines2.append("     %s" % text)
+		lines2.append("")
+		lines2.append(_awards_text())
+	elif mode_name == "VP":
+		lines2.append("Si contano i Punti Vittoria; vince chi ne ha di piu'.")
+		lines2.append(_awards_text())
+		var tb := String((victory_data.get("tiebreak", {}) as Dictionary).get(
+			"condition", "")).strip_edges()
+		if tb != "":
+			lines2.append("\n[b]Parita'[/b]\n%s" % tb)
+	elif mode_name == "OBJECTIVES":
+		lines2.append("Mini-scenario: non si contano punti, si guarda chi ha "
+			+ "raggiunto il suo obiettivo.")
+		var objs: Dictionary = victory_data.get("objectives", {})
+		for side_key in ["ROYAL_NAVY", "KRIEGSMARINE"]:
+			var o: Dictionary = objs.get(side_key, {})
+			if o.is_empty():
+				continue
+			lines2.append("\n[b]%s[/b]" % String(o.get("label", side_key)))
+			lines2.append("  Decisiva:  %s" % String(o.get("decisive", "-")))
+			lines2.append("  Marginale: %s" % String(o.get("marginal", "-")))
+	elif mode_name == "CONDITIONS":
+		lines2.append("Questo scenario non usa i Punti Vittoria: si vince per "
+			+ "condizioni, e vale la PRIMA che si verifica.")
+		for c_v: Variant in victory_data.get("conditions", []):
+			var c: Dictionary = c_v
+			var w := String(c.get("winner", ""))
+			var who := "Kriegsmarine" if w == "KRIEGSMARINE" \
+				else ("Royal Navy" if w == "ROYAL_NAVY" else w)
+			lines2.append("  - %s  ->  vince %s" % [String(c.get("text", "")), who])
+	if not lines2.is_empty():
+		out["victory"] = "\n".join(lines2)
+	return out
+
+
+## I premi in VP, uno per riga. Le righe che il motore non sa valutare da solo
+## restano marcate: una voce "da spuntare a mano" e' un'informazione, non un
+## buco - dice al giocatore che quel punto deve contarlo lui.
+func _awards_text() -> String:
+	var manual: Array[String] = []
+	var lines: Array[String] = []
+	for a_v: Variant in victory_data.get("awards", []):
+		var a: Dictionary = a_v
+		var label := String(a.get("label", "")).strip_edges()
+		if label.begins_with("Calcolare i VP dalle tabelle stampate"):
+			manual.append(label)
+			continue
+		var side := String(a.get("side", ""))
+		var who := "KM" if side == "KRIEGSMARINE" else "RN"
+		var pts := float(a.get("points", 0))
+		var mark := "  [spunta a mano]" if bool(a.get("manual", false)) else ""
+		lines.append("  %s  %s  %s%s" % [who, GameState.vp_str(pts), label, mark])
+	if lines.is_empty():
+		if manual.is_empty():
+			return ""
+		return ("[color=#ffcc66]I punti di questo scenario non sono ancora "
+			+ "trascritti nel dato: vanno letti sulla pagina dello scenario e "
+			+ "contati a mano.[/color]")
+	return "[b]Punti[/b]\n" + "\n".join(lines)
