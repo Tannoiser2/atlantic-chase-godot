@@ -104,6 +104,12 @@ var extended: bool = false
 var confusion_side: int = -1
 var confusion_used: bool = false
 
+## La nave NEMICA che la Confusione lascia comandare, quando il segnalino e'
+## stato speso per la Manovra o per l'Attitudine. E' l'unico elemento del gioco
+## che permette di toccare le navi altrui, e senza ricordare QUALE il permesso
+## varrebbe per tutte.
+var confusion_controlled: Ship = null
+
 var kind: int = Kind.BATTLE
 var weather: int = TimeLapse.Weather.GOOD
 

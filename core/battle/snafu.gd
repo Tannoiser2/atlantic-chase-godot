@@ -187,13 +187,22 @@ static func confusion_transfer(state: BattleState, side: int, from: Ship,
 ## il controllo della nave nemica lo esercita il giocatore, qui si registra
 ## solo che il jolly e' stato speso.
 static func confusion_spend(state: BattleState, side: int,
-		use: int) -> Dictionary:
+		use: int, enemy: Ship = null) -> Dictionary:
 	if not confusion_available(state, side):
 		return {"ok": false, "log": "", "error":
 			"la Confusione non e' disponibile"}
+	if enemy != null:
+		var tf := state.own_tf_of(enemy)
+		if tf == null or tf.side == side:
+			return {"ok": false, "log": "", "error":
+				"la Confusione comanda una nave NEMICA, non una tua"}
+		if enemy.sunk:
+			return {"ok": false, "log": "", "error": "quella nave e' affondata"}
+		state.confusion_controlled = enemy
 	state.confusion_used = true
-	return {"ok": true, "error": "", "log": "Confusione usata: %s."
-		% String(CONFUSION_USES.get(use, ""))}
+	var who := "" if enemy == null else " (%s)" % enemy.name
+	return {"ok": true, "error": "", "log": "Confusione usata: %s%s."
+		% [String(CONFUSION_USES.get(use, "")), who]}
 
 
 # ------------------------------------------------------------ durata della Battaglia --

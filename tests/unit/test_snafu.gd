@@ -20,6 +20,7 @@ func run() -> void:
 	test_disengagement_on_finish()
 	test_confusion()
 	test_confusion_assigned_at_start()
+	test_confusion_takes_one_enemy_ship()
 
 
 func _rng(v: Array) -> DiceRNG:
@@ -372,3 +373,43 @@ func test_confusion_assigned_at_start() -> void:
 	Battle.new(st2, rng2).start()
 	eq(st2.confusion_side, TaskForce.Side.ROYAL_NAVY,
 		"con un dado DISPARI va all'Inattivo")
+
+
+## LA CONFUSIONE COMANDA UNA NAVE NEMICA, e una sola.
+##
+## Il segnalino si spendeva gia' per la Manovra e per l'Attitudine, ma non
+## ricordava QUALE nave lasciasse comandare: il permesso valeva per tutte, che
+## e' cosa diversa dalla regola stampata.
+func test_confusion_takes_one_enemy_ship() -> void:
+	_begin("la Confusione comanda una nave nemica, e una sola")
+	var st := BattleState.new(BattleState.Kind.BATTLE, TimeLapse.Weather.GOOD)
+	st.advanced = true
+	var km := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
+	var mine := Ship.new("Bismarck", TimeLapse.Speed.FAST)
+	km.ships = [mine] as Array[Ship]
+	var rn := TaskForce.new(2, TaskForce.Side.ROYAL_NAVY)
+	var theirs := Ship.new("Hood", TimeLapse.Speed.FAST)
+	var other := Ship.new("Repulse", TimeLapse.Speed.FAST)
+	rn.ships = [theirs, other] as Array[Ship]
+	st.active_tf = km
+	st.target_tf = rn
+	st.confusion_side = TaskForce.Side.KRIEGSMARINE
+
+	# Non si comanda una nave propria: il fascicolo dice NEMICA.
+	var own := Snafu.confusion_spend(st, TaskForce.Side.KRIEGSMARINE,
+		Snafu.ConfusionUse.MANEUVER_CONTROL, mine)
+	false_(bool(own["ok"]), "una nave propria non si comanda con la Confusione")
+	false_(st.confusion_used, "e il jolly non viene sprecato")
+
+	var r := Snafu.confusion_spend(st, TaskForce.Side.KRIEGSMARINE,
+		Snafu.ConfusionUse.MANEUVER_CONTROL, theirs)
+	true_(bool(r["ok"]), "una nave nemica si comanda")
+	eq(st.confusion_controlled, theirs, "e il motore ricorda QUALE")
+	true_(String(r["log"]).contains("Hood"), "il registro la nomina")
+	true_(st.confusion_used, "il jolly e' speso")
+
+	# Una volta sola in tutta la Battaglia.
+	var again := Snafu.confusion_spend(st, TaskForce.Side.KRIEGSMARINE,
+		Snafu.ConfusionUse.ATTITUDE_CONTROL, other)
+	false_(bool(again["ok"]), "non si usa due volte")
+	eq(st.confusion_controlled, theirs, "e la nave comandata resta quella")

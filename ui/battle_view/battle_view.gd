@@ -276,6 +276,13 @@ func _rebuild_buttons() -> void:
 						items.append(["Fuga: %s" % _side_label(false), "G",
 							func() -> void: _do_break_away(false, true), false])
 
+	# I TRE USI DELLA CONFUSIONE non sono tre pulsanti: sono lo stesso jolly, e
+	# quale sia disponibile lo decide la fase. Per questo la voce e' una sola e
+	# cambia etichetta.
+	var confusion_label := _confusion_label()
+	if confusion_label != "":
+		items.append([confusion_label, "K", _use_confusion, false])
+
 	for it_v: Variant in items:
 		var it: Array = it_v
 		var b := Button.new()
@@ -298,6 +305,10 @@ func _is_targeting_phase() -> bool:
 func _can_control_ship(ship: Ship) -> bool:
 	if ship == null:
 		return false
+	# La Confusione: l'unico elemento del gioco che lascia toccare una nave
+	# altrui, e vale per QUELLA nave sola.
+	if state.confusion_controlled == ship:
+		return true
 	# IL TIMONE FUORI USO ribalta la proprieta' per una fase (Regole Avanzate):
 	# con un DISPARI la nave la muove l'avversario. E' l'unico caso in cui una
 	# nave tua non e' tua, e va rispettato prima di ogni altra considerazione.
@@ -486,6 +497,87 @@ func _side_label(active: bool) -> String:
 ## giocatori guardano lo stesso schermo.
 ## La scelta della Plancia, per la prima nave che deve ancora farla. Sono due
 ## mali, e il fascicolo non lascia scampo: o non spari, o non ti muovi.
+## I TRE USI DEL SEGNALINO CONFUSIONE (Regole Avanzate).
+##
+## Sono tre cose molto diverse, e quale sia disponibile dipende dalla FASE: nel
+## Fuoco si sposta un Colpo o un Effetto fra due navi PROPRIE, nella Manovra e
+## nell'Attitudine si comanda una nave NEMICA. Il motore le sapeva fare tutte e
+## tre da quando la Verifica Snafu e' stata trascritta; la vista disegnava il
+## segnalino e basta, quindi non se ne poteva usare nessuna.
+## Il segnalino e' tuo e non ancora speso?
+func _confusion_ready() -> bool:
+	var side := solo_player_side if solo_player_side >= 0 else state.confusion_side
+	return Snafu.confusion_available(state, side)
+
+
+## L'etichetta del pulsante Confusione per la fase corrente, "" se non si puo'
+## usare adesso.
+func _confusion_label() -> String:
+	if state.ended or not _confusion_ready():
+		return ""
+	match state.phase:
+		BattleState.Phase.GUNNERY:
+			return "Confusione: sposta un Colpo o un Effetto su una nave TUA"
+		BattleState.Phase.MANEUVER:
+			return "Confusione: comanda la nave nemica selezionata"
+		BattleState.Phase.ATTITUDE:
+			return "Confusione: decidi l'attitudine della nave nemica selezionata"
+	return ""
+
+
+func _use_confusion() -> void:
+	var side := solo_player_side if solo_player_side >= 0 else state.confusion_side
+	if not Snafu.confusion_available(state, side):
+		state.note("Confusione: non e' tua, oppure e' gia' stata usata.")
+		refresh()
+		return
+	match state.phase:
+		BattleState.Phase.GUNNERY:
+			_confusion_transfer()
+		BattleState.Phase.MANEUVER:
+			_confusion_take(Snafu.ConfusionUse.MANEUVER_CONTROL)
+		BattleState.Phase.ATTITUDE:
+			_confusion_take(Snafu.ConfusionUse.ATTITUDE_CONTROL)
+		_:
+			state.note("Confusione: si usa nel Fuoco, nella Manovra o "
+				+ "nell'Attitudine.")
+	refresh()
+
+
+## Fuoco: sposta un Colpo o un Effetto dalla nave selezionata a un'altra TUA.
+## Il fascicolo e' esplicito: su una nave PROPRIA, mai su una nemica.
+func _confusion_transfer() -> void:
+	var side := solo_player_side if solo_player_side >= 0 else state.confusion_side
+	if selected == null:
+		state.note("Confusione: seleziona la nave che deve passare il danno.")
+		return
+	var mine: Array[Ship] = []
+	for s2 in state.all_ships():
+		var tf := state.own_tf_of(s2)
+		if s2 != selected and not s2.sunk and tf != null and tf.side == side:
+			mine.append(s2)
+	if mine.is_empty():
+		state.note("Confusione: non hai un'altra nave su cui spostare il danno.")
+		return
+	var effect := ""
+	if selected.special_effects.size() > 0 and selected.hits <= 0:
+		effect = String(selected.special_effects[0])
+	var r := Snafu.confusion_transfer(state, side, selected, mine[0], effect)
+	state.note(String(r["log"]) if bool(r["ok"]) \
+		else "Confusione: %s" % String(r["error"]))
+
+
+## Manovra e Attitudine: prende il comando di una nave NEMICA per quella fase.
+func _confusion_take(use: int) -> void:
+	var side := solo_player_side if solo_player_side >= 0 else state.confusion_side
+	if selected == null:
+		state.note("Confusione: seleziona la nave NEMICA da comandare.")
+		return
+	var r := Snafu.confusion_spend(state, side, use, selected)
+	state.note(String(r["log"]) if bool(r["ok"]) \
+		else "Confusione: %s" % String(r["error"]))
+
+
 func _bridge_no_fire() -> void:
 	_bridge_choose("no_fire")
 
@@ -1200,6 +1292,9 @@ func handle_key(k: InputEventKey) -> bool:
 			return true
 		KEY_P:
 			_bridge_no_fire()
+			return true
+		KEY_K:
+			_use_confusion()
 			return true
 		KEY_M:
 			_bridge_stopped()

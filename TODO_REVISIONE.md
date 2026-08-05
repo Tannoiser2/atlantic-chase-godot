@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Baseline: **3419 verifiche su 20 suite**, tutte verdi. Replay solitario:
+Baseline: **3427 verifiche su 20 suite**, tutte verdi. Replay solitario:
 **quindici `OK`** su quindici scenari, nessuno saltato. `audit_solo.gd`:
 **93 caselle azione, zero procedure segnaposto, ZERO buchi dichiarati, zero
 blocchi.**
@@ -36,7 +36,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 | Forze Furtive (Mine, Sub, U-Boat) | 🟡 | nucleo, posa Mine e attacco fatti; U-Boat di A2 e disegno GUI no |
 | Basi Aeree | 🟢 | lanciano Attacchi Aerei (RB p.27); stampate e piazzate in partita |
 | Reazione Norvegese | 🟡 | quattro tabelle collegate ai due cicli; restano i risultati b/g |
-| Battaglia avanzata | 🟡 | mancano quattro scelte interattive e MS12 |
+| Battaglia avanzata | 🟡 | le quattro scelte ci sono; resta MS12 e un comando per la divisione del fuoco |
 | Comandanti | 🟡 | testi trascritti; Forbes e Marschall non automatizzati |
 | Basi aeree sulla Mappa Operazionale | 🟡 | diciassette trascritte; le sette con un anno aspettano l'anno dello scenario |
 | Linea Artica | 🔴 | non e' un dato di mappa: i vincoli di RB p.27 non sono controllabili |
@@ -140,7 +140,11 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
   che si e' notato. Adesso confronta il viewport logico.
   **La verifica e' stata fatta**: 1280x720, 1600x900 e 1920x1080 passano tutte
   e tre, prova di fumo e screenshot. Resta il viewport stretto.
-- **Battaglia avanzata**: quattro scelte interattive e il mini-scenario MS12.
+- **Battaglia avanzata**: le quattro scelte interattive sono fatte (Plancia,
+  Timone Fuori Uso, Confusione, divisione del fuoco). Restano **MS12**, che va
+  giocato come struttura in tre parti e non come una Battaglia singola, e il
+  **comando nella vista per dichiarare la divisione del fuoco**: il motore la sa
+  fare e i test la difendono, ma il giocatore non ha ancora come chiederla.
 - **I 22 scenari a due giocatori** hanno dati, setup e vittoria, ma nessun
   audit end-to-end.
 
@@ -172,7 +176,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 3419 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 3427 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
@@ -761,7 +765,12 @@ sopra scenario per scenario.
   a ogni disegno darebbe una nave che cambia padrone ogni fotogramma.
   Nel solitario il vincolo si fa rispettare; a due giocatori allo stesso tavolo
   resta scritto nel registro, perche' li' comandano tutti e due.
-- [ ] Esporre correttamente i tre usi del segnalino Confusione.
+- [x] **I tre usi del segnalino Confusione**: nel Fuoco sposta un Colpo o un
+  Effetto fra due navi PROPRIE, nella Manovra e nell'Attitudine comanda una nave
+  NEMICA. Non sono tre pulsanti ma una voce sola (`K`) che cambia etichetta con
+  la fase, perche' e' lo stesso jolly in tre momenti. Il motore ricorda ora
+  QUALE nave nemica il segnalino lascia comandare: prima il permesso valeva per
+  tutte.
 - [x] **Divisione del fuoco in Acquisizione**: `Battle.set_split_fire()`
   distribuisce il Valore dei Cannoni fra due bersagli DIVERSI, le parti devono
   sommare al valore intero, e chi divide **perde la colonna Acquisizione** -
