@@ -77,6 +77,91 @@ static func has_follow_up(decision: Dictionary) -> bool:
 	return not (decision.get("follow_up", {}) as Dictionary).is_empty()
 
 
+## I PASSI di una decisione del bot, nell'ordine, come dato.
+##
+## Erano scritti due volte: `SoloRunner._apply_bot_decision` e
+## `ui/main.gd::_apply_solo_ai_decision`. Le regole erano gia' qui, ma l'ordine
+## no - e le due copie erano gia' divergute su una cosa che si vede solo
+## giocando: il runner fermava la ricorsione delle continuazioni a
+## MAX_FOLLOW_UPS, la GUI non la fermava affatto. Il fascicolo ne stampa due al
+## massimo; una che non si ferma e' un difetto, non un ciclo di gioco.
+##
+## Qui c'e' solo l'ORDINE, non l'esecuzione: chi cammina l'elenco lo fa a modo
+## suo, sincrono nel runner e con gli `await` nella vista, che deve aprire
+## dialoghi e la Mappa di Battaglia. E' il motivo per cui i due cicli non si
+## possono fondere in una funzione sola, e insieme il motivo per cui l'ordine
+## non deve stare in nessuno dei due.
+enum Step {
+	LOG,               ## le righe che la decisione porta con se'
+	STEAL_CHECK,       ## l'Inattivo puo' tentare di Sottrarre l'Iniziativa
+	COMPLETION,        ## risolvi il Completamento
+	ACTION,            ## risolvi l'azione tabellare
+	TIME_LAPSE,        ## Scorrere del Tempo
+	ROLL_AGAIN,        ## la tabella ordina un altro tiro immediato
+	FOLLOW_UP,         ## continuazione prescritta, senza ritirare la Tabella
+	YIELD_INITIATIVE,  ## l'Iniziativa passa al giocatore
+	KEEP_INITIATIVE,   ## il bot la mantiene: chi ha una coda, accodi
+}
+
+## Quante continuazioni prescritte si concatenano sulla stessa uscita della
+## Tabella prima di dichiarare che qualcosa non torna.
+const MAX_FOLLOW_UPS := 4
+
+
+## `depth` e' quante continuazioni si sono gia' concatenate.
+##
+## Un passo `STEAL_CHECK` porta `on_steal`: i passi da fare AL POSTO del resto
+## se l'Inattivo riesce a Sottrarre. Chi cammina l'elenco, se il tentativo
+## riesce, esegue quelli e si ferma.
+##
+## `KEEP_INITIATIVE` non ha effetto nel runner headless, che non ha una coda da
+## riempire: un passo che un camminatore ignora e' legittimo, e dichiararlo qui
+## e' meglio che avere due elenchi diversi.
+static func steps_for(decision: Dictionary, depth: int) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var active: Variant = decision.get("active", null)
+	var goal: Variant = decision.get("target_hex", Vector2i.MAX)
+	out.append({"step": Step.LOG, "lines": decision.get("log", [])})
+	match branch_of(decision):
+		Branch.COMPLETION:
+			out.append({"step": Step.STEAL_CHECK,
+				"label": "Completamento del bot",
+				"refused": "Completamento impedito dal cambio d'Iniziativa.",
+				"on_steal": [{"step": Step.TIME_LAPSE, "active": active,
+					"goal": goal}]})
+			out.append({"step": Step.COMPLETION, "active": active,
+				"port": decision.get("completion_port", {})})
+			return out
+		Branch.ACTION:
+			out.append({"step": Step.ACTION})
+			return out
+		Branch.NOTHING:
+			if must_yield_initiative(decision):
+				out.append({"step": Step.YIELD_INITIATIVE,
+					"reason": "senza effetto applicabile"})
+				return out
+	if effect_needs_time_lapse_before_pass(decision):
+		out.append({"step": Step.TIME_LAPSE, "active": active,
+			"goal": Vector2i.MAX,
+			"note": "Completamento impossibile: esegue Passare e Scorrere del Tempo."})
+	if effect_rolls_again(decision):
+		out.append({"step": Step.ROLL_AGAIN})
+		return out
+	if effect_is_trajectory(decision):
+		out.append({"step": Step.TIME_LAPSE, "active": active, "goal": goal})
+		out.append({"step": Step.STEAL_CHECK, "label": "Traiettoria del bot",
+			"refused": "", "on_steal": []})
+		if has_follow_up(decision) and depth < MAX_FOLLOW_UPS:
+			out.append({"step": Step.FOLLOW_UP, "depth": depth + 1})
+		else:
+			out.append({"step": Step.KEEP_INITIATIVE})
+		return out
+	if bool(decision.get("pass_initiative", false)):
+		out.append({"step": Step.YIELD_INITIATIVE,
+			"reason": "la procedura cede l'Iniziativa"})
+	return out
+
+
 ## La dichiarazione dell'azione decisa dal bot.
 ##
 ## Include la regola della TF Coordinatrice: RB p.47 la ammette solo se occupa

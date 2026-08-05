@@ -2255,71 +2255,103 @@ func _apply_solo_ai_result(result: Dictionary) -> String:
 	return await _apply_solo_ai_decision(result, decision)
 
 
-func _apply_solo_ai_decision(result: Dictionary, decision: Dictionary) -> String:
+## Cammina i passi che `SoloSequence.steps_for` prescrive, aspettando quelli
+## che aprono qualcosa a schermo.
+##
+## L'ORDINE non e' piu' qui: stava scritto anche in `SoloRunner`, e le due
+## copie erano gia' divergute su una cosa che si vede solo giocando - il runner
+## fermava la ricorsione delle continuazioni a MAX_FOLLOW_UPS, questo ciclo non
+## la fermava affatto. Adesso l'elenco e' uno, e qui resta solo COME si esegue
+## un passo: con i dialoghi, gli avvisi e la coda che il runner headless non ha.
+func _apply_solo_ai_decision(result: Dictionary, decision: Dictionary,
+		depth: int = 0) -> String:
 	var imaginary := _solo_imaginary_side()
 	if imaginary < 0:
 		return "nessuna parte avversaria configurata."
-	for line_v: Variant in decision.get("log", []):
-		_msg(String(line_v))
 	var code := String(result.get("code", "?"))
 	var summary := "risultato %s; nessun effetto applicato." % code
-	# Una decisione che non applica niente non puo' lasciare l'Iniziativa al
-	# bot: resterebbe Attivo senza nessuna procedura accodata, e la partita
-	# aspetterebbe un giocatore che non deve muovere. Nel motore headless si
-	# vedeva come un turno senza tiri; qui non si vedrebbe affatto, perche' non
-	# c'e' niente da mostrare.
-	if SoloSequence.must_yield_initiative(decision):
-		_msg("Solitario AI: risultato %s senza effetto applicabile; cede l'Iniziativa."
-			% code)
-		var idle_player := _solo_player_side()
-		if idle_player >= 0:
-			_change_initiative_to(idle_player)
-		return "risultato %s: nessun effetto applicabile; l'Iniziativa passa al giocatore." % code
-	if SoloSequence.branch_of(decision) == SoloSequence.Branch.COMPLETION:
-		if await _offer_steal_initiative("Completamento del bot"):
-			_msg("Solitario AI: Completamento impedito dal cambio d'Iniziativa.")
-			await _solo_time_lapse(decision.get("active", null),
-				decision.get("target_hex", Vector2i.MAX))
-			return "risultato %s: Completamento impedito; l'Iniziativa e' cambiata." % code
-		var comp := Completion.resolve(decision["active"], decision["completion_port"], vp_tracker)
-		for line_v2: Variant in comp.get("log", []):
-			_msg(String(line_v2))
-		log.record("Solitario AI: Completamento")
-		_show_completed_notice(decision["active"], comp, "BOT")
-		summary = "risultato %s: %s ha Completato a %s." % [code,
-			(decision["active"] as TaskForce).display_name(),
-			String((comp.get("port", {}) as Dictionary).get("name", "un porto"))]
-		state.changed.emit()
-		_queue_next_solo_action("dopo il Completamento")
-	elif SoloSequence.branch_of(decision) == SoloSequence.Branch.ACTION:
-		summary = "risultato %s: %s" % [code, await _resolve_solo_ai_action(decision)]
-	elif SoloSequence.branch_of(decision) == SoloSequence.Branch.EFFECT:
-		log.record("Solitario AI: %s" % String(decision.get("turn_kind", "effetto")))
-		state.changed.emit()
-		if SoloSequence.effect_needs_time_lapse_before_pass(decision):
-			_msg("Solitario AI: il Completamento e' impossibile; esegue Passare e Scorrere del Tempo.")
-			await _solo_time_lapse(decision.get("active", null))
-		if SoloSequence.effect_rolls_again(decision):
+	for step_v: Variant in SoloSequence.steps_for(decision, depth):
+		var step: Dictionary = step_v
+		match int(step["step"]):
+			SoloSequence.Step.LOG:
+				for line_v: Variant in step.get("lines", []):
+					_msg(String(line_v))
+			SoloSequence.Step.STEAL_CHECK:
+				if not await _offer_steal_initiative(String(step.get("label", ""))):
+					continue
+				var refused := String(step.get("refused", ""))
+				if refused != "":
+					_msg("Solitario AI: " + refused)
+					summary = "risultato %s: Completamento impedito; l'Iniziativa e' cambiata." % code
+				for alt_v: Variant in step.get("on_steal", []):
+					summary = await _run_solo_step(alt_v as Dictionary, result,
+						decision, code, summary)
+				return summary
+			_:
+				summary = await _run_solo_step(step, result, decision, code,
+					summary)
+				if _solo_step_stops(step):
+					break
+	# Una decisione di solo effetto puo' chiudere cedendo l'Iniziativa; la sua
+	# riga di registro e' il riassunto migliore che abbiamo.
+	var decision_log: Array = decision.get("log", [])
+	if not decision_log.is_empty() and summary.begins_with("risultato %s;" % code):
+		summary = "risultato %s: %s" % [code, String(decision_log[-1])]
+	return summary
+
+
+static func _solo_step_stops(step: Dictionary) -> bool:
+	return int(step["step"]) in [SoloSequence.Step.COMPLETION,
+		SoloSequence.Step.ACTION, SoloSequence.Step.ROLL_AGAIN,
+		SoloSequence.Step.FOLLOW_UP, SoloSequence.Step.YIELD_INITIATIVE,
+		SoloSequence.Step.KEEP_INITIATIVE]
+
+
+func _run_solo_step(step: Dictionary, result: Dictionary, decision: Dictionary,
+		code: String, summary: String) -> String:
+	match int(step["step"]):
+		SoloSequence.Step.TIME_LAPSE:
+			var note := String(step.get("note", ""))
+			if note != "":
+				_msg("Solitario AI: " + note)
+			await _solo_time_lapse(step.get("active", null),
+				step.get("goal", Vector2i.MAX))
+		SoloSequence.Step.COMPLETION:
+			var comp := Completion.resolve(step["active"], step["port"],
+				vp_tracker)
+			for line_v: Variant in comp.get("log", []):
+				_msg(String(line_v))
+			log.record("Solitario AI: Completamento")
+			_show_completed_notice(step["active"], comp, "BOT")
+			state.changed.emit()
+			_queue_next_solo_action("dopo il Completamento")
+			return "risultato %s: %s ha Completato a %s." % [code,
+				(step["active"] as TaskForce).display_name(),
+				String((comp.get("port", {}) as Dictionary).get("name", "un porto"))]
+		SoloSequence.Step.ACTION:
+			return "risultato %s: %s" % [code,
+				await _resolve_solo_ai_action(decision)]
+		SoloSequence.Step.ROLL_AGAIN:
+			log.record("Solitario AI: %s" % String(decision.get("turn_kind", "effetto")))
+			state.changed.emit()
 			_queue_next_solo_action("la tabella ordina un altro tiro")
-		elif SoloSequence.effect_is_trajectory(decision):
-			await _solo_time_lapse(decision.get("active", null),
-				decision.get("target_hex", Vector2i.MAX))
-			if not await _offer_steal_initiative("Traiettoria del bot"):
-				if SoloSequence.has_follow_up(decision):
-					_msg("Solitario AI: continua la procedura prescritta senza ritirare la Tabella.")
-					var next := SoloAI.continue_follow_up(decision, state, graph,
-						engine, _port_control(), imaginary)
-					summary = await _apply_solo_ai_decision(result, next)
-				else:
-					_queue_next_solo_action("il bot mantiene l'Iniziativa")
-		var decision_log: Array = decision.get("log", [])
-		if not decision_log.is_empty() and summary.begins_with("risultato %s;" % code):
-			summary = "risultato %s: %s" % [code, String(decision_log[-1])]
-	if bool(decision.get("pass_initiative", false)) and _solo_is_imaginary_turn():
-		var player := _solo_player_side()
-		if player >= 0:
-			_change_initiative_to(player)
-			summary += " L'Iniziativa passa al giocatore."
+		SoloSequence.Step.FOLLOW_UP:
+			_msg("Solitario AI: continua la procedura prescritta senza ritirare la Tabella.")
+			var next := SoloAI.continue_follow_up(decision, state, graph,
+				engine, _port_control(), _solo_imaginary_side())
+			return await _apply_solo_ai_decision(result, next,
+				int(step.get("depth", 1)))
+		SoloSequence.Step.KEEP_INITIATIVE:
+			_queue_next_solo_action("il bot mantiene l'Iniziativa")
+		SoloSequence.Step.YIELD_INITIATIVE:
+			if String(step.get("reason", "")) == "senza effetto applicabile":
+				_msg(("Solitario AI: risultato %s senza effetto applicabile; "
+					+ "cede l'Iniziativa.") % code)
+			if _solo_is_imaginary_turn():
+				var player := _solo_player_side()
+				if player >= 0:
+					_change_initiative_to(player)
+			return "risultato %s: l'Iniziativa passa al giocatore." % code
 	return summary
 
 

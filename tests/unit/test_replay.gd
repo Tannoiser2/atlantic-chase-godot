@@ -71,6 +71,7 @@ func run() -> void:
 	test_a_different_answerer_changes_the_game()
 	test_the_cycle_can_be_driven_step_by_step()
 	test_the_bot_turn_asks_through_seams()
+	test_step_order_is_shared_by_both_cycles()
 
 
 ## Il conto delle verifiche di ogni suite e' fisso (`EXPECTED` in
@@ -1114,3 +1115,60 @@ func test_the_bot_turn_asks_through_seams() -> void:
 		return "forse"
 	false_(plain.ask_steal("prova"),
 		"e una risposta insensata ricade sul valore di policy")
+
+
+## L'ORDINE dei passi vive in `SoloSequence` per la stessa ragione delle regole:
+## era scritto due volte, e le due copie erano gia' divergute su una cosa che si
+## vede solo giocando. Il runner fermava la ricorsione delle continuazioni a
+## MAX_FOLLOW_UPS; `ui/main.gd` non la fermava affatto.
+func test_step_order_is_shared_by_both_cycles() -> void:
+	_begin("l'ordine dei passi sta in un posto solo, tetto compreso")
+
+	# Un Completamento: prima si offre di Sottrarre, e se riesce non si Completa
+	# ma si fa Scorrere del Tempo. E' la regola che tiene insieme le due meta'.
+	var completion := SoloSequence.steps_for({"completion": true,
+		"completion_port": {"name": "Kiel"}, "log": ["a", "b"]}, 0)
+	eq(_kinds(completion), [SoloSequence.Step.LOG, SoloSequence.Step.STEAL_CHECK,
+		SoloSequence.Step.COMPLETION] as Array[int],
+		"registro, tentativo di Sottrarre, Completamento")
+	var steal: Dictionary = completion[1]
+	eq(_kinds(steal["on_steal"]), [SoloSequence.Step.TIME_LAPSE] as Array[int],
+		"e se l'Inattivo Sottrae si fa Scorrere del Tempo invece del Completamento")
+
+	# Una Traiettoria con continuazione: Scorrere del Tempo, offerta di
+	# Sottrarre, e poi la continuazione - ma solo finche' il tetto lo permette.
+	var traj := {"ok": true, "turn_kind": "trajectory",
+		"follow_up": {"kind": "attack"}, "log": []}
+	eq(_kinds(SoloSequence.steps_for(traj, 0)),
+		[SoloSequence.Step.LOG, SoloSequence.Step.TIME_LAPSE,
+		SoloSequence.Step.STEAL_CHECK, SoloSequence.Step.FOLLOW_UP] as Array[int],
+		"alla prima continuazione si prosegue")
+	eq(int((SoloSequence.steps_for(traj, 0)[3] as Dictionary)["depth"]), 1,
+		"e la profondita' cresce di uno")
+	# IL TETTO. Senza, la vista poteva incatenare continuazioni all'infinito.
+	var capped := SoloSequence.steps_for(traj, SoloSequence.MAX_FOLLOW_UPS)
+	eq(int((capped[capped.size() - 1] as Dictionary)["step"]),
+		SoloSequence.Step.KEEP_INITIATIVE,
+		"raggiunto il tetto non si continua piu': il fascicolo ne stampa due")
+
+	# Una decisione che non applica niente cede l'Iniziativa, e non fa altro.
+	eq(_kinds(SoloSequence.steps_for({}, 0)),
+		[SoloSequence.Step.LOG, SoloSequence.Step.YIELD_INITIATIVE] as Array[int],
+		"senza effetto si cede l'Iniziativa")
+	# Una che la cede di proposito, invece, arriva in fondo.
+	eq(_kinds(SoloSequence.steps_for({"ok": true, "pass_initiative": true}, 0)),
+		[SoloSequence.Step.LOG, SoloSequence.Step.YIELD_INITIATIVE] as Array[int],
+		"e anche quella che la cede di proposito")
+
+	# Un altro tiro immediato chiude l'elenco: quello che viene dopo lo decide
+	# il tiro nuovo, non questo.
+	eq(_kinds(SoloSequence.steps_for({"ok": true, "roll_again": true}, 0)),
+		[SoloSequence.Step.LOG, SoloSequence.Step.ROLL_AGAIN] as Array[int],
+		"il nuovo tiro chiude l'elenco")
+
+
+func _kinds(steps: Array) -> Array[int]:
+	var out: Array[int] = []
+	for s_v: Variant in steps:
+		out.append(int((s_v as Dictionary)["step"]))
+	return out

@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Baseline: **3676 verifiche su 21 suite**, tutte verdi. Replay solitario:
+Baseline: **3684 verifiche su 21 suite**, tutte verdi. Replay solitario:
 **quindici `OK`** su quindici scenari, nessuno saltato. `audit_solo.gd`:
 **93 caselle azione, zero procedure segnaposto, ZERO buchi dichiarati, zero
 blocchi.**
@@ -176,7 +176,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 3676 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 3684 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
@@ -190,11 +190,23 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
   tabella Tardi e il vincolo "una decisione senza effetto cede l'Iniziativa".
   Sia `SoloRunner` sia `ui/main.gd` le chiamano. Ha gia' ripagato: le due copie
   erano divergute su `initiative_changes` e sulla Coordinatrice.
-- [ ] **Resta duplicato l'ORDINE dei passi** (~12 righe di rami speculari in
-  ciascun ciclo). Unificarlo richiede un iteratore di passi nel core e
-  trasformare il ciclo della vista in coroutine, perche' i suoi passi
-  attendono dialoghi, animazioni e la Mappa di Battaglia. Da fare quando serve
-  toccare l'ordine, non prima: oggi le due copie non contengono piu' regole.
+- [x] **Anche l'ORDINE dei passi e' in un posto solo**: `SoloSequence.steps_for`
+  descrive i passi di una decisione come DATO - registro, tentativo di
+  Sottrarre, Completamento, azione, Scorrere del Tempo, nuovo tiro,
+  continuazione, Iniziativa - e i due cicli lo camminano ognuno a modo suo: il
+  runner in sincrono, la vista con gli `await` che le servono per dialoghi e
+  Mappa di Battaglia. L'iteratore non ha richiesto di trasformare la vista in
+  coroutine: lo era gia'.
+  **Le due copie erano gia' divergute**, e su una cosa che si vede solo
+  giocando: il runner fermava la ricorsione delle continuazioni a
+  `MAX_FOLLOW_UPS`, `ui/main.gd` non la fermava affatto - il fascicolo ne
+  stampa due al massimo. Adesso il tetto e' nel core e vale per tutti e due.
+  I quindici replay non cambiano di una riga: e' la prova che il runner gioca
+  la stessa partita di prima.
+  Restano rispecchiati due punti soli, ed e' voluto: il tiro della Tabella
+  (`_bot_turn` / `_solo_roll_action`), che diverge su come si chiedono i
+  modificatori, e la risoluzione dell'azione (`_resolve_bot_action` /
+  `_resolve_solo_ai_action`), che nella vista apre la Mappa di Battaglia.
 - [x] Smoke test GUI del ciclo solitario: `tools/smoke_solo_flow.gd` apre il
   gioco vero, passa l'Iniziativa all'avversario immaginario, risponde alle
   scelte del pannello e della mappa e pretende tiro della Tabella, mossa

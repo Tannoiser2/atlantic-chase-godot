@@ -35,7 +35,7 @@ const EXPECTED := {
 	"res://tests/unit/test_result_tables.gd": 34,
 	"res://tests/unit/test_lingering.gd": 63,
 	"res://tests/unit/test_snafu.gd": 98,
-	"res://tests/unit/test_replay.gd": 204,
+	"res://tests/unit/test_replay.gd": 212,
 	"res://tests/unit/test_stealth.gd": 96,
 	"res://tests/unit/test_norway.gd": 78,
 	"res://tests/unit/test_ms12.gd": 58,

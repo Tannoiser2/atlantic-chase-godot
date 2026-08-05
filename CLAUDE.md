@@ -52,7 +52,7 @@ Percorre una Battaglia avanzata intera, salva un PNG per fase e stampa accanto
 a ogni scatto lo stato del motore. Non giudica: serve a mettere l'immagine e lo
 stato uno accanto all'altro. Cinque difetti visivi sono usciti cosi'.
 
-Baseline corrente: **3676 verifiche, 21 suite** (era 2570 su 17 prima della
+Baseline corrente: **3684 verifiche, 21 suite** (era 2570 su 17 prima della
 suite `test_replay.gd`). Il totale non puo' scendere senza una rimozione
 intenzionale di test spiegata nel commit.
 
@@ -164,13 +164,14 @@ e una Base Aerea come FONTE di un Attacco Aereo (RB p.27): `ActionEngine`
 pretende una TF Attiva con una CV integra e non sa partire da un esagono.
 Quello e' il prossimo pezzo di regola, se si vuole chiudere anche quel buco.
 
-**B. Chiudere la duplicazione GUI/SoloRunner.** Le cuciture ci sono gia' -
-`ask_choice`, `ask_modifiers`, `ask_steal`, i rispondenti iniettabili e la
-macchina a passi `step()`/`answer()` col suo meccanismo di ripresa. Resta far
-guidare `ui/main.gd` da `SoloRunner` e cancellare le sue 211 righe rispecchiate:
-quattro coppie, misurate nel TODO. E' una sessione a se', perche' li' vivono
-l'asincrono e il riscontro visivo, ed e' il punto dove un errore non si vede nei
-test ma si vede giocando.
+**B. ~~Chiudere la duplicazione GUI/SoloRunner~~ - in gran parte CHIUSA.** Le
+regole di sequenza stanno in `SoloSequence`, e adesso anche l'ORDINE dei passi:
+`SoloSequence.steps_for` lo descrive come dato e i due cicli lo camminano,
+sincrono il runner e con gli `await` la vista. Restano rispecchiati due punti
+soli, e di proposito: il tiro della Tabella, che diverge su come si chiedono i
+modificatori, e la risoluzione dell'azione, che nella vista apre la Mappa di
+Battaglia. Chi ci mette mano legga prima i due commenti "Mirror headless" in
+`solo_runner.gd`.
 
 Finche' B non e' chiusa, una modifica alla sequenza del turno del bot va fatta
 in tutti e due i posti: `solo_runner.gd` porta tre commenti "Mirror headless di

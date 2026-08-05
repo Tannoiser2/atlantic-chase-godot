@@ -39,9 +39,6 @@ const MAX_TURNS := 120
 ## regressione la togliesse il replay non deve bloccarsi in silenzio.
 const MAX_BATTLE_STEPS := 400
 
-## Quante continuazioni prescritte si accettano di fila su una stessa uscita
-## della Tabella. Il fascicolo ne stampa al massimo due (Traiettoria + azione).
-const MAX_FOLLOW_UPS := 4
 
 var state: GameState = null
 var graph: MapGraph = null
@@ -277,6 +274,11 @@ func _has_available_reinforcements() -> bool:
 # ------------------------------------------- turno dell'avversario immaginario --
 
 ## Mirror headless di `ui/main.gd::_solo_roll_action(auto = true)`.
+##
+## Resta uno dei due punti ancora rispecchiati: qui si tira la Tabella e si
+## scrivono i modificatori. Le REGOLE stanno in `SoloSequence` e in `SoloAI`;
+## quello che diverge fra i due e' solo come si chiedono i modificatori - qui
+## `ask_modifiers`, nella vista un dialogo.
 func _bot_turn() -> void:
 	solo.set_phase(state.solo_phase, state.solo_phase_reason)
 	var tid := solo.action_table_id()
@@ -310,63 +312,82 @@ func _apply_bot_result(result: Dictionary) -> void:
 	_apply_bot_decision(result, decision, 0)
 
 
-## Mirror headless di `ui/main.gd::_apply_solo_ai_decision`.
+## Cammina i passi che `SoloSequence.steps_for` prescrive.
 ##
-## `depth` conta le continuazioni prescritte sulla stessa uscita della Tabella:
-## il fascicolo ne stampa due al massimo, e una ricorsione che non si ferma e'
-## un difetto, non un ciclo di gioco.
+## L'ORDINE non e' piu' qui: era scritto due volte, una per ciclo, e le due
+## copie erano gia' divergute sul tetto alle continuazioni. Qui resta solo come
+## si ESEGUE un passo senza GUI - il che, per due passi su nove, vuol dire non
+## fare niente.
 func _apply_bot_decision(result: Dictionary, decision: Dictionary,
 		depth: int) -> void:
-	for line_v: Variant in decision.get("log", []):
-		_line("BOT   " + String(line_v))
-	var code := String(result.get("code", "?"))
-	match SoloSequence.branch_of(decision):
-		SoloSequence.Branch.COMPLETION:
-			if _inactive_steals("Completamento del bot"):
-				_line("BOT   Completamento impedito dal cambio d'Iniziativa.")
-				_bot_time_lapse(decision.get("active", null),
-					decision.get("target_hex", Vector2i.MAX))
+	for step_v: Variant in SoloSequence.steps_for(decision, depth):
+		var step: Dictionary = step_v
+		match int(step["step"]):
+			SoloSequence.Step.LOG:
+				for line_v: Variant in step.get("lines", []):
+					_line("BOT   " + String(line_v))
+			SoloSequence.Step.STEAL_CHECK:
+				if not _inactive_steals(String(step.get("label", ""))):
+					continue
+				var refused := String(step.get("refused", ""))
+				if refused != "":
+					_line("BOT   " + refused)
+				for alt_v: Variant in step.get("on_steal", []):
+					_run_bot_step(alt_v as Dictionary, result, decision)
 				return
-			var active: TaskForce = decision["active"]
-			var comp := Completion.resolve(active, decision["completion_port"],
+			_:
+				if _run_bot_step(step, result, decision):
+					return
+
+
+## Un passo solo. Ritorna true se dopo di lui non si prosegue.
+func _run_bot_step(step: Dictionary, result: Dictionary,
+		decision: Dictionary) -> bool:
+	match int(step["step"]):
+		SoloSequence.Step.TIME_LAPSE:
+			var note := String(step.get("note", ""))
+			if note != "":
+				_line("BOT   " + note)
+			_bot_time_lapse(step.get("active", null),
+				step.get("goal", Vector2i.MAX))
+		SoloSequence.Step.COMPLETION:
+			var comp := Completion.resolve(step["active"], step["port"],
 				vp_tracker)
-			for line_v2: Variant in comp.get("log", []):
-				_line("BOT   " + String(line_v2))
+			for line_v: Variant in comp.get("log", []):
+				_line("BOT   " + String(line_v))
 			if bool(comp.get("ok", false)):
 				completions += 1
-			return
-		SoloSequence.Branch.ACTION:
+			return true
+		SoloSequence.Step.ACTION:
 			_resolve_bot_action(decision)
-			return
-		SoloSequence.Branch.NOTHING:
-			if SoloSequence.must_yield_initiative(decision):
-				_line("BOT   risultato %s senza effetto applicabile: cede l'Iniziativa." % code)
-				_give_initiative_to(player_side)
-				return
-	if SoloSequence.effect_needs_time_lapse_before_pass(decision):
-		_line("BOT   Completamento impossibile: esegue Passare e Scorrere del Tempo.")
-		_bot_time_lapse(decision.get("active", null))
-	if SoloSequence.effect_rolls_again(decision):
-		_line("BOT   la tabella ordina un altro tiro immediato.")
-		if not state.solo_ended:
-			_bot_turn()
-		return
-	if SoloSequence.effect_is_trajectory(decision):
-		_bot_time_lapse(decision.get("active", null),
-			decision.get("target_hex", Vector2i.MAX))
-		if _inactive_steals("Traiettoria del bot"):
-			return
-		if SoloSequence.has_follow_up(decision) and depth < MAX_FOLLOW_UPS:
+			return true
+		SoloSequence.Step.ROLL_AGAIN:
+			_line("BOT   la tabella ordina un altro tiro immediato.")
+			if not state.solo_ended:
+				_bot_turn()
+			return true
+		SoloSequence.Step.FOLLOW_UP:
 			_line("BOT   continua la procedura prescritta senza ritirare la Tabella.")
 			var next := SoloAI.continue_follow_up(decision, state, graph, engine,
 				port_control, imaginary_side)
-			_apply_bot_decision(result, next, depth + 1)
-		return
-	if bool(decision.get("pass_initiative", false)):
-		_give_initiative_to(player_side)
+			_apply_bot_decision(result, next, int(step.get("depth", 1)))
+			return true
+		SoloSequence.Step.YIELD_INITIATIVE:
+			var why := String(step.get("reason", ""))
+			if why == "senza effetto applicabile":
+				_line("BOT   risultato %s senza effetto applicabile: cede l'Iniziativa."
+					% String(result.get("code", "?")))
+			_give_initiative_to(player_side)
+			return true
+		SoloSequence.Step.KEEP_INITIATIVE:
+			# Senza GUI non c'e' nessuna coda da riempire: il ciclo del runner
+			# torna da solo al giro successivo.
+			return true
+	return false
 
 
-## Mirror headless di `ui/main.gd::_resolve_solo_ai_action`.
+## Mirror headless di `ui/main.gd::_resolve_solo_ai_action`: l'ultimo rimasto.
+## Qui l'azione si risolve e basta; li' apre la Mappa di Battaglia.
 func _resolve_bot_action(decision: Dictionary) -> void:
 	var key := String(decision.get("action_key", ""))
 	var dec := SoloSequence.declaration_for(decision)
