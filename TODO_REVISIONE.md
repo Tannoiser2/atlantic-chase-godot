@@ -808,6 +808,10 @@ sopra scenario per scenario.
   Una cosa che SEMBRAVA un difetto e non lo era, verificata nel codice prima di
   segnalarla: le pedine britanniche appaiono ruotate e quelle tedesche no, ma e'
   la convenzione dell'attitudine - chi e' in Acquisizione resta dritto.
+  **Sesto difetto, segnalato dall'utente**: il bordo giallo di selezione restava
+  ORIZZONTALE attorno a una pedina ruotata, perche' veniva disegnato dopo che la
+  trasformazione era stata annullata. Adesso e' dentro la stessa rotazione della
+  pedina.
   **Resta** l'audit delle situazioni che una partita automatica non produce:
   Fumo, Inseguimento, Disingaggio e i tre usi della Confusione vanno guardati
   giocando a mano.

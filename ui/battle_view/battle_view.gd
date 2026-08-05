@@ -1034,8 +1034,13 @@ func _draw_ships_in(band: Rect2, is_active: bool, zone: int) -> void:
 		var cw: float = widths[i]
 		var r := Rect2(Vector2(x, y), Vector2(cw, ch))
 		var tex: Texture2D = texs[i]
+		# L'attitudine ruota la pedina: chi Avvicina punta al nemico, chi e' in
+		# Corsa dall'altra parte, chi Acquisisce resta dritto. La rotazione
+		# serve anche al bordo di selezione, quindi si calcola qui e non dentro
+		# il ramo che disegna la texture.
+		var rotation := _attitude_rotation(s, is_active) \
+			if state.advanced and tex != null else 0.0
 		if tex != null:
-			var rotation := _attitude_rotation(s, is_active) if state.advanced else 0.0
 			draw_set_transform(r.get_center(), rotation)
 			draw_texture_rect(tex, Rect2(-r.size * 0.5, r.size), false)
 			draw_set_transform(Vector2.ZERO, 0.0)
@@ -1045,7 +1050,13 @@ func _draw_ships_in(band: Rect2, is_active: bool, zone: int) -> void:
 				HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color.BLACK)
 
 		if s == selected:
-			draw_rect(r.grow(4), Color(1, 0.95, 0.3), false, 4.0)
+			# Il bordo va disegnato DENTRO la stessa rotazione della pedina: fuori
+			# restava orizzontale attorno a una pedina verticale, e la
+			# selezione sembrava riguardare un'altra cosa.
+			draw_set_transform(r.get_center(), rotation)
+			draw_rect(Rect2(-r.size * 0.5, r.size).grow(4), Color(1, 0.95, 0.3),
+				false, 4.0)
+			draw_set_transform(Vector2.ZERO, 0.0)
 		if s.smoke:
 			_draw_small_counter(SMOKE_COUNTER, r.position + Vector2(4, 4), 30.0)
 		if s.hits > 0:
