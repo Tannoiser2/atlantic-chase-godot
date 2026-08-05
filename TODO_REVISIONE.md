@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Baseline: **3431 verifiche su 20 suite**, tutte verdi. Replay solitario:
+Baseline: **3489 verifiche su 21 suite**, tutte verdi. Replay solitario:
 **quindici `OK`** su quindici scenari, nessuno saltato. `audit_solo.gd`:
 **93 caselle azione, zero procedure segnaposto, ZERO buchi dichiarati, zero
 blocchi.**
@@ -175,7 +175,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 3431 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 3489 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
@@ -778,8 +778,18 @@ sopra scenario per scenario.
   dei cannoni e `Z` conferma. Il ciclo va da 1 a gv-1, quindi non offre mai zero
   cannoni a un bersaglio - il motore una parte nulla la accetterebbe, perche' il
   fascicolo non la vieta, ma l'interfaccia non la propone.
-- [ ] Implementare MS12 come struttura speciale in tre parti; non trattarlo
-  come una singola Battaglia ordinaria.
+- [x] **MS12 come struttura in tre parti**: `core/rules/ms12.gd` e
+  `core/data/ms12.json` trascrivono p.51 - tre Parti di due Round, il tiro 2d6
+  delle Forze coi suoi due modificatori, le tre composizioni, l'attitudine
+  imposta alla Forza C, e la regola di chi puo' restare fuori (solo se
+  AZZOPPATO, mai il Convoglio ne' lo Squadrone DD). Le navi che tornano da una
+  Parte sono le STESSE, col loro danno addosso.
+  **RESTA da collegare alla vista**: oggi il motore sa costruire le tre Parti e
+  58 verifiche le difendono, ma aprendo MS12 dal menu si gioca ancora la
+  Battaglia singola dello schieramento importato. Manca anche l'attitudine
+  segreta dello Scharnhorst, che il fascicolo vuole scelta PRIMA del tiro delle
+  Forze: e' la sola informazione nascosta dello scenario, e va chiesta al
+  giocatore, non inventata.
 - [ ] Audit visivo di attitudini, rotazione navi, Acquiring, Closing, Fog,
   Confusion, siluri, inseguimento e Disingaggio in tutti i Round.
 - [ ] Verificare in solitario che il bot controlli soltanto le proprie navi e

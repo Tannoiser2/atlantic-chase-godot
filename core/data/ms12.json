@@ -1,0 +1,88 @@
+{
+ "_scenario": "MS12 Finale",
+ "_source": "AC_TwoPlayer_Book_EN.pdf p.51 (Mini-scenario MS12: Finale, December 1943), letta sulla pagina renderizzata.",
+ "_why": "MS12 non e' una Battaglia: e' TRE Battaglie di due Round ciascuna, e prima di ognuna il britannico tira per sapere con quale Forza combatte. Trattarlo come una Battaglia sola - che e' quello che l'app faceva - toglie allo scenario la sua unica meccanica.",
+ "active_player": "ROYAL_NAVY",
+ "weather": "BAD",
+ "parts": 3,
+ "rounds_per_part": 2,
+ "force_table": {
+  "_text": "For each Part, the British player rolls 2d6 to determine which force he gets to use.",
+  "dice": "2d6",
+  "rows": [
+   {
+    "min": 2,
+    "max": 7,
+    "force": "A"
+   },
+   {
+    "min": 8,
+    "max": 10,
+    "force": "B"
+   },
+   {
+    "min": 11,
+    "max": 99,
+    "force": "C"
+   }
+  ],
+  "modifiers": [
+   {
+    "value": 2,
+    "when": "il Convoglio e' stato bersaglio del Fuoco di Cannoni"
+   },
+   {
+    "value": 3,
+    "when": "il BC tedesco e' azzoppato"
+   }
+  ]
+ },
+ "forces": {
+  "A": {
+   "ships": [
+    "Convoy x3",
+    "DD Squadron"
+   ],
+   "attitude": "either",
+   "_note": "Convoglio -2/na e Squadrone DD 0/na, attitudine a scelta fra Closing e Running."
+  },
+  "B": {
+   "ships": [
+    "Belfast",
+    "Norfolk",
+    "Sheffield"
+   ],
+   "attitude": "either",
+   "_note": "Tre CA, attitudine a scelta fra Closing e Running."
+  },
+  "C": {
+   "ships": [
+    "Fiji",
+    "Doy"
+   ],
+   "attitude": "CLOSING",
+   "_note": "La pagina stampa una sola freccia per la Forza C: Closing. 'Doy' e' il nome della Duke of York nel ruolino: viene dall'abbreviazione stampata sulla pedina, ed e' lo stesso che usa lo schieramento di MS12."
+  }
+ },
+ "german": {
+  "ships": [
+   "Scharnhorst"
+  ],
+  "zone": "FAR",
+  "attitude": "any",
+  "_note": "Lo Scharnhorst si schiera nella zona Lontana con l'attitudine che vuole, ma la sceglie SEGRETAMENTE PRIMA che il britannico determini con quale Forza combatte. E' la sola informazione nascosta dello scenario."
+ },
+ "setup_rule": "In ogni Parte le navi si schierano nella loro zona Lontana. Tranne lo Squadrone DD e il Convoglio, il britannico puo' tenere fuori dal gioco una nave se e' AZZOPPATA. Tutte le altre devono partecipare a prescindere dai Colpi e dagli effetti speciali presi in una Parte precedente.",
+ "advanced_rules": "Verifica Snafu all'inizio di ogni Parte. Verifiche del Disingaggio alla fine di ogni Parte. Se un BC tedesco ottiene un risultato 'port', trattalo invece come un risultato '-'.",
+ "victory": {
+  "_source": "AC_TwoPlayer_Book_EN.pdf p.51, riquadro Victory Conditions.",
+  "ROYAL_NAVY": {
+   "decisive": "affondare lo Scharnhorst",
+   "marginal": "azzoppare lo Scharnhorst e meno di 3 Colpi sul Convoglio"
+  },
+  "KRIEGSMARINE": {
+   "decisive": "6 o piu' Colpi sul Convoglio, oppure affondare o azzoppare la Duke of York E almeno 3 Colpi sul Convoglio",
+   "marginal": "da 3 a 5 Colpi sul Convoglio, oppure azzoppare 3 navi, oppure affondare la Duke of York"
+  }
+ }
+}
