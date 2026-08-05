@@ -438,7 +438,19 @@ static func automatic_modifiers(table: SoloTable, state: GameState,
 		# dichiarate dopo. "in Norvegia" restringe: la pagina distingue fra
 		# "sulla mappa" (N5) e "in Norvegia" (N6), e non e' la stessa cosa.
 		if lower.contains("base aerea"):
-			for m in AirBase.of_side(state, side):
+			# "each German air base ON MAP" (N5, p.33) contro "ogni SEGNALINO
+			# Base Aerea tedesca in Norvegia" (N6, p.39): la prima comprende
+			# anche quelle stampate, la seconda no. Oggi il numero e' lo stesso
+			# - il Mare di Norvegia, dove si gioca N5, non ne ha nessuna
+			# stampata, e la Mappa Operazionale non ha basi tedesche stampate -
+			# ma le due frasi non dicono la stessa cosa, e il codice le
+			# distingue perche' il dato potrebbe cambiare.
+			var bases: Array[Dictionary] = []
+			if lower.contains("segnalino"):
+				bases = AirBase.of_side(state, side)
+			else:
+				bases = AirBase.sources_for(state, state.graph, side)
+			for m in bases:
 				if lower.contains("norvegia") \
 						and not Norway.is_norway_hex(state.graph, AirBase.hex_of(m)):
 					continue

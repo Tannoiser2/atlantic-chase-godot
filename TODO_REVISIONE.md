@@ -1078,11 +1078,17 @@ sopra scenario per scenario.
   non erano applicati ne' dichiarati. Adesso ci sono.
   Resta il sesto, A2 "nessuna TF tedesca puo' essere intercettata": chiede la
   legalita' dell'Intercettazione, ed e' vero lavoro.
-- [ ] **DA VERIFICARE SULLA PAGINA: "ogni base aerea tedesca sulla mappa" (N5)
-  conta anche quelle STAMPATE?** Il codice conta i marcatori PIAZZATI
-  (`AirBase.of_side`), non quelli stampati sulla mappa (`AirBase.printed_of`).
-  Se la riga stampata intende tutte e due, il conto e' basso. Non l'ho
-  verificato, e cambia il numero.
+- [x] **Verificato: "each German air base ON MAP" (N5, p.33).** La domanda era
+  se contasse anche le basi STAMPATE oltre ai marcatori piazzati. Misurato:
+  la Mappa Operazionale ha 17 basi britanniche stampate e ZERO tedesche; il
+  Mare del Nord ne ha 2 tedesche e 5 britanniche; **il Mare di Norvegia, dove
+  si gioca N5, non ne ha nessuna**. Quindi per N5 le due letture danno lo
+  stesso numero e il conto era gia' giusto.
+  Il codice adesso distingue lo stesso le due frasi, perche' non dicono la
+  stessa cosa: "base aerea sulla mappa" comprende le stampate, "SEGNALINO Base
+  Aerea in Norvegia" (N6, p.39) no. Oggi il risultato coincide; se un domani
+  qualcuno aggiunge una base tedesca stampata al Mare di Norvegia, coincidera'
+  ancora per il motivo giusto.
 - [ ] **N5 al seme predefinito adesso dichiara uno STALLO** invece di arrivare
   alla fine stampata: i replay sono quattordici `OK` e uno `STALLO`. Lo stallo
   e' vero e sta nella regola stampata - la Traiettoria si allunga di un
