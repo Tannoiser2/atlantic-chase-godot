@@ -39,6 +39,7 @@ godot --path . --script res://tools/smoke_ui.gd -- adv
 godot --path . --script res://tools/smoke_solo_flow.gd
 godot --path . --script res://tools/smoke_solo_flow.gd -- BL1
 godot --path . --script res://tools/smoke_inset_map.gd
+godot --path . --script res://tools/smoke_ms12.gd
 ```
 
 Baseline corrente: **3489 verifiche, 21 suite** (era 2570 su 17 prima della

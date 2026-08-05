@@ -369,6 +369,8 @@ func _resolve_wave(firers: Array[Ship], targeting: Dictionary) -> Array[Dictiona
 		var target: Ship = targeting[firer]
 		if target == null or target.sunk:
 			continue
+		if target.kind == Ship.Kind.CONVOY:
+			state.convoy_was_targeted = true
 		var st := Maneuver.is_obscured(state, target)
 		var sf := Maneuver.is_obscured(state, firer)
 		var extra: Array[Dictionary] = []
@@ -400,6 +402,8 @@ func _resolve_split(firer: Ship) -> Array[Dictionary]:
 		var target: Ship = p.get("target", null)
 		if target == null or target.sunk:
 			continue
+		if target.kind == Ship.Kind.CONVOY:
+			state.convoy_was_targeted = true
 		var st := Maneuver.is_obscured(state, target)
 		var sf := Maneuver.is_obscured(state, firer)
 		var a := Gunnery.attack(firer, target, rng, st, sf, true, 2,

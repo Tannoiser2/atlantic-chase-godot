@@ -70,6 +70,17 @@ var _expanded_bot_traces: Dictionary = {}
 var _last_bot_summary: String = ""
 var _battle_post_time_lapse: Array[TaskForce] = []
 var _battle_post_bl2_incident: bool = false
+
+## MS12 e' TRE Battaglie di due Round (fascicolo a due giocatori p.51). Qui si
+## tiene il filo fra una Parte e l'altra: quale Parte si sta giocando, le navi
+## che tornano col loro danno, se il Convoglio e' gia' stato bersagliato - che
+## e' un modificatore del tiro delle Forze - e l'attitudine segreta scelta dal
+## tedesco prima del tiro.
+var _ms12: Ms12 = null
+var _ms12_part: int = 0
+var _ms12_carried: Dictionary = {}
+var _ms12_convoy_targeted: bool = false
+var _ms12_scharnhorst_attitude: int = -1
 var _hex_choice_active: bool = false
 var _hex_choice_options: Dictionary = {}
 var _hex_choice_prompt: String = ""
@@ -1168,6 +1179,13 @@ func _prepare_solo_battle(active: TaskForce, target: TaskForce) -> bool:
 ## I dodici mini-scenari partono direttamente qui: sono Battaglie gia'
 ## schierate, senza una fase sulla mappa operazionale che le preceda.
 func _open_scenario_battle() -> void:
+	# MS12 non e' una Battaglia: sono TRE Battaglie di due Round, e prima di
+	# ognuna il britannico tira per sapere con quale Forza combatte
+	# (fascicolo a due giocatori p.51). Aprirlo come Battaglia singola era
+	# giocabile ma non era MS12.
+	if scenario.id.begins_with("MS12"):
+		await _open_ms12_part(1)
+		return
 	var bstate := scenario.make_battle_state(state.weather)
 	if bstate == null:
 		return
@@ -1177,10 +1195,15 @@ func _open_scenario_battle() -> void:
 	_show_battle(bstate)
 
 
-func _show_battle(bstate: BattleState) -> void:
+func _show_battle(bstate: BattleState, keep_advanced: bool = false) -> void:
 	# Va deciso PRIMA di start(): la Verifica Snafu si tira una volta sola,
 	# prima del Round Uno, e con le regole base non si tira affatto.
-	bstate.advanced = state.advanced_battle
+	#
+	# `keep_advanced` serve a MS12, che le Regole Avanzate le PRESCRIVE: la sua
+	# pagina stampa "Advanced Battle Rules: Snafu Checks & Disengagement
+	# Checks", quindi la scelta fatta nella schermata iniziale non vale li'.
+	if not keep_advanced:
+		bstate.advanced = state.advanced_battle
 	var b := Battle.new(bstate, state.rng, vp_tracker)
 	b.start()
 
@@ -1195,6 +1218,87 @@ func _show_battle(bstate: BattleState) -> void:
 	_battle_view.closed.connect(_close_battle.bind(b))
 	var where := " in %s" % str(bstate.hex) if bstate.hex != Vector2i.ZERO else ""
 	_msg("%s aperta%s." % [BattleState.KIND_LABELS[bstate.kind], where])
+
+
+## MS12: apre la Parte `n` delle tre.
+##
+## L'ordine dei passi e' quello stampato e non e' indifferente: lo Scharnhorst
+## sceglie l'attitudine SEGRETAMENTE PRIMA che il britannico tiri per la Forza.
+## E' la sola informazione nascosta dello scenario, e chiederla dopo il tiro
+## vorrebbe dire lasciargliela scegliere sapendo chi ha di fronte.
+func _open_ms12_part(n: int) -> void:
+	if _ms12 == null:
+		_ms12 = Ms12.load_default()
+		if _ms12.load_error != "":
+			_msg("MS12: %s" % _ms12.load_error)
+			return
+	_ms12_part = n
+	if n == 1:
+		_ms12_carried.clear()
+		_ms12_convoy_targeted = false
+		await _ask_ms12_scharnhorst_attitude()
+
+	var german_crippled := false
+	var scharnhorst: Ship = _ms12_carried.get("Scharnhorst", null)
+	if scharnhorst != null:
+		german_crippled = AdvancedGunnery.is_crippled(scharnhorst)
+	var roll := _ms12.roll_force(state.rng, _ms12_convoy_targeted, german_crippled)
+	_msg("MS12 - Parte %d di %d. %s" % [n, _ms12.parts(), String(roll["log"])])
+
+	var kept_out := await _ask_ms12_kept_out(String(roll["force"]))
+	var part := _ms12.build_part(String(roll["force"]), state.weather,
+		_ms12_carried, kept_out)
+	if not bool(part["ok"]):
+		_msg("MS12: %s" % String(part["error"]))
+		return
+	for line_v: Variant in part["log"]:
+		_msg("  %s" % String(line_v))
+	var bstate: BattleState = part["state"]
+	# Le navi di questa Parte tornano nella prossima con il loro danno.
+	for sh_v: Variant in part["ships"]:
+		var sh: Ship = sh_v
+		_ms12_carried[sh.name] = sh
+	if _ms12_scharnhorst_attitude >= 0 and not bstate.target_tf.ships.is_empty():
+		bstate.target_tf.ships[0].attitude = _ms12_scharnhorst_attitude
+	if not state.advanced_battle:
+		_msg("  MS12 prescrive le Regole Avanzate (Verifica Snafu e Verifiche "
+			+ "del Disingaggio): questa Battaglia le usa comunque.")
+	_show_battle(bstate, true)
+
+
+## L'attitudine segreta dello Scharnhorst, scelta prima del tiro delle Forze.
+func _ask_ms12_scharnhorst_attitude() -> void:
+	var kinds := [Attitude.Kind.ACQUIRING, Attitude.Kind.CLOSING,
+		Attitude.Kind.RUNNING]
+	var options: Array = []
+	for k in kinds:
+		options.append({"label": Attitude.label(k),
+			"detail": "attitudine dello Scharnhorst per questa Parte"})
+	var i: int = await Choice.ask(self, "MS12 - attitudine dello Scharnhorst",
+		"Il tedesco sceglie ADESSO, prima che il britannico sappia con quale "
+		+ "Forza combattera'. E' la sola informazione nascosta dello scenario.",
+		options, true)
+	_ms12_scharnhorst_attitude = kinds[i] if i >= 0 and i < kinds.size() \
+		else Attitude.Kind.CLOSING
+
+
+## Chi resta fuori da questa Parte. Il fascicolo lo permette solo alle navi
+## AZZOPPATE, e mai al Convoglio ne' allo Squadrone DD.
+func _ask_ms12_kept_out(force: String) -> Array:
+	var out: Array = []
+	for name_v: Variant in _ms12.force_ships(force):
+		var name := String(name_v)
+		var sh: Ship = _ms12_carried.get(name, null)
+		if sh == null or not _ms12.may_stay_out(sh):
+			continue
+		var i: int = await Choice.ask(self, "MS12 - %s e' azzoppata" % name,
+			"Le navi azzoppate possono restare fuori da questa Parte. Tutte le "
+			+ "altre devono partecipare, a prescindere dai Colpi presi prima.",
+			[{"label": "Partecipa lo stesso", "detail": ""},
+				{"label": "Resta fuori da questa Parte", "detail": ""}], true)
+		if i == 1:
+			out.append(name)
+	return out
 
 
 func _close_battle(b: Battle) -> void:
@@ -1219,6 +1323,15 @@ func _close_battle(b: Battle) -> void:
 	log.record("Battaglia in %s" % str(b.state.hex))
 	state.changed.emit()
 	_refresh()
+	# MS12: finita una Parte se ne apre un'altra, fino alla terza.
+	if _ms12 != null and _ms12_part > 0:
+		if b.state.convoy_was_targeted:
+			_ms12_convoy_targeted = true
+		if _ms12_part < _ms12.parts():
+			await _open_ms12_part(_ms12_part + 1)
+		else:
+			_ms12_part = 0
+			_msg("MS12: le tre Parti sono concluse. Apri Punteggio per l'Esito.")
 
 
 func _report_eliminated_forces(reason: String) -> void:

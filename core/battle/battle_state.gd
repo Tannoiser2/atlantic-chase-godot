@@ -64,6 +64,13 @@ var fixed_setup_attitudes: Dictionary = {}
 ## Eccezioni dichiarate dal fascicolo dei mini-scenari. Restano dati dello
 ## scenario: il motore applica la regola senza riconoscere nomi come "MS3".
 var skip_snafu: bool = false
+## Un Convoglio e' stato BERSAGLIO del Fuoco di Cannoni in questa Battaglia?
+##
+## Serve al tiro delle Forze di MS12 (fascicolo a due giocatori p.51): "+2 if
+## the Convoy has been the target of gunnery". E' "bersaglio", non "colpito":
+## contarlo dai Colpi darebbe un modificatore diverso da quello stampato.
+var convoy_was_targeted: bool = false
+
 ## La DIVISIONE DEL FUOCO dichiarata per il Round corrente:
 ## nave -> [ { "target": Ship, "gv": int }, { ... } ].
 ##

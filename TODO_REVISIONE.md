@@ -36,7 +36,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 | Forze Furtive (Mine, Sub, U-Boat) | 🟡 | nucleo, posa Mine e attacco fatti; U-Boat di A2 e disegno GUI no |
 | Basi Aeree | 🟢 | lanciano Attacchi Aerei (RB p.27); stampate e piazzate in partita |
 | Reazione Norvegese | 🟡 | quattro tabelle collegate ai due cicli; restano i risultati b/g |
-| Battaglia avanzata | 🟡 | le quattro scelte sono complete; resta MS12 |
+| Battaglia avanzata | 🟢 | quattro scelte interattive e MS12 in tre Parti, motore e vista |
 | Comandanti | 🟡 | testi trascritti; Forbes e Marschall non automatizzati |
 | Basi aeree sulla Mappa Operazionale | 🟡 | diciassette trascritte; le sette con un anno aspettano l'anno dello scenario |
 | Linea Artica | 🔴 | non e' un dato di mappa: i vincoli di RB p.27 non sono controllabili |
@@ -140,10 +140,11 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
   che si e' notato. Adesso confronta il viewport logico.
   **La verifica e' stata fatta**: 1280x720, 1600x900 e 1920x1080 passano tutte
   e tre, prova di fumo e screenshot. Resta il viewport stretto.
-- **Battaglia avanzata**: le quattro scelte interattive sono complete, motore e
-  vista - Plancia, Timone Fuori Uso, Confusione, divisione del fuoco. Resta
-  **MS12**, che va giocato come struttura in tre parti e non come una Battaglia
-  singola.
+- **Battaglia avanzata**: le quattro scelte interattive e MS12 sono complete,
+  motore e vista. Resta l'**audit visivo** di attitudini, rotazione navi,
+  Acquiring, Closing, Fog, Confusion, siluri, inseguimento e Disingaggio in
+  tutti i Round: e' l'unica voce del capitolo che chiede di guardare, non di
+  scrivere.
 - **I 22 scenari a due giocatori** hanno dati, setup e vittoria, ma nessun
   audit end-to-end.
 
@@ -784,12 +785,15 @@ sopra scenario per scenario.
   imposta alla Forza C, e la regola di chi puo' restare fuori (solo se
   AZZOPPATO, mai il Convoglio ne' lo Squadrone DD). Le navi che tornano da una
   Parte sono le STESSE, col loro danno addosso.
-  **RESTA da collegare alla vista**: oggi il motore sa costruire le tre Parti e
-  58 verifiche le difendono, ma aprendo MS12 dal menu si gioca ancora la
-  Battaglia singola dello schieramento importato. Manca anche l'attitudine
-  segreta dello Scharnhorst, che il fascicolo vuole scelta PRIMA del tiro delle
-  Forze: e' la sola informazione nascosta dello scenario, e va chiesta al
-  giocatore, non inventata.
+  **E' collegato alla vista**: aprendo MS12 il tedesco sceglie l'attitudine
+  dello Scharnhorst PRIMA del tiro delle Forze - la sola informazione nascosta
+  dello scenario - poi si tira, si gioca la Parte di due Round, e alla sua fine
+  la successiva si apre da sola portandosi dietro le navi col loro danno. MS12
+  usa le Regole Avanzate anche se la partita e' cominciata con le base, perche'
+  la sua pagina le prescrive, e il registro lo dice.
+  La prova di fumo `tools/smoke_ms12.gd` apre il gioco vero e pretende tre
+  Parti di due Round: **verificata rompendola di proposito**, togliendo il
+  passaggio alla Parte successiva.
 - [ ] Audit visivo di attitudini, rotazione navi, Acquiring, Closing, Fog,
   Confusion, siluri, inseguimento e Disingaggio in tutti i Round.
 - [ ] Verificare in solitario che il bot controlli soltanto le proprie navi e
