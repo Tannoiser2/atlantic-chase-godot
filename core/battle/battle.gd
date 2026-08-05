@@ -194,8 +194,60 @@ func bridge_choices_pending() -> Array[Ship]:
 	return out
 
 
+## IL TIMONE FUORI USO (Regole Avanzate). Si tira a ogni Manovra e a ogni
+## Attitudine: DISPARI e la nave la muove l'avversario, PARI resta al
+## proprietario. Il tiro va rifatto ogni volta - non e' uno stato che dura.
+## Il tiro va fatto UNA volta per fase, quando la fase si apre: il giocatore
+## deve sapere chi comanda che cosa MENTRE sceglie, non dopo. Rifarlo a ogni
+## disegno della vista darebbe una nave che cambia padrone ogni fotogramma.
+var _rudder_rolled_for: String = ""
+
+
+func ensure_rudder_rolled() -> void:
+	if not state.advanced:
+		return
+	if state.phase != BattleState.Phase.ATTITUDE \
+			and state.phase != BattleState.Phase.MANEUVER:
+		return
+	var key := "%d:%d" % [state.round_number, state.phase]
+	if _rudder_rolled_for == key:
+		return
+	_rudder_rolled_for = key
+	roll_rudder_control("Attitudine" if state.phase == BattleState.Phase.ATTITUDE
+		else "Manovra")
+
+
+func roll_rudder_control(where: String) -> void:
+	state.rudder_control.clear()
+	if not state.advanced:
+		return
+	for ship in state.all_ships():
+		if ship.sunk:
+			continue
+		var r := SpecialEffects.rudder_check(ship, rng)
+		if not bool(r["applies"]):
+			continue
+		var opponent := bool(r["opponent_controls"])
+		state.rudder_control[ship] = opponent
+		state.note("%s (Timone Fuori Uso, %s): 1d6=%d -> la comanda %s."
+			% [ship.name, where, int(r["roll"]),
+				"l'AVVERSARIO" if opponent else "il proprietario"])
+
+
+## Di chi e' la decisione per questa nave nella fase corrente. Quasi sempre la
+## sua parte; col Timone Fuori Uso puo' essere l'altra.
+func controller_side(ship: Ship) -> int:
+	var tf := state.own_tf_of(ship)
+	if tf == null:
+		return -1
+	if bool(state.rudder_control.get(ship, false)):
+		return 1 - tf.side
+	return tf.side
+
+
 func attitude_phase(choices: Dictionary = {}) -> void:
 	state.phase = BattleState.Phase.ATTITUDE
+	ensure_rudder_rolled()
 	for s_v: Variant in choices.keys():
 		var s: Ship = s_v
 		if s.sunk:
@@ -406,6 +458,7 @@ func torpedo_phase(attacks: Dictionary) -> Array[Dictionary]:
 ## Le navi non elencate restano dove sono e mantengono lo stato del Fumo.
 func maneuver_phase(moves: Dictionary) -> void:
 	state.phase = BattleState.Phase.MANEUVER
+	ensure_rudder_rolled()
 	for ship in Maneuver.move_order(state):
 		if not moves.has(ship):
 			continue

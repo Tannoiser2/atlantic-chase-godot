@@ -21,6 +21,7 @@ func run() -> void:
 	test_repair()
 	test_wired_into_battle()
 	test_bridge_choice()
+	test_rudder_control_changes_hands()
 
 
 func _ship(n: String = "Bismarck") -> Ship:
@@ -314,3 +315,52 @@ func test_bridge_choice() -> void:
 			fired_by_hurt += 1
 	eq(fired_by_hurt, 0, "e infatti non spara")
 	true_(results.size() > 0, "mentre il nemico spara normalmente")
+
+
+## IL TIMONE FUORI USO (Regole Avanzate).
+##
+## A ogni Manovra e a ogni Attitudine si tira un dado: DISPARI e la nave la
+## muove l'AVVERSARIO. `rudder_check()` c'era dal commit degli Effetti
+## Speciali, e non la chiamava nessuno: la nave restava tua comunque.
+func test_rudder_control_changes_hands() -> void:
+	_begin("col Timone Fuori Uso la nave non e' piu' tua")
+	var st := BattleState.new(BattleState.Kind.BATTLE, TimeLapse.Weather.GOOD)
+	st.advanced = true
+	var km := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
+	var drifting := _ship("Bismarck")
+	km.ships = [drifting] as Array[Ship]
+	var rn := TaskForce.new(2, TaskForce.Side.ROYAL_NAVY)
+	rn.ships = [_ship("Hood")] as Array[Ship]
+	st.active_tf = km
+	st.target_tf = rn
+	var rng := DiceRNG.new(5)
+	var b := Battle.new(st, rng)
+
+	eq(b.controller_side(drifting), TaskForce.Side.KRIEGSMARINE,
+		"senza Timone la nave la comanda la sua parte")
+
+	SpecialEffects.apply(drifting, SpecialEffects.RUDDER)
+	# DISPARI: la comanda l'avversario.
+	rng.push_forced([3])
+	b.roll_rudder_control("prova")
+	eq(b.controller_side(drifting), TaskForce.Side.ROYAL_NAVY,
+		"con un DISPARI la nave la muove l'avversario")
+
+	# PARI: torna al proprietario. Il tiro si rifa' ogni fase, non e' uno stato
+	# che dura.
+	rng.push_forced([4])
+	b.roll_rudder_control("prova")
+	eq(b.controller_side(drifting), TaskForce.Side.KRIEGSMARINE,
+		"con un PARI resta al proprietario")
+
+	# E si tira una volta sola per fase: due chiamate nella stessa fase non
+	# devono consumare due dadi, se no la nave cambierebbe padrone a ogni
+	# disegno della vista.
+	st.phase = BattleState.Phase.MANEUVER
+	st.round_number = 1
+	rng.push_forced([3])
+	b.ensure_rudder_rolled()
+	var after_first := b.controller_side(drifting)
+	b.ensure_rudder_rolled()
+	eq(b.controller_side(drifting), after_first,
+		"chiamata due volte nella stessa fase, il tiro resta quello")

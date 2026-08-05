@@ -64,6 +64,16 @@ var fixed_setup_attitudes: Dictionary = {}
 ## Eccezioni dichiarate dal fascicolo dei mini-scenari. Restano dati dello
 ## scenario: il motore applica la regola senza riconoscere nomi come "MS3".
 var skip_snafu: bool = false
+## Chi comanda una nave col TIMONE FUORI USO, per la fase corrente:
+## nave -> true se la muove l'AVVERSARIO.
+##
+## Regole Avanzate: a ogni Manovra e a ogni Attitudine si tira un dado, e con
+## DISPARI la nave la muove l'avversario. E' l'effetto piu' crudele del
+## fascicolo - la nave non e' danneggiata, semplicemente non e' piu' tua - e
+## finora il tiro non lo faceva nessuno: `SpecialEffects.rudder_check()`
+## esisteva e non veniva chiamata.
+var rudder_control: Dictionary = {}
+
 ## La scelta della PLANCIA per il Round corrente: nave -> "no_fire" | "stopped".
 ##
 ## Regole Avanzate: una nave che ha preso la Plancia deve scegliere, OGNI

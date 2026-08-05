@@ -296,7 +296,19 @@ func _is_targeting_phase() -> bool:
 
 
 func _can_control_ship(ship: Ship) -> bool:
-	if ship == null or solo_player_side < 0:
+	if ship == null:
+		return false
+	# IL TIMONE FUORI USO ribalta la proprieta' per una fase (Regole Avanzate):
+	# con un DISPARI la nave la muove l'avversario. E' l'unico caso in cui una
+	# nave tua non e' tua, e va rispettato prima di ogni altra considerazione.
+	if state.rudder_control.has(ship):
+		var controller := battle.controller_side(ship)
+		if solo_player_side >= 0:
+			return controller == solo_player_side
+		# Fuori dal solitario comandano tutti e due i giocatori allo stesso
+		# tavolo: il vincolo si vede nel registro, non si puo' far rispettare.
+		return true
+	if solo_player_side < 0:
 		return true
 	var tf := state.own_tf_of(ship)
 	return tf != null and tf.side == solo_player_side
@@ -1362,6 +1374,10 @@ func refresh() -> void:
 	queue_redraw()
 	if _header == null:
 		return
+	# Il Timone Fuori Uso si tira quando la fase si apre, non quando si
+	# risolve: il giocatore deve sapere chi comanda che cosa mentre sceglie.
+	if battle != null:
+		battle.ensure_rudder_rolled()
 	var lines: Array[String] = []
 	lines.append("[b]%s[/b] in %s   -   [color=#9edcf2]%s[/color]   -   Round [b]%d[/b] di %d   -   fase [b]%s[/b]" % [
 		BattleState.KIND_LABELS[state.kind], str(state.hex),

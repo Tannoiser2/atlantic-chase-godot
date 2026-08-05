@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Baseline: **3406 verifiche su 20 suite**, tutte verdi. Replay solitario:
+Baseline: **3410 verifiche su 20 suite**, tutte verdi. Replay solitario:
 **quindici `OK`** su quindici scenari, nessuno saltato. `audit_solo.gd`:
 **93 caselle azione, zero procedure segnaposto, ZERO buchi dichiarati, zero
 blocchi.**
@@ -172,7 +172,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 3406 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 3410 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
@@ -754,7 +754,13 @@ sopra scenario per scenario.
   viene prima del Fuoco. `P` rinuncia, `M` ferma; finche' resta da fare, il
   Round non prosegue. Chi resta Fermo e' Fermo DAVVERO - bersaglio con +3 - e la
   scelta vale un Round solo, se no la Plancia sarebbe un affondamento lento.
-- [ ] Implementare il controllo avversario per Timone Fuori Uso.
+- [x] **Controllo avversario per Timone Fuori Uso**: si tira a ogni Attitudine
+  e a ogni Manovra, e con DISPARI la nave la comanda l'avversario
+  (`Battle.controller_side`). Il tiro si fa quando la fase si APRE, una volta
+  sola: il giocatore deve sapere chi comanda che cosa mentre sceglie, e rifarlo
+  a ogni disegno darebbe una nave che cambia padrone ogni fotogramma.
+  Nel solitario il vincolo si fa rispettare; a due giocatori allo stesso tavolo
+  resta scritto nel registro, perche' li' comandano tutti e due.
 - [ ] Esporre correttamente i tre usi del segnalino Confusione.
 - [ ] Implementare la divisione del fuoco in Acquisizione.
 - [ ] Implementare MS12 come struttura speciale in tre parti; non trattarlo

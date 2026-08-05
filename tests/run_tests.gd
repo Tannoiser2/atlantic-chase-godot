@@ -31,7 +31,7 @@ const EXPECTED := {
 	"res://tests/unit/test_reorganize_signal.gd": 138,
 	"res://tests/unit/test_solo.gd": 1033,
 	"res://tests/unit/test_attitude.gd": 167,
-	"res://tests/unit/test_special_effects.gd": 80,
+	"res://tests/unit/test_special_effects.gd": 84,
 	"res://tests/unit/test_result_tables.gd": 34,
 	"res://tests/unit/test_lingering.gd": 63,
 	"res://tests/unit/test_snafu.gd": 90,
