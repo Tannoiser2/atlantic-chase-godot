@@ -52,17 +52,37 @@ func _process(_delta: float) -> bool:
 			return _finish(false, "il clic nel SubViewport non seleziona la TF")
 		if _root.cam.zoom.x <= _zoom_before:
 			return _finish(false, "la rotella nel SubViewport non raggiunge la camera")
-		var inset_panel: Control = _root._inset_panel
-		if inset_panel == null:
-			return _finish(false, "la finestra delle mappe inserto non e' presente")
-		var inset_tabs: TabContainer = inset_panel.get_node("InsetTabs")
-		if inset_tabs.get_child_count() != 2:
-			return _finish(false, "le due mappe inserto non sono presenti")
-		for inset in inset_tabs.get_children():
-			if not inset is TextureRect or (inset as TextureRect).texture == null:
-				return _finish(false, "una mappa inserto non ha caricato la sua immagine")
-		if inset_panel.get_global_rect().end.x > _root._map_container.get_global_rect().position.x:
-			return _finish(false, "le mappe inserto si sovrappongono alla mappa principale")
+		# Op5 Rheinubung si gioca sulla Mappa Operazionale: disposizione
+		# larga - mappa al centro, registro a destra, pannelli sotto.
+		if _root._inset_layout():
+			return _finish(false, "Op5 non si gioca su un inserto")
+		if _root._map_container.get_global_rect().position.x > 24.0:
+			return _finish(false, ("sulla Mappa Operazionale la mappa comincia "
+				+ "a sinistra, invece parte da x=%.0f")
+				% _root._map_container.get_global_rect().position.x)
+		# Le maniglie: con questa disposizione servono quella del registro e
+		# quella della fascia inferiore, non quella della colonna a sinistra.
+		for grabber: Variant in [_root._grab_inset, _root._grab_log,
+				_root._grab_bottom]:
+			if grabber == null:
+				return _finish(false, "manca una delle tre maniglie dei bordi")
+		if _root._grab_inset.visible:
+			return _finish(false, ("senza mappa inserto non c'e' un bordo di "
+				+ "colonna da trascinare, e la maniglia non deve restare li'"))
+		if not _root._grab_bottom.visible:
+			return _finish(false, "manca la maniglia della fascia inferiore")
+		# Trascinare il bordo inferiore cambia davvero il layout: e' la sola
+		# prova che le misure non sono tornate costanti per sbaglio.
+		var map_h_before: float = _root._map_container.size.y
+		var bottom_before: float = _root._bottom_h
+		_root._bottom_h = bottom_before + 120.0
+		_root._apply_layout()
+		if _root._map_container.size.y >= map_h_before:
+			return _finish(false, ("alzando la fascia inferiore la mappa deve "
+				+ "abbassarsi, invece e' rimasta alta %.0f")
+				% _root._map_container.size.y)
+		_root._bottom_h = bottom_before
+		_root._apply_layout()
 		var tf_panel: Control = _root._tf_panel
 		var bottom_row: Control = tf_panel.get_parent()
 		var status_panel: Control = bottom_row.get_node("StatusPanel")

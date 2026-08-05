@@ -82,6 +82,63 @@ func _process(_delta: float) -> bool:
 		if not _check(sprite.texture.get_size() == Vector2(_root.graph.map_size),
 				"della misura dichiarata dal grafo"):
 			return true
+		# Una mappa inserto e' VERTICALE: la superficie di gioco si sposta
+		# nella colonna di sinistra, alta quanto la finestra, e i pannelli si
+		# prendono il centro. Prima stava in un riquadro orizzontale con due
+		# fasce nere ai lati.
+		var map_rect: Rect2 = _root._map_container.get_global_rect()
+		var full: Vector2 = _root._map_container.get_viewport_rect().size
+		if not _check(_root._inset_layout(), "la disposizione passa a inserto"):
+			return true
+		if not _check(map_rect.size.y > map_rect.size.x,
+				"la mappa e' piu' alta che larga (%.0fx%.0f)"
+					% [map_rect.size.x, map_rect.size.y]):
+			return true
+		if not _check(map_rect.end.y > full.y - 32.0,
+				"e arriva in fondo alla finestra (%.0f su %.0f)"
+					% [map_rect.end.y, full.y]):
+			return true
+		if not _check(map_rect.position.x < 24.0,
+				"partendo da sinistra (x=%.0f)" % map_rect.position.x):
+			return true
+		# E la camera inquadra la mappa NELLA nuova misura: se si inquadrasse
+		# quella di prima, l'inserto resterebbe piccolo fra due fasce nere.
+		var shown: float = _root.graph.map_size.y * _root.cam.zoom.y
+		if not _check(shown > map_rect.size.y * 0.85,
+				"la camera riempie il riquadro (%.0f su %.0f)"
+					% [shown, map_rect.size.y]):
+			return true
+		# I pannelli non restano sotto una mappa che ormai e' alta quanto la
+		# finestra: si spostano nel centro liberato.
+		var panels: Rect2 = _root._bottom_row.get_global_rect()
+		if not _check(panels.position.x >= map_rect.end.x - 1.0,
+				"i pannelli stanno a destra della mappa (%.0f contro %.0f)"
+					% [panels.position.x, map_rect.end.x]):
+			return true
+		if not _check(panels.size.y > 400.0,
+				"e si prendono l'altezza del centro (%.0f)" % panels.size.y):
+			return true
+		# Difetto gia' pagato: qui il registro e' alto quanto la finestra, e la
+		# fascia arrivava al bordo destro come nell'altra disposizione. La
+		# scheda della Task Force finiva sopra il registro e si leggevano tutti
+		# e due insieme.
+		if not _check(panels.end.x <= _root._log_panel.get_global_rect().position.x + 1.0,
+				"e non finiscono sopra il registro (%.0f contro %.0f)"
+					% [panels.end.x, _root._log_panel.get_global_rect().position.x]):
+			return true
+		# Difetto gia' pagato: affiancati in una colonna stretta, la scheda
+		# della Task Force schiacciava il pannello di stato a una lettera per
+		# riga. Qui si impilano.
+		var status: Control = _root._bottom_row.get_node("StatusPanel")
+		if not _check(status.size.x > 300.0,
+				"il pannello di stato resta leggibile (largo %.0f)" % status.size.x):
+			return true
+		if not _check(_root._tf_panel.get_global_rect().position.y >= status.get_global_rect().end.y - 1.0,
+				"e la scheda della Task Force gli sta SOTTO, non accanto"):
+			return true
+		if not _check(_root._grab_inset.visible and not _root._grab_bottom.visible,
+				"la maniglia e' quella del bordo verticale, non dell'orizzontale"):
+			return true
 		_step += 1
 		return false
 
@@ -96,6 +153,17 @@ func _process(_delta: float) -> bool:
 	if not _check(tiles2 != null and tiles2.get_child_count() > 1,
 			"la Mappa Operazionale torna a tile (%d)"
 				% (0 if tiles2 == null else tiles2.get_child_count())):
+		return true
+	# E la disposizione torna quella larga: mappa al centro, pannelli sotto.
+	if not _check(not _root._inset_layout(), "la disposizione torna larga"):
+		return true
+	var wide: Rect2 = _root._map_container.get_global_rect()
+	if not _check(wide.size.x > wide.size.y,
+			"la mappa torna piu' larga che alta (%.0fx%.0f)"
+				% [wide.size.x, wide.size.y]):
+		return true
+	if not _check(_root._bottom_row.get_global_rect().position.y > wide.end.y - 1.0,
+			"e i pannelli tornano sotto la mappa"):
 		return true
 	print("\nMAPPA INSERTO: OK - due inserti aperti come superficie di gioco e "
 		+ "ritorno alla Mappa Operazionale, con tabellone, stato, Traiettorie e "

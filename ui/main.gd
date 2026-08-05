@@ -89,11 +89,42 @@ var _bl1_fueling_running: bool = false
 const MAP_TOP := 100.0
 const MAP_LEFT := 310.0
 const MAP_RIGHT := 410.0
-const MAP_BOTTOM := 352.0
+const BOTTOM_H := 232.0
+const MARGIN := 12.0
+
+## Larghezze minime, sotto le quali trascinare un bordo non ha piu' senso:
+## un pannello piu' stretto di cosi' non mostra piu' quello che contiene.
+const MIN_INSET_W := 200.0
+const MIN_LOG_W := 54.0
+const MIN_BOTTOM_H := 90.0
+const MIN_MAP_W := 320.0
+const MIN_MAP_H := 240.0
+## Quanto deve restare ai pannelli quando la mappa inserto si prende la
+## sinistra. In quella disposizione i pannelli sono IMPILATI, non affiancati,
+## quindi non serve la larghezza della scheda della Task Force: serve quella
+## che rende leggibile una riga di testo.
+const MIN_PANELS_W := 380.0
+
+## Le tre misure dello spazio di lavoro. Erano costanti, e con loro il layout
+## era quello e basta: la fascia inferiore restava alta 328 px anche quando
+## conteneva quattro righe, e la colonna delle mappe inserto restava larga 310
+## anche quando non c'era nessuna mappa da metterci. Adesso sono misure, i
+## bordi si trascinano, e `_apply_layout()` e' l'unico posto che le applica -
+## se no cinque pannelli finiscono a credere cose diverse su dov'e' il bordo.
+## 0 = larghezza automatica (quella che fa riempire l'altezza alla mappa
+## inserto); un valore positivo e' la scelta di chi ha trascinato il bordo.
+var _inset_w_manual := 0.0
+var _log_w := MAP_RIGHT
+var _bottom_h := BOTTOM_H
+
 var _map_container: SubViewportContainer = null
 var _map_viewport: SubViewport = null
 var _map_frame: Panel = null
-var _inset_panel: PanelContainer = null
+var _bottom_row: BoxContainer = null
+var _grab_inset: Panel = null
+var _grab_log: Panel = null
+var _grab_bottom: Panel = null
+var _dragging := ""
 ## "" = Mappa Operazionale, altrimenti la chiave dell'inserto in uso.
 var _current_map_key: String = ""
 
@@ -106,10 +137,7 @@ func _build_map_viewport() -> void:
 
 	_map_frame = Panel.new()
 	_map_frame.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_map_frame.offset_left = MAP_LEFT
 	_map_frame.offset_top = MAP_TOP
-	_map_frame.offset_right = -MAP_RIGHT
-	_map_frame.offset_bottom = -MAP_BOTTOM
 	_map_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var frame_style := StyleBoxFlat.new()
 	frame_style.bg_color = Color(0.015, 0.02, 0.025, 1.0)
@@ -120,10 +148,7 @@ func _build_map_viewport() -> void:
 
 	_map_container = SubViewportContainer.new()
 	_map_container.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_map_container.offset_left = MAP_LEFT + 1
 	_map_container.offset_top = MAP_TOP + 1
-	_map_container.offset_right = -MAP_RIGHT - 1
-	_map_container.offset_bottom = -MAP_BOTTOM - 1
 	_map_container.stretch = true
 	_map_container.mouse_filter = Control.MOUSE_FILTER_STOP
 	layer.add_child(_map_container)
@@ -145,12 +170,138 @@ func _resize_map_viewport() -> void:
 		cam.call_deferred("_clamp_position")
 
 
-func _set_map_right_margin(margin: float) -> void:
+## L'unico posto che decide dov'e' ogni bordo dello spazio di lavoro.
+##
+## Cinque controlli confinano sugli stessi bordi - cornice della mappa,
+## SubViewport, colonna del registro, fascia dei pannelli e maniglie - e finche'
+## ognuno teneva i suoi offset scritti a mano bastava cambiarne uno per lasciare
+## gli altri a guardare un bordo che non c'era piu'.
+##
+## Ci sono DUE disposizioni, e a sceglierle e' la forma della mappa.
+##
+##   Mappa Operazionale: e' larga. Sta al centro, il registro a destra, i
+##   pannelli in una fascia sotto.
+##
+##   Mappa inserto: e' ALTA. I cinque scenari inserto si giocavano su una mappa
+##   verticale infilata in un riquadro orizzontale, con due fasce nere ai lati
+##   e la mappa rimpicciolita per starci. Adesso la superficie di gioco prende
+##   la colonna di sinistra, alta quanto la finestra e larga quanto serve alla
+##   sua proporzione, e i pannelli si prendono il centro liberato - dove hanno
+##   piu' spazio di quanto ne avessero nella fascia.
+func _apply_layout() -> void:
 	if _map_frame == null or _map_container == null:
 		return
-	_map_frame.offset_right = -margin
-	_map_container.offset_right = -margin - 1
+	var full := get_viewport_rect().size
+	var right := _log_w if _log_expanded else MIN_LOG_W
+	if _log_panel != null:
+		_log_panel.offset_left = -_log_w if _log_expanded else -MIN_LOG_W
+	if _inset_layout():
+		var w := _inset_map_width(full)
+		# I due pannelli si IMPILANO. Affiancati vivevano in una fascia larga
+		# 1576; qui la colonna centrale ne ha meno di 500, e la scheda della
+		# Task Force - che ne pretende 560 - schiacciava quello di stato a una
+		# colonna di caratteri, una lettera per riga.
+		_bottom_row.vertical = true
+		_tf_panel.custom_minimum_size.x = 0.0
+		_frame_map(MARGIN, full.x - MARGIN - w, MARGIN)
+		if _log_panel != null:
+			_log_panel.offset_bottom = -MARGIN
+		if _bottom_row != null:
+			_bottom_row.offset_left = w + 2.0 * MARGIN
+			# Qui il registro e' alto quanto la finestra, non si ferma sopra
+			# la fascia: se la fascia arrivasse al bordo destro come nell'altra
+			# disposizione, la scheda della Task Force finirebbe SOPRA il
+			# registro - e si leggevano tutti e due insieme.
+			_bottom_row.offset_right = -(right + MARGIN)
+			_bottom_row.offset_top = MAP_TOP - full.y
+	else:
+		_bottom_row.vertical = false
+		_tf_panel.custom_minimum_size.x = 560.0
+		var bottom := _bottom_height() + 2.0 * MARGIN
+		_frame_map(MARGIN, right, bottom)
+		if _log_panel != null:
+			_log_panel.offset_bottom = -bottom
+		if _bottom_row != null:
+			_bottom_row.offset_left = MARGIN
+			_bottom_row.offset_right = -MARGIN
+			_bottom_row.offset_top = -(_bottom_height() + MARGIN)
+	_place_grabbers()
 	_resize_map_viewport()
+
+
+func _frame_map(left: float, right: float, bottom: float) -> void:
+	_map_frame.offset_left = left
+	_map_frame.offset_right = -right
+	_map_frame.offset_bottom = -bottom
+	_map_container.offset_left = left + 1.0
+	_map_container.offset_right = -right - 1.0
+	_map_container.offset_bottom = -bottom - 1.0
+
+
+## Si gioca su una mappa inserto?
+func _inset_layout() -> bool:
+	return _current_map_key != ""
+
+
+## Quanto larga la colonna della mappa inserto.
+##
+## Di suo, quanto serve perche' la mappa riempia l'altezza disponibile alla sua
+## proporzione: e' il motivo per cui la si sposta a sinistra. Chi trascina il
+## bordo decide diversamente, e `_inset_w` tiene la sua scelta.
+func _inset_map_width(full: Vector2) -> float:
+	# Il tetto deve tenere conto ANCHE del registro, che in questa disposizione
+	# e' alto quanto la finestra e sta accanto ai pannelli, non sopra di loro.
+	# Contando solo i pannelli, la mappa si prendeva 675 px, ne restavano 479
+	# ai pannelli che ne pretendono 593, e la scheda della Task Force sbordava
+	# sopra il registro.
+	var log_w := _log_w if _log_expanded else MIN_LOG_W
+	var room := full.x - MIN_PANELS_W - log_w - 3.0 * MARGIN
+	var top := maxf(MIN_INSET_W, room)
+	if _inset_w_manual > 0.0:
+		return clampf(_inset_w_manual, MIN_INSET_W, top)
+	var height := full.y - MAP_TOP - 2.0 * MARGIN
+	var aspect := 0.75
+	if graph != null and graph.map_size.y > 0:
+		aspect = float(graph.map_size.x) / float(graph.map_size.y)
+	return clampf(height * aspect, MIN_INSET_W, top)
+
+
+func _bottom_height() -> float:
+	if _bottom_row == null:
+		return _bottom_h
+	return maxf(_bottom_h, _bottom_row.get_combined_minimum_size().y)
+
+
+## Le maniglie, sui bordi che si possono spostare. Sono sottili ma non
+## invisibili: un bordo trascinabile che non si vede non lo trascina nessuno.
+## Quali esistono dipende dalla disposizione: con la mappa inserto a sinistra
+## non c'e' nessuna fascia inferiore, e quindi nessun bordo inferiore.
+func _place_grabbers() -> void:
+	if _grab_bottom == null:
+		return
+	var full := get_viewport_rect().size
+	var right := _log_w if _log_expanded else MIN_LOG_W
+	_grab_log.offset_left = -right
+	_grab_log.offset_right = -right + 8.0
+	_grab_log.offset_top = MAP_TOP
+	if _inset_layout():
+		var w := _inset_map_width(full)
+		_grab_inset.visible = true
+		_grab_inset.offset_left = w + MARGIN
+		_grab_inset.offset_right = w + 2.0 * MARGIN
+		_grab_inset.offset_top = MAP_TOP
+		_grab_inset.offset_bottom = -MARGIN
+		_grab_log.offset_bottom = -MARGIN
+		_grab_bottom.visible = false
+		return
+	var bottom := _bottom_height() + 2.0 * MARGIN
+	_grab_inset.visible = false
+	_grab_log.offset_bottom = -bottom
+	_grab_bottom.visible = true
+	_grab_bottom.offset_left = MARGIN
+	_grab_bottom.offset_right = -right
+	_grab_bottom.offset_top = -bottom
+	_grab_bottom.offset_bottom = -bottom + 8.0
 
 
 func _ready() -> void:
@@ -3330,8 +3481,14 @@ func _build_hud() -> void:
 	_tf_panel.add_child(tf_col)
 	_tf_info = RichTextLabel.new()
 	_tf_info.bbcode_enabled = true
-	_tf_info.fit_content = true
-	_tf_info.custom_minimum_size = Vector2(0, 0)
+	# NON `fit_content`: cosi' la scheda pretendeva l'altezza del suo testo -
+	# 95 px - e attraverso di lei la fascia inferiore pretendeva 246 px anche
+	# quando non c'era niente da vedere. Adesso scorre, e l'altezza la decide
+	# chi trascina il bordo.
+	_tf_info.fit_content = false
+	_tf_info.scroll_active = true
+	_tf_info.custom_minimum_size = Vector2(0, 48)
+	_tf_info.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_tf_info.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	tf_col.add_child(_tf_info)
 	var ship_scroll := ScrollContainer.new()
@@ -3352,10 +3509,8 @@ func _build_hud() -> void:
 	# sempre disponibile anche quando il testo e' nascosto.
 	_log_panel = PanelContainer.new()
 	_log_panel.set_anchors_preset(Control.PRESET_RIGHT_WIDE)
-	_log_panel.offset_left = -410
-	_log_panel.offset_right = -12
+	_log_panel.offset_right = -MARGIN
 	_log_panel.offset_top = MAP_TOP
-	_log_panel.offset_bottom = -MAP_BOTTOM
 	_log_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	_log_panel.add_theme_stylebox_override("panel", _panel_style())
 	hud.add_child(_log_panel)
@@ -3398,16 +3553,20 @@ func _build_hud() -> void:
 	# bisognava passare il mouse su sei pulsanti, uno dopo l'altro. Qui si
 	# vedono insieme, RAGGRUPPATE PER MOTIVO: quasi sempre e' un motivo solo che
 	# ne blocca quattro, e detto cosi' si capisce cosa fare.
-	var bottom_row := HBoxContainer.new()
+	# BoxContainer e non HBoxContainer: Godot rifiuta di ruotare un
+	# HBoxContainer ("Can't change orientation of HBoxContainer"), e questa
+	# fascia deve poter passare da affiancata a impilata quando la mappa
+	# inserto si prende la sinistra.
+	var bottom_row := BoxContainer.new()
+	bottom_row.vertical = false
 	bottom_row.name = "BottomWorkspace"
 	bottom_row.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	bottom_row.offset_left = 12
-	bottom_row.offset_right = -12
-	bottom_row.offset_top = -340
-	bottom_row.offset_bottom = -12
+	bottom_row.offset_right = -MARGIN
+	bottom_row.offset_bottom = -MARGIN
 	bottom_row.add_theme_constant_override("separation", 8)
 	bottom_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud.add_child(bottom_row)
+	_bottom_row = bottom_row
 
 	var nowpanel := PanelContainer.new()
 	nowpanel.name = "StatusPanel"
@@ -3477,49 +3636,61 @@ func _build_hud() -> void:
 	_solo_event_panel.add_child(_lbl_solo_event)
 
 	_build_action_bar(hud)
-	_build_inset_maps(hud)
+	_build_grabbers(hud)
 	_build_briefing(hud)
 	_build_help(hud)
+	_apply_layout()
 
 
-func _build_inset_maps(parent: Control) -> void:
-	_inset_panel = PanelContainer.new()
-	_inset_panel.name = "InsetMaps"
-	_inset_panel.set_anchors_preset(Control.PRESET_LEFT_WIDE)
-	_inset_panel.offset_left = 12
-	_inset_panel.offset_right = MAP_LEFT - 8
-	_inset_panel.offset_top = MAP_TOP
-	_inset_panel.offset_bottom = -MAP_BOTTOM
-	_inset_panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	_inset_panel.add_theme_stylebox_override("panel", _panel_style())
-	parent.add_child(_inset_panel)
-
-	var tabs := TabContainer.new()
-	tabs.name = "InsetTabs"
-	tabs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	tabs.tooltip_text = ("Mappe inserto originali. Il reticolo e' calibrato e il "
-		+ "motore le carica: aprendo uno scenario inserto diventano la "
-		+ "superficie di gioco. Qui restano un riferimento visivo.")
-	_inset_panel.add_child(tabs)
-	_add_inset_map(tabs, "Nord", "Mare del Nord",
-		"res://assets/boards/map_north_sea.jpg")
-	_add_inset_map(tabs, "Norvegia", "Mare di Norvegia",
-		"res://assets/boards/map_norwegian_sea.jpg")
+## Bordi trascinabili. Sono tre Panel sottili sui tre confini mobili: chi vuole
+## piu' mappa restringe il registro, chi legge molto lo allarga.
+func _build_grabbers(parent: Control) -> void:
+	_grab_inset = _make_grabber(parent, "GrabInset", true,
+		"Trascina per cambiare la larghezza della colonna delle mappe")
+	_grab_log = _make_grabber(parent, "GrabLog", true,
+		"Trascina per cambiare la larghezza del registro")
+	_grab_bottom = _make_grabber(parent, "GrabBottom", false,
+		"Trascina per cambiare l'altezza della fascia inferiore")
 
 
-func _add_inset_map(tabs: TabContainer, tab_title: String, title: String,
-		path: String) -> void:
-	var image := TextureRect.new()
-	image.name = tab_title
-	image.texture = load(path)
-	image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	image.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	image.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	image.mouse_filter = Control.MOUSE_FILTER_PASS
-	image.tooltip_text = ("%s - riferimento visivo; il reticolo e' calibrato" % title)
-	tabs.add_child(image)
+func _make_grabber(parent: Control, node_name: String, vertical_seam: bool,
+		tip: String) -> Panel:
+	var g := Panel.new()
+	g.name = node_name
+	g.set_anchors_preset(Control.PRESET_FULL_RECT)
+	g.mouse_filter = Control.MOUSE_FILTER_STOP
+	g.mouse_default_cursor_shape = (Control.CURSOR_HSIZE if vertical_seam
+		else Control.CURSOR_VSIZE)
+	g.tooltip_text = tip
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.45, 0.60, 0.72, 0.22)
+	sb.set_corner_radius_all(3)
+	g.add_theme_stylebox_override("panel", sb)
+	g.gui_input.connect(_on_grabber_input.bind(node_name))
+	parent.add_child(g)
+	return g
+
+
+func _on_grabber_input(event: InputEvent, which: String) -> void:
+	if event is InputEventMouseButton:
+		var mb := event as InputEventMouseButton
+		if mb.button_index == MOUSE_BUTTON_LEFT:
+			_dragging = which if mb.pressed else ""
+		return
+	if _dragging != which or not (event is InputEventMouseMotion):
+		return
+	var at := get_viewport().get_mouse_position()
+	var full := get_viewport_rect().size
+	match which:
+		"GrabInset":
+			_inset_w_manual = clampf(at.x - MARGIN, MIN_INSET_W,
+				full.x - MIN_PANELS_W)
+		"GrabLog":
+			_log_w = clampf(full.x - at.x, MIN_LOG_W, full.x - MIN_MAP_W)
+		"GrabBottom":
+			_bottom_h = clampf(full.y - at.y - 2.0 * MARGIN, MIN_BOTTOM_H,
+				full.y - MAP_TOP - MIN_MAP_H)
+	_apply_layout()
 
 
 ## Cambia la superficie di gioco: Mappa Operazionale o una delle due inserto.
@@ -3545,18 +3716,36 @@ func _use_map_for(sc: Scenario) -> void:
 	state.graph = g
 	board.setup(g)
 	traj_layer.setup(g, state)
-	cam.setup(Vector2(g.map_size))
+	# Cambiare superficie cambia la DISPOSIZIONE, non solo il contenuto: una
+	# mappa inserto e' verticale e va a sinistra, la Mappa Operazionale e'
+	# larga e sta al centro.
+	_apply_layout()
+	# L'inquadratura iniziale si calcola sulla misura del SubViewport, e il
+	# SubViewport la riceve dal suo contenitore al passaggio di layout
+	# SUCCESSIVO. Chiamandola qui si inquadrava il riquadro di prima: la mappa
+	# inserto restava piccola in mezzo a due fasce nere, cioe' proprio il
+	# difetto che spostarla a sinistra doveva togliere.
+	# Due volte di proposito: subito, perche' un Control ancorato aggiorna la
+	# sua misura appena gli si cambiano gli offset; e differito, per il caso in
+	# cui il SubViewport la riceva solo al passaggio dopo.
+	_fit_camera_to_map()
+	call_deferred("_fit_camera_to_map")
+
+
+func _fit_camera_to_map() -> void:
+	if cam == null or graph == null:
+		return
+	cam.setup(Vector2(graph.map_size))
 	_focus_selected()
 
 
 func _toggle_log_panel() -> void:
 	_log_expanded = not _log_expanded
-	_log_panel.offset_left = -410 if _log_expanded else -54
 	_log_scroll.visible = _log_expanded
 	_log_toggle.text = "Registro  >" if _log_expanded else "<"
 	_log_toggle.tooltip_text = "Comprimi il registro degli eventi" \
 		if _log_expanded else "Apri il registro degli eventi"
-	_set_map_right_margin(MAP_RIGHT if _log_expanded else 54.0)
+	_apply_layout()
 
 
 func _on_log_meta_clicked(meta: Variant) -> void:
@@ -4150,6 +4339,11 @@ func _tf_card_text(tf: TaskForce) -> String:
 func _refresh_tf_panel() -> void:
 	if _tf_panel == null:
 		return
+	# Il minimo della fascia inferiore cambia con quello che c'e' dentro: la
+	# scheda che compare, le pedine che vanno a capo. Il bordo va rimesso DOPO
+	# che il contenitore ha ricalcolato, se no si assesta con un fotogramma di
+	# ritardo e si vede saltare.
+	call_deferred("_apply_layout")
 	if mode == Mode.EDITOR or selected_tf == null or selected_tf.completed:
 		_tf_panel.visible = false
 		_tf_card_signature = ""

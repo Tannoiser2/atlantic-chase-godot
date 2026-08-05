@@ -905,6 +905,36 @@ sopra scenario per scenario.
   una riga falsa, e il pannello scrive quante ne restano da guardare - un
   punteggio incompleto si vede invece di sembrare finito.
 
+- [x] **Lo spazio di lavoro ha due disposizioni, scelte dalla forma della mappa.**
+  Segnalato dall'utente su tre punti insieme: la fascia inferiore era alta 328
+  px e quasi vuota; la colonna di sinistra offriva SEMPRE due mappe inserto in
+  due linguette, comprese quelle che lo scenario non tocca; e le mappe inserto
+  sono verticali, quindi stavano male in un riquadro orizzontale.
+  - **Mappa Operazionale**: mappa al centro, registro a destra, pannelli in una
+    fascia sotto. La fascia adesso e' 232 px invece di 328, e la colonna delle
+    mappe inserto non c'e' piu': la mappa parte da x=12 e guadagna 298 px.
+  - **Mappa inserto** (BL3, N1, N2, N3, N5): la superficie di gioco prende la
+    colonna di sinistra, alta quanto la finestra e larga quanto vuole la sua
+    proporzione; i pannelli si prendono il centro liberato, IMPILATI. La mappa
+    di N2 passa da 430x600 con due fasce nere ai lati a 684x886 piena.
+  - I bordi si trascinano: tre maniglie, quali esistono dipende dalla
+    disposizione. `_apply_layout()` e' l'unico posto che decide dov'e' un bordo
+    - prima erano cinque controlli con i loro offset scritti a mano.
+  Tre difetti pagati per strada, tutti e tre adesso sorvegliati da
+  `smoke_inset_map.gd`: la fascia sbordava sotto la finestra (un contenitore
+  non scende sotto il minimo dei suoi contenuti, e chiederglielo non lo
+  rimpicciolisce); la scheda della Task Force finiva SOPRA il registro (che in
+  quella disposizione e' alto quanto la finestra); e la camera inquadrava il
+  riquadro di PRIMA, lasciando la mappa piccola proprio dove spostarla doveva
+  ingrandirla.
+- [ ] **Uno scenario che usa DUE mappe insieme non e' supportato.** L'utente lo
+  ha chiesto ("se lo scenario ne usa due allora si devono vedere entrambe") e
+  oggi non serve a nessuno: dei ventidue scenari, cinque usano un inserto e
+  ognuno ne usa uno solo. Servirebbero due superfici di gioco vive - due
+  SubViewport, due tabelloni, due camere - e il grafo e' uno. Non e' un
+  ritocco di layout: e' una modifica al motore, e va decisa quando esistera'
+  uno scenario che la chiede.
+
 ## P2 - Distribuzione e manutenzione
 
 - [ ] Provare davvero gesti e layout su iPad; l'export web da solo non basta.
