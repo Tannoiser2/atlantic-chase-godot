@@ -3645,19 +3645,37 @@ func _build_hud() -> void:
 ## Bordi trascinabili. Sono tre Panel sottili sui tre confini mobili: chi vuole
 ## piu' mappa restringe il registro, chi legge molto lo allarga.
 func _build_grabbers(parent: Control) -> void:
+	# LE ANCORE CONTANO, ed e' il difetto che ho pagato qui. Con
+	# PRESET_FULL_RECT le ancore sono (0,0,1,1): `offset_left = -410` non vuol
+	# dire "410 dal bordo destro", vuol dire x = -410. Cosi' ognuna delle tre
+	# maniglie si allargava per meta' finestra sopra la mappa, e siccome sono
+	# MOUSE_FILTER_STOP si mangiavano ogni clic: niente selezione delle Task
+	# Force, niente zoom, niente trascinamento, e la freccetta di
+	# ridimensionamento ovunque. I menu funzionavano perche' stanno sopra.
+	#
+	# Ogni maniglia va ancorata al bordo che segue: le due verticali al bordo
+	# sinistro e a quello destro, quella orizzontale al bordo inferiore.
 	_grab_inset = _make_grabber(parent, "GrabInset", true,
-		"Trascina per cambiare la larghezza della colonna delle mappe")
+		"Trascina per cambiare la larghezza della mappa",
+		Vector4(0.0, 0.0, 0.0, 1.0))
 	_grab_log = _make_grabber(parent, "GrabLog", true,
-		"Trascina per cambiare la larghezza del registro")
+		"Trascina per cambiare la larghezza del registro",
+		Vector4(1.0, 0.0, 1.0, 1.0))
 	_grab_bottom = _make_grabber(parent, "GrabBottom", false,
-		"Trascina per cambiare l'altezza della fascia inferiore")
+		"Trascina per cambiare l'altezza della fascia inferiore",
+		Vector4(0.0, 1.0, 1.0, 1.0))
 
 
+## `anchors` e' (sinistra, alto, destra, basso), ognuna 0 = bordo iniziale,
+## 1 = bordo finale. Gli offset di `_place_grabbers()` sono scritti per queste.
 func _make_grabber(parent: Control, node_name: String, vertical_seam: bool,
-		tip: String) -> Panel:
+		tip: String, anchors: Vector4) -> Panel:
 	var g := Panel.new()
 	g.name = node_name
-	g.set_anchors_preset(Control.PRESET_FULL_RECT)
+	g.anchor_left = anchors.x
+	g.anchor_top = anchors.y
+	g.anchor_right = anchors.z
+	g.anchor_bottom = anchors.w
 	g.mouse_filter = Control.MOUSE_FILTER_STOP
 	g.mouse_default_cursor_shape = (Control.CURSOR_HSIZE if vertical_seam
 		else Control.CURSOR_VSIZE)

@@ -927,6 +927,23 @@ sopra scenario per scenario.
   quella disposizione e' alto quanto la finestra); e la camera inquadrava il
   riquadro di PRIMA, lasciando la mappa piccola proprio dove spostarla doveva
   ingrandirla.
+- [x] **Le maniglie dei bordi non devono coprire la mappa.** Difetto mio,
+  segnalato dall'utente subito dopo: con la mappa non si poteva piu' fare
+  niente - niente selezione delle Task Force, niente zoom, niente
+  trascinamento, e la freccetta di ridimensionamento dappertutto - mentre i
+  menu rispondevano. Le tre maniglie erano ancorate con `PRESET_FULL_RECT`,
+  dove le ancore sono (0,0,1,1): li' `offset_left = -410` non vuol dire "410
+  dal bordo destro", vuol dire x = -410. `GrabLog` risultava un pannello
+  1608x644 steso sopra la mappa, e siccome sono `MOUSE_FILTER_STOP` si
+  mangiava ogni clic. Adesso ogni maniglia e' ancorata al bordo che segue, e
+  sono tre strisce da 8 px.
+  La prova di fumo non lo vedeva, e adesso lo vede: il clic che gia' c'era
+  entra nel SubViewport per via diretta, saltando la HUD, quindi non poteva
+  accorgersi di un pannello che copriva la mappa. Il controllo nuovo e'
+  geometrico - nessuna maniglia visibile puo' essere piu' grande di un bordo
+  ne' contenere il centro della mappa - ed e' stato verificato rimettendo
+  l'ancora sbagliata: fallisce con "la maniglia GrabLog e' un pannello
+  1608x644, non un bordo".
 - [ ] **Uno scenario che usa DUE mappe insieme non e' supportato.** L'utente lo
   ha chiesto ("se lo scenario ne usa due allora si devono vedere entrambe") e
   oggi non serve a nessuno: dei ventidue scenari, cinque usano un inserto e

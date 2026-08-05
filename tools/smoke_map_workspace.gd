@@ -71,6 +71,24 @@ func _process(_delta: float) -> bool:
 				+ "colonna da trascinare, e la maniglia non deve restare li'"))
 		if not _root._grab_bottom.visible:
 			return _finish(false, "manca la maniglia della fascia inferiore")
+		# DIFETTO GIA' PAGATO, e che questa prova non vedeva. Le maniglie sono
+		# MOUSE_FILTER_STOP: se una si allarga sopra la mappa, si mangia ogni
+		# clic - niente selezione, niente zoom, niente trascinamento - e resta
+		# solo la freccetta di ridimensionamento. Era successo con le ancore
+		# sbagliate, e il clic qui sotto NON se ne accorgeva perche' entra nel
+		# SubViewport per via diretta, saltando la HUD.
+		var map_rect: Rect2 = _root._map_container.get_global_rect()
+		for grabber: Variant in [_root._grab_inset, _root._grab_log,
+				_root._grab_bottom]:
+			var g: Control = grabber
+			if not g.visible:
+				continue
+			if g.size.x > 24.0 and g.size.y > 24.0:
+				return _finish(false, ("la maniglia %s e' un pannello %.0fx%.0f, "
+					+ "non un bordo") % [g.name, g.size.x, g.size.y])
+			if g.get_global_rect().has_point(map_rect.get_center()):
+				return _finish(false, ("la maniglia %s copre il centro della "
+					+ "mappa: nessun clic arriverebbe al gioco") % g.name)
 		# Trascinare il bordo inferiore cambia davvero il layout: e' la sola
 		# prova che le misure non sono tornate costanti per sbaglio.
 		var map_h_before: float = _root._map_container.size.y
