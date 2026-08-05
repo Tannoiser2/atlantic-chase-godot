@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Baseline: **3393 verifiche su 20 suite**, tutte verdi. Replay solitario:
+Baseline: **3406 verifiche su 20 suite**, tutte verdi. Replay solitario:
 **quindici `OK`** su quindici scenari, nessuno saltato. `audit_solo.gd`:
 **93 caselle azione, zero procedure segnaposto, ZERO buchi dichiarati, zero
 blocchi.**
@@ -172,7 +172,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 3393 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 3406 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
@@ -749,7 +749,11 @@ sopra scenario per scenario.
 
 ## P1 - Battaglia avanzata
 
-- [ ] Implementare la scelta Plancia: rinuncia al Fuoco oppure nave Ferma.
+- [x] **Scelta Plancia**: chi ha la Plancia sceglie ogni Round fra rinunciare
+  al Fuoco e restare Ferma, e la scelta si fa nella fase dell'Attitudine perche'
+  viene prima del Fuoco. `P` rinuncia, `M` ferma; finche' resta da fare, il
+  Round non prosegue. Chi resta Fermo e' Fermo DAVVERO - bersaglio con +3 - e la
+  scelta vale un Round solo, se no la Plancia sarebbe un affondamento lento.
 - [ ] Implementare il controllo avversario per Timone Fuori Uso.
 - [ ] Esporre correttamente i tre usi del segnalino Confusione.
 - [ ] Implementare la divisione del fuoco in Acquisizione.

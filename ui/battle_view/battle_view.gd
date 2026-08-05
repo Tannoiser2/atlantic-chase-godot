@@ -232,9 +232,17 @@ func _rebuild_buttons() -> void:
 				if not targeting.is_empty():
 					items.append(["Azzera bersagli", "R", _clear_targets, false])
 			BattleState.Phase.ATTITUDE:
+				var pending := battle.bridge_choices_pending()
 				if not battle.pending_snafu.is_empty():
 					items.append(["Applica Snafu alla nave selezionata", "N",
 						_resolve_snafu_selected, true])
+				elif not pending.is_empty():
+					# La Plancia si sceglie PRIMA del Fuoco, ed e' una scelta
+					# obbligata: finche' resta da fare, il Round non prosegue.
+					items.append(["Plancia di %s: rinuncia al Fuoco" % pending[0].name,
+						"P", _bridge_no_fire, true])
+					items.append(["Plancia di %s: resta Ferma" % pending[0].name,
+						"M", _bridge_stopped, true])
 				else:
 					items.append(["Conferma Attitudini", "SPAZIO", _advance_phase,
 						true])
@@ -464,6 +472,28 @@ func _side_label(active: bool) -> String:
 ## Il fascicolo vorrebbe che si scegliessero in segreto e si rivelassero
 ## insieme; qui si assegnano a vista, che e' l'unico modo sensato quando i due
 ## giocatori guardano lo stesso schermo.
+## La scelta della Plancia, per la prima nave che deve ancora farla. Sono due
+## mali, e il fascicolo non lascia scampo: o non spari, o non ti muovi.
+func _bridge_no_fire() -> void:
+	_bridge_choose("no_fire")
+
+
+func _bridge_stopped() -> void:
+	_bridge_choose("stopped")
+
+
+func _bridge_choose(choice: String) -> void:
+	if state.phase != BattleState.Phase.ATTITUDE:
+		return
+	var pending := battle.bridge_choices_pending()
+	if pending.is_empty():
+		return
+	var why := battle.set_bridge_choice(pending[0], choice)
+	if why != "":
+		state.note("Plancia: %s" % why)
+	refresh()
+
+
 func _cycle_attitude() -> void:
 	if selected == null:
 		state.note("Attitudine: seleziona prima una nave.")
@@ -1155,6 +1185,12 @@ func handle_key(k: InputEventKey) -> bool:
 			if state.phase == BattleState.Phase.ATTITUDE \
 					and not battle.pending_snafu.is_empty():
 				_resolve_snafu_selected()
+			return true
+		KEY_P:
+			_bridge_no_fire()
+			return true
+		KEY_M:
+			_bridge_stopped()
 			return true
 		KEY_I:
 			if state.phase == BattleState.Phase.MANEUVER:

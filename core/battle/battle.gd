@@ -157,6 +157,43 @@ func setup_attitudes_for(ship: Ship) -> Array[int]:
 ## `choices` associa nave -> Attitude.Kind. Le navi non elencate tengono
 ## quella che avevano: e' legale, il fascicolo dice "puo' essere la stessa
 ## attitudine di prima".
+## LA SCELTA DELLA PLANCIA (Regole Avanzate). Una nave che ha preso la Plancia
+## deve scegliere, ogni Round, fra due mali: non sparare, oppure restare Ferma.
+##
+## La scelta e' del PROPRIETARIO e va fatta subito, prima del Fuoco: per questo
+## la si raccoglie nella fase dell'Attitudine, che nel Round avanzato viene
+## prima. Finora nessuno la chiedeva, e la Plancia non faceva niente.
+##
+## `choice` e' "no_fire" oppure "stopped". Ritorna il motivo del rifiuto, o ""
+## se la scelta e' stata registrata.
+func set_bridge_choice(ship: Ship, choice: String) -> String:
+	if ship == null or ship.sunk:
+		return "nave assente"
+	if not SpecialEffects.bridge_choice_needed(ship):
+		return "%s non ha la Plancia: non deve scegliere niente" % ship.name
+	if choice != "no_fire" and choice != "stopped":
+		return "la Plancia si sceglie fra 'no_fire' e 'stopped'"
+	state.bridge_choice[ship] = choice
+	ship.round_stopped = choice == "stopped"
+	state.note("%s (Plancia): %s." % [ship.name,
+		"rinuncia al Fuoco" if choice == "no_fire" else "resta Ferma"])
+	return ""
+
+
+## Le navi che devono ancora scegliere per la Plancia in questo Round.
+## Vuoto = si puo' procedere col Fuoco.
+func bridge_choices_pending() -> Array[Ship]:
+	var out: Array[Ship] = []
+	if not state.advanced:
+		return out
+	for s in state.all_ships():
+		if s.sunk or not SpecialEffects.bridge_choice_needed(s):
+			continue
+		if not state.bridge_choice.has(s):
+			out.append(s)
+	return out
+
+
 func attitude_phase(choices: Dictionary = {}) -> void:
 	state.phase = BattleState.Phase.ATTITUDE
 	for s_v: Variant in choices.keys():
@@ -187,6 +224,12 @@ func attitude_phase(choices: Dictionary = {}) -> void:
 func gunnery_phase(targeting: Dictionary) -> Array[Dictionary]:
 	state.phase = BattleState.Phase.GUNNERY
 	var results: Array[Dictionary] = []
+
+	# La Plancia: chi ha scelto di rinunciare al Fuoco non entra in nessuna
+	# ondata. Chi ha scelto di restare Fermo spara, ed e' bersaglio con +3.
+	for s_v: Variant in state.bridge_choice.keys():
+		if String(state.bridge_choice[s_v]) == "no_fire":
+			state.note("%s non spara: la Plancia." % (s_v as Ship).name)
 
 	var first_wave: Array[Ship] = []
 	var second_wave: Array[Ship] = []
@@ -224,6 +267,8 @@ func _resolve_wave(firers: Array[Ship], targeting: Dictionary) -> Array[Dictiona
 		if blocked_by_damage_control(firer):
 			state.note("%s non spara: Controllo Danni dichiarato nel Round precedente."
 				% firer.name)
+			continue
+		if String(state.bridge_choice.get(firer, "")) == "no_fire":
 			continue
 		var target: Ship = targeting[firer]
 		if target == null or target.sunk:
@@ -497,6 +542,12 @@ func end_round() -> bool:
 		else:
 			state.end_battle("raggiunto l'Ultimo Round (%d)" % state.last_round)
 			return true
+	# La scelta della Plancia vale un Round solo, e la nave che era Ferma per
+	# quella scelta torna alla sua velocita': se restasse, la Plancia
+	# diventerebbe un affondamento lento e silenzioso.
+	for s_v: Variant in state.bridge_choice.keys():
+		(s_v as Ship).round_stopped = false
+	state.bridge_choice.clear()
 	state.round_number += 1
 	state.phase = state.first_phase()
 	state.note("--- Round %d ---" % state.round_number)

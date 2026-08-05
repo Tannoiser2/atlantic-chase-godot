@@ -84,6 +84,10 @@ var smoke: bool = false
 ## corretto senza toccare niente.
 var attitude: int = 1           ## Attitude.Kind.CLOSING
 
+## Ferma per il Round corrente perche' la Plancia lo impone (vedi
+## `current_speed()`). Non e' serializzata: vale un Round e muore con lui.
+var round_stopped: bool = false
+
 ## Effetti Speciali assegnati (Regole Avanzate). Ogni voce e' il codice del
 ## risultato: una nave con un effetto speciale e' "gravemente danneggiata" e
 ## perde alcuni benefici, per esempio la colonna Acquisizione.
@@ -172,6 +176,16 @@ func apply_hits(n: int) -> String:
 
 ## Velocita' del lato attualmente a faccia in su.
 func current_speed() -> int:
+	# La scelta della PLANCIA per il Round corrente (Regole Avanzate): chi ha
+	# preso la Plancia sceglie ogni Round fra non sparare e restare Ferma, e se
+	# sceglie di fermarsi e' Ferma davvero - quindi bersaglio con +3, e immobile
+	# nella Manovra.
+	#
+	# NON entra in `to_dict()` di proposito: vale per un Round e vive solo
+	# dentro la Battaglia. Se finisse nel salvataggio, una nave riaperta
+	# resterebbe ferma per sempre senza che nessuno sappia perche'.
+	if round_stopped:
+		return TimeLapse.Speed.STOPPED
 	# gli Effetti Speciali battono tutto: una nave che brucia o si allaga e'
 	# molto lenta o ferma qualunque cosa dica la pedina
 	var forced := SpecialEffects.speed_override(self)

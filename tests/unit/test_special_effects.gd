@@ -20,6 +20,7 @@ func run() -> void:
 	test_magazine()
 	test_repair()
 	test_wired_into_battle()
+	test_bridge_choice()
 
 
 func _ship(n: String = "Bismarck") -> Ship:
@@ -253,3 +254,63 @@ func test_wired_into_battle() -> void:
 	var a2 := Gunnery.attack(victim, firer, DiceRNG.new(3), false, false, true)
 	false_(a2["ok"], "con l'incendio grave non spara piu'")
 	eq(victim.current_speed(), TimeLapse.Speed.STOPPED, "ed e' ferma")
+
+
+## LA SCELTA DELLA PLANCIA (Regole Avanzate).
+##
+## Una nave che ha preso la Plancia deve scegliere, OGNI Round, fra non sparare
+## e restare Ferma. E' una decisione del proprietario, e finora nessuno gliela
+## chiedeva: la Plancia era un segnalino che non faceva niente.
+func test_bridge_choice() -> void:
+	_begin("la Plancia: o non spari, o non ti muovi")
+	var st := BattleState.new(BattleState.Kind.BATTLE, TimeLapse.Weather.GOOD)
+	st.advanced = true
+	var km := TaskForce.new(1, TaskForce.Side.KRIEGSMARINE)
+	var hurt := _ship("Scharnhorst")
+	hurt.battle_zone = BattleState.Zone.NEAR
+	km.ships = [hurt] as Array[Ship]
+	var rn := TaskForce.new(2, TaskForce.Side.ROYAL_NAVY)
+	var enemy := _ship("Hood")
+	enemy.battle_zone = BattleState.Zone.NEAR
+	rn.ships = [enemy] as Array[Ship]
+	st.active_tf = km
+	st.target_tf = rn
+	var b := Battle.new(st, DiceRNG.new(3))
+
+	eq(b.bridge_choices_pending().size(), 0,
+		"senza Plancia non c'e' niente da scegliere")
+	true_(b.set_bridge_choice(hurt, "no_fire").contains("non ha la Plancia"),
+		"e la scelta viene rifiutata col motivo")
+
+	SpecialEffects.apply(hurt, SpecialEffects.BRIDGE)
+	eq(b.bridge_choices_pending().size(), 1,
+		"con la Plancia la nave deve scegliere")
+	true_(b.set_bridge_choice(hurt, "mezza").contains("'no_fire' e 'stopped'"),
+		"e le scelte sono due, non una terza a piacere")
+
+	# Restare Ferma: la nave e' Ferma DAVVERO, quindi bersaglio con +3.
+	eq(b.set_bridge_choice(hurt, "stopped"), "", "la scelta si registra")
+	eq(hurt.current_speed(), TimeLapse.Speed.STOPPED,
+		"restare Ferma vuol dire essere Ferma, non solo dichiararlo")
+	eq(b.bridge_choices_pending().size(), 0, "e non resta piu' niente da scegliere")
+
+	# Fine del Round: la scelta vale un Round solo, se no la Plancia sarebbe un
+	# affondamento lento.
+	st.round_number = 1
+	st.last_round = 5
+	b.end_round()
+	eq(hurt.current_speed(), TimeLapse.Speed.FAST,
+		"nel Round dopo la nave torna alla sua velocita'")
+	eq(b.bridge_choices_pending().size(), 1, "e deve scegliere di nuovo")
+
+	# Rinunciare al Fuoco: la nave non spara, ma si muove.
+	eq(b.set_bridge_choice(hurt, "no_fire"), "", "la seconda scelta si registra")
+	eq(hurt.current_speed(), TimeLapse.Speed.FAST,
+		"chi rinuncia al Fuoco non e' Ferma")
+	var results := b.gunnery_phase({hurt: enemy, enemy: hurt})
+	var fired_by_hurt := 0
+	for r_v: Variant in results:
+		if (r_v as Dictionary).get("firer") == hurt:
+			fired_by_hurt += 1
+	eq(fired_by_hurt, 0, "e infatti non spara")
+	true_(results.size() > 0, "mentre il nemico spara normalmente")

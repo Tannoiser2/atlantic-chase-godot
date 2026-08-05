@@ -64,6 +64,14 @@ var fixed_setup_attitudes: Dictionary = {}
 ## Eccezioni dichiarate dal fascicolo dei mini-scenari. Restano dati dello
 ## scenario: il motore applica la regola senza riconoscere nomi come "MS3".
 var skip_snafu: bool = false
+## La scelta della PLANCIA per il Round corrente: nave -> "no_fire" | "stopped".
+##
+## Regole Avanzate: una nave che ha preso la Plancia deve scegliere, OGNI
+## Round, fra non sparare e restare Ferma. Non e' un effetto che si applica da
+## solo: e' una decisione del proprietario, e finora nessuno gliela chiedeva -
+## il che voleva dire che la Plancia non faceva niente.
+var bridge_choice: Dictionary = {}
+
 var starting_confusion_side: int = -1
 var minimum_break_away_round: int = 1
 
