@@ -29,7 +29,7 @@ const EXPECTED := {
 	"res://tests/unit/test_scenarios.gd": 228,
 	"res://tests/unit/test_victory.gd": 352,
 	"res://tests/unit/test_reorganize_signal.gd": 138,
-	"res://tests/unit/test_solo.gd": 1033,
+	"res://tests/unit/test_solo.gd": 1046,
 	"res://tests/unit/test_attitude.gd": 167,
 	"res://tests/unit/test_special_effects.gd": 97,
 	"res://tests/unit/test_result_tables.gd": 34,

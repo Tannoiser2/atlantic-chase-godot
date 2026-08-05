@@ -99,6 +99,7 @@ func run() -> void:
 	test_n3_stealth_attack_uses_the_submarine_with_the_printed_bonus()
 	test_n3_stealth_attack_falls_back_to_recon()
 	test_n3_bring_on_battle_measures_from_the_submarine()
+	test_bring_to_battle_aims_at_the_nearest_hex()
 	test_n3_trajectory_to_bergen_has_a_second_step()
 	test_n3_convoy_is_replaced_by_a_cruiser_before_battle()
 	test_n5_procedures_are_transcribed()
@@ -3316,3 +3317,69 @@ func test_n1_german_can_complete_in_an_off_map_port() -> void:
 		names.append(String((o_v as Dictionary)["name"]))
 	true_(names.has("Kiel"),
 		"una TF tedesca nell'esagono di Kiel puo' Completare li': %s" % str(names))
+
+
+## "The selected TF will target the NEAREST hex while avoiding intel triggers
+## if possible" (BL2, fascicolo p.11).
+##
+## Segnalato dall'utente su una partita a BL2: una TF tedesca nel Mare di
+## Norvegia ha aggiunto UNDICI segmenti per raggiungere il capo occidentale di
+## un Convoglio britannico che le passava accanto a est. Puntava alla TESTA
+## della Traiettoria bersaglio invece che all'esagono piu' vicino - e la testa
+## di un Convoglio che va da Halifax al Clyde e' dall'altra parte
+## dell'Atlantico.
+func test_bring_to_battle_aims_at_the_nearest_hex() -> void:
+	_begin("portare in Battaglia punta all'esagono piu' vicino, non alla testa")
+	var g := MapGraph.load_default()
+	var uk := TaskForce.Side.ROYAL_NAVY
+	var ge := TaskForce.Side.KRIEGSMARINE
+
+	# Una Traiettoria bersaglio lunga: si cammina in linea verso est.
+	var convoy := TaskForce.new(1, uk)
+	convoy.name = "Convoglio"
+	convoy.trajectory = Trajectory.new()
+	var walk := g.port_hex("Halifax")
+	true_(g.is_playable(walk), "si parte da un esagono giocabile")
+	convoy.trajectory.become_station(walk)
+	for _i in 6:
+		var next_hex := Vector2i.MAX
+		for n in g.adjacent_hexes(walk):
+			if n.x > walk.x and g.is_playable(n) \
+					and not convoy.trajectory.occupies(n):
+				next_hex = n
+				break
+		if next_hex == Vector2i.MAX:
+			break
+		if not convoy.trajectory.extend(next_hex, 1, g):
+			break
+		walk = next_hex
+	var hexes := convoy.trajectory.hexes()
+	true_(hexes.size() >= 4, "il Convoglio ha una Traiettoria lunga (%d)"
+		% hexes.size())
+
+	# La TF tedesca sta dalla parte opposta alla TESTA.
+	var far_end: Vector2i = hexes[0]
+	var near_end: Vector2i = hexes[hexes.size() - 1]
+	var raider := TaskForce.new(2, ge)
+	raider.name = "Raider"
+	raider.trajectory = Trajectory.new()
+	raider.trajectory.become_station(near_end)
+
+	var aim := SoloAI._intercept_hex(raider, convoy)
+	var d_aim := Hex.distance(near_end, aim)
+	var d_far := Hex.distance(near_end, far_end)
+	true_(d_far > d_aim, ("la testa e' piu' lontana (%d) dell'esagono scelto "
+		+ "(%d): il caso ha senso") % [d_far, d_aim])
+	true_(convoy.trajectory.occupies(aim),
+		"l'esagono scelto sta sulla Traiettoria bersaglio")
+	ne(aim, far_end, "e NON e' la testa, che era la scelta di prima")
+	for h in hexes:
+		true_(Hex.distance(near_end, h) >= d_aim,
+			"nessun esagono del bersaglio e' piu' vicino di quello scelto")
+
+	# Una Stazione non ha capi: si punta li' e basta.
+	var moored := TaskForce.new(3, uk)
+	moored.trajectory = Trajectory.new()
+	moored.trajectory.become_station(far_end)
+	eq(SoloAI._intercept_hex(raider, moored), far_end,
+		"contro una Stazione si punta alla Stazione")

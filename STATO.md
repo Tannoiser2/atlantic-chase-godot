@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **3657 verifiche, 21 suite, headless.**
+Tutti i test passano: **3670 verifiche, 21 suite, headless.**
 
 ---
 

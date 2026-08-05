@@ -4378,7 +4378,53 @@ static func _best_legal_action(state: GameState, engine: ActionEngine,
 
 static func _route_toward_tf(state: GameState, graph: MapGraph,
 		active: TaskForce, target: TaskForce, note: String) -> Dictionary:
-	return _route_toward_hex(state, graph, active, _anchor_hex(target), note)
+	return _route_toward_hex(state, graph, active,
+		_intercept_hex(active, target), note)
+
+
+## L'esagono del bersaglio a cui puntare per portarlo in Battaglia.
+##
+## E' l'esagono PIU' VICINO della sua Traiettoria, non la testa. La differenza
+## non e' teorica: in BL2 una TF tedesca nel Mare di Norvegia ha attraversato
+## tutto l'Atlantico per raggiungere il capo occidentale di un Convoglio che le
+## passava accanto a est, undici segmenti invece di pochi. Il fascicolo lo
+## scrive: "The selected TF will target the NEAREST hex while avoiding intel
+## triggers if possible" (BL2, p.11), e le altre ventitre' procedure che
+## passano di qui dicono tutte "intercetta / porta in Battaglia la piu'
+## VICINA": nessuna chiede un capo in particolare.
+##
+## La distanza si misura dai due capi della TF Attiva, perche' e' da li' che
+## puo' allungarsi. A parita' vince l'esagono con (q, r) minore: serve un
+## criterio stabile, se no la stessa partita con lo stesso seme puo' scegliere
+## un bersaglio diverso.
+static func _intercept_hex(active: TaskForce, target: TaskForce) -> Vector2i:
+	if target == null:
+		return Vector2i.ZERO
+	var t := target.trajectory
+	if t.is_station():
+		return t.station_hex
+	var candidates := t.hexes()
+	if candidates.is_empty():
+		return _anchor_hex(target)
+	var from: Array[Vector2i] = []
+	if active != null:
+		for end in [0, 1]:
+			var h := active.trajectory.end_hex(end)
+			if h != Vector2i.MAX and not from.has(h):
+				from.append(h)
+	if from.is_empty():
+		return candidates[0]
+	var best := Vector2i.MAX
+	var best_d := 1 << 30
+	for h in candidates:
+		var d := 1 << 30
+		for f in from:
+			d = mini(d, Hex.distance(f, h))
+		if d < best_d or (d == best_d and (h.x < best.x
+				or (h.x == best.x and h.y < best.y))):
+			best_d = d
+			best = h
+	return best
 
 
 static func _route_toward_hex(state: GameState, graph: MapGraph,

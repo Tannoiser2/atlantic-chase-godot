@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Baseline: **3657 verifiche su 21 suite**, tutte verdi. Replay solitario:
+Baseline: **3670 verifiche su 21 suite**, tutte verdi. Replay solitario:
 **quindici `OK`** su quindici scenari, nessuno saltato. `audit_solo.gd`:
 **93 caselle azione, zero procedure segnaposto, ZERO buchi dichiarati, zero
 blocchi.**
@@ -176,7 +176,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 3657 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 3670 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
@@ -956,6 +956,20 @@ sopra scenario per scenario.
   `Norway.apply_reaction` li somma in `solo_counters` - quindi nel salvataggio.
   Il conto e' UNO solo, letto da tutti e due: contarlo due volte in due posti
   vuol dire vederlo divergere.
+- [x] **Portare in Battaglia punta all'esagono piu' VICINO, non alla testa.**
+  Segnalato dall'utente su una partita a BL2, guardando la mappa: una TF
+  tedesca nel Mare di Norvegia ha aggiunto UNDICI segmenti per attraversare
+  l'Atlantico e raggiungere il capo occidentale di un Convoglio britannico che
+  le passava accanto a est. `_route_toward_tf` puntava a `_anchor_hex()`, cioe'
+  `end_hex(0)`: la testa della Traiettoria bersaglio, sempre, comunque fosse
+  orientata. Il fascicolo lo scrive a lettere: "The selected TF will target the
+  NEAREST hex while avoiding intel triggers if possible" (BL2, p.11), e tutte e
+  ventiquattro le procedure che passano di li' dicono "intercetta / porta in
+  Battaglia la piu' VICINA" - nessuna chiede un capo in particolare.
+  La distanza si misura dai due capi della TF Attiva, che sono i punti da cui
+  puo' allungarsi; a parita' vince (q, r) minore, perche' senza un criterio
+  stabile la stessa partita con lo stesso seme puo' scegliere un bersaglio
+  diverso. I quindici replay non cambiano di una riga.
 - [ ] **Uno scenario che usa DUE mappe insieme non e' supportato.** L'utente lo
   ha chiesto ("se lo scenario ne usa due allora si devono vedere entrambe") e
   oggi non serve a nessuno: dei ventidue scenari, cinque usano un inserto e
