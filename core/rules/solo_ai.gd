@@ -246,6 +246,8 @@ static func apply_table_result(table_id: String, result: Dictionary,
 			port_control, side, subject)
 	if state.scenario_name.begins_with("BL2"):
 		return _bl2_table_result(table_id, result, state, subject)
+	if state.scenario_name.begins_with("BL3") and table_id == "identify":
+		return _bl3_identify(state, subject, String(result.get("code", "")))
 	var out := _empty("Solitario AI: la tabella '%s' e' trascritta ma non ha ancora effetti automatici." % table_id)
 	out["pass_initiative"] = false
 	return out
@@ -538,6 +540,97 @@ static func bl2_is_neutral_water(rules: Dictionary, h: Vector2i) -> bool:
 		if h == Vector2i(int(entry.get("q", 0)), int(entry.get("r", 0))):
 			return true
 	return false
+
+
+## Identificare la TF britannica di BL3 (fascicolo p.14).
+##
+## La tabella c'era nel dato e non veniva applicata: `apply_table_result`
+## smistava solo BL1 e BL2, e per BL3 rispondeva "trascritta ma non ha ancora
+## effetti automatici". Chi ci finiva sopra restava con la TF ignota, e la
+## Battaglia non si apriva - con una Schermaglia vinta e il diritto stampato a
+## una Battaglia Limitata.
+##
+## Tre cose che la pagina dice e che le altre due tabelle non dicono:
+##   - le celle mettono piu' navi su piu' righe, e il dato le separa con "/"
+##     oppure con " + " ("CL + Convoglio"): valgono tutte e due;
+##   - "A BB result must be either the Nelson or Rodney. If already in play, or
+##     if they were in play, select any slow BB." E' l'OPPOSTO di N2 e N3, che
+##     escludono proprio quelle due;
+##   - "If the British TF is instructed by the Action Table result to Bring to
+##     Battle, replace 'Convoy' with a BB." Vale quando a portare in Battaglia
+##     e' la procedura britannica, non quando la Battaglia la apre il giocatore
+##     tedesco: e' il contrassegno `bl3_bring_to_battle` a distinguerle.
+const BL3_BB_FIRST := ["Nelson", "Rodney"]
+const UK_CV_POOL := ["Ark Royal", "Victorious", "Furious", "Glorious"]
+
+
+static func _bl3_identify(state: GameState, tf: TaskForce,
+		code: String) -> Dictionary:
+	if tf == null or not tf.unidentified:
+		return _empty("Solitario AI BL3: nessuna TF britannica non identificata.")
+	var specs: Array[String] = []
+	for raw_v: Variant in code.replace("+", "/").split("/", false):
+		var spec := String(raw_v).strip_edges().to_upper()
+		if spec == "":
+			continue
+		if spec == "CONVOGLIO" or spec == "CONVOY":
+			spec = "BB" if bool(tf.solo_flags.get("bl3_bring_to_battle", false)) \
+				else "CONVOY"
+		specs.append(spec)
+	if specs.is_empty():
+		return _empty("Solitario AI BL3: codice '%s' non interpretabile." % code)
+	var ships: Array[Ship] = []
+	var used := _ship_names_in_play(state)
+	var notes: Array[String] = []
+	for spec in specs:
+		var sh := _bl3_ship_for(spec, used)
+		if sh == null:
+			return _empty(("Solitario AI BL3: nessuna nave britannica disponibile "
+				+ "per il tipo %s; composizione non inventata.") % spec)
+		ships.append(sh)
+		used[sh.name] = true
+	if specs.has("CONVOY"):
+		notes.append("Il 'Convoglio' resta un Convoglio: la sostituzione con una "
+			+ "BB vale solo quando e' la Tabella delle Azioni a ordinare di "
+			+ "portare in Battaglia.")
+	tf.ships = ships
+	tf.unidentified = false
+	tf.recompute_speed()
+	var out := _empty("Solitario AI BL3: %s identificata come %s."
+		% [tf.display_name(), ", ".join(_ship_names(ships))])
+	(out["log"] as Array).append_array(notes)
+	out["ok"] = true
+	out["active"] = tf
+	return out
+
+
+## Una nave per il tipo chiesto, con le preferenze stampate di BL3.
+static func _bl3_ship_for(spec: String, used: Dictionary) -> Ship:
+	if spec == "CONVOY":
+		return ShipRoster.shared().make("Convoy x3")
+	if spec == "CV":
+		return _make_available_ship_from_names(UK_CV_POOL, used)
+	if spec == "BB":
+		# "must be either the Nelson or Rodney. If already in play, OR IF THEY
+		# WERE IN PLAY, select any slow BB." Le due meta' della condizione sono
+		# gia' coperte da `used`: `_ship_names_in_play` scorre TUTTE le Task
+		# Force, comprese quelle che hanno Completato e sono uscite di scena.
+		var pick := _make_available_ship_from_names(BL3_BB_FIRST, used)
+		if pick != null:
+			return pick
+		return _make_available_ship(spec, used)
+	return _make_available_ship(spec, used)
+
+
+static func _make_available_ship_from_names(names: Array, used: Dictionary) -> Ship:
+	for name_v: Variant in names:
+		var name := String(name_v)
+		if used.has(name):
+			continue
+		var sh := ShipRoster.shared().make(name)
+		if sh != null:
+			return sh
+	return null
 
 
 static func _bl2_identify(state: GameState, tf: TaskForce, code: String) -> Dictionary:
@@ -4283,9 +4376,19 @@ static func _attempt_completion_at_port(graph: MapGraph, port_control: Dictionar
 	done["turn_kind"] = "completion"
 	done["active"] = tf
 	done["completion_port"] = option
-	done["log"].append("%s: %s puo' tentare il Completamento a %s."
-		% [note, tf.display_name(), String(option["name"])])
+	done["log"].append("%s %s puo' tentare il Completamento a %s."
+		% [_lead_in(note), tf.display_name(), String(option["name"])])
 	return done
+
+
+## Una nota da premettere a una frase. Alcune finiscono gia' con un punto
+## ("...rotta di rientro verso Bergen."), altre no ("...la Traiettoria piu'
+## lunga"): incollare ": " a tutte dava "verso Bergen.: TF britannica...".
+static func _lead_in(note: String) -> String:
+	var t := note.strip_edges()
+	if t == "":
+		return ""
+	return t if t.ends_with(".") or t.ends_with(":") else t + ":"
 
 
 static func _completion_port_option(tf: TaskForce, graph: MapGraph,

@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Baseline: **3670 verifiche su 21 suite**, tutte verdi. Replay solitario:
+Baseline: **3676 verifiche su 21 suite**, tutte verdi. Replay solitario:
 **quindici `OK`** su quindici scenari, nessuno saltato. `audit_solo.gd`:
 **93 caselle azione, zero procedure segnaposto, ZERO buchi dichiarati, zero
 blocchi.**
@@ -176,7 +176,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 3670 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 3676 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
@@ -991,6 +991,31 @@ sopra scenario per scenario.
   legge tutta insieme. `smoke_solo_flow.gd` pretende che nessuna riga di
   servizio si veda senza averla aperta - verificato rendendole visibili di
   proposito, e la prova fallisce.
+- [x] **BL3 identifica la TF britannica.** Segnalato dall'utente su una
+  partita a BL3: una Schermaglia vinta dava diritto a una Battaglia Limitata e
+  la Battaglia non si apriva. La tabella "Identify British TF" (p.14) era
+  trascritta nel dato, ma `apply_table_result` smistava solo BL1 e BL2: per
+  BL3 rispondeva "trascritta ma non ha ancora effetti automatici", la TF
+  restava ignota e senza navi da portare sulla Mappa di Battaglia.
+  Tre cose che quella pagina dice e le altre due non dicono:
+  - le celle col Convoglio usano " + " invece di "/" ("CL + Convoglio"), e
+    contarne uno solo lasciava la cella senza nessuna nave;
+  - "A BB result must be either the Nelson or Rodney. If already in play, or if
+    they were in play, select any slow BB": e' l'OPPOSTO di N2 e N3, che quelle
+    due le escludono. Stessa sigla, due scenari, due regole;
+  - serviva la CV, che c'e' nel ruolino ma non era in nessun elenco di tipo.
+  La clausola "if the British TF is instructed by the Action Table result to
+  Bring to Battle, replace 'Convoy' with a BB" si applica solo col
+  contrassegno `bl3_bring_to_battle`, e quando non c'e' il registro lo dice:
+  aprendo la Battaglia il giocatore tedesco, quell'istruzione non c'e' stata.
+- [ ] **La suite si blocca se un test del solitario e' troppo grosso.** Mi e'
+  successo due volte scrivendo i test di questa sessione: un metodo con un
+  ciclo su dieci casi, ognuno con `GameState` e grafo, e `run_tests.gd` resta
+  fermo senza stampare niente - nemmeno la prima suite. Lo stesso codice in
+  uno script a se' gira in due secondi, e il test ridotto passa. Non l'ho
+  capito, e finche' non lo si capisce e' una trappola che costa mezz'ora ogni
+  volta: chi la incontra tenga i test del solitario corti e verifichi il resto
+  con uno script usa-e-getta.
 - [ ] **Uno scenario che usa DUE mappe insieme non e' supportato.** L'utente lo
   ha chiesto ("se lo scenario ne usa due allora si devono vedere entrambe") e
   oggi non serve a nessuno: dei ventidue scenari, cinque usano un inserto e

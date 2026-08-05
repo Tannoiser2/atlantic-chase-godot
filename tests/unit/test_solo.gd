@@ -100,6 +100,7 @@ func run() -> void:
 	test_n3_stealth_attack_falls_back_to_recon()
 	test_n3_bring_on_battle_measures_from_the_submarine()
 	test_bring_to_battle_aims_at_the_nearest_hex()
+	test_bl3_identifies_the_british_tf()
 	test_n3_trajectory_to_bergen_has_a_second_step()
 	test_n3_convoy_is_replaced_by_a_cruiser_before_battle()
 	test_n5_procedures_are_transcribed()
@@ -3383,3 +3384,61 @@ func test_bring_to_battle_aims_at_the_nearest_hex() -> void:
 	moored.trajectory.become_station(far_end)
 	eq(SoloAI._intercept_hex(raider, moored), far_end,
 		"contro una Stazione si punta alla Stazione")
+
+
+## BL3 p.14, "Identify British TF".
+##
+## Segnalato dall'utente su una partita a BL3: una Schermaglia vinta dava
+## diritto a una Battaglia Limitata, e la Battaglia non si apriva. La tabella
+## era trascritta ma `apply_table_result` smistava solo BL1 e BL2, quindi per
+## BL3 rispondeva "trascritta ma non ha ancora effetti automatici" e la TF
+## restava ignota - cioe' senza navi da portare sulla Mappa di Battaglia.
+func test_bl3_identifies_the_british_tf() -> void:
+	_begin("BL3 identifica davvero la TF britannica")
+	var g := MapGraph.load_inset("map_north_sea")
+	var engine := ActionEngine.load_default()
+	var sc := Scenario.load_by_id("BL3 Raiders of the North Sea")
+	var uk := TaskForce.Side.ROYAL_NAVY
+
+	# "CL + Convoglio": il separatore stampato e' "/", ma le celle col
+	# Convoglio usano " + ". Contarne uno solo lasciava la cella senza navi.
+	var st := GameState.new(g, 7)
+	st.scenario_name = "BL3 Raiders of the North Sea"
+	var tf := TaskForce.new(9, uk)
+	tf.unidentified = true
+	tf.trajectory = Trajectory.new()
+	tf.trajectory.become_station(g.port_hex("Methil"))
+	var r := SoloAI.apply_table_result("identify", {"code": "CL + Convoglio"},
+		st, g, engine, sc.port_control(), uk, tf)
+	true_(bool(r["ok"]), "la cella 'CL + Convoglio' si applica")
+	false_(tf.unidentified, "e la TF non e' piu' ignota")
+	eq(tf.ships.size(), 2, "mette in campo due navi")
+
+	# "A BB result must be either the Nelson or Rodney." E' l'OPPOSTO di N2 e
+	# N3, che quelle due le escludono: stessa sigla, due scenari, due regole.
+	var st2 := GameState.new(g, 7)
+	st2.scenario_name = "BL3 Raiders of the North Sea"
+	var tf2 := TaskForce.new(9, uk)
+	tf2.unidentified = true
+	tf2.trajectory = Trajectory.new()
+	tf2.trajectory.become_station(g.port_hex("Methil"))
+	SoloAI.apply_table_result("identify", {"code": "BB/BB/CA/CA"}, st2, g,
+		engine, sc.port_control(), uk, tf2)
+	var names: Array[String] = []
+	for ship in tf2.ships:
+		names.append(ship.name)
+	true_(names.has("Nelson") and names.has("Rodney"),
+		"le due BB sono la Nelson e la Rodney, non due lente: %s" % str(names))
+
+	# La CV c'e' nel ruolino ma non era in nessun elenco: 'BC/CV/CA' non
+	# avrebbe prodotto niente.
+	var st3 := GameState.new(g, 7)
+	st3.scenario_name = "BL3 Raiders of the North Sea"
+	var tf3 := TaskForce.new(9, uk)
+	tf3.unidentified = true
+	tf3.trajectory = Trajectory.new()
+	tf3.trajectory.become_station(g.port_hex("Methil"))
+	var r3 := SoloAI.apply_table_result("identify", {"code": "BC/CV/CA"}, st3, g,
+		engine, sc.port_control(), uk, tf3)
+	true_(bool(r3["ok"]), "la cella 'BC/CV/CA' si applica")
+	eq(tf3.ships.size(), 3, "con tre navi")
