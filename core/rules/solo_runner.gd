@@ -39,6 +39,22 @@ const MAX_TURNS := 120
 ## regressione la togliesse il replay non deve bloccarsi in silenzio.
 const MAX_BATTLE_STEPS := 400
 
+## I quindici scenari solitari e il seme con cui sono FISSATI.
+##
+## Stanno qui e non nei due strumenti che li usano - `tools/replay_solo.gd` e
+## `tools/bless_replays.gd` - perche' un elenco in due copie e' un elenco che
+## prima o poi ne contiene quattordici da una parte e quindici dall'altra.
+const ALL_SOLO := [
+	"BL1 Raiders of the North Atlantic", "BL2 Contain and Destroy",
+	"BL3 Raiders of the North Sea", "N1 Operazione Wilfred",
+	"N2 Operazione Weser (nord)", "N3 Operazione Weser (sud)",
+	"N4 Operazione Weser (nord & sud)", "N5 Meglio Tardi che Mai",
+	"N6 Il Dilemma delle Operazioni", "B1 Operazione Berlino",
+	"B2 La Battaglia dell'Atlantico", "B3 Operazione Reno",
+	"B4 Decisione sui Mari", "A1 Convogli PQ", "A2 L'Ultima Battaglia",
+]
+const BLESSED_SEED := 20260803
+
 
 var state: GameState = null
 var graph: MapGraph = null

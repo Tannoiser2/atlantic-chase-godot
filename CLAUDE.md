@@ -52,7 +52,7 @@ Percorre una Battaglia avanzata intera, salva un PNG per fase e stampa accanto
 a ogni scatto lo stato del motore. Non giudica: serve a mettere l'immagine e lo
 stato uno accanto all'altro. Cinque difetti visivi sono usciti cosi'.
 
-Baseline corrente: **3697 verifiche, 21 suite** (era 2570 su 17 prima della
+Baseline corrente: **3872 verifiche, 21 suite** (era 2570 su 17 prima della
 suite `test_replay.gd`). Il totale non puo' scendere senza una rimozione
 intenzionale di test spiegata nel commit.
 
@@ -179,7 +179,19 @@ in tutti e due i posti: `solo_runner.gd` porta tre commenti "Mirror headless di
 Leggerli PRIMA di cominciare un refactor: in questa sessione li ho letti dopo, e
 quattro passi sono finiti sulla meta' sbagliata.
 
-Il paracadute di entrambi i lavori e' `tests/unit/test_replay.gd`, che confronta
-la TRASCRIZIONE dei replay riga per riga a parita' di seme. Se dopo una modifica
-un seme da' una partita diversa, la modifica ha cambiato il gioco - e va deciso
-di proposito, non scoperto dopo.
+Il paracadute e' `tests/unit/test_replay.gd`, che rigioca tutti e quindici i
+solitari al seme fisso e confronta ogni riga con l'impronta salvata in
+`tests/data/replay_fingerprints.json`. Se una modifica cambia la partita, il
+test dice QUALE scenario, a quale riga e con quale testo nuovo.
+
+Quando il cambiamento e' voluto si riscrive l'impronta, di proposito:
+
+```bash
+godot --headless --path . --script res://tools/bless_replays.gd
+```
+
+e il commit che lo fa deve dire perche'. Fino al 2026-08-05 questo paracadute
+NON esisteva: il test confrontava due esecuzioni dello STESSO codice nello
+stesso processo, il che prova il determinismo ma non puo' accorgersi di niente,
+perche' le due partite sono nuove tutte e due. Scoperto guastando il bot di
+proposito e vedendo la suite restare verde.

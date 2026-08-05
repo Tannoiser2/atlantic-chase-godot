@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Baseline: **3697 verifiche su 21 suite**, tutte verdi. Replay solitario:
+Baseline: **3872 verifiche su 21 suite**, tutte verdi. Replay solitario:
 **quindici `OK`** su quindici scenari, nessuno saltato. `audit_solo.gd`:
 **93 caselle azione, zero procedure segnaposto, ZERO buchi dichiarati, zero
 blocchi.**
@@ -187,7 +187,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 3697 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 3872 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
@@ -1031,14 +1031,29 @@ sopra scenario per scenario.
   Bring to Battle, replace 'Convoy' with a BB" si applica solo col
   contrassegno `bl3_bring_to_battle`, e quando non c'e' il registro lo dice:
   aprendo la Battaglia il giocatore tedesco, quell'istruzione non c'e' stata.
-- [ ] **La suite si blocca se un test del solitario e' troppo grosso.** Mi e'
-  successo due volte scrivendo i test di questa sessione: un metodo con un
-  ciclo su dieci casi, ognuno con `GameState` e grafo, e `run_tests.gd` resta
-  fermo senza stampare niente - nemmeno la prima suite. Lo stesso codice in
-  uno script a se' gira in due secondi, e il test ridotto passa. Non l'ho
-  capito, e finche' non lo si capisce e' una trappola che costa mezz'ora ogni
-  volta: chi la incontra tenga i test del solitario corti e verifichi il resto
-  con uno script usa-e-getta.
+- [x] **Il paracadute dei replay adesso esiste davvero.** `test_replay.gd`
+  confrontava DUE esecuzioni dello stesso codice nello stesso processo: prova
+  il determinismo, che serve, ma non puo' accorgersi che una modifica ha
+  cambiato la partita - sono nuove tutte e due. CLAUDE.md prometteva l'altra
+  cosa. Scoperto guastando il bot di proposito: la suite restava verde.
+  Adesso `tests/data/replay_fingerprints.json` tiene l'impronta di ogni riga
+  di tutti e quindici i replay al seme fisso, e il test dice quale scenario, a
+  quale riga e con quale testo nuovo. `tools/bless_replays.gd` la riscrive,
+  di proposito.
+  Con la stessa prova - rimettere `_anchor_hex` al posto di `_intercept_hex` -
+  la rete segnala quattro scenari: BL1 riga 124, BL2 riga 141, N1 riga 142,
+  N6 riga 90. **Vuol dire che la correzione "punta all'esagono piu' vicino" AVEVA
+  cambiato la partita in quattro scenari**, e la frase "i replay non cambiano
+  di una riga" scritta nel suo commit era sbagliata: nasceva da un test che non
+  poteva vederlo.
+- [x] ~~La suite si blocca se un test del solitario e' troppo grosso~~ -
+  **NON e' quello.** Rimessa in piedi la forma esatta che aveva bloccato due
+  volte (dieci casi, ognuno con `GameState`, grafo e `add_task_force`): gira in
+  3,78 s. L'intera suite ne prende 5,8. Non ho trovato la causa vera; le due
+  volte era successo dopo che diverse sonde Godot in background erano state
+  uccise da un timeout, e le due volte e' bastato `pkill -9 -f godot` prima di
+  rilanciare. Lasciare scritto "i test grossi bloccano" sarebbe stato peggio di
+  non scrivere niente: avrebbe fatto evitare test legittimi.
 - [ ] **Uno scenario che usa DUE mappe insieme non e' supportato.** L'utente lo
   ha chiesto ("se lo scenario ne usa due allora si devono vedere entrambe") e
   oggi non serve a nessuno: dei ventidue scenari, cinque usano un inserto e

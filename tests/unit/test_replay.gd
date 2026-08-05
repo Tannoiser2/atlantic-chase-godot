@@ -34,9 +34,15 @@ const A2_SEED := 20260803
 ## pochi: la suite deve restare veloce.
 const SWEEP_SEEDS := [2, 3, 7, 42]
 
+## Tutti e quindici i solitari: l'elenco e il seme stanno in `SoloRunner`,
+## perche' li usano anche i due strumenti e un elenco in tre copie prima o poi
+## ne contiene quattordici.
+const ALL_SOLO := SoloRunner.ALL_SOLO
+const ALL_SOLO_SEED := SoloRunner.BLESSED_SEED
+
 
 func name() -> String:
-	return "Replay solitario BL1/BL2/A2"
+	return "Replay solitario - tutti e quindici"
 
 
 func run() -> void:
@@ -72,6 +78,7 @@ func run() -> void:
 	test_the_cycle_can_be_driven_step_by_step()
 	test_the_bot_turn_asks_through_seams()
 	test_step_order_is_shared_by_both_cycles()
+	test_replays_match_the_blessed_transcripts()
 
 
 ## Il conto delle verifiche di ogni suite e' fisso (`EXPECTED` in
@@ -121,9 +128,9 @@ func test_bl2_replay_reaches_printed_end() -> void:
 ## E' la proprieta' che rende utile tutto il resto: senza determinismo una
 ## regressione si vede oggi e sparisce domani.
 func test_replays_are_deterministic() -> void:
-	_begin("stesso seme, stessa partita")
-	for pair_v: Variant in [[BL1, BL1_SEED], [BL2, BL2_SEED]]:
-		var pair: Array = pair_v
+	_begin("stesso seme, stessa partita - tutti e quindici")
+	for id_v: Variant in ALL_SOLO:
+		var pair: Array = [String(id_v), ALL_SOLO_SEED]
 		var a := _run(String(pair[0]), int(pair[1]))
 		var b := _run(String(pair[0]), int(pair[1]))
 		var ta: Array = a.get("transcript", [])
@@ -204,7 +211,7 @@ func test_completions_use_legal_ports() -> void:
 func test_sweep_terminates_or_declares_a_gap() -> void:
 	_begin("ogni seme finisce o dichiara la lacuna")
 	for seed_v: Variant in SWEEP_SEEDS:
-		for scenario_id in [BL1, BL2]:
+		for scenario_id in ALL_SOLO:
 			var out := _run(scenario_id, int(seed_v))
 			var ended := bool(out.get("ended", false))
 			var gap := bool(out.get("declared_gap", false))
@@ -1172,3 +1179,59 @@ func _kinds(steps: Array) -> Array[int]:
 	for s_v: Variant in steps:
 		out.append(int((s_v as Dictionary)["step"]))
 	return out
+
+
+## IL PARACADUTE VERO: la partita di oggi contro quella fissata nel repository.
+##
+## Quello che c'era non lo era. `test_replays_are_deterministic` confronta DUE
+## esecuzioni dello stesso codice nello stesso processo: prova il determinismo,
+## che serve, ma non puo' accorgersi che una modifica ha cambiato la partita -
+## sono nuove tutte e due. CLAUDE.md prometteva l'altra cosa, "se dopo una
+## modifica un seme da' una partita diversa, la modifica ha cambiato il gioco",
+## e quella promessa non era mantenuta da nessun test. L'ho scoperto guastando
+## il bot di proposito: la suite restava verde.
+##
+## Il termine di paragone e' `tests/data/replay_fingerprints.json`, l'impronta
+## di ogni riga di ogni trascrizione. Quando cambia sul serio si riscrive con
+## `tools/bless_replays.gd`, e il commit che lo fa deve dire perche'.
+func test_replays_match_the_blessed_transcripts() -> void:
+	_begin("i quindici replay sono ancora la partita fissata")
+	var f := FileAccess.open("res://tests/data/replay_fingerprints.json",
+		FileAccess.READ)
+	true_(f != null, "l'impronta dei replay c'e'")
+	if f == null:
+		return
+	var parsed: Variant = JSON.parse_string(f.get_as_text())
+	f.close()
+	true_(typeof(parsed) == TYPE_DICTIONARY, "ed e' JSON valido")
+	var blessed: Dictionary = (parsed as Dictionary).get("scenarios", {})
+	eq(blessed.size(), ALL_SOLO.size(),
+		"c'e' un'impronta per ognuno dei quindici")
+	eq(int((parsed as Dictionary).get("_seed", -1)), ALL_SOLO_SEED,
+		"fissata con lo stesso seme che il test rigioca")
+
+	for id_v: Variant in ALL_SOLO:
+		var id := String(id_v)
+		var want: Dictionary = blessed.get(id, {})
+		if want.is_empty():
+			true_(false, "%s non ha un'impronta: rigenerala con bless_replays" % id)
+			continue
+		var runner := SoloRunner.new()
+		if not runner.load_scenario(id, ALL_SOLO_SEED):
+			true_(false, "%s non si carica" % id)
+			continue
+		runner.run()
+		var got: Array = runner.transcript
+		var want_hashes: Array = want.get("hashes", [])
+		var first := -1
+		for i in mini(got.size(), want_hashes.size()):
+			if String(got[i]).hash() != int(want_hashes[i]):
+				first = i
+				break
+		if first < 0 and got.size() != want_hashes.size():
+			first = mini(got.size(), want_hashes.size())
+		eq(first, -1, ("%s: la partita e' cambiata alla riga %d (\"%s\"). Se e' "
+			+ "voluto, rigenera l'impronta con tools/bless_replays.gd e spiega "
+			+ "perche' nel commit.") % [id, first + 1,
+			String(got[first]) if first >= 0 and first < got.size()
+				else "riga mancante"])
