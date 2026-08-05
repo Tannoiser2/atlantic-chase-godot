@@ -3132,7 +3132,8 @@ func _try_norway_completion() -> bool:
 		if bool(reaction.get("ok", false)):
 			for line_v: Variant in reaction.get("log", []):
 				_msg(String(line_v))
-			var applied := Norway.apply_reaction(state, reaction, acting)
+			var applied := Norway.apply_reaction(state, reaction, acting,
+				graph, scenario.id, h)
 			for line_v: Variant in applied.get("log", []):
 				_msg(String(line_v))
 			if int(applied.get("initiative_to", -1)) >= 0:

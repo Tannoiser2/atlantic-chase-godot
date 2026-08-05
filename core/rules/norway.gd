@@ -313,6 +313,96 @@ static func _has_type_in(state: GameState, side: int, h: Vector2i,
 	return false
 
 
+## I risultati che SPOSTANO un marcatore Base Aerea: la 'B' di N5 e la 'G' di
+## N5 e N6.
+##
+## Erano dichiarati come lacuna, e il motivo scritto nel log - "le Basi Aeree
+## non sono ancora pedine giocabili" - non e' piu' vero da quando la pedina
+## esiste, si salva e lancia Attacchi Aerei. Adesso i marcatori si muovono
+## davvero.
+##
+## Le due 'G' NON sono la stessa procedura, e la differenza e' stampata:
+##   N5 (p.34) toglie PRIMA una base britannica se ce n'e' una in Norvegia, e
+##      solo se non ce n'e' piazza quella tedesca;
+##   N6 (p.39) piazza e basta.
+## Anche il ripiego col Meteo Cattivo e' diverso: N5 attacca segnalini Contatto
+## a tutte le TF britanniche a portata, N6 applica un risultato 'X'.
+##
+## Quello che resta fuori e' il TERZO passo - l'Attacco Aereo immediato quando
+## Trondheim e Narvik hanno gia' la loro base - perche' non e' un marcatore da
+## spostare ma un'azione da risolvere, e chi la risolve e' il ciclo, non questa
+## funzione. Esce in `air_strike` come richiesta esplicita.
+static func _apply_airbase_result(state: GameState, graph: MapGraph,
+		key: String, scenario_id: String, h: Vector2i) -> Dictionary:
+	var out := {"log": [] as Array[String], "declared_gap": false,
+		"air_strike": {}}
+	var ge := TaskForce.Side.KRIEGSMARINE
+	var uk := TaskForce.Side.ROYAL_NAVY
+	var lines: Array[String] = out["log"]
+	if graph == null:
+		out["declared_gap"] = true
+		lines.append("LACUNA DICHIARATA: il risultato sposta un marcatore Base "
+			+ "Aerea, ma la mappa non e' stata passata alla Reazione.")
+		return out
+
+	if key == "b":
+		# "Place a British Airbase marker in the hex. However, if a German
+		# Airbase marker is in Norway, remove that marker instead."
+		var german := _nearest_airbase_in_norway(state, graph, ge, h)
+		if not german.is_empty():
+			AirBase.remove_at(state, AirBase.hex_of(german), ge)
+			lines.append("Reazione 'B': tolto il marcatore Base Aerea tedesca in %s."
+				% str(AirBase.hex_of(german)))
+			return out
+		AirBase.place(state, uk, h, "Reazione Norvegese 'B'")
+		lines.append("Reazione 'B': piazzato un marcatore Base Aerea britannica in %s."
+			% str(h))
+		return out
+
+	# 'G'. Solo N5 stampa il passo che toglie prima una base britannica.
+	if scenario_id.begins_with("N5"):
+		var british := _nearest_airbase_in_norway(state, graph, uk, h)
+		if not british.is_empty():
+			AirBase.remove_at(state, AirBase.hex_of(british), uk)
+			lines.append("Reazione 'G': tolto il marcatore Base Aerea britannica in %s."
+				% str(AirBase.hex_of(british)))
+			return out
+	for port in ["Trondheim", "Narvik"]:
+		var ph := graph.place_hex(port)
+		if ph == Vector2i.MAX:
+			continue
+		if AirBase.at(state, ph, ge):
+			continue
+		AirBase.place(state, ge, ph, "Reazione Norvegese 'G'")
+		lines.append("Reazione 'G': piazzato un marcatore Base Aerea tedesca a %s."
+			% port)
+		return out
+	# Trondheim e Narvik ce l'hanno gia': tocca all'Attacco Aereo immediato.
+	out["air_strike"] = {"side": ge, "scenario": scenario_id,
+		"bad_weather_fallback": "contact_markers" if scenario_id.begins_with("N5")
+			else "x_result"}
+	lines.append("Reazione 'G': Trondheim e Narvik hanno gia' la loro Base Aerea, "
+		+ "quindi il risultato chiede un Attacco Aereo immediato.")
+	return out
+
+
+## Il marcatore Base Aerea di una parte piu' vicino a `h`, purche' sia in
+## Norvegia: il fascicolo dice "in Norway", non "ovunque".
+static func _nearest_airbase_in_norway(state: GameState, graph: MapGraph,
+		side: int, h: Vector2i) -> Dictionary:
+	var best := {}
+	var best_distance := 1 << 30
+	for m in AirBase.of_side(state, side):
+		var mh := AirBase.hex_of(m)
+		if not is_norway_hex(graph, mh):
+			continue
+		var d := Hex.distance(mh, h)
+		if d < best_distance:
+			best_distance = d
+			best = m
+	return best
+
+
 ## Tira la Reazione Norvegese e dice che cosa e' uscito. NON applica ancora
 ## nulla: l'applicazione sta in `apply_reaction`, cosi' il tiro si puo' provare
 ## da solo e il chiamante puo' mostrarlo prima di subirlo.
@@ -376,9 +466,10 @@ static func roll_reaction(state: GameState, graph: MapGraph, rng: DiceRNG,
 ## I risultati che spostano marker Base Aerea (N5, 'b' e 'g') NON si applicano:
 ## le Basi Aeree non sono ancora pedine giocabili. Si dichiarano.
 static func apply_reaction(state: GameState, result: Dictionary,
-		tf: TaskForce) -> Dictionary:
+		tf: TaskForce, graph: MapGraph = null, scenario_id: String = "",
+		h: Vector2i = Vector2i.MAX) -> Dictionary:
 	var out := {"hits": 0, "cancelled": false, "initiative_to": -1,
-		"declared_gap": false, "log": [] as Array[String]}
+		"declared_gap": false, "air_strike": {}, "log": [] as Array[String]}
 	var key := String(result.get("result", ""))
 	# Reazione Aggressiva. Serve DUE volte, e finora non veniva contata
 	# nessuna delle due: e' il modificatore -1 della Tabella di Azione
@@ -415,8 +506,14 @@ static func apply_reaction(state: GameState, result: Dictionary,
 		"two_hits":
 			out["hits"] = 2
 		"g_and_hit":
+			# Due risultati insieme: il Colpo e la 'G'. Il Colpo lo dava gia';
+			# la 'G' restava dichiarata anche dopo che la pedina Base Aerea
+			# esisteva.
 			out["hits"] = 1
-			out["declared_gap"] = true
+			var both := _apply_airbase_result(state, graph, "g", scenario_id, h)
+			(out["log"] as Array[String]).append_array(both["log"] as Array[String])
+			out["declared_gap"] = bool(both["declared_gap"])
+			out["air_strike"] = both["air_strike"]
 		"cancel":
 			out["hits"] = 2
 			out["cancelled"] = true
@@ -428,11 +525,13 @@ static func apply_reaction(state: GameState, result: Dictionary,
 				"Le forze norvegesi resistono ma vengono sopraffatte: Reazione Aggressiva.")
 			return out
 		"b", "g":
-			out["declared_gap"] = true
-	if out["declared_gap"]:
-		(out["log"] as Array[String]).append(
-			"LACUNA DICHIARATA: il risultato sposta un marker Base Aerea, e le "
-			+ "Basi Aeree non sono ancora pedine giocabili.")
+			var moved := _apply_airbase_result(state, graph, key, scenario_id, h)
+			(out["log"] as Array[String]).append_array(moved["log"] as Array[String])
+			out["declared_gap"] = bool(moved["declared_gap"])
+			out["air_strike"] = moved["air_strike"]
+			if key == "b":
+				state.changed.emit()
+				return out
 	if int(out["hits"]) > 0:
 		var landed := _hit_landing_force(tf, int(out["hits"]))
 		(out["log"] as Array[String]).append(

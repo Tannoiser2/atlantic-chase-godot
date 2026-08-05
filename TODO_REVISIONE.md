@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Baseline: **3684 verifiche su 21 suite**, tutte verdi. Replay solitario:
+Baseline: **3697 verifiche su 21 suite**, tutte verdi. Replay solitario:
 **quindici `OK`** su quindici scenari, nessuno saltato. `audit_solo.gd`:
 **93 caselle azione, zero procedure segnaposto, ZERO buchi dichiarati, zero
 blocchi.**
@@ -96,13 +96,24 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 
 ## Che cosa e' DA RIFINIRE 🟡
 
+- **N6 non aveva la Tabella di Reazione Norvegese.** Le tabelle trascritte
+  erano quattro (pp.19, 24, 27, 34) e la p.39 ne stampa una anche per N6:
+  in quello scenario un Completamento britannico a Trondheim o Narvik, o in un
+  esagono adiacente, non innescava nessuna Reazione. Adesso sono cinque.
+  Trovata cercando dove applicare i risultati `b`/`g`.
+
 - **Forze Furtive**: restano i due marker U-Boat di A2, di cui il motore tiene
   solo il conteggio, e il disegno della pedina nella GUI.
-- **Basi Aeree: restano i risultati `b`/`g` della Reazione Norvegese.** Tutto
-  il resto e' fatto - la pedina, il salvataggio, le Informazioni innescate, e
-  soprattutto l'Attacco Aereo lanciato dalla base (RB p.27) - ma i due risultati
-  della Reazione che SPOSTANO un marcatore continuano a dichiarare la lacuna,
-  perche' scritti quando la pedina non esisteva. Adesso si possono scrivere.
+- **Basi Aeree: i risultati `b`/`g` della Reazione adesso spostano i
+  marcatori.** Erano dichiarati come lacuna col motivo "le Basi Aeree non sono
+  ancora pedine giocabili", che aveva smesso di essere vero. Le due `G` NON
+  sono la stessa procedura, ed e' stampato: N5 (p.34) toglie PRIMA una base
+  britannica se ce n'e' una in Norvegia, N6 (p.39) piazza e basta; anche il
+  ripiego col Meteo Cattivo e' diverso (segnalini Contatto contro risultato
+  'X'). **Resta fuori il terzo passo**, l'Attacco Aereo immediato quando
+  Trondheim e Narvik hanno gia' la loro base: non e' un marcatore da spostare
+  ma un'azione da risolvere, ed esce da `apply_reaction` in `air_strike` come
+  richiesta esplicita. Chi la collega al ciclo chiude anche quello.
 - **Reazione Norvegese**: le quattro tabelle (pp.19, 24, 27, 34) sono trascritte
   in `core/data/solo/norwegian_reaction.json` con innesco, colonne, righe,
   modificatori e legenda, e **il tiro e l'applicazione sono collegati a tutti e
@@ -176,7 +187,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 3684 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 3697 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne

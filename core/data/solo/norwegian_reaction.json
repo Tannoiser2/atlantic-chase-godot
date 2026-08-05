@@ -1,7 +1,7 @@
 {
- "_source": "AC_Solo_scenarios_2022, pagine 19, 24, 27 e 34, lette sulle pagine renderizzate a 300 dpi.",
+ "_source": "AC_Solo_scenarios_2022, pagine 19, 24, 27, 34 e 39, lette sulle pagine renderizzate a 300 dpi.",
  "_rule": "Fascicolo p.16: \"When you perform a successful Completion action in a Norwegian Port or point of interest, roll a die and check the result on the Norwegian Reaction Table (specific to each scenario). The imaginary player is not required to do this (Reaction is incorporated into the Action Tables).\" Tira solo il GIOCATORE.",
- "_warning": "Le quattro tabelle NON hanno la stessa forma. N1 ha una riga sola; N2 si divide secondo la presenza di MINE britanniche nell'esagono; N3 secondo la presenza di una TF BRITANNICA; N5 secondo se il Completamento e' NELL'esagono del porto o in uno ADIACENTE. Anche i risultati cambiano: solo N1 dichiara che la reazione non tocca il gioco. Il testo estratto dal PDF di p.19 e' per giunta fuorviante, perche' elenca i risultati in un ordine che non e' quello stampato: 1-2 e' Angry reaction, non No reaction.",
+ "_warning": "Le CINQUE tabelle NON hanno la stessa forma. N1 ha una riga sola; N2 si divide secondo la presenza di MINE britanniche nell'esagono; N3 secondo la presenza di una TF BRITANNICA; N5 secondo se il Completamento e' NELL'esagono del porto o in uno ADIACENTE. Anche i risultati cambiano: solo N1 dichiara che la reazione non tocca il gioco. Il testo estratto dal PDF di p.19 e' per giunta fuorviante, perche' elenca i risultati in un ordine che non e' quello stampato: 1-2 e' Angry reaction, non No reaction. N6 (p.39) ha una riga sola come N1, ma i suoi risultati spostano marker Base Aerea come quelli di N5, e la sua 'G' NON toglie prima una base britannica: quel passo lo stampa solo N5.",
  "tables": {
   "N1 Operazione Wilfred": {
    "_page": 19,
@@ -268,6 +268,73 @@
     "b": "Metti un marker Base Aerea BRITANNICA nell'esagono. Se pero' c'e' un marker Base Aerea tedesca in Norvegia, rimuovi quello invece; se ce n'e' piu' d'uno, il piu' VICINO all'esagono del Completamento.",
     "g": "Se c'e' un marker Base Aerea britannica in Norvegia, rimuovilo (il piu' VICINO all'esagono del Completamento se ce n'e' piu' d'uno). Se non ce n'e' nessuna, metti un marker Base Aerea TEDESCA a Trondheim; se c'e' gia', a Narvik; se c'e' gia' anche a Narvik, esegui subito un Attacco Aereo sulla TF britannica piu' vicina a portata (col Meteo Cattivo, attacca invece un marker Contatto a tutte le TF britanniche a portata di tutte le Basi Aeree tedesche).",
     "g_and_hit": "Due risultati insieme: la 'G' e un Colpo al Convoglio."
+   }
+  },
+  "N6 Il Dilemma delle Operazioni": {
+   "_page": 39,
+   "title": "Norwegian Reaction: British Completion Action in Norway",
+   "trigger": "Quando un CONVOGLIO BRITANNICO esegue con successo un Completamento in un esagono con Trondheim o Narvik, oppure in un esagono ADIACENTE a uno dei due porti.",
+   "axis": null,
+   "columns": [
+    {
+     "label": "1 o meno",
+     "min": -99,
+     "max": 1
+    },
+    {
+     "label": "2",
+     "min": 2,
+     "max": 2
+    },
+    {
+     "label": "3",
+     "min": 3,
+     "max": 3
+    },
+    {
+     "label": "4",
+     "min": 4,
+     "max": 4
+    },
+    {
+     "label": "5+",
+     "min": 5,
+     "max": 99
+    }
+   ],
+   "rows": [
+    {
+     "label": "",
+     "cells": [
+      "cancel",
+      "two_hits",
+      "g_and_hit",
+      "g",
+      "none"
+     ]
+    }
+   ],
+   "modifiers": [
+    {
+     "value": 1,
+     "when": "una o piu' BB o BC britanniche sono NELL'esagono del Convoglio"
+    },
+    {
+     "value": -1,
+     "when": "c'e' un marker Base Aerea tedesca in Norvegia"
+    },
+    {
+     "value": -2,
+     "when": "il marker Base Aerea tedesca e' NELL'esagono del Completamento (al posto del -1)"
+    }
+   ],
+   "legend": {
+    "hit": "Il Convoglio subisce un Colpo.",
+    "two_hits": "Il Convoglio subisce due Colpi. Puoi dirottare uno dei due su un'altra nave britannica nell'esagono, purche' la sua TF sia una Stazione.",
+    "cancel": "Il Completamento e' annullato. Il Convoglio britannico subisce due Colpi e deve Completare a Scapa Flow. L'Iniziativa passa ai tedeschi.",
+    "g": "Metti un marker Base Aerea TEDESCA a Trondheim; se c'e' gia', a Narvik; se c'e' gia' anche a Narvik, esegui subito un Attacco Aereo sulla TF britannica piu' vicina a portata (col Meteo Cattivo applica invece un risultato 'X' della Tabella di Azione Tedesca).",
+    "g_and_hit": "Due risultati insieme: la 'G' e un Colpo al Convoglio.",
+    "none": "Nessuna reazione."
    }
   }
  },

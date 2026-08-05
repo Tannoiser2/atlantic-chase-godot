@@ -25,6 +25,7 @@ func run() -> void:
 	test_reaction_roll()
 	test_reaction_effects()
 	test_aggressive_reactions_are_counted()
+	test_airbase_reaction_results_move_markers()
 
 
 func _tf(st: GameState, side: int, h: Vector2i, ships: Array) -> TaskForce:
@@ -142,14 +143,19 @@ func test_n5_adjacent_landing() -> void:
 		"l'esagono del porto non e' adiacente a se stesso")
 
 
-## Le quattro tabelle di Reazione Norvegese, trascritte da pp.19, 24, 27, 34.
+## Le cinque tabelle di Reazione Norvegese, da pp.19, 24, 27, 34 e 39.
 ##
 ## Non hanno la stessa forma, ed e' il motivo per cui questo test esiste: N1 ha
 ## una riga sola, N2 si divide sulle Mine britanniche, N3 su una TF britannica,
-## N5 su "nell'esagono o adiacente". Trattarle come quattro copie della stessa
+## N5 su "nell'esagono o adiacente", N6 di nuovo una riga sola ma con i
+## risultati che spostano le Basi Aeree. Trattarle come copie della stessa
 ## tabella e' l'errore facile.
+##
+## Quella di N6 mancava del tutto: le tabelle erano quattro e la p.39 ne stampa
+## una anche per lui, quindi in N6 il Completamento britannico a Trondheim o
+## Narvik non innescava nessuna Reazione.
 func test_norwegian_reaction_tables() -> void:
-	_begin("le quattro tabelle di Reazione Norvegese")
+	_begin("le cinque tabelle di Reazione Norvegese")
 	var f := FileAccess.open("res://core/data/solo/norwegian_reaction.json",
 		FileAccess.READ)
 	true_(f != null, "il file delle tabelle c'e'")
@@ -160,10 +166,11 @@ func test_norwegian_reaction_tables() -> void:
 	true_(typeof(parsed) == TYPE_DICTIONARY, "ed e' JSON valido")
 	var doc: Dictionary = parsed
 	var tables: Dictionary = doc.get("tables", {})
-	eq(tables.size(), 4, "quattro tabelle, una per scenario")
+	eq(tables.size(), 5, "cinque tabelle, una per scenario che la stampa")
 
 	var pages := {"N1 Operazione Wilfred": 19, "N2 Operazione Weser (nord)": 24,
-		"N3 Operazione Weser (sud)": 27, "N5 Meglio Tardi che Mai": 34}
+		"N3 Operazione Weser (sud)": 27, "N5 Meglio Tardi che Mai": 34,
+		"N6 Il Dilemma delle Operazioni": 39}
 	var missing: Array[String] = []
 	var unsourced: Array[String] = []
 	var bad_shape: Array[String] = []
@@ -306,13 +313,11 @@ func test_reaction_effects() -> void:
 	var none := Norway.apply_reaction(st, {"result": "none"}, conv)
 	eq(int(none["hits"]), 0, "'none' non fa nulla")
 
-	# N5: i risultati che spostano Basi Aeree non si applicano, si dichiarano.
-	var g := Norway.apply_reaction(st, {"result": "g"}, conv)
-	true_(bool(g["declared_gap"]),
-		"il risultato 'g' e' dichiarato: le Basi Aeree non sono pedine giocabili")
-	var gh := Norway.apply_reaction(st, {"result": "g_and_hit"}, conv)
+	# 'g_and_hit' sono DUE risultati: il Colpo e la Base Aerea.
+	var gh := Norway.apply_reaction(st, {"result": "g_and_hit"}, conv,
+		inset, "N5 Meglio Tardi che Mai", narvik)
 	eq(int(gh["hits"]), 1, "'g_and_hit' il Colpo lo da' davvero")
-	true_(bool(gh["declared_gap"]), "ma la parte della Base Aerea resta dichiarata")
+	false_(bool(gh["declared_gap"]), "e la Base Aerea non e' piu' una lacuna")
 
 
 ## La Reazione Aggressiva si conta, e la stessa cifra serve in due posti.
@@ -370,3 +375,88 @@ func test_aggressive_reactions_are_counted() -> void:
 	# Secondo uso: la riga dell'Esito di N3.
 	eq(int(Victory.debriefing_flags(st).get("aggressive_reactions", -1)), 2,
 		"e l'Esito legge lo stesso numero, non un suo conto separato")
+
+
+## I risultati che SPOSTANO un marcatore Base Aerea: la 'B' e la 'G'.
+##
+## Erano dichiarati come lacuna, e il motivo scritto nel registro - "le Basi
+## Aeree non sono ancora pedine giocabili" - aveva smesso di essere vero: la
+## pedina esiste, si salva e lancia Attacchi Aerei.
+##
+## Le due 'G' non sono la stessa procedura, ed e' la cosa che questo test
+## difende: N5 (p.34) toglie PRIMA una base britannica se ce n'e' una in
+## Norvegia; N6 (p.39) piazza e basta.
+func test_airbase_reaction_results_move_markers() -> void:
+	_begin("i risultati 'B' e 'G' spostano davvero i marcatori")
+	var ge := TaskForce.Side.KRIEGSMARINE
+	var uk := TaskForce.Side.ROYAL_NAVY
+	var narvik := inset.port_hex("Narvik")
+	var trondheim := inset.port_hex("Trondheim")
+
+	# 'B' senza basi tedesche: ne piazza una britannica nell'esagono.
+	var st := GameState.new(inset, 1)
+	var conv := _tf(st, uk, narvik, ["Convoy x2"])
+	Norway.apply_reaction(st, {"result": "b"}, conv, inset,
+		"N5 Meglio Tardi che Mai", narvik)
+	true_(AirBase.at(st, narvik, uk), "la 'B' piazza una base britannica")
+	eq(AirBase.count_of(st, uk), 1, "una sola")
+
+	# 'B' con una base tedesca in Norvegia: toglie QUELLA, e non ne piazza.
+	var st2 := GameState.new(inset, 1)
+	var conv2 := _tf(st2, uk, narvik, ["Convoy x2"])
+	AirBase.place(st2, ge, trondheim, "prova")
+	Norway.apply_reaction(st2, {"result": "b"}, conv2, inset,
+		"N5 Meglio Tardi che Mai", narvik)
+	eq(AirBase.count_of(st2, ge), 0, "la base tedesca sparisce")
+	eq(AirBase.count_of(st2, uk), 0, "e non se ne piazza una britannica")
+
+	# 'G' in N5 con una base britannica in Norvegia: toglie quella.
+	var st3 := GameState.new(inset, 1)
+	var conv3 := _tf(st3, ge, narvik, ["Convoy x2"])
+	AirBase.place(st3, uk, trondheim, "prova")
+	Norway.apply_reaction(st3, {"result": "g"}, conv3, inset,
+		"N5 Meglio Tardi che Mai", narvik)
+	eq(AirBase.count_of(st3, uk), 0, "N5: la 'G' toglie prima la base britannica")
+	eq(AirBase.count_of(st3, ge), 0, "e non ne piazza una tedesca")
+
+	# La stessa situazione in N6: quel passo la sua pagina non lo stampa.
+	var st4 := GameState.new(inset, 1)
+	var conv4 := _tf(st4, ge, narvik, ["Convoy x2"])
+	AirBase.place(st4, uk, trondheim, "prova")
+	Norway.apply_reaction(st4, {"result": "g"}, conv4, inset,
+		"N6 Il Dilemma delle Operazioni", narvik)
+	eq(AirBase.count_of(st4, uk), 1, "N6: la base britannica resta dov'e'")
+	true_(AirBase.at(st4, trondheim, ge),
+		"e la tedesca si piazza a Trondheim, come stampato")
+
+	# Trondheim occupata: si va a Narvik. Occupate tutte e due: Attacco Aereo.
+	var st5 := GameState.new(inset, 1)
+	var conv5 := _tf(st5, ge, narvik, ["Convoy x2"])
+	AirBase.place(st5, ge, trondheim, "prova")
+	Norway.apply_reaction(st5, {"result": "g"}, conv5, inset,
+		"N6 Il Dilemma delle Operazioni", narvik)
+	true_(AirBase.at(st5, narvik, ge), "con Trondheim occupata si piazza a Narvik")
+	var full := Norway.apply_reaction(st5, {"result": "g"}, conv5, inset,
+		"N6 Il Dilemma delle Operazioni", narvik)
+	eq(AirBase.count_of(st5, ge), 2, "con tutte e due occupate non se ne aggiunge")
+	false_((full["air_strike"] as Dictionary).is_empty(),
+		"e il risultato chiede un Attacco Aereo immediato")
+	eq(String((full["air_strike"] as Dictionary)["bad_weather_fallback"]),
+		"x_result", "N6 col Meteo Cattivo ripiega su un risultato 'X'")
+
+	# N5 ripiega diversamente, e la differenza e' stampata.
+	var st6 := GameState.new(inset, 1)
+	var conv6 := _tf(st6, ge, narvik, ["Convoy x2"])
+	AirBase.place(st6, ge, trondheim, "prova")
+	AirBase.place(st6, ge, narvik, "prova")
+	var n5_full := Norway.apply_reaction(st6, {"result": "g"}, conv6, inset,
+		"N5 Meglio Tardi che Mai", narvik)
+	eq(String((n5_full["air_strike"] as Dictionary)["bad_weather_fallback"]),
+		"contact_markers", "N5 col Meteo Cattivo attacca segnalini Contatto")
+
+	# Senza mappa non si inventa niente: si dichiara.
+	var st7 := GameState.new(inset, 1)
+	var conv7 := _tf(st7, uk, narvik, ["Convoy x2"])
+	var blind := Norway.apply_reaction(st7, {"result": "b"}, conv7)
+	true_(bool(blind["declared_gap"]),
+		"senza la mappa il risultato resta dichiarato invece di indovinare")

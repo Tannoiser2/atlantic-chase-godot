@@ -944,7 +944,8 @@ func _player_norway_completion() -> bool:
 			if bool(reaction.get("ok", false)):
 				for line_v: Variant in reaction.get("log", []):
 					_line("GIOCATORE   " + String(line_v))
-				var applied := Norway.apply_reaction(state, reaction, tf)
+				var applied := Norway.apply_reaction(state, reaction, tf,
+					graph, scenario.id, h)
 				for line_v: Variant in applied.get("log", []):
 					_line("GIOCATORE   " + String(line_v))
 				if int(applied.get("initiative_to", -1)) >= 0:
