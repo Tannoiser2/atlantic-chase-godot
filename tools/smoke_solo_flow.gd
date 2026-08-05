@@ -167,6 +167,28 @@ func _finish_report() -> bool:
 			return _finish(false, "una procedura riparte dopo la fine dello scenario")
 	elif not _initiative_returned:
 		return _finish(false, "l'Iniziativa non e' mai tornata al giocatore")
+	# Il registro dev'essere LEGGIBILE, non completo e basta. Due pretese:
+	#  - ogni procedura del bot mostra che cosa ha FATTO, non un rimando ai
+	#    dettagli che il giocatore ha gia' sotto gli occhi;
+	#  - le righe di servizio - richieste all'utente e conferme di quello che
+	#    ha appena fatto lui - stanno chiuse, non sparse fra le altre.
+	_root._refresh()
+	var rendered: String = _root._lbl_log.text
+	if rendered.contains("consulta i dettagli"):
+		return _finish(false, ("una procedura del bot rimanda ai dettagli invece "
+			+ "di dire che cosa ha fatto"))
+	var service_lines := 0
+	for line in _root._messages:
+		if _root._is_service_line(String(line)):
+			service_lines += 1
+	if service_lines > 0 and not rendered.contains("righe di servizio"):
+		return _finish(false, ("ci sono %d righe di servizio e nessuna e' stata "
+			+ "raccolta: il registro le mostra tutte") % service_lines)
+	for line in _root._messages:
+		if _root._is_service_line(String(line)) and rendered.contains(String(line)):
+			return _finish(false, ("la riga di servizio '%s' si vede senza averla "
+				+ "aperta") % String(line))
+
 	# L'ultimo controllo e' quello che nessun test del motore puo' fare:
 	# i tasti arrivano ancora?
 	var before: TaskForce = _root.selected_tf

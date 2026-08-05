@@ -970,6 +970,27 @@ sopra scenario per scenario.
   puo' allungarsi; a parita' vince (q, r) minore, perche' senza un criterio
   stabile la stessa partita con lo stesso seme puo' scegliere un bersaglio
   diverso. I quindici replay non cambiano di una riga.
+- [x] **Il registro dice che cosa e' successo; il resto sta chiuso.** Chiesto
+  dall'utente: "nel log devono rimanere le cose importanti, quelle di servizio
+  oppure ovvie rimangono collassate e al bisogno posso ispezionarle".
+  - **Le procedure del bot** mostravano "AZIONE EFFETTIVA - Procedura conclusa;
+    consulta i dettagli" quando la riga di riassunto non c'era: si diceva al
+    giocatore di aprire un pannello per sapere una cosa che il pannello aveva
+    gia' sotto gli occhi. Adesso, in mancanza del riassunto, si stampa
+    l'ultima riga che racconta un'AZIONE - scartando tiro, lettura della
+    tabella e testo della procedura, che dicono come ci si e' arrivati.
+  - **Le righe di servizio** - "clicca un segmento terminale", "selezionata la
+    tale TF", "trascina dalla Task Force" - sono richieste all'utente e
+    conferme di quello che ha appena fatto lui. Ripetute a ogni clic
+    seppellivano le righe che contano. Adesso le consecutive si raccolgono in
+    una riga sola, "N righe di servizio (clicca per vederle)", e si aprono
+    cliccandola. Nessuna riga viene buttata via, e `Copia tutto` continua a
+    copiare il registro intero.
+  Il criterio editoriale sta in un elenco unico (`SERVICE_MARKERS`) invece che
+  sparso nei chiamanti: e' una decisione su che cosa merita una riga, e si
+  legge tutta insieme. `smoke_solo_flow.gd` pretende che nessuna riga di
+  servizio si veda senza averla aperta - verificato rendendole visibili di
+  proposito, e la prova fallisce.
 - [ ] **Uno scenario che usa DUE mappe insieme non e' supportato.** L'utente lo
   ha chiesto ("se lo scenario ne usa due allora si devono vedere entrambe") e
   oggi non serve a nessuno: dei ventidue scenari, cinque usano un inserto e

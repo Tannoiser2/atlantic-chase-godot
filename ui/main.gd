@@ -67,6 +67,8 @@ var _message_seq: int = 0
 var _bot_trace_serial: int = 0
 var _active_bot_trace: int = 0
 var _expanded_bot_traces: Dictionary = {}
+## Gruppi di righe di servizio aperti a mano, per indice dell'ultima riga.
+var _expanded_service: Dictionary = {}
 var _last_bot_summary: String = ""
 var _battle_post_time_lapse: Array[TaskForce] = []
 var _battle_post_bl2_incident: bool = false
@@ -3768,6 +3770,14 @@ func _toggle_log_panel() -> void:
 
 func _on_log_meta_clicked(meta: Variant) -> void:
 	var value := String(meta)
+	if value.begins_with("service:"):
+		var key := int(value.trim_prefix("service:"))
+		if bool(_expanded_service.get(key, false)):
+			_expanded_service.erase(key)
+		else:
+			_expanded_service[key] = true
+		_refresh()
+		return
 	if not value.begins_with("bot_trace:"):
 		return
 	var trace_id := int(value.trim_prefix("bot_trace:"))
@@ -4318,6 +4328,34 @@ func _toggle_help() -> void:
 	_help.visible = not _help.visible
 
 
+## Le righe di SERVIZIO: richieste all'utente e conferme di quello che ha
+## appena fatto lui. Non raccontano niente della partita - "clicca un segmento
+## terminale", "selezionata la tale TF" - e ripetute a ogni clic seppelliscono
+## le righe che invece contano. Restano nel registro, ma chiuse: si aprono
+## cliccando la riga che le riassume.
+##
+## L'elenco sta qui e non sparso nei chiamanti di proposito: e' un criterio
+## editoriale unico, e si legge tutto insieme.
+const SERVICE_MARKERS := [
+	"Scorrere del Tempo: selezionati",
+	"Traiettoria: trascina dalla Task Force",
+	"Dove poni la Stazione?",
+	"selezionata ",
+	"Task Force deselezionata",
+	"Completa prima la scelta gia' aperta",
+	"Pronto. F1 per l'elenco dei comandi",
+]
+
+
+static func _is_service_line(line: String) -> bool:
+	# La riga porta il numero di mossa in testa: si guarda il testo.
+	var text := line.substr(6) if line.length() > 6 else line
+	for marker_v: Variant in SERVICE_MARKERS:
+		if text.begins_with(String(marker_v)):
+			return true
+	return false
+
+
 func _msg(s: String) -> void:
 	_message_seq += 1
 	_messages.append("%04d  %s" % [_message_seq, s])
@@ -4460,6 +4498,14 @@ func _refresh() -> void:
 				entries.append(entry)
 			(trace_entries[trace_id]["lines"] as Array[String]).append(_messages[i])
 			trace_entries[trace_id]["index"] = i
+		elif _is_service_line(_messages[i]) and not entries.is_empty() \
+				and bool(entries[entries.size() - 1].get("service", false)):
+			# Le righe di servizio consecutive stanno in un gruppo solo.
+			(entries[entries.size() - 1]["lines"] as Array[String]).append(_messages[i])
+			entries[entries.size() - 1]["index"] = i
+		elif _is_service_line(_messages[i]):
+			entries.append({"index": i, "trace": 0, "service": true,
+				"lines": [_messages[i]] as Array[String]})
 		else:
 			entries.append({"index": i, "trace": 0,
 				"lines": [_messages[i]] as Array[String]})
@@ -4468,17 +4514,36 @@ func _refresh() -> void:
 	for entry in entries:
 		var trace_id := int(entry["trace"])
 		var lines: Array[String] = entry["lines"]
+		if bool(entry.get("service", false)):
+			var key := int(entry["index"])
+			if bool(_expanded_service.get(key, false)):
+				lg.append(("[url=service:%d][color=#718796]Nascondi %d righe di "
+					+ "servizio[/color][/url]") % [key, lines.size()])
+				for line in lines:
+					lg.append("  [color=#6f7f88]%s[/color]" % line)
+			else:
+				lg.append(("[url=service:%d][color=#718796]%d righe di servizio "
+					+ "(clicca per vederle)[/color][/url]") % [key, lines.size()])
+			continue
 		if trace_id <= 0:
 			lg.append(_format_log_line(lines[0]))
 			continue
 		var expanded := bool(_expanded_bot_traces.get(trace_id, false))
-		var summary := "Procedura conclusa; consulta i dettagli."
+		# Il riassunto e' la riga "BOT - ...", che dice che cosa ha FATTO il
+		# bot. Quando non c'e' - procedura interrotta a meta', o che non
+		# produce un riassunto - si ripiegava su "consulta i dettagli", cioe'
+		# si diceva al giocatore di aprire il pannello per sapere una cosa che
+		# il pannello aveva gia' sotto gli occhi. Meglio l'ultima riga che
+		# racconta un'azione: e' l'ultima cosa che il bot ha fatto davvero.
+		var summary := ""
 		var details: Array[String] = []
 		for line in lines:
 			if line.contains("BOT - "):
 				summary = line.get_slice("BOT - ", 1)
 			else:
 				details.append(line)
+		if summary == "":
+			summary = _last_action_line(details)
 		var symbol := "Nascondi" if expanded else "Mostra"
 		lg.append(("[url=bot_trace:%d][color=#9fd4ee][b]%s procedura BOT %02d[/b]"
 			+ "[/color][/url]  [color=#718796](%d righe)[/color]") \
@@ -4498,6 +4563,24 @@ func _refresh() -> void:
 			call_deferred("_set_log_scroll", 0)
 		else:
 			call_deferred("_set_log_scroll", old_scroll)
+
+
+## L'ultima riga che racconta un'azione, fra i dettagli di una procedura.
+## Si scartano i preamboli - il tiro, la lettura della tabella, il testo della
+## procedura stampata - perche' dicono come ci si e' arrivati, non che cosa e'
+## successo.
+static func _last_action_line(details: Array[String]) -> String:
+	for i in range(details.size() - 1, -1, -1):
+		var text: String = details[i]
+		text = text.substr(6) if text.length() > 6 else text
+		text = text.strip_edges()
+		if text == "" or text.begins_with("1d6") or text.begins_with("Solitario -") \
+				or text.begins_with("Solitario:") or text.begins_with("AZIONE") \
+				or text.begins_with("Dato non modellato") \
+				or text.begins_with("Modificatore automatico"):
+			continue
+		return text
+	return "procedura in corso"
 
 
 func _format_log_line(line: String) -> String:
