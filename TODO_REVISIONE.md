@@ -1103,6 +1103,22 @@ sopra scenario per scenario.
   **Effetto collaterale buono**: lo stallo di N5 al seme predefinito e'
   sparito e i replay tornano a quindici `OK`. Non e' un caso - una partita in
   cui nessuno viene mai identificato e' una partita che non progredisce.
+- [x] **Sette `_status` dichiaravano lacune ormai chiuse.** Sette file di
+  scenario scrivevano "basi aeree non modellate" quando la pedina Base Aerea
+  esiste, si salva, lancia Attacchi Aerei e ora si muove anche con i risultati
+  della Reazione; A1 dichiarava non modellato il Bletchley Park, che c'e'
+  (`intel_marker_once`); N4 dichiarava non modellate Mine e forza Furtiva
+  Sommergibile, che sono pedine giocabili da un pezzo.
+  E' lo stesso schema incontrato tre volte in questa sessione: un commento
+  scritto quando una cosa mancava, rimasto identico dopo che e' arrivata.
+  Un dato che dichiara una lacuna che non c'e' piu' e' una bugia che fa
+  evitare lavoro gia' fatto.
+  **Non ho toccato quello che non ho verificato**: la PORTATA del supporto
+  aereo tedesco - quella che le procedure dicono di evitare tracciando la
+  rotta - resta dichiarata, perche' `ActionEngine` conosce il supporto aereo
+  come contributo al Totale Traiettoria ma non ho verificato il vincolo di
+  tracciamento. Restano dichiarati anche i limiti di classe (A1, B4), la forza
+  U-Boat iniziale di A1 e l'Invasione della Norvegia di N6.
 - [ ] **Uno scenario che usa DUE mappe insieme non e' supportato.** L'utente lo
   ha chiesto ("se lo scenario ne usa due allora si devono vedere entrambe") e
   oggi non serve a nessuno: dei ventidue scenari, cinque usano un inserto e

@@ -2,7 +2,7 @@
  "_scenario": "B1 Operazione Berlino",
  "_source": "Fascicolo Scenari in Solitario, seconda edizione INGLESE (AC_Solo_scenarios_2022.pdf), pp.41-44. Trascritta a mano da render/testo del PDF aggiornato.",
  "_role": "Il giocatore e' il TEDESCO; le tabelle rappresentano l'avversario BRITANNICO.",
- "_status": "Tabella del Rifornimento, Tabella delle Azioni Britanniche, Identificazione e Verifica della Scorta trascritte da AC_Solo_scenarios_2022 pp.41-44, lette sulle pagine renderizzate a risoluzione nativa. Le celle e i modificatori coincidevano gia'; erano le 22 procedure a mancare. Basi aeree e portata del supporto aereo restano non modellate.",
+ "_status": "Tabella del Rifornimento, Tabella delle Azioni Britanniche, Identificazione e Verifica della Scorta trascritte da AC_Solo_scenarios_2022 pp.41-44, lette sulle pagine renderizzate a risoluzione nativa. Le celle e i modificatori coincidevano gia'; erano le 22 procedure a mancare. Le Basi Aeree adesso ci sono; resta non modellata la PORTATA del supporto aereo tedesco, che le procedure dicono di evitare tracciando la rotta.",
  "tables": [
   {
    "id": "fueling",

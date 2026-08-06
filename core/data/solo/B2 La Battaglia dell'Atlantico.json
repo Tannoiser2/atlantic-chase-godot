@@ -2,7 +2,7 @@
  "_scenario": "B2 La Battaglia dell'Atlantico",
  "_source": "Fascicolo Scenari in Solitario, seconda edizione INGLESE (AC_Solo_scenarios_2022.pdf), pp.45-48. Trascritta a mano da render/testo del PDF aggiornato.",
  "_role": "Il giocatore e' il BRITANNICO; le tabelle rappresentano l'avversario TEDESCO.",
- "_status": "Tabella delle Azioni Tedesche e Identificazione trascritte da AC_Solo_scenarios_2022 pp.45-48, lette sulle pagine renderizzate. Le celle e il modificatore coincidevano gia'. Basi aeree tedesche e portata del supporto aereo restano non modellate: i rami che le richiedono sono dichiarati.",
+ "_status": "Tabella delle Azioni Tedesche e Identificazione trascritte da AC_Solo_scenarios_2022 pp.45-48, lette sulle pagine renderizzate. Le celle e il modificatore coincidevano gia'. Le Basi Aeree tedesche adesso ci sono; resta non modellata la PORTATA del supporto aereo, che le procedure dicono di evitare tracciando la rotta: i rami che la richiedono sono dichiarati.",
  "tables": [
   {
    "id": "actions",

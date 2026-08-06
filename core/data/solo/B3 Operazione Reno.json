@@ -2,7 +2,7 @@
  "_scenario": "B3 Operazione Reno",
  "_source": "Fascicolo Scenari in Solitario, seconda edizione INGLESE (AC_Solo_scenarios_2022.pdf), pp.49-53. Trascritta a mano da render/testo del PDF aggiornato.",
  "_role": "Il giocatore e' il TEDESCO; le tabelle rappresentano l'avversario BRITANNICO.",
- "_status": "Tabelle e procedure trascritte da AC_Solo_scenarios_2022 pp.49-53, lette sulle pagine renderizzate a risoluzione nativa. CORRETTA la colonna 3 della tabella di Identificazione: stampa CV/CA/CA, tre navi, e il dato ne aveva due. Basi aeree e portata del supporto aereo restano non modellate.",
+ "_status": "Tabelle e procedure trascritte da AC_Solo_scenarios_2022 pp.49-53, lette sulle pagine renderizzate a risoluzione nativa. CORRETTA la colonna 3 della tabella di Identificazione: stampa CV/CA/CA, tre navi, e il dato ne aveva due. Le Basi Aeree adesso ci sono; resta non modellata la PORTATA del supporto aereo tedesco, che le procedure dicono di evitare tracciando la rotta.",
  "tables": [
   {
    "id": "fueling",

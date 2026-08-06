@@ -2,7 +2,7 @@
  "_scenario": "B4 Decisione sui Mari",
  "_source": "Fascicolo Scenari in Solitario, seconda edizione INGLESE (AC_Solo_scenarios_2022.pdf), pp.54-57. Trascritta a mano da render/testo del PDF aggiornato.",
  "_role": "Il giocatore e' il BRITANNICO; le tabelle rappresentano l'avversario TEDESCO.",
- "_status": "Tabella delle Azioni Tedesche e Identificazione trascritte da AC_Solo_scenarios_2022 pp.54-57, lette sulle pagine renderizzate. Le celle e il modificatore coincidevano gia'. Basi aeree tedesche, portata del supporto aereo e limiti di classe restano non modellati.",
+ "_status": "Tabella delle Azioni Tedesche e Identificazione trascritte da AC_Solo_scenarios_2022 pp.54-57, lette sulle pagine renderizzate. Le celle e il modificatore coincidevano gia'. Le Basi Aeree tedesche adesso ci sono; restano non modellati la PORTATA del supporto aereo, che le procedure dicono di evitare tracciando la rotta, e i limiti di classe.",
  "tables": [
   {
    "id": "actions",

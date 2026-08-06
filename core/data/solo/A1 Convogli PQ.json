@@ -2,7 +2,7 @@
  "_scenario": "A1 Convogli PQ",
  "_source": "Fascicolo Scenari in Solitario, seconda edizione INGLESE (AC_Solo_scenarios_2022.pdf), pp.59-62. Trascritta a mano da render/testo del PDF aggiornato.",
  "_role": "Il giocatore e' il BRITANNICO; le tabelle rappresentano l'avversario TEDESCO.",
- "_status": "Tabella delle Azioni Tedesche e Identificazione trascritte da AC_Solo_scenarios_2022 pp.59-62, lette sulle pagine renderizzate. Basi aeree, forza U-Boat iniziale, Bletchley Park e limiti di classe restano non modellati.",
+ "_status": "Tabella delle Azioni Tedesche e Identificazione trascritte da AC_Solo_scenarios_2022 pp.59-62, lette sulle pagine renderizzate. La forza U-Boat iniziale e i limiti di classe restano non modellati. Le Basi Aeree e il segnalino Informazioni una-tantum di Bletchley Park adesso ci sono.",
  "tables": [
   {
    "id": "actions",

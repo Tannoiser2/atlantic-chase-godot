@@ -2,7 +2,7 @@
  "_scenario": "N6 Il Dilemma delle Operazioni",
  "_source": "Fascicolo Scenari in Solitario, seconda edizione INGLESE (AC_Solo_scenarios_2022.pdf), pp.36-39. Trascritta a mano da render/testo del PDF aggiornato.",
  "_role": "Il giocatore e' il BRITANNICO; le tabelle rappresentano l'avversario TEDESCO.",
- "_status": "Tabella delle Azioni, Traiettoria Tedesca, T-Seconda Azione e Identificazione trascritte da AC_Solo_scenarios_2022 pp.36-38, lette sulle pagine renderizzate a risoluzione nativa. Le celle coincidevano gia'; erano le 25 procedure a mancare. Basi aeree tedesche e Invasione della Norvegia restano pedine e regole non modellate.",
+ "_status": "Tabella delle Azioni, Traiettoria Tedesca, T-Seconda Azione e Identificazione trascritte da AC_Solo_scenarios_2022 pp.36-38, lette sulle pagine renderizzate a risoluzione nativa. Le celle coincidevano gia'; erano le 25 procedure a mancare. Le Basi Aeree tedesche adesso sono pedine giocabili; resta non modellata l'Invasione della Norvegia.",
  "tables": [
   {
    "id": "actions",

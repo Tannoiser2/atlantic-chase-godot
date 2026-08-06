@@ -2,7 +2,7 @@
  "_scenario": "N4 Operazione Weser (nord & sud)",
  "_source": "Fascicolo Scenari in Solitario, seconda edizione INGLESE (AC_Solo_scenarios_2022.pdf), pp.28-31. Trascritta a mano da render/testo del PDF aggiornato.",
  "_role": "Il giocatore e' il TEDESCO; le tabelle rappresentano l'avversario BRITANNICO.",
- "_status": "Tabella delle Azioni e Reazione Norvegese trascritte da AC_Solo_scenarios_2022 pp.28-30, lette sulle pagine renderizzate. Mine, basi aeree e forze furtive Sottomarino restano pedine non modellate: i risultati che le richiedono sono dichiarati, non approssimati.",
+ "_status": "Tabella delle Azioni e Reazione Norvegese trascritte da AC_Solo_scenarios_2022 pp.28-30, lette sulle pagine renderizzate. Mine, Basi Aeree e forza Furtiva Sommergibile adesso sono pedine giocabili, e la Reazione Norvegese di questo scenario e' raggiungibile: i risultati che le richiedono si applicano.",
  "tables": [
   {
    "id": "actions",
