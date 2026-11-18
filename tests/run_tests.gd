@@ -24,7 +24,7 @@ const EXPECTED := {
 	"res://tests/unit/test_initiative.gd": 16,
 	"res://tests/unit/test_state_and_undo.gd": 77,
 	"res://tests/unit/test_actions.gd": 146,
-	"res://tests/unit/test_battle.gd": 152,
+	"res://tests/unit/test_battle.gd": 154,
 	"res://tests/unit/test_ships.gd": 71,
 	"res://tests/unit/test_scenarios.gd": 228,
 	"res://tests/unit/test_victory.gd": 352,
@@ -35,10 +35,11 @@ const EXPECTED := {
 	"res://tests/unit/test_result_tables.gd": 34,
 	"res://tests/unit/test_lingering.gd": 63,
 	"res://tests/unit/test_snafu.gd": 98,
-	"res://tests/unit/test_replay.gd": 387,
+	"res://tests/unit/test_replay.gd": 389,
 	"res://tests/unit/test_stealth.gd": 96,
 	"res://tests/unit/test_norway.gd": 100,
 	"res://tests/unit/test_ms12.gd": 58,
+	"res://tests/unit/test_common_modifiers.gd": 203,
 }
 
 const SUITES := [
@@ -63,6 +64,7 @@ const SUITES := [
 	"res://tests/unit/test_stealth.gd",
 	"res://tests/unit/test_norway.gd",
 	"res://tests/unit/test_ms12.gd",
+	"res://tests/unit/test_common_modifiers.gd",
 ]
 
 

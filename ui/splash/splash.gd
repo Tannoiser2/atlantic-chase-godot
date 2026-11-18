@@ -17,10 +17,13 @@ var _brief: RichTextLabel
 var _art: TextureRect
 var _start_btn: Button
 var _adv: CheckBox
+var _optional: Dictionary = {}      ## chiave Regola Opzionale -> CheckBox
+var _resume_btn: Button
 var _ids: Array[String] = []
 
 
 func _ready() -> void:
+	UiTheme.install()
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	_build()
 	_populate()
@@ -29,16 +32,16 @@ func _ready() -> void:
 func _build() -> void:
 	var bg := ColorRect.new()
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	bg.color = Color(0.05, 0.08, 0.12)
+	bg.color = UiTheme.NOTTE
 	add_child(bg)
 
 	var row := HBoxContainer.new()
 	row.set_anchors_preset(Control.PRESET_FULL_RECT)
 	row.offset_left = 28
-	row.offset_top = 24
+	row.offset_top = 22
 	row.offset_right = -28
-	row.offset_bottom = -24
-	row.add_theme_constant_override("separation", 28)
+	row.offset_bottom = -22
+	row.add_theme_constant_override("separation", 26)
 	add_child(row)
 
 	# --- copertina ---
@@ -48,28 +51,38 @@ func _build() -> void:
 		cover.texture = tex
 	cover.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	cover.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	cover.custom_minimum_size = Vector2(420, 0)
+	cover.custom_minimum_size = Vector2(360, 0)
+	cover.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cover.size_flags_stretch_ratio = 0.42
 	cover.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	row.add_child(cover)
 
 	# --- colonna destra ---
 	var right := VBoxContainer.new()
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	right.add_theme_constant_override("separation", 12)
+	right.add_theme_constant_override("separation", 10)
 	row.add_child(right)
 
 	var title := Label.new()
-	title.text = "Scegli lo scenario"
-	title.add_theme_font_size_override("font_size", 30)
+	title.text = "ATLANTIC CHASE"
+	title.add_theme_font_override("font", UiTheme.stampino())
+	title.add_theme_font_size_override("font_size", 46)
+	title.add_theme_color_override("font_color", UiTheme.OTTONE)
 	right.add_child(title)
+	var subtitle := Label.new()
+	subtitle.text = "La campagna navale della Kriegsmarine, 1939-1942. Scegli uno scenario."
+	subtitle.add_theme_color_override("font_color", UiTheme.CARTA_SPENTA)
+	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	subtitle.custom_minimum_size.x = 400
+	right.add_child(subtitle)
 
 	var body := HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	body.add_theme_constant_override("separation", 16)
+	body.add_theme_constant_override("separation", 14)
 	right.add_child(body)
 
 	_list = ItemList.new()
-	_list.custom_minimum_size = Vector2(360, 0)
+	_list.custom_minimum_size = Vector2(380, 0)
 	_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_list.item_selected.connect(_on_selected)
 	_list.item_activated.connect(func(_i: int) -> void: _start())
@@ -79,11 +92,12 @@ func _build() -> void:
 	var briefcol := VBoxContainer.new()
 	briefcol.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	briefcol.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	briefcol.custom_minimum_size.x = 380
 	briefcol.add_theme_constant_override("separation", 10)
 	body.add_child(briefcol)
 
 	_art = TextureRect.new()
-	_art.custom_minimum_size = Vector2(0, 200)
+	_art.custom_minimum_size = Vector2(0, 170)
 	_art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	_art.visible = false
@@ -96,58 +110,89 @@ func _build() -> void:
 	briefcol.add_child(briefpanel)
 	_brief = RichTextLabel.new()
 	_brief.bbcode_enabled = true
+	_brief.custom_minimum_size.x = 340
+	UiTheme.style_rich(_brief, 16)
 	briefpanel.add_child(_brief)
 
-	# Le Regole Avanzate di Battaglia sono un modulo opzionale che i due
-	# giocatori accettano PRIMA di cominciare, non una scelta da fare battaglia
-	# per battaglia: quindi si sceglie qui, una volta sola.
+	# --- regole ---
+	# Sono moduli che si accettano PRIMA di cominciare, non scelte da fare
+	# azione per azione: quindi stanno qui, una volta sola.
+	var rules := PanelContainer.new()
+	rules.add_theme_stylebox_override("panel", _panel_style())
+	right.add_child(rules)
+	var rules_col := VBoxContainer.new()
+	rules_col.add_theme_constant_override("separation", 4)
+	rules.add_child(rules_col)
+	rules_col.add_child(UiTheme.heading("REGOLE", 18))
+	var flow := HFlowContainer.new()
+	flow.add_theme_constant_override("h_separation", 22)
+	flow.add_theme_constant_override("v_separation", 4)
+	rules_col.add_child(flow)
 	_adv = CheckBox.new()
-	_adv.text = "  Regole Avanzate di Battaglia"
+	_adv.text = "Battaglie con le Regole Avanzate"
 	_adv.tooltip_text = ("Attitudini (Acquisizione, Accostata, Corsa), Verifica "
 		+ "Snafu, Effetti Speciali al posto dei soli Colpi, Effetti Duraturi, "
 		+ "Disingaggio, Battaglia Estesa.\nCambia solo le Battaglie: la partita "
 		+ "sulla mappa resta identica.")
 	_adv.button_pressed = Session.advanced_battle
-	right.add_child(_adv)
+	_adv.focus_mode = Control.FOCUS_NONE
+	flow.add_child(_adv)
+	var tips := {
+		"damaged_ship_limit": ("Regola Opzionale (RB p.62): una Task Force con "
+			+ "una nave Danneggiata non puo' essere la TF Attiva di Ingaggiare "
+			+ "ne' di Ricerca Navale."),
+		"cv_limit": ("Regola Opzionale (RB p.62): una portaerei da' Supporto "
+			+ "Aereo e lancia Attacchi solo con una Traiettoria di sei segmenti "
+			+ "o meno."),
+		"battle_removes_evasive": ("Regola Opzionale (RB p.62): chi esce da una "
+			+ "Battaglia perde il segnalino Manovre Evasive."),
+	}
+	for key in OptionalRules.KEYS:
+		var cb := CheckBox.new()
+		cb.text = String(OptionalRules.LABELS.get(key, key))
+		cb.tooltip_text = String(tips.get(key, "Regola Opzionale (RB p.62)"))
+		cb.button_pressed = bool(Session.optional_rules.get(key, false))
+		cb.focus_mode = Control.FOCUS_NONE
+		flow.add_child(cb)
+		_optional[key] = cb
 
 	var buttons := HBoxContainer.new()
 	buttons.add_theme_constant_override("separation", 12)
 	right.add_child(buttons)
 
-	_start_btn = Button.new()
-	_start_btn.text = "  Inizia la partita  "
-	_start_btn.custom_minimum_size = Vector2(0, 44)
+	_start_btn = UiTheme.button("Inizia la partita", "primario", 54.0, 24)
+	_start_btn.custom_minimum_size.x = 260
 	_start_btn.pressed.connect(_start)
 	buttons.add_child(_start_btn)
 
-	var quit_btn := Button.new()
-	quit_btn.text = "  Esci  "
-	quit_btn.custom_minimum_size = Vector2(0, 44)
-	quit_btn.pressed.connect(func() -> void: get_tree().quit())
-	buttons.add_child(quit_btn)
+	_resume_btn = UiTheme.button("Riprendi una partita", "normale", 54.0, 20)
+	_resume_btn.pressed.connect(_resume)
+	_resume_btn.disabled = SaveGame.list_saves().is_empty()
+	_resume_btn.tooltip_text = ("Nessuna partita salvata" if _resume_btn.disabled
+		else "Riapre un salvataggio, automatico o fatto a mano")
+	buttons.add_child(_resume_btn)
+
+	# In un browser "Esci" non esce da niente: si chiude la scheda.
+	if not OS.has_feature("web"):
+		var quit_btn := UiTheme.button("Esci", "normale", 54.0, 20)
+		quit_btn.pressed.connect(func() -> void: get_tree().quit())
+		buttons.add_child(quit_btn)
 
 	var credit := RichTextLabel.new()
 	credit.bbcode_enabled = true
 	credit.fit_content = true
-	credit.custom_minimum_size = Vector2(0, 62)
+	credit.custom_minimum_size = Vector2(400, 44)
+	UiTheme.style_rich(credit, 14)
+	credit.add_theme_color_override("default_color", UiTheme.CARTA_SPENTA)
 	credit.text = ("[i]Atlantic Chase[/i] e' un gioco di [b]GMT Games[/b], "
-		+ "design di Jeremy White, © 2020 GMT Games LLC.\n"
-		+ "Questa e' una implementazione amatoriale non affiliata a GMT, "
-		+ "per uso personale. Regole tradotte da G. Sorio.")
+		+ "design di Jeremy White, (c) 2020 GMT Games LLC. "
+		+ "Implementazione amatoriale non affiliata a GMT, per uso personale. "
+		+ "Regole tradotte da G. Sorio.")
 	right.add_child(credit)
 
 
 static func _panel_style() -> StyleBoxFlat:
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.08, 0.11, 0.15, 0.95)
-	sb.border_color = Color(0.35, 0.48, 0.60)
-	sb.set_border_width_all(1)
-	sb.set_corner_radius_all(6)
-	sb.content_margin_left = 14
-	sb.content_margin_right = 14
-	sb.content_margin_top = 10
-	sb.content_margin_bottom = 10
-	return sb
+	return UiTheme.box(UiTheme.SCAFO, UiTheme.ACCIAIO, 1, 6, 14, 10)
 
 
 ## Gli scenari non sono tutti la stessa cosa, e un elenco piatto lo nascondeva:
@@ -186,16 +231,21 @@ func _populate() -> void:
 		var ids: Array[String] = group[1]
 		if ids.is_empty():
 			continue
-		_list.add_item("---  %s  ---" % String(group[0]))
+		_list.add_item(String(group[0]))
 		var header := _list.item_count - 1
 		_list.set_item_selectable(header, false)
-		_list.set_item_custom_fg_color(header, Color(0.62, 0.80, 0.95))
+		_list.set_item_custom_fg_color(header, UiTheme.OTTONE)
+		_list.set_item_custom_bg_color(header, UiTheme.SCAFO_ALTO)
 		_ids.append("")
 		for id in ids:
 			var sc := Scenario.load_by_id(id)
-			_list.add_item("   %s" % (sc.title if sc.title != "" else id))
+			_list.add_item("  %s" % (sc.title if sc.title != "" else id))
 			_ids.append(id)
-			if id.begins_with("Op5"):
+			# Si parte dal primo solitario: e' cio' che si puo' giocare subito,
+			# da soli, senza dover sapere che cosa sia "Op5". Se si torna qui
+			# da una partita, resta selezionato lo scenario appena lasciato.
+			if id == Session.scenario_id or (default_index == 0
+					and Session.scenario_id == "" and ids == solo):
 				default_index = _ids.size() - 1
 	if default_index > 0:
 		_list.select(default_index)
@@ -244,15 +294,51 @@ func _start() -> void:
 	# avvierebbe uno scenario con id vuoto.
 	if _ids[i[0]] == "":
 		return
-	Session.advanced_battle = _adv.button_pressed
+	_store_rules()
+	Session.resume_path = ""
 	Session.start(_ids[i[0]])
 	get_tree().change_scene_to_file(GAME_SCENE)
 
 
+func _store_rules() -> void:
+	Session.advanced_battle = _adv.button_pressed
+	Session.optional_rules = {}
+	for key_v: Variant in _optional.keys():
+		Session.optional_rules[key_v] = (_optional[key_v] as CheckBox).button_pressed
+
+
+## Riprende un salvataggio. Le regole con cui era stato giocato stanno nel
+## salvataggio stesso, non nelle caselle di questa schermata.
+func _resume() -> void:
+	var saves := SaveGame.list_saves()
+	if saves.is_empty():
+		return
+	var opts: Array = []
+	for sv in saves.slice(0, 8):
+		opts.append({"label": String(sv["name"]),
+			"detail": "%s - round %d - salvata il %s" % [String(sv["scenario"]),
+				int(sv["round"]), String(sv["saved_at"]).replace("T", " alle ")]})
+	_dialog_open = true
+	var i: int = await Choice.ask(self, "Riprendi una partita",
+		"Il salvataggio contiene anche lo stato dei dadi: si riprende la "
+		+ "stessa partita, non una simile.", opts)
+	_dialog_open = false
+	if i < 0 or i >= saves.size():
+		return
+	Session.resume_path = String(saves[i]["path"])
+	Session.start(Session.scenario_id)
+	get_tree().change_scene_to_file(GAME_SCENE)
+
+
+var _dialog_open := false
+
+
 func _unhandled_input(event: InputEvent) -> void:
+	if _dialog_open:
+		return
 	if event is InputEventKey and (event as InputEventKey).pressed:
 		var k := event as InputEventKey
 		if k.keycode == KEY_ENTER or k.keycode == KEY_KP_ENTER:
 			_start()
-		elif k.keycode == KEY_ESCAPE:
+		elif k.keycode == KEY_ESCAPE and not OS.has_feature("web"):
 			get_tree().quit()

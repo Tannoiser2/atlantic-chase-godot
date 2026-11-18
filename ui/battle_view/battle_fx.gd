@@ -311,7 +311,7 @@ func _draw_label(e: Dictionary, p: float) -> void:
 	var txt := String(e["text"])
 	if txt == "":
 		return
-	var font := ThemeDB.fallback_font
+	var font := UiTheme.stretto()
 	var size := 17
 	var w := font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
 	var lift := 34.0 + 26.0 * p + float(int(e.get("stack", 0))) * 23.0

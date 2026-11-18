@@ -19,6 +19,13 @@ static var seed_value: int = 0
 ## regolamento base.
 static var advanced_battle: bool = true
 
+## Regole Opzionali scelte nella schermata iniziale (RB p.62): chiave -> bool.
+## Come per le Battaglie avanzate, la copia che conta e' quella di GameState.
+static var optional_rules: Dictionary = {}
+
+## Salvataggio da riprendere appena la scena di gioco e' pronta, o "".
+static var resume_path: String = ""
+
 
 static func start(p_scenario_id: String, p_seed: int = 0) -> void:
 	scenario_id = p_scenario_id

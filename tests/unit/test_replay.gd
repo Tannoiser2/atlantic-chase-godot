@@ -23,6 +23,7 @@ const BL2 := "BL2 Contain and Destroy"
 
 ## Semi verificati a mano: entrambi arrivano a una condizione di fine stampata.
 const BL1_SEED := 20260803
+const N2_STEPS := "N2 Operazione Weser (nord)"
 const BL2_SEED := 20260803
 
 ## A2 e' l'unico scenario le cui fini stampate stanno DENTRO i risultati della
@@ -1020,8 +1021,13 @@ func test_a_different_answerer_changes_the_game() -> void:
 ## compile-time di chiamare una coroutine senza await.
 func test_the_cycle_can_be_driven_step_by_step() -> void:
 	_begin("il ciclo si guida a passi")
+	# N2, non BL2: il primo turno di BL2 non pone piu' domande da quando la
+	# Traiettoria non e' seguita da uno Scorrere del Tempo (RB p.43), e quello
+	# di BL1 nemmeno, da quando una Stazione in una Casella Porto non si puo'
+	# attaccare (RB p.8). Un ciclo che non chiede niente passerebbe questo test
+	# senza provare nulla; N2 chiede subito in quale porto Completare.
 	var runner := SoloRunner.new()
-	true_(runner.load_scenario(BL2, BL2_SEED), "scenario caricato: %s" % runner.load_error)
+	true_(runner.load_scenario(N2_STEPS, BL1_SEED), "scenario caricato: %s" % runner.load_error)
 
 	var questions := 0
 	var guard := 0
@@ -1039,6 +1045,7 @@ func test_the_cycle_can_be_driven_step_by_step() -> void:
 		out = runner.answer(pref)
 	eq(String(out.get("kind", "")), "done", "il turno arriva in fondo")
 	true_(guard < 50, "e non gira a vuoto")
+	true_(questions > 0, "e almeno una domanda e' stata posta davvero")
 
 	# Rispondere sempre col preferito deve dare lo STESSO turno che il ciclo
 	# normale gioca da solo: la macchina a passi non e' un'altra partita.
@@ -1142,16 +1149,22 @@ func test_step_order_is_shared_by_both_cycles() -> void:
 	eq(_kinds(steal["on_steal"]), [SoloSequence.Step.TIME_LAPSE] as Array[int],
 		"e se l'Inattivo Sottrae si fa Scorrere del Tempo invece del Completamento")
 
-	# Una Traiettoria con continuazione: Scorrere del Tempo, offerta di
-	# Sottrarre, e poi la continuazione - ma solo finche' il tetto lo permette.
+	# Una Traiettoria con continuazione: SOLO la continuazione, finche' il
+	# tetto lo permette. RB p.43 e Menu delle Azioni: "Traiettoria - Tenete
+	# l'Iniziativa", quindi niente Scorrere del Tempo e niente offerta di
+	# Sottrarre. Questo test pretendeva tutti e due i passi: difendeva il
+	# difetto.
 	var traj := {"ok": true, "turn_kind": "trajectory",
 		"follow_up": {"kind": "attack"}, "log": []}
 	eq(_kinds(SoloSequence.steps_for(traj, 0)),
-		[SoloSequence.Step.LOG, SoloSequence.Step.TIME_LAPSE,
-		SoloSequence.Step.STEAL_CHECK, SoloSequence.Step.FOLLOW_UP] as Array[int],
-		"alla prima continuazione si prosegue")
-	eq(int((SoloSequence.steps_for(traj, 0)[3] as Dictionary)["depth"]), 1,
+		[SoloSequence.Step.LOG, SoloSequence.Step.FOLLOW_UP] as Array[int],
+		"alla prima continuazione si prosegue, senza Scorrere e senza Sottrarre")
+	eq(int((SoloSequence.steps_for(traj, 0)[1] as Dictionary)["depth"]), 1,
 		"e la profondita' cresce di uno")
+	var lone := {"ok": true, "turn_kind": "trajectory", "log": []}
+	eq(_kinds(SoloSequence.steps_for(lone, 0)),
+		[SoloSequence.Step.LOG, SoloSequence.Step.KEEP_INITIATIVE] as Array[int],
+		"una Traiettoria senza continuazione tiene l'Iniziativa e basta")
 	# IL TETTO. Senza, la vista poteva incatenare continuazioni all'infinito.
 	var capped := SoloSequence.steps_for(traj, SoloSequence.MAX_FOLLOW_UPS)
 	eq(int((capped[capped.size() - 1] as Dictionary)["step"]),

@@ -258,8 +258,15 @@ func end_conditions() -> Dictionary:
 
 ## I Convogli possono disperdersi in questo scenario? La dispersione non e' un
 ## diritto, e' un permesso che danno le istruzioni.
+##
+## Solo un `true` scritto nel dato vale come permesso. In diversi scenari
+## solitari il campo e' una STRINGA ("vedi raw_victory_text..."): significa
+## "non ancora trascritto", e resta un buco dichiarato - non un si'. Prima
+## `bool()` su quella stringa era un errore di script: premere Disperdi in B2,
+## B3, N2 o N5 fermava la funzione a meta'.
 func convoy_dispersal_allowed() -> bool:
-	return bool(rules().get("convoy_dispersal", false))
+	var v: Variant = rules().get("convoy_dispersal", false)
+	return typeof(v) == TYPE_BOOL and bool(v)
 
 
 ## "Se una Task Force puo' effettuare il Completamento, deve farlo": e' la

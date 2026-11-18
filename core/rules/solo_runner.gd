@@ -166,6 +166,8 @@ func run(max_turns: int = MAX_TURNS) -> Dictionary:
 			Initiative.side_name(state.initiative), state.initiative_count,
 			Initiative.weather_label(state.weather)])
 		var before_seed := state.rng.log.size()
+		var before_signature := _progress_signature()
+		var ended_before := state.solo_ended
 		if state.initiative == imaginary_side:
 			bot_turns += 1
 			_bot_turn()
@@ -173,7 +175,12 @@ func run(max_turns: int = MAX_TURNS) -> Dictionary:
 			player_turns += 1
 			_begin_player_turn()
 			_player_turn()
-		if SoloAI.enforce_scenario_end(state):
+		# Una procedura puo' chiudere lo scenario dal suo interno (la 'X' di BL2
+		# quando non restano Convogli): allora `enforce_scenario_end` trova la
+		# fine gia' dichiarata e tace. La riga va scritta lo stesso, perche' e'
+		# quella che chi legge la trascrizione - e i test - cercano.
+		if SoloAI.enforce_scenario_end(state) \
+				or (state.solo_ended and not ended_before):
 			_line("FINE SCENARIO: %s" % state.solo_end_reason)
 		var signature := _progress_signature()
 		if signature == _last_progress_signature:
@@ -187,10 +194,13 @@ func run(max_turns: int = MAX_TURNS) -> Dictionary:
 			declared_gap = true
 			_line("STALLO DICHIARATO: %s" % stall)
 			break
-		# Un turno che non tira nemmeno un dado e non cambia l'Iniziativa non
-		# fa progredire niente: e' un ciclo fermo, e va dichiarato subito
-		# invece di consumare tutti i turni disponibili.
-		if state.rng.log.size() == before_seed and not state.solo_ended:
+		# Un turno che non tira nemmeno un dado, non cambia l'Iniziativa e non
+		# sposta nessuna Task Force non fa progredire niente: e' un ciclo
+		# fermo, e va dichiarato subito invece di consumare tutti i turni.
+		# Un'azione Traiettoria NON tira dadi e tiene l'Iniziativa (RB p.43):
+		# e' un turno legittimo, e si riconosce perche' la mappa e' cambiata.
+		if state.rng.log.size() == before_seed and signature == before_signature \
+				and not state.solo_ended:
 			stopped_reason = ("turno %d senza alcun tiro: il ciclo non avanza"
 				% turns)
 			_line("INTERROTTO: %s" % stopped_reason)
@@ -462,6 +472,7 @@ func _resolve_bot_action(decision: Dictionary) -> void:
 		_line("BOT   l'Attacco Aereo parte dalla base aerea in %s: Totale "
 			% str(AirBase.hex_of(dec.active_air_base))
 			+ "Traiettoria zero, e non c'e' nessuna Traiettoria da accorciare (RB p.27).")
+	_designate_supports(dec)
 	if dec.active_coordinating != null:
 		_line("BOT   %s coordina l'azione." % dec.active_coordinating.display_name())
 	var res := engine.resolve(dec, state)
@@ -497,6 +508,7 @@ func _resolve_bot_action(decision: Dictionary) -> void:
 		pending = Results.Battle.NONE
 	if pending != Results.Battle.NONE:
 		_maybe_go_late("battle", "un risultato del bot ha aperto una Battaglia")
+		_time_lapse_supports(dec)
 		_run_battle(pending, active, target, dec.target_hex)
 		return
 	if bool(engine.action(key).get("causes_time_lapse", false)):
@@ -508,6 +520,7 @@ func _resolve_bot_action(decision: Dictionary) -> void:
 			decision.get("time_lapse_goal", dec.target_hex),
 			dec.launch_hex if key == "AIR_STRIKE" else Vector2i.MAX,
 			bool(decision.get("time_lapse_prefer_near", false)))
+		_time_lapse_supports(dec)
 	match SoloSequence.after_action(key, initiative_changes):
 		SoloSequence.AfterAction.CHANGE:
 			_give_initiative_to(1 - dec.acting_side())
@@ -563,7 +576,9 @@ func _player_turn() -> void:
 			return
 	_line("GIOCATORE (policy harness): Passare.")
 	_player_time_lapse(_player_main_force())
-	_seek_initiative("GIOCATORE")
+	# RB p.35: "Dopo aver effettuato lo Scorrere del Tempo, il giocatore
+	# Inattivo diventa ora il giocatore Attivo". Non si Cerca: passa.
+	_give_initiative_to(imaginary_side)
 
 
 ## BL1 p.8: la tabella Murmansk si tira PRIMA del Debriefing, e sposta i VP.
@@ -1142,8 +1157,47 @@ func _carries_convoy(tf: TaskForce) -> bool:
 	return false
 
 
+## Le designazioni di sostegno delle due parti (RB pp.45-47).
+##
+## L'avversario immaginario designa tutto quello che puo' (p.1: usa sempre
+## Coordinamento e Supporto Aereo) e spende il segnalino Manovre Evasive appena
+## puo' (p.2). Il giocatore simulato designa Coordinatrice e Supporto Aereo, che
+## sono un beneficio netto, e NON spende il segnalino: e' una scelta tattica, e
+## una policy che la facesse a caso renderebbe i replay meno leggibili.
+func _designate_supports(dec: ActionEngine.Declaration) -> void:
+	for side in [dec.acting_side(), 1 - dec.acting_side()]:
+		if side < 0 or side > 1:
+			continue
+		CommonModifiers.designate_all(dec, state, graph, side,
+			side == imaginary_side)
+
+
+## RB pp.27, 31, 33, 41: dopo il risultato "ciascuna Task Force designata
+## effettua lo Scorrere del Tempo ECCETTO la Task Force bersaglio". La TF
+## Attiva la gestisce il chiamante, col criterio della sua procedura; qui
+## passano le Coordinatrici e le TF di Supporto Aereo delle due parti. La TF
+## di Supporto Aereo non puo' perdere il segmento del Punto di Lancio se non
+## per ultimo (p.45).
+func _time_lapse_supports(dec: ActionEngine.Declaration) -> void:
+	var done: Array[TaskForce] = []
+	var entries := [
+		[dec.active_coordinating, Vector2i.MAX],
+		[dec.active_air_support, CommonModifiers.active_air_hex(dec)],
+		[dec.target_coordinating, Vector2i.MAX],
+		[dec.target_air_support, CommonModifiers.target_air_hex(dec)],
+	]
+	for entry in entries:
+		var tf: TaskForce = entry[0]
+		if tf == null or tf == dec.active or tf == dec.target or done.has(tf):
+			continue
+		done.append(tf)
+		_time_lapse(tf, dec.target_hex, entry[1],
+			"BOT" if tf.side == imaginary_side else "GIOCATORE")
+
+
 func _resolve_player_action(dec: ActionEngine.Declaration) -> void:
 	var key := dec.action_key
+	_designate_supports(dec)
 	var res := engine.resolve(dec, state)
 	var label := String(engine.action(key).get("label", key))
 	if not bool(res["ok"]):
@@ -1175,18 +1229,20 @@ func _resolve_player_action(dec: ActionEngine.Declaration) -> void:
 	if pending != Results.Battle.NONE:
 		_maybe_go_late("battle", "un risultato del giocatore ha aperto una Battaglia")
 		_bl2_neutral_incident(key, dec.active, dec.target_hex)
+		_time_lapse_supports(dec)
 		_run_battle(pending, dec.active, dec.target, dec.target_hex)
 		return
 	_bl2_neutral_incident(key, dec.active, dec.target_hex)
 	if bool(engine.action(key).get("causes_time_lapse", false)):
 		_player_time_lapse(dec.active, dec.target_hex)
+		_time_lapse_supports(dec)
 	if initiative_changes:
 		_give_initiative_to(1 - dec.active.side)
 		return
 	_seek_initiative("GIOCATORE")
 
 
-## Allunga la Traiettoria verso l'avversario piu' vicino e poi Scorre il Tempo.
+## Allunga la Traiettoria verso l'avversario piu' vicino.
 ## E' l'azione Traiettoria: la rotta la calcola `SoloAI.best_route`, la stessa
 ## usata dal bot, per non avere due pianificatori diversi.
 func _player_trajectory() -> bool:
@@ -1225,8 +1281,11 @@ func _player_trajectory() -> bool:
 		return false
 	_line("GIOCATORE (policy harness): Traiettoria di %s, %d segmenti verso %s."
 		% [tf.display_name(), added, str(goal)])
-	_player_time_lapse(tf, goal)
-	_seek_initiative("GIOCATORE")
+	# RB p.43 e Menu delle Azioni: dopo la Traiettoria l'Attivo TIENE
+	# l'Iniziativa, senza Scorrere del Tempo e senza tiri. Qui si faceva
+	# Scorrere il Tempo e si Cercava l'Iniziativa, cioe' un'azione che nel
+	# regolamento non esiste. Il turno successivo del giocatore simulato
+	# trovera' la rotta gia' tracciata e passera' al resto del suo elenco.
 	return true
 
 
@@ -1268,8 +1327,17 @@ func _apply_interruption_cancel(res: Dictionary,
 	_line("      %s" % String(ir.get("effect", "Azione annullata.")))
 	match int(ir.get("result", Interruption.Result.ALERT)):
 		Interruption.Result.SLIP_AWAY:
-			_line("      Sfuggire: l'effetto scelto dall'Inattivo non e' "
-				+ "automatizzato nel replay; si Cerca l'Iniziativa.")
+			if 1 - dec.acting_side() == imaginary_side:
+				for line_v: Variant in SoloOpponent.apply_slip_away(state, dec):
+					_line("      %s" % String(line_v))
+			else:
+				# POLICY DELL'HARNESS: il giocatore simulato prende sempre le
+				# Manovre Evasive. La Segnalazione e' una scelta tattica, e
+				# farla a caso renderebbe il replay meno leggibile.
+				if dec.target != null and not dec.target.evasive:
+					dec.target.evasive = true
+				_line("      Sfuggire: il giocatore simulato prende Manovre "
+					+ "Evasive sulla TF Bersaglio (policy harness).")
 			_seek_initiative("Interruzione")
 		Interruption.Result.VIE_FOR_INITIATIVE:
 			_seek_initiative("Interruzione")
@@ -1278,21 +1346,39 @@ func _apply_interruption_cancel(res: Dictionary,
 
 
 func _seek_initiative(who: String) -> bool:
-	var r := Initiative.seek(state)
+	# p.2: l'avversario immaginario spende il segnalino Manovre Evasive "as
+	# soon as possible". Il giocatore simulato tiene il suo: e' una scelta, e
+	# la policy dell'harness non la fa.
+	var spender: TaskForce = null
+	if 1 - state.initiative == imaginary_side:
+		spender = SoloOpponent.evasive_holder(state, imaginary_side)
+	var r := Initiative.seek(state, spender)
 	for line_v: Variant in r["log"]:
 		_line("%s   %s" % [who, String(line_v)])
 	return bool(r.get("changed", false))
 
 
-## L'Inattivo tenta di Sottrarre. Se e' l'avversario immaginario lo fa sempre
-## (e' la regola solitaria applicata da `ui/main.gd`); se e' il giocatore
-## simulato, decide `player_steals_initiative`.
+## L'Inattivo tenta di Sottrarre. Se e' l'avversario immaginario decide
+## `SoloOpponent.steal_choice` (dado di p.2, o "sempre" dove lo scenario lo
+## stampa); se e' il giocatore simulato, decide `player_steals_initiative`.
 func _inactive_steals(reason: String) -> bool:
 	var inactive := 1 - state.initiative
 	if inactive == player_side and not ask_steal(reason):
 		_line("   %s: il giocatore simulato rinuncia a Sottrarre." % reason)
 		return false
-	var r := Initiative.steal(state)
+	var spender: TaskForce = null
+	if inactive == imaginary_side:
+		var choice := solo.steal_choice(state, imaginary_side)
+		for line_v: Variant in choice["log"]:
+			_line("   %s: %s" % [reason, String(line_v)])
+		if not bool(choice["attempt"]):
+			var given := Initiative.decline_steal_for_evasive(state,
+				choice["evasive_to"])
+			for line_v: Variant in given["log"]:
+				_line("   %s" % String(line_v))
+			return false
+		spender = choice["spend_from"]
+	var r := Initiative.steal(state, spender)
 	for line_v: Variant in r["log"]:
 		_line("   %s" % String(line_v))
 	return bool(r.get("changed", false))
@@ -1342,6 +1428,16 @@ func _time_lapse(tf: TaskForce, goal: Vector2i, protected_hex: Vector2i,
 	# `SoloSequence` perche' e' una regola, non un modo di mostrarla.
 	var preferred := SoloSequence.time_lapse_preference(opts, tf.trajectory,
 		goal, prefer_near)
+	# POLICY DELL'HARNESS: il giocatore simulato, se puo', toglie il segmento
+	# col segnalino Informazioni invocando il Limite. Un segnalino impedisce il
+	# Completamento (RB p.29), e una policy che non lo toglie mai gira in tondo
+	# davanti al porto - si vedeva in N4, dove le Mine britanniche mettono
+	# Informazioni proprio sull'esagono di destinazione.
+	if tf.side == player_side:
+		for i in opts.size():
+			if bool((opts[i] as Dictionary).get("removes_info", false)):
+				preferred = i
+				break
 	var labels: Array[String] = []
 	for option_v: Variant in opts:
 		var ends: Array = (option_v as Dictionary)["ends"]
@@ -1465,6 +1561,10 @@ func _run_battle(kind_result: int, active: TaskForce, target: TaskForce,
 		hex: Vector2i) -> void:
 	if active.afloat_ships().is_empty() or target.afloat_ships().is_empty():
 		_line("   Battaglia non aperta: una delle due TF non ha navi.")
+		# Senza questo il turno finiva qui, con l'Iniziativa ferma a chi aveva
+		# agito e nessun tiro: la stessa azione si ripeteva all'infinito. Una
+		# Battaglia si chiude sempre Cercando l'Iniziativa (RB p.31).
+		_seek_initiative("Battaglia")
 		return
 	var kind := BattleState.Kind.BATTLE
 	if kind_result == Results.Battle.SURPRISE:
@@ -1473,6 +1573,7 @@ func _run_battle(kind_result: int, active: TaskForce, target: TaskForce,
 		kind = BattleState.Kind.LIMITED
 	var bs := BattleState.new(kind, state.weather)
 	bs.advanced = state.advanced_battle
+	bs.remove_evasive_on_exit = OptionalRules.enabled(state, "battle_removes_evasive")
 	bs.active_tf = active
 	bs.target_tf = target
 	bs.hex = hex

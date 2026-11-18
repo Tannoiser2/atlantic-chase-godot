@@ -76,7 +76,23 @@ static func removal_options(traj: Trajectory, speed: int, amount: int,
 
 	# --- opzioni SENZA Limite di Informazioni: non si tocca alcun segmento
 	#     con Informazioni, e si rimuove esattamente `amount` (o tutti se meno)
-	var target := mini(amount, n)
+	#
+	# RB p.19: "Se non vi sono segmenti sufficienti per soddisfare l'esatto
+	# ammontare, rimuoveteli tutti (ma non quelli con segnalino Informazioni
+	# assegnato; rimangono a meno che non invochiate il Limite di
+	# Informazioni)". "Sufficienti" conta quindi i segmenti RIMOVIBILI: quelli
+	# che si raggiungono dai due capi senza toccare un segnalino. Prima il
+	# bersaglio era min(amount, lunghezza), e una Traiettoria corta con un
+	# segnalino a un capo non offriva nessuna rimozione normale - si poteva
+	# solo invocare il Limite, o niente.
+	var free_front := 0
+	while free_front < n and not bool(traj.segments[free_front]["info"]):
+		free_front += 1
+	var free_back := 0
+	while free_back < n - free_front \
+			and not bool(traj.segments[n - 1 - free_back]["info"]):
+		free_back += 1
+	var target := mini(amount, mini(n, free_front + free_back))
 	for front in range(target + 1):
 		var back := target - front
 		if front + back > n:

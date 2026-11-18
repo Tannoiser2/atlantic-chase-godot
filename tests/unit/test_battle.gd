@@ -481,7 +481,18 @@ func test_battle_end() -> void:
 		true_(tf.trajectory.is_station(), "%s e' una Stazione" % tf.display_name())
 		eq(tf.trajectory.station_hex, st3.hex, "nell'esagono di Battaglia")
 		true_(tf.trajectory.station_contact, "con segnalino Contatto")
-		false_(tf.evasive, "la Battaglia rimuove le Manovre Evasive")
+		# "La Battaglia Rimuove le Manovre Evasive" e' una REGOLA OPZIONALE
+		# (RB p.62). Questo test pretendeva la rimozione sempre.
+		true_(tf.evasive, "senza la regola opzionale le Manovre Evasive restano")
+	var st4 := _battle()
+	st4.remove_evasive_on_exit = true
+	var b4 := Battle.new(st4, DiceRNG.new(0))
+	b4.start()
+	st4.active_tf.evasive = true
+	st4.target_tf.evasive = true
+	b4.finish()
+	for tf in [st4.active_tf, st4.target_tf]:
+		false_(tf.evasive, "con la regola opzionale la Battaglia le rimuove")
 
 
 ## Battaglia completa con le navi vere di Rheinubung: e' il test che dimostra

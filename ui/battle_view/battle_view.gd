@@ -197,7 +197,10 @@ func _build_ui() -> void:
 	_hint.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	_hint.offset_left = 16
 	_hint.offset_top = -38
-	_hint.add_theme_color_override("font_color", Color(0.85, 0.9, 0.95))
+	_hint.add_theme_color_override("font_color", UiTheme.OTTONE)
+	_hint.add_theme_font_override("font", UiTheme.grassetto())
+	_hint.clip_text = true
+	_hint.offset_right = -16
 	add_child(_hint)
 
 	# Barra dei comandi della Battaglia. La sola riga di aiuto in fondo non
@@ -323,13 +326,12 @@ func _rebuild_buttons() -> void:
 
 	for it_v: Variant in items:
 		var it: Array = it_v
-		var b := Button.new()
-		b.text = "  %s (%s)  " % [it[0], it[1]]
-		b.custom_minimum_size = Vector2(0, 40)
+		# Il pulsante che fa avanzare la Battaglia e' d'ottone, gli altri no:
+		# prima la differenza era una sfumatura di giallo nel testo.
+		var b := UiTheme.button(String(it[0]),
+			"primario" if bool(it[3]) else "normale", 46.0)
+		b.tooltip_text = "Tasto: %s" % String(it[1])
 		b.pressed.connect(it[2])
-		if bool(it[3]):
-			b.add_theme_color_override("font_color", Color(1, 0.93, 0.72))
-			b.add_theme_color_override("font_hover_color", Color(1, 1, 0.85))
 		_buttons.add_child(b)
 
 
@@ -848,7 +850,7 @@ func _draw() -> void:
 	_ship_rects.clear()
 
 	var y := area.position.y
-	var font := ThemeDB.fallback_font
+	var font := UiTheme.stretto()
 	for i in ZONE_ORDER.size():
 		var h := area.size.y * float(weights[i]) / total
 		var r := Rect2(area.position.x, y, area.size.x, h - 4)
@@ -902,7 +904,7 @@ func _draw() -> void:
 func _draw_targeting() -> void:
 	if not _is_targeting_phase():
 		return
-	var font := ThemeDB.fallback_font
+	var font := UiTheme.stretto()
 
 	# chi puo' sparare ma non ha ancora un bersaglio: contorno tratteggiato
 	for e_v: Variant in _ship_rects:
@@ -1027,7 +1029,7 @@ func _draw_ships_in(band: Rect2, is_active: bool, zone: int) -> void:
 	total -= gap
 	var x := band.position.x + (band.size.x - total) * 0.5
 	var y := band.position.y + (band.size.y - ch) * 0.5
-	var font := ThemeDB.fallback_font
+	var font := UiTheme.stretto()
 
 	for i in ships.size():
 		var s: Ship = ships[i]

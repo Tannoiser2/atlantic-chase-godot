@@ -93,6 +93,19 @@ func _process(_delta: float) -> bool:
 		_root_node._show_outcome()
 	if _frames == 8 and _args.has("briefing"):
 		_root_node._toggle_briefing()
+	# Le viste della nuova interfaccia: menu, aiuto, rotta in corso, scelta.
+	if _frames == 8 and _args.has("menu"):
+		_root_node._toggle_menu()
+	if _frames == 8 and _args.has("aiuto"):
+		_root_node._toggle_help()
+	if _frames == 8 and _args.has("rotta"):
+		_root_node._declare_action("TRAJECTORY")
+		_root_node._refresh()
+	if _frames == 8 and _args.has("scelta"):
+		_root_node._status_choose("Ricerca Navale - Iniziativa",
+			"L'Inattivo (Royal Navy) puo' tentare di Sottrarre l'Iniziativa.", [
+			{"label": "Tenta di Sottrarre", "detail": "2d6 + Conto"},
+			{"label": "Rinuncia: Manovre Evasive", "detail": ""}])
 	if _frames == 12 and _args.has("evasive") and _root_node.selected_tf != null:
 		_root_node.selected_tf.evasive = true
 		_root_node.state.changed.emit()

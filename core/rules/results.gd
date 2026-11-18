@@ -22,7 +22,8 @@ enum Battle { NONE, FULL, SURPRISE, LIMITED }
 static func apply(code: String, active: TaskForce, target: TaskForce,
 		target_hex: Vector2i, state: GameState,
 		chooser: Callable = Callable(),
-		designated_active_info: int = -1) -> Dictionary:
+		designated_active_info: int = -1,
+		inactive_choice: Dictionary = {}) -> Dictionary:
 	var out := {"code": code, "text": "", "battle": Battle.NONE,
 		"initiative_changes": false, "steal_initiative_offer": false}
 	match code:
@@ -42,10 +43,11 @@ static func apply(code: String, active: TaskForce, target: TaskForce,
 		"SIGHTED":
 			out["text"] = _sighted(target, target_hex)
 		"SHADOW":
-			out["text"] = _shadow(target, target_hex)
+			out["text"] = _shadow(target, target_hex, inactive_choice)
 			out["steal_initiative_offer"] = true
 		"EARLY_LATE":
-			out["text"] = _early_late(target, target_hex, state, chooser)
+			out["text"] = _early_late(target, target_hex, state, chooser,
+				inactive_choice)
 		"LOSE_CONTACT":
 			out["text"] = _lose_contact(target, target_hex)
 		"CLOSING":
@@ -180,7 +182,14 @@ static func _sighted(target: TaskForce, h: Vector2i) -> String:
 
 ## RB p.53: lascia 3 segmenti; il segmento nell'esagono bersaglio non si rimuove.
 ## Se la Traiettoria ne aveva gia' 3 o meno, nessuna rimozione e Manovre Evasive.
-static func _shadow(target: TaskForce, h: Vector2i) -> String:
+##
+## RB p.24: "Risultati IN ANTICIPO o IN RITARDO e SEGUIRE: il giocatore
+## Inattivo puo' spendere il segnalino [Manovre Evasive] per scegliere quali
+## segmenti rimuovere. Normalmente il giocatore Attivo prende questa decisione."
+## `inactive_choice` porta quella scelta: { "spend_evasive": true,
+## "remove_from_end": 0 | 1 }. Senza, decide l'Attivo come prima.
+static func _shadow(target: TaskForce, h: Vector2i,
+		inactive_choice: Dictionary = {}) -> String:
 	if target == null:
 		return "Seguire: nessun bersaglio."
 	var t := target.trajectory
@@ -192,12 +201,20 @@ static func _shadow(target: TaskForce, h: Vector2i) -> String:
 		return ("Seguire: %s ha gia' 3 segmenti o meno e possiede gia' Manovre Evasive."
 			% target.display_name())
 	var removed := 0
+	var order := [0, 1]
+	var spent := ""
+	if _spends_evasive(target, inactive_choice):
+		target.evasive = false
+		var first := clampi(int(inactive_choice.get("remove_from_end", 0)), 0, 1)
+		order = [first, 1 - first]
+		spent = " Manovre Evasive spese: i segmenti li ha scelti %s." \
+			% target.display_name()
 	# rimuove dai capi finche' restano 3, senza toccare l'esagono bersaglio
 	var guard := 0
 	while t.length() > 3 and guard < 40:
 		guard += 1
 		var removed_this := false
-		for end in [0, 1]:
+		for end in order:
 			if t.length() <= 3:
 				break
 			if t.end_hex(end) == h:
@@ -208,8 +225,35 @@ static func _shadow(target: TaskForce, h: Vector2i) -> String:
 			break
 		if not removed_this:
 			break
-	return ("Seguire: rimossi %d segmenti da %s, ne restano %d."
-		% [removed, target.display_name(), t.length()])
+	return ("Seguire: rimossi %d segmenti da %s, ne restano %d.%s"
+		% [removed, target.display_name(), t.length(), spent])
+
+
+## L'Inattivo spende davvero il segnalino? Solo se lo ha chiesto E la TF
+## Bersaglio ne ha uno: "il segnalino speso DEVE appartenere alla Task Force
+## che sta ricevendo i benefici" (RB p.24).
+static func _spends_evasive(target: TaskForce, inactive_choice: Dictionary) -> bool:
+	return target != null and target.evasive \
+		and bool(inactive_choice.get("spend_evasive", false))
+
+
+## Che cosa c'e' da scegliere, per chi deve chiederlo a un giocatore.
+##   EARLY_LATE  { "choice": true, "front": n, "back": m } se il segmento
+##               bersaglio e' in mezzo e toglierlo apre un buco;
+##   SHADOW      { "choice": true, "excess": n } se ci sono piu' di 3 segmenti.
+## `choice` false = non c'e' niente che il segnalino possa cambiare.
+static func removal_preview(code: String, target: TaskForce, h: Vector2i) -> Dictionary:
+	if target == null or target.trajectory.is_station():
+		return {"choice": false}
+	var t := target.trajectory
+	if code == "SHADOW":
+		return {"choice": t.length() > 3, "excess": t.length() - 3}
+	if code == "EARLY_LATE":
+		var i := t.index_of_hex(h)
+		if i <= 0 or i >= t.length() - 1:
+			return {"choice": false}
+		return {"choice": true, "front": i, "back": t.length() - i - 1}
+	return {"choice": false}
 
 
 ## RB p.51: rimuove il segmento bersaglio; se cio' crea un buco, il giocatore
@@ -217,7 +261,8 @@ static func _shadow(target: TaskForce, h: Vector2i) -> String:
 ## piu' dannosa per il bersaglio (troncone piu' lungo): in M4 completo la scelta
 ## passera' al giocatore, ma il conteggio dei segmenti resta corretto.
 static func _early_late(target: TaskForce, h: Vector2i, state: GameState,
-		chooser: Callable = Callable()) -> String:
+		chooser: Callable = Callable(),
+		inactive_choice: Dictionary = {}) -> String:
 	if target == null:
 		return "In Anticipo o In Ritardo: nessun bersaglio."
 	var t := target.trajectory
@@ -255,6 +300,14 @@ static func _early_late(target: TaskForce, h: Vector2i, state: GameState,
 			"buco:%d:%d" % [before, after])
 		if typeof(pick) == TYPE_BOOL:
 			drop_front = pick
+	# RB p.24: spendendo le Manovre Evasive sceglie l'Inattivo. Se non dice
+	# quale troncone, tiene il piu' lungo: e' il motivo per cui si spende.
+	var spent := ""
+	if _spends_evasive(target, inactive_choice):
+		target.evasive = false
+		drop_front = bool(inactive_choice.get("drop_front", before < after))
+		spent = " Manovre Evasive spese: il troncone lo ha scelto %s." \
+			% target.display_name()
 	var dropped := before if drop_front else after
 	if drop_front:
 		for k in before:
@@ -263,8 +316,8 @@ static func _early_late(target: TaskForce, h: Vector2i, state: GameState,
 		for k in after:
 			t.segments.pop_back()
 	return ("In Anticipo o In Ritardo: rimosso il segmento in %s; il buco costa a %s "
-		+ "altri %d segmenti, ne restano %d.")\
-		% [str(h), target.display_name(), dropped, t.length()]
+		+ "altri %d segmenti, ne restano %d.%s")\
+		% [str(h), target.display_name(), dropped, t.length(), spent]
 
 
 static func _lose_contact(target: TaskForce, h: Vector2i) -> String:

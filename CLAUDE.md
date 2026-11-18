@@ -40,7 +40,18 @@ godot --path . --script res://tools/smoke_solo_flow.gd
 godot --path . --script res://tools/smoke_solo_flow.gd -- BL1
 godot --path . --script res://tools/smoke_inset_map.gd
 godot --path . --script res://tools/smoke_ms12.gd
+godot --path . --script res://tools/smoke_trajectory.gd
+godot --path . --script res://tools/smoke_gui.gd
+python3 tools/controlla_glifi.py
 ```
+
+`smoke_gui.gd` difende l'interfaccia nuova: riga di guida, esagoni legali
+accesi, trascinamento della mappa, Menu, Casella Porto, salvataggio automatico,
+e nessuna etichetta schiacciata a una lettera per riga. `controlla_glifi.py`
+verifica che ogni carattere mostrato esista nei font di `assets/fonts/`: un
+glifo assente esce come un quadratino e nessun test lo vede. L'aspetto sta
+tutto in `ui/theme/ui_theme.gd`: un pannello o un pulsante nuovo prende colori
+e caratteri da li', non da uno `StyleBoxFlat` scritto sul posto.
 
 Per guardare la Battaglia invece che misurarla:
 
@@ -52,8 +63,8 @@ Percorre una Battaglia avanzata intera, salva un PNG per fase e stampa accanto
 a ogni scatto lo stato del motore. Non giudica: serve a mettere l'immagine e lo
 stato uno accanto all'altro. Cinque difetti visivi sono usciti cosi'.
 
-Baseline corrente: **3881 verifiche, 21 suite** (era 2570 su 17 prima della
-suite `test_replay.gd`). Il totale non puo' scendere senza una rimozione
+Baseline corrente: **4088 verifiche, 22 suite** (era 2570 su 17 prima della
+suite `test_replay.gd`, 3881 su 21 prima di `test_common_modifiers.gd`). Il totale non puo' scendere senza una rimozione
 intenzionale di test spiegata nel commit.
 
 Per il solitario eseguire anche:
