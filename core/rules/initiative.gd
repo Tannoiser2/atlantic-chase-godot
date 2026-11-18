@@ -39,19 +39,50 @@ static func pass_to_inactive(state: GameState) -> Dictionary:
 			% side_name(state.initiative), String(w["log"])] as Array[String]}
 
 
+## Quanto vale un segnalino Manovre Evasive speso dall'Inattivo su un tiro di
+## Iniziativa. RB p.46: "Se le Condizioni Meteo sono Buone, il modificatore e'
+## +1, se Avverse e' +2".
+##
+## LACUNA DICHIARATA: RB p.26 concede il +2 anche col Meteo Buono se la TF e'
+## sulla Linea Artica. La Linea Artica non e' un dato di mappa in questo
+## progetto, quindi quel caso non e' riconoscibile e vale il +1.
+static func evasive_bonus(state: GameState) -> int:
+	return 2 if state.weather == TimeLapse.Weather.BAD else 1
+
+
+## Spende il segnalino Manovre Evasive di `tf` per un tiro di Iniziativa e
+## ritorna il modificatore ottenuto (0 se la TF non ne ha uno).
+##
+## RB p.24: per questo uso - e solo per questo - il segnalino puo' stare su
+## QUALSIASI Task Force dell'Inattivo, non su una coinvolta nell'Azione.
+static func _spend_evasive(state: GameState, tf: TaskForce,
+		lines: Array[String]) -> int:
+	if tf == null or not tf.evasive:
+		return 0
+	tf.evasive = false
+	var bonus := evasive_bonus(state)
+	lines.append("Manovre Evasive spese da %s: %+d al tiro (meteo %s)."
+		% [tf.display_name(), bonus,
+			"cattivo" if state.weather == TimeLapse.Weather.BAD else "buono"])
+	return bonus
+
+
 ## Cercare l'Iniziativa: l'Attivo tira 1d6; l'Inattivo tira 1d6 e somma il
 ## Conto dell'Iniziativa ed eventualmente Manovre Evasive. Parita' = Attivo.
-static func seek(state: GameState, inactive_evasive: bool = false) -> Dictionary:
+##
+## `evasive_from` e' la TF dell'Inattivo che spende il proprio segnalino
+## Manovre Evasive su questo tiro; null se non ne spende.
+static func seek(state: GameState, evasive_from: TaskForce = null) -> Dictionary:
 	var active := state.initiative
 	var inactive := 1 - active
 	var a := state.rng.d6("Cercare l'Iniziativa - Attivo")
 	var i := state.rng.d6("Cercare l'Iniziativa - Inattivo")
-	var mod := state.initiative_count + (1 if inactive_evasive else 0)
+	var lines: Array[String] = []
+	var mod := state.initiative_count + _spend_evasive(state, evasive_from, lines)
 	var itotal := i + mod
 	var changed := itotal > a
-	var lines: Array[String] = [
-		"Cercare l'Iniziativa: %s 1d6=%d; %s 1d6=%d%+d -> %d." % [
-			side_name(active), a, side_name(inactive), i, mod, itotal]]
+	lines.append("Cercare l'Iniziativa: %s 1d6=%d; %s 1d6=%d%+d -> %d." % [
+			side_name(active), a, side_name(inactive), i, mod, itotal])
 	if changed:
 		state.initiative = inactive
 		state.initiative_count = 0
@@ -70,14 +101,16 @@ static func seek(state: GameState, inactive_evasive: bool = false) -> Dictionary
 
 ## Sottrarre l'Iniziativa: l'Inattivo tira 2d6 + Conto + eventuali Manovre
 ## Evasive; con 9+ prende l'Iniziativa, altrimenti il Conto sale di 1.
-static func steal(state: GameState, inactive_evasive: bool = false) -> Dictionary:
+##
+## `evasive_from`: come in `seek`.
+static func steal(state: GameState, evasive_from: TaskForce = null) -> Dictionary:
 	var inactive := 1 - state.initiative
 	var roll := state.rng.d6x2("Sottrarre l'Iniziativa")
-	var mod := state.initiative_count + (1 if inactive_evasive else 0)
+	var lines: Array[String] = []
+	var mod := state.initiative_count + _spend_evasive(state, evasive_from, lines)
 	var total := roll + mod
-	var lines: Array[String] = [
-		"Sottrarre l'Iniziativa: %s 2d6=%d%+d -> %d (serve 9)." % [
-			side_name(inactive), roll, mod, total]]
+	lines.append("Sottrarre l'Iniziativa: %s 2d6=%d%+d -> %d (serve 9)." % [
+			side_name(inactive), roll, mod, total])
 	if total >= 9:
 		state.initiative = inactive
 		state.initiative_count = 0

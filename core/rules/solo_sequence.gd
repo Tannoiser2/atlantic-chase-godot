@@ -148,9 +148,16 @@ static func steps_for(decision: Dictionary, depth: int) -> Array[Dictionary]:
 		out.append({"step": Step.ROLL_AGAIN})
 		return out
 	if effect_is_trajectory(decision):
-		out.append({"step": Step.TIME_LAPSE, "active": active, "goal": goal})
-		out.append({"step": Step.STEAL_CHECK, "label": "Traiettoria del bot",
-			"refused": "", "on_steal": []})
+		# RB p.43 e Menu delle Azioni: "Traiettoria - Porre segmenti Traiettoria
+		# - Tenete l'Iniziativa". Nessuno Scorrere del Tempo e nessun tentativo
+		# di Sottrarre: l'Attivo "puo' effettuare piu' azioni Traiettoria, una
+		# dopo l'altra... oppure un'Azione completamente diversa".
+		# Fino al 2026-11 qui c'erano tutti e due i passi, e ogni Traiettoria
+		# del bot si accorciava subito e regalava un tiro al giocatore. La riga
+		# "Time Lapse: Remove segments farthest from X" che chiude le procedure
+		# stampate dice DA CHE PARTE togliere quando lo Scorrere del Tempo
+		# arriva (dopo un'azione su tabella, un Passare, un Completamento
+		# fallito): non ne ordina uno in piu'.
 		if has_follow_up(decision) and depth < MAX_FOLLOW_UPS:
 			out.append({"step": Step.FOLLOW_UP, "depth": depth + 1})
 		else:

@@ -12,6 +12,10 @@ name: Pages
 #  - l'export Web ha bisogno dei template scaricati a parte: non stanno nel
 #    binario di Godot.
 
+# PUBBLICAZIONE SOLO SU RICHIESTA. Un push qualsiasi non pubblica niente: serve
+# il Run manuale da GitHub (Actions -> Pages -> Run workflow) oppure un commit
+# su master col marcatore [pubblica] nel messaggio. Prima pubblicava a ogni
+# push, cioe' anche il lavoro a meta'.
 on:
   push:
     branches: [master]
@@ -32,6 +36,7 @@ env:
 
 jobs:
   build:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[pubblica]')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

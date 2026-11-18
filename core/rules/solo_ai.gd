@@ -5161,14 +5161,26 @@ static func _first_damaged_force(state: GameState, side: int) -> TaskForce:
 	return null
 
 
+## Le procedure che la chiamano lo scrivono tutte per esteso: "Remove Damaged
+## British ships. If this empties one or more TFs, remove them". E p.1, in
+## generale: "If an identified TF loses all its ships and becomes empty, remove
+## it. It does not become unidentified."
+##
+## La seconda meta' qui mancava: la TF restava sulla mappa IDENTIFICATA e senza
+## navi. Si vedeva in B3: il giocatore la Ingaggiava, la Battaglia non si apriva
+## ("una delle due TF non ha navi") e l'azione si ripeteva all'infinito; intanto
+## la stessa nave tornava disponibile e veniva "rivelata" in un'altra TF.
 static func _remove_damaged_ships(state: GameState, side: int) -> void:
-	for tf in state.forces_of(side):
+	for tf in state.forces_of(side).duplicate():
 		var keep: Array[Ship] = []
 		for s in tf.ships:
 			if not (s.damaged and not s.sunk):
 				keep.append(s)
+		var emptied: bool = keep.size() < tf.ships.size() and keep.is_empty()
 		tf.ships = keep
 		tf.recompute_speed()
+		if emptied and not tf.unidentified:
+			state.remove_task_force(tf)
 
 
 static func _anchor_hex(tf: TaskForce) -> Vector2i:

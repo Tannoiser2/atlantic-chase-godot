@@ -193,7 +193,27 @@ class Declaration extends RefCounted:
 	var target_air_support: TaskForce = null
 	var launch_hex: Vector2i = Vector2i.MAX
 	var target_hex: Vector2i = Vector2i.MAX
-	var modifier: int = 0          ## modificatori comuni gia' sommati
+	## Modificatori che una PROCEDURA STAMPATA impone all'azione (il +3
+	## dell'Attacco Furtivo di N3, p.26). I Modificatori Comuni NON vanno qui:
+	## li calcola `CommonModifiers.compute` dalle designazioni qui sotto.
+	var modifier: int = 0
+
+	## Punto di Lancio del Supporto Aereo, per parte. Con una TF e' uno dei
+	## suoi esagoni; con una base aerea e' l'esagono della base, e allora la TF
+	## resta null e la base sta nel campo `_base`.
+	var active_air_support_hex: Vector2i = Vector2i.MAX
+	var active_air_support_base: Dictionary = {}
+	var target_air_support_hex: Vector2i = Vector2i.MAX
+	var target_air_support_base: Dictionary = {}
+
+	## RB p.47: "Invece di una Task Force, un giocatore puo' designare una forza
+	## Furtiva amica (U-Boat, Mine o Sottomarini) come forza Coordinatrice".
+	var active_coordinating_stealth: Dictionary = {}
+	var target_coordinating_stealth: Dictionary = {}
+
+	## L'Inattivo spende il segnalino Manovre Evasive della TF Bersaglio per
+	## imporre il modificatore avverso (RB p.46).
+	var target_spends_evasive: bool = false
 	## La forza Furtiva che esegue l'azione, quando a eseguirla NON e' una Task
 	## Force. RB p.41 la ammette come attaccante dell'Attacco Furtivo, ed e'
 	## l'unica azione in cui succede: qui l'Attiva puo' quindi restare `null`.
@@ -223,6 +243,16 @@ class Declaration extends RefCounted:
 		var out: Array[TaskForce] = []
 		for t in [active, active_coordinating, active_air_support]:
 			if t != null:
+				out.append(t)
+		return out
+
+	## Le TF che il BERSAGLIO ha designato a sostegno. RB pp.27, 31, 33: dopo
+	## il risultato "ciascuna Task Force designata effettua lo Scorrere del Tempo
+	## ECCETTO la Task Force bersaglio" - quindi anche queste.
+	func designated_target_support() -> Array[TaskForce]:
+		var out: Array[TaskForce] = []
+		for t in [target_coordinating, target_air_support]:
+			if t != null and t != target and not out.has(t):
 				out.append(t)
 		return out
 
@@ -309,6 +339,15 @@ func legality_error(dec: Declaration, state: GameState) -> String:
 		if coordinating != null and (dec.target_hex == Vector2i.MAX \
 				or not coordinating.trajectory.occupies(dec.target_hex)):
 			return "la TF Coordinatrice deve occupare l'esagono Bersaglio"
+	for stealth in [dec.active_coordinating_stealth, dec.target_coordinating_stealth]:
+		if not (stealth as Dictionary).is_empty() and (dec.target_hex == Vector2i.MAX \
+				or Vector2i(int(stealth.get("q", 0)), int(stealth.get("r", 0)))
+					!= dec.target_hex):
+			return "la forza Furtiva Coordinatrice deve stare nell'esagono Bersaglio"
+	if dec.active_coordinating != null and not dec.active_coordinating_stealth.is_empty():
+		return "una sola forza Coordinatrice per giocatore (RB p.47)"
+	if dec.target_coordinating != null and not dec.target_coordinating_stealth.is_empty():
+		return "una sola forza Coordinatrice per giocatore (RB p.47)"
 	if dec.action_key == "COMPLETION" and not dec.active.can_complete():
 		return "una TF con segnalino Informazioni non puo' effettuare il Completamento"
 	# una Task Force con un Convoglio ha le mani legate: niente Attacco Aereo,
@@ -335,12 +374,23 @@ func resolve(dec: Declaration, state: GameState) -> Dictionary:
 		"trajectory_total": 0, "tt_explain": [], "column": "",
 		"interruption": {}, "dice": 0, "modifier": dec.modifier, "sum": 0,
 		"results": [] as Array[String], "result_labels": [] as Array[String],
-		"unverified": false,
+		"unverified": false, "modifier_lines": [] as Array[String],
 	}
 	var err := legality_error(dec, state)
 	if err != "":
 		out["error"] = err
 		return out
+
+	# Modificatori Comuni (RB pp.45-47). Si calcolano prima dell'Interruzione
+	# perche' dipendono solo dalle designazioni; il segnalino Manovre Evasive
+	# pero' si spende solo se si arriva a tirare.
+	var common := CommonModifiers.compute(dec, state)
+	var mod_lines: Array[String] = []
+	if dec.modifier != 0:
+		mod_lines.append("Procedura stampata: %+d" % dec.modifier)
+	mod_lines.append_array(common["lines"])
+	out["modifier"] = dec.modifier + int(common["total"])
+	out["modifier_lines"] = mod_lines
 
 	# 3. Totale Traiettoria
 	var desig := dec.to_designations()
@@ -371,6 +421,8 @@ func resolve(dec: Declaration, state: GameState) -> Dictionary:
 		out["ok"] = true
 		state.set_modifier_track(dec.acting_side(), int(out["modifier"]))
 		return out
+	if dec.target_spends_evasive and dec.target != null and dec.target.evasive:
+		dec.target.evasive = false
 	var dice := state.rng.d6x2("azione %s" % dec.action_key)
 	out["dice"] = dice
 	var total := dice + int(out["modifier"])
@@ -405,6 +457,15 @@ func describe(res: Dictionary) -> String:
 		var m := int(res["modifier"])
 		var msign := "" if m == 0 else (" %+d" % m)
 		parts.append("2d6 = %d%s -> %d" % [res["dice"], msign, res["sum"]])
+		var applied: Array[String] = []
+		for line_v: Variant in res.get("modifier_lines", []):
+			# le righe che dichiarano una lacuna o un "non si applica" non sono
+			# modificatori: stanno nel dettaglio, non nel riassunto
+			if (String(line_v).contains(": +") or String(line_v).contains(": -")) \
+					and not String(line_v).ends_with(": +0"):
+				applied.append(String(line_v))
+		if not applied.is_empty():
+			parts.append("[" + "; ".join(applied) + "]")
 	if not (res["result_labels"] as Array).is_empty():
 		parts.append("risultato: " + ", ".join(res["result_labels"]))
 	else:

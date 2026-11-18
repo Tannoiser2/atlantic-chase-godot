@@ -37,9 +37,20 @@ var phase: int = Phase.EARLY
 var phase_reason: String = ""
 
 
+## L'avversario immaginario tenta SEMPRE di Sottrarre l'Iniziativa, senza
+## tirare il dado di p.2. Lo stampano tre scenari, ognuno a parole sue (N1
+## p.17, N4 p.28, N5 p.32); il dato sta nel file dello scenario, sotto
+## `seize_initiative`, con la frase e la pagina.
+var always_seizes: bool = false
+var always_seizes_source: String = ""
+
+
 static func from_dict(d: Dictionary) -> SoloOpponent:
 	var o := SoloOpponent.new()
 	o.scenario_id = String(d.get("_scenario", ""))
+	var seize: Dictionary = d.get("seize_initiative", {})
+	o.always_seizes = bool(seize.get("always_attempt", false))
+	o.always_seizes_source = String(seize.get("source", ""))
 	for t_v: Variant in d.get("tables", []):
 		var t := SoloTable.from_dict(t_v)
 		o.tables[t.id] = t
@@ -184,3 +195,88 @@ func identify(rng: DiceRNG, tf: TaskForce) -> Dictionary:
 	var out := (table("identify") as SoloTable).roll_and_read(rng, 0)
 	out["task_force"] = tf.display_name() if tf != null else ""
 	return out
+
+
+
+## Sottrarre l'Iniziativa o prendere Manovre Evasive?
+##
+## AC Solo scenarios 2022 p.2, riquadro "Evasive Maneuvers": "When the imaginary
+## opponent has the choice between attempting to Seize Initiative or take an
+## Evasive Maneuvers marker, make the decision by rolling a die: If 1-4, it
+## attempts to Seize Initiative, and if 5-6 it takes the Evasive Maneuvers
+## marker (attach it to a TF with a Convoy, or if no Convoy in play, to a TF
+## with a Damaged ship; and if none of those are in play, on any TF). If all TFs
+## already have an Evasive Maneuvers marker (or if no TFs are in play), it
+## attempts to Seize Initiative."
+##
+## E subito sotto: "When to use an Evasive Maneuvers Marker? As soon as
+## possible. If the imaginary player has the option to use it, it does so."
+## Quindi, quando tenta, spende sul tiro un segnalino che ha gia'.
+##
+## Prima di questa funzione l'avversario immaginario tentava SEMPRE, e i
+## segnalini Manovre Evasive non li prendeva ne' li spendeva mai.
+##
+## Ritorna:
+##   attempt     true = tenta di Sottrarre
+##   evasive_to  la TF che riceve il segnalino (se non tenta)
+##   spend_from  la TF che spende il proprio segnalino sul tiro (se tenta)
+##   log         le righe da mettere nel registro
+func steal_choice(state: GameState, imaginary_side: int) -> Dictionary:
+	var out := {"attempt": true, "evasive_to": null, "spend_from": null,
+		"log": [] as Array[String]}
+	var own: Array[TaskForce] = []
+	for tf in state.forces_of(imaginary_side):
+		if not tf.completed:
+			own.append(tf)
+	var free: Array[TaskForce] = []
+	for tf in own:
+		if not tf.evasive:
+			free.append(tf)
+	if always_seizes:
+		out["log"].append("L'avversario immaginario tenta sempre di Sottrarre (%s)."
+			% always_seizes_source)
+	elif free.is_empty():
+		out["log"].append("Nessuna TF puo' ricevere Manovre Evasive: "
+			+ "l'avversario immaginario tenta di Sottrarre (p.2).")
+	else:
+		var die := state.rng.d6("Sottrarre o Manovre Evasive (solitario p.2)")
+		if die >= 5:
+			var chosen := evasive_recipient(free)
+			out["attempt"] = false
+			out["evasive_to"] = chosen
+			out["log"].append("Sottrarre o Manovre Evasive: 1d6 = %d -> prende "
+				% die + "Manovre Evasive su %s (p.2)." % chosen.display_name())
+			return out
+		out["log"].append("Sottrarre o Manovre Evasive: 1d6 = %d -> tenta di "
+			% die + "Sottrarre (p.2).")
+	out["spend_from"] = evasive_holder(state, imaginary_side)
+	return out
+
+
+## A quale TF va il segnalino: una con un Convoglio, altrimenti una con una nave
+## Danneggiata, altrimenti una qualsiasi. A parita' la prima per id: il
+## fascicolo non lo dice, e serve un criterio stabile perche' la stessa partita
+## con lo stesso seme faccia la stessa scelta.
+static func evasive_recipient(free: Array[TaskForce]) -> TaskForce:
+	var sorted := free.duplicate()
+	sorted.sort_custom(func(a: TaskForce, b: TaskForce) -> bool: return a.id < b.id)
+	for tf: TaskForce in sorted:
+		if Convoy.has_convoy(tf):
+			return tf
+	for tf: TaskForce in sorted:
+		for ship in tf.afloat_ships():
+			if ship.damaged:
+				return tf
+	return sorted[0] if not sorted.is_empty() else null
+
+
+## La TF dell'avversario immaginario che spende il proprio segnalino Manovre
+## Evasive appena puo' ("as soon as possible", p.2). null se nessuna ne ha.
+static func evasive_holder(state: GameState, side: int) -> TaskForce:
+	var best: TaskForce = null
+	for tf in state.forces_of(side):
+		if tf.completed or not tf.evasive:
+			continue
+		if best == null or tf.id < best.id:
+			best = tf
+	return best

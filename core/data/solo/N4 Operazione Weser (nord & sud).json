@@ -2,6 +2,11 @@
  "_scenario": "N4 Operazione Weser (nord & sud)",
  "_source": "Fascicolo Scenari in Solitario, seconda edizione INGLESE (AC_Solo_scenarios_2022.pdf), pp.28-31. Trascritta a mano da render/testo del PDF aggiornato.",
  "_role": "Il giocatore e' il TEDESCO; le tabelle rappresentano l'avversario BRITANNICO.",
+ "seize_initiative": {
+  "always_attempt": true,
+  "source": "AC Solo scenarios 2022 p.28",
+  "text": "Urgency (British SI opportunities): When the British have the opportunity to make a Seize Initiative attempt, they always make the attempt and do not elect to take the Evasive maneuvers marker."
+ },
  "_status": "Tabella delle Azioni e Reazione Norvegese trascritte da AC_Solo_scenarios_2022 pp.28-30, lette sulle pagine renderizzate. Mine, Basi Aeree e forza Furtiva Sommergibile adesso sono pedine giocabili, e la Reazione Norvegese di questo scenario e' raggiungibile: i risultati che le richiedono si applicano.",
  "tables": [
   {

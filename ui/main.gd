@@ -712,6 +712,9 @@ func _declare_action(key: String) -> void:
 	if why != "":
 		_msg("%s: %s" % [String(engine.action(key).get("label", key)), why])
 		return
+	# Dichiarare un'altra azione chiude il tracciamento della rotta.
+	if key != "TRAJECTORY":
+		_cancel_trajectory_action(false)
 
 	# Azioni che non si risolvono su una tabella e non hanno un bersaglio:
 	# hanno una procedura loro e prendono strade separate.
@@ -731,8 +734,9 @@ func _declare_action(key: String) -> void:
 		"TRAJECTORY":
 			_arm_trajectory_action()
 			_msg("Traiettoria: trascina dalla Task Force selezionata per "
-				+ "disegnare la rotta, oppure clicca un esagono adiacente a "
-				+ "un capo. ESC annulla senza tracciare altro.")
+				+ "disegnare la rotta, oppure clicca gli esagoni uno dopo "
+				+ "l'altro. Tieni l'Iniziativa: ESC o un'altra azione chiude "
+				+ "la rotta.")
 			return
 
 	var active := selected_tf
@@ -811,30 +815,11 @@ func _declare_action(key: String) -> void:
 		traj_layer.set_air_action_markers(dec.acting_side(), launch_hex,
 			dec.target_hex)
 
-	# RB p.47: la Coordinatrice deve occupare l'esagono Bersaglio.
-	var own: Array[TaskForce] = []
-	for tf in state.forces_of(dec.acting_side()):
-		if tf != active and tf.trajectory.occupies(dec.target_hex):
-			own.append(tf)
-	if not own.is_empty():
-		dec.active_coordinating = await _pick_tf(own, "TF Coordinatrice",
-			"Designa una Task Force Coordinatrice? La sua lunghezza puo' "
-			+ "sostituire quella della TF Attiva nel Totale Traiettoria.", true)
-
-	# Nell'Attacco Aereo la fonte e' gia' il Supporto Aereo (RB p.27).
-	var carriers: Array[TaskForce] = []
-	if key != "AIR_STRIKE":
-		for tf in state.forces_of(dec.acting_side()):
-			if tf == active or ActionEngine.air_launch_hexes(tf).is_empty():
-				continue
-			for h in ActionEngine.air_launch_hexes(tf):
-				if Hex.distance(h, dec.target_hex) <= 2:
-					carriers.append(tf)
-					break
-	if not carriers.is_empty():
-		dec.active_air_support = await _pick_tf(carriers, "TF Supporto Aereo",
-			"Designa una Task Force di Supporto Aereo? Deve avere una "
-			+ "portaerei.", true)
+	# RB pp.45-47: prima l'Attivo, poi l'Inattivo, designano Coordinatrice e
+	# Supporto Aereo; l'Inattivo puo' anche spendere le Manovre Evasive della
+	# TF Bersaglio. Da queste designazioni escono i Modificatori Comuni.
+	await _designate_supports_for(dec, dec.acting_side())
+	await _designate_supports_for(dec, 1 - dec.acting_side())
 
 	# Gensoul agisce sulle designazioni, quindi PRIMA della risoluzione:
 	# l'Interruzione si tira sui segnalini Informazioni delle TF designate, e
@@ -864,7 +849,8 @@ func _declare_action(key: String) -> void:
 	for code_v: Variant in res["results"] as Array:
 		var code := String(code_v)
 		var applied := Results.apply(code, active, target,
-			dec.target_hex, state, _ship_chooser, _designated_active_info_count(dec))
+			dec.target_hex, state, _ship_chooser, _designated_active_info_count(dec),
+			await _inactive_removal_choice(code, target, dec.target_hex))
 		_msg("    %s" % applied["text"])
 		if bool(applied.get("initiative_changes", false)):
 			initiative_changed = true
@@ -885,10 +871,7 @@ func _declare_action(key: String) -> void:
 			dec.active, dec.target_hex)
 		_solo_maybe_go_late("battle", "un risultato ha aperto una Battaglia")
 		_battle_post_time_lapse.clear()
-		for tf in [dec.active_coordinating, dec.active_air_support]:
-			if tf != null and tf != dec.active and tf != dec.target \
-					and not _battle_post_time_lapse.has(tf):
-				_battle_post_time_lapse.append(tf)
+		_queue_supports_for_time_lapse(dec)
 		if key == "AIR_STRIKE":
 			traj_layer.clear_air_action_markers()
 		_open_battle(pending_battle, dec.active, target, dec.target_hex)
@@ -1118,10 +1101,10 @@ func _handle_interruption_cancel(res: Dictionary, dec: ActionEngine.Declaration)
 	match int(ir.get("result", Interruption.Result.ALERT)):
 		Interruption.Result.SLIP_AWAY:
 			await _handle_slip_away(dec)
-			if _seek_initiative():
+			if await _seek_initiative():
 				await _maybe_run_solo_opponent_turn("Interruzione")
 		Interruption.Result.VIE_FOR_INITIATIVE:
-			if _seek_initiative():
+			if await _seek_initiative():
 				await _maybe_run_solo_opponent_turn("Interruzione")
 		Interruption.Result.INITIATIVE_CHANGE:
 			if _change_initiative_to(1 - dec.acting_side()):
@@ -1174,16 +1157,174 @@ func _post_table_action_flow(key: String, dec: ActionEngine.Declaration) -> void
 			if await _offer_steal_initiative("Ricerca Navale"):
 				await _maybe_run_solo_opponent_turn("Ricerca Navale")
 		"ENGAGE", "AIR_STRIKE", "STEALTH_ATTACK":
-			if _seek_initiative():
+			if await _seek_initiative():
 				await _maybe_run_solo_opponent_turn("Cercare l'Iniziativa")
 
 
 func _time_lapse_designated_active(dec: ActionEngine.Declaration) -> void:
-	for tf in dec.designated_active():
-		if tf != null and tf != dec.target:
-			var protected_hex := dec.launch_hex if dec.action_key == "AIR_STRIKE" \
-				and tf == dec.active else Vector2i.MAX
-			await _do_time_lapse_for(tf, true, protected_hex)
+	if dec.active != null and dec.active != dec.target:
+		await _do_time_lapse_for(dec.active, true,
+			dec.launch_hex if dec.action_key == "AIR_STRIKE" else Vector2i.MAX)
+	await _time_lapse_supports(dec)
+
+
+## Le TF di sostegno delle DUE parti, ognuna col segmento che non puo' perdere
+## se non per ultimo (il Punto di Lancio del Supporto Aereo, RB p.45).
+func _support_time_lapse_entries(dec: ActionEngine.Declaration) -> Array:
+	var out: Array = []
+	var seen: Array[TaskForce] = []
+	for entry in [
+			[dec.active_coordinating, Vector2i.MAX],
+			[dec.active_air_support, CommonModifiers.active_air_hex(dec)],
+			[dec.target_coordinating, Vector2i.MAX],
+			[dec.target_air_support, CommonModifiers.target_air_hex(dec)]]:
+		var tf: TaskForce = entry[0]
+		if tf == null or tf == dec.active or tf == dec.target or seen.has(tf):
+			continue
+		seen.append(tf)
+		out.append(entry)
+	return out
+
+
+## RB pp.27, 31, 33, 41: "ciascuna Task Force designata effettua lo Scorrere
+## del Tempo ECCETTO la Task Force bersaglio". Prima lo faceva solo la TF
+## Attiva (e, nel percorso del giocatore, le sue due spalle): le TF designate
+## dal Bersaglio non lo facevano mai, perche' il Bersaglio non designava.
+func _time_lapse_supports(dec: ActionEngine.Declaration) -> void:
+	for entry in _support_time_lapse_entries(dec):
+		await _time_lapse_any(entry[0], dec.target_hex, entry[1])
+
+
+func _queue_supports_for_time_lapse(dec: ActionEngine.Declaration) -> void:
+	for entry in _support_time_lapse_entries(dec):
+		if not _battle_post_time_lapse.has(entry[0]):
+			_battle_post_time_lapse.append(entry[0])
+
+
+## RB p.24: sui risultati In Anticipo/In Ritardo e Seguire l'Inattivo puo'
+## spendere le Manovre Evasive della TF Bersaglio per scegliere LUI quali
+## segmenti perdere. Si chiede solo al giocatore e solo se c'e' davvero una
+## scelta: l'avversario immaginario il suo segnalino lo ha gia' speso sul tiro,
+## "appena puo'" (solitario p.2).
+func _inactive_removal_choice(code: String, target: TaskForce,
+		h: Vector2i) -> Dictionary:
+	if target == null or not target.evasive or not _can_control_tf(target):
+		return {}
+	if code != "EARLY_LATE" and code != "SHADOW":
+		return {}
+	var preview := Results.removal_preview(code, target, h)
+	if not bool(preview.get("choice", false)):
+		return {}
+	var opts: Array = [{"label": "Tieni il segnalino",
+		"detail": "sceglie l'avversario quali segmenti perdi"}]
+	if code == "EARLY_LATE":
+		opts.append({"label": "Spendi: perdi il troncone di testa",
+			"detail": "%d segmenti" % int(preview["front"])})
+		opts.append({"label": "Spendi: perdi il troncone di coda",
+			"detail": "%d segmenti" % int(preview["back"])})
+	else:
+		opts.append({"label": "Spendi: accorcia dalla testa",
+			"detail": "%d segmenti in piu' dei 3 che restano" % int(preview["excess"])})
+		opts.append({"label": "Spendi: accorcia dalla coda",
+			"detail": "%d segmenti in piu' dei 3 che restano" % int(preview["excess"])})
+	var i: int = await Choice.ask(self, "Manovre Evasive - %s" % target.display_name(),
+		"Puoi spendere il segnalino per scegliere tu quali segmenti rimuovere (RB p.24).",
+		opts)
+	if i <= 0:
+		return {}
+	if code == "EARLY_LATE":
+		return {"spend_evasive": true, "drop_front": i == 1}
+	return {"spend_evasive": true, "remove_from_end": 0 if i == 1 else 1}
+
+
+## Scorrere del Tempo di una TF di chiunque: il giocatore sceglie i segmenti
+## sulla mappa, l'avversario immaginario col criterio della sua procedura.
+func _time_lapse_any(tf: TaskForce, goal: Vector2i = Vector2i.MAX,
+		protected_hex: Vector2i = Vector2i.MAX) -> void:
+	if tf == null or state.task_force(tf.id) == null or tf.trajectory.is_station():
+		return
+	if _can_control_tf(tf):
+		await _do_time_lapse_for(tf, true, protected_hex)
+	else:
+		await _solo_time_lapse(tf, goal, protected_hex)
+
+
+## Le designazioni di sostegno di una parte: Coordinatrice, Supporto Aereo e -
+## per chi subisce l'azione - le Manovre Evasive della TF Bersaglio.
+##
+## L'avversario immaginario designa tutto quello che puo' (AC Solo scenarios
+## 2022 p.1) e spende il segnalino appena puo' (p.2). Il giocatore sceglie: una
+## TF designata dovra' poi fare lo Scorrere del Tempo, quindi non e' gratis.
+func _designate_supports_for(dec: ActionEngine.Declaration, side: int) -> void:
+	if side < 0 or side > 1 or not CommonModifiers.applies_to(dec.action_key):
+		return
+	if solo != null and side == _solo_imaginary_side():
+		CommonModifiers.designate_all(dec, state, graph, side, true)
+		return
+	var is_active := side == dec.acting_side()
+	var who := "Attivo" if is_active else "Bersaglio"
+	var o := CommonModifiers.options_for(dec, state, graph, side)
+
+	var coord_tfs: Array[TaskForce] = o["coordinating_tfs"]
+	var coord_stealth: Array[Dictionary] = o["coordinating_stealth"]
+	if not coord_tfs.is_empty() or not coord_stealth.is_empty():
+		var opts: Array = [{"label": "Nessuna", "detail": "niente Coordinamento"}]
+		var value := CommonModifiers.coordination_value(state.weather, is_active)
+		for tf in coord_tfs:
+			opts.append({"label": tf.display_name(), "detail":
+				"%+d al tiro; %d segmenti; fara' lo Scorrere del Tempo"
+					% [value, tf.length()]})
+		for f in coord_stealth:
+			opts.append({"label": "Forza %s" % Stealth.kind_name(
+				int(f.get("kind", -1))), "detail": "%+d al tiro" % value})
+		var i: int = await Choice.ask(self, "Coordinamento - %s" % who,
+			"%s puo' designare una forza Coordinatrice nell'esagono Bersaglio."
+				% Initiative.side_name(side), opts)
+		if i >= 1 and i <= coord_tfs.size():
+			if is_active:
+				dec.active_coordinating = coord_tfs[i - 1]
+			else:
+				dec.target_coordinating = coord_tfs[i - 1]
+		elif i > coord_tfs.size():
+			var f: Dictionary = coord_stealth[i - 1 - coord_tfs.size()]
+			if is_active:
+				dec.active_coordinating_stealth = f
+			else:
+				dec.target_coordinating_stealth = f
+
+	var air: Array = []
+	var coord_tf: TaskForce = dec.active_coordinating if is_active \
+		else dec.target_coordinating
+	for e_v: Variant in o["air_tfs"]:
+		if (e_v as Dictionary)["tf"] != coord_tf:
+			air.append(e_v)
+	air.append_array(o["air_bases"])
+	if not air.is_empty():
+		var opts2: Array = [{"label": "Nessuno", "detail": "niente Supporto Aereo"}]
+		for e_v: Variant in air:
+			var e: Dictionary = e_v
+			var v := CommonModifiers.air_support_value(int(e["distance"]), is_active)
+			if e.has("tf"):
+				opts2.append({"label": (e["tf"] as TaskForce).display_name(),
+					"detail": "%+d al tiro, lancio da %s; fara' lo Scorrere del Tempo"
+						% [v, str(e["hex"])]})
+			else:
+				opts2.append({"label": "Base aerea in %s" % str(e["hex"]),
+					"detail": "%+d al tiro" % v})
+		var j: int = await Choice.ask(self, "Supporto Aereo - %s" % who,
+			"%s puo' designare una fonte di Supporto Aereo entro due esagoni."
+				% Initiative.side_name(side), opts2)
+		if j >= 1:
+			CommonModifiers.set_air_support(dec, is_active, air[j - 1])
+
+	if bool(o["evasive"]):
+		var ev := CommonModifiers.evasive_value(state.weather)
+		var k: int = await Choice.ask(self, "Manovre Evasive - Bersaglio",
+			"%s ha un segnalino Manovre Evasive." % dec.target.display_name(), [
+				{"label": "Tienilo", "detail": "resta per un altro uso"},
+				{"label": "Spendilo", "detail": "%+d al tiro dell'avversario" % ev},
+			])
+		dec.target_spends_evasive = k == 1
 
 
 func _do_time_lapse_for(tf: TaskForce, allow_bl1_fueling: bool = true,
@@ -1218,16 +1359,54 @@ func _change_initiative_to(side: int) -> bool:
 	return true
 
 
+## La TF dell'Inattivo che spende il proprio segnalino Manovre Evasive su un
+## tiro di Iniziativa (RB p.24 e p.46: +1 col Meteo Buono, +2 con l'Avverso; per
+## questo uso il segnalino puo' stare su qualsiasi TF dell'Inattivo).
+##
+## L'avversario immaginario lo spende appena puo' (AC Solo scenarios 2022 p.2).
+## Il giocatore sceglie: e' una risorsa, e ha altri tre usi.
+func _evasive_spender_for_initiative(what: String) -> TaskForce:
+	var inactive := 1 - state.initiative
+	if solo != null and inactive == _solo_imaginary_side():
+		return SoloOpponent.evasive_holder(state, inactive)
+	var holders: Array[TaskForce] = []
+	for tf in state.forces_of(inactive):
+		if tf.evasive and not tf.completed:
+			holders.append(tf)
+	if holders.is_empty():
+		return null
+	var opts: Array = [{"label": "Non spendere",
+		"detail": "il segnalino resta alla sua Task Force"}]
+	for tf in holders:
+		opts.append({"label": "Spendi quello di %s" % tf.display_name(),
+			"detail": "%+d al tiro" % Initiative.evasive_bonus(state)})
+	var i: int = await Choice.ask(self, "%s - Manovre Evasive" % what,
+		"%s puo' spendere un segnalino Manovre Evasive per migliorare il tiro."
+			% Initiative.side_name(inactive), opts)
+	if i <= 0:
+		return null
+	return holders[i - 1]
+
+
 func _seek_initiative() -> bool:
-	return _report_initiative(Initiative.seek(state))
+	var spender := await _evasive_spender_for_initiative("Cercare l'Iniziativa")
+	return _report_initiative(Initiative.seek(state, spender))
 
 
 func _offer_steal_initiative(reason: String) -> bool:
 	var inactive := 1 - state.initiative
 	if solo != null and inactive == _solo_imaginary_side():
-		_msg("%s - Iniziativa: l'avversario immaginario tenta di Sottrarre."
-			% reason)
-		var auto := Initiative.steal(state)
+		# AC Solo scenarios 2022 p.2: l'avversario immaginario tira un dado per
+		# decidere fra il tentativo e il segnalino, salvo gli scenari che
+		# stampano "tenta sempre". Prima tentava sempre, ovunque.
+		var choice := solo.steal_choice(state, inactive)
+		for line_v: Variant in choice["log"]:
+			_msg("%s - Iniziativa: %s" % [reason, String(line_v)])
+		if not bool(choice["attempt"]):
+			_report_initiative(Initiative.decline_steal_for_evasive(state,
+				choice["evasive_to"]))
+			return false
+		var auto := Initiative.steal(state, choice["spend_from"])
 		_report_initiative(auto)
 		return bool(auto.get("changed", false))
 	var opts: Array = [
@@ -1238,7 +1417,8 @@ func _offer_steal_initiative(reason: String) -> bool:
 		"L'Inattivo (%s) puo' tentare di Sottrarre l'Iniziativa."
 			% Initiative.side_name(inactive), opts)
 	if i == 0:
-		var r := Initiative.steal(state)
+		var spender := await _evasive_spender_for_initiative("Sottrarre l'Iniziativa")
+		var r := Initiative.steal(state, spender)
 		_report_initiative(r)
 		return bool(r.get("changed", false))
 	if i == 1:
@@ -1461,13 +1641,12 @@ func _close_battle(b: Battle) -> void:
 	_report_eliminated_forces("Battaglia")
 	_msg("Battaglia conclusa: %s" % b.state.end_reason)
 	for tf in _battle_post_time_lapse:
-		if tf != null and state.task_force(tf.id) != null:
-			await _do_time_lapse_for(tf)
+		await _time_lapse_any(tf)
 	_battle_post_time_lapse.clear()
 	if _battle_post_bl2_incident:
 		_battle_post_bl2_incident = false
 		await _roll_bl2_international_incident()
-	if _seek_initiative():
+	if await _seek_initiative():
 		await _maybe_run_solo_opponent_turn("fine Battaglia")
 	if _battle_layer != null:
 		_battle_layer.queue_free()
@@ -1674,8 +1853,6 @@ func _finish_drag() -> void:
 		log.record("estensione di %d segmenti (%s)"
 			% [added, selected_tf.display_name()])
 		state.changed.emit()
-		_trajectory_action_armed = false
-		await _after_trajectory_action(selected_tf)
 	_refresh()
 
 
@@ -1715,17 +1892,19 @@ func _try_extend(h: Vector2i) -> void:
 			log.record("estensione (%s)" % selected_tf.display_name(),
 				{"tf": selected_tf.id, "hex": [h.x, h.y]})
 			state.changed.emit()
-			_trajectory_action_armed = false
-			await _after_trajectory_action(selected_tf)
+			# L'azione resta ARMATA: RB p.43, dopo la Traiettoria l'Attivo
+			# tiene l'Iniziativa e "puo' effettuare piu' azioni Traiettoria,
+			# una dopo l'altra". Prima ogni clic disarmava, e il clic seguente
+			# - quello con cui si voleva proseguire la rotta - deselezionava
+			# la Task Force.
 			return
 	_msg("mossa illegale: %s" % traj.extend_error(h, active_end, graph, ports, selected_tf.side))
 
 
-func _after_trajectory_action(active: TaskForce) -> void:
-	if active == null:
-		return
-	if await _offer_steal_initiative("Traiettoria"):
-		await _maybe_run_solo_opponent_turn("Traiettoria")
+# Qui c'era `_after_trajectory_action`, che dopo ogni Traiettoria offriva
+# all'Inattivo il tentativo di Sottrarre l'Iniziativa. Non e' una regola: RB
+# p.43 e il Menu delle Azioni dicono "Traiettoria - Tenete l'Iniziativa". Con
+# la rotta tracciata a clic il tentativo scattava a OGNI esagono.
 
 
 func _cycle_tf(step: int) -> void:
@@ -2427,6 +2606,8 @@ func _resolve_solo_ai_action(decision: Dictionary) -> String:
 	if not dec.active_stealth.is_empty():
 		_msg("Solitario AI: l'azione la esegue %s (Totale Traiettoria zero, RB p.41)."
 			% actor_name)
+	await _designate_supports_for(dec, dec.acting_side())
+	await _designate_supports_for(dec, 1 - dec.acting_side())
 	if dec.active_coordinating != null:
 		_msg("Solitario AI: %s coordina l'azione."
 			% dec.active_coordinating.display_name())
@@ -2460,7 +2641,9 @@ func _resolve_solo_ai_action(decision: Dictionary) -> String:
 	var applied_texts: Array[String] = []
 	for code_v: Variant in res["results"] as Array:
 		var code := String(code_v)
-		var applied := Results.apply(code, active, target, dec.target_hex, state)
+		var applied := Results.apply(code, active, target, dec.target_hex, state,
+			Callable(), -1,
+			await _inactive_removal_choice(code, target, dec.target_hex))
 		_msg("    %s" % applied["text"])
 		applied_texts.append(String(applied["text"]))
 		if bool(applied.get("initiative_changes", false)):
@@ -2483,6 +2666,8 @@ func _resolve_solo_ai_action(decision: Dictionary) -> String:
 		_solo_maybe_go_late("battle", "un risultato del bot ha aperto una Battaglia")
 		if key == "AIR_STRIKE":
 			traj_layer.clear_air_action_markers()
+		_battle_post_time_lapse.clear()
+		_queue_supports_for_time_lapse(dec)
 		_open_battle(pending_battle, active, target, dec.target_hex)
 	else:
 		if bool(engine.action(key).get("causes_time_lapse", false)):
@@ -2492,6 +2677,7 @@ func _resolve_solo_ai_action(decision: Dictionary) -> String:
 				decision.get("time_lapse_goal", dec.target_hex),
 				dec.launch_hex if key == "AIR_STRIKE" else Vector2i.MAX,
 				bool(decision.get("time_lapse_prefer_near", false)))
+			await _time_lapse_supports(dec)
 		if key == "AIR_STRIKE":
 			traj_layer.clear_air_action_markers()
 		match SoloSequence.after_action(key, initiative_changes):
@@ -2508,7 +2694,7 @@ func _resolve_solo_ai_action(decision: Dictionary) -> String:
 				if not await _offer_steal_initiative("Ricerca Navale del bot"):
 					_queue_next_solo_action("il bot mantiene l'Iniziativa")
 			_:
-				var changed := _seek_initiative()
+				var changed: bool = await _seek_initiative()
 				if not changed and _solo_is_imaginary_turn():
 					_queue_next_solo_action("il bot vince la ricerca dell'Iniziativa")
 	var outcome := "; ".join(applied_texts)
@@ -2648,7 +2834,7 @@ func _apply_solo_table_result(table_id: String, result: Dictionary,
 		_resync_selection()
 		_refresh()
 	if String(decision.get("initiative", "")) == "vie":
-		if _seek_initiative():
+		if await _seek_initiative():
 			await _maybe_run_solo_opponent_turn("Tabella solitario")
 	return decision
 

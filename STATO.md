@@ -1,7 +1,14 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **3881 verifiche, 21 suite, headless.**
+Tutti i test passano: **4024 verifiche, 22 suite, headless.**
+
+**Revisione delle regole base, 2026-11**: cinque errori corretti (Traiettoria e
+Iniziativa, rotta a clic, Modificatori Comuni, Manovre Evasive, scelta del bot
+fra Sottrarre e Manovre Evasive). Il dettaglio, e quello che resta da
+rileggere, sta in testa a `TODO_REVISIONE.md`. Le sezioni storiche qui sotto
+che parlano di "Sottrarre dopo la Traiettoria" descrivono il comportamento
+vecchio.
 
 ---
 

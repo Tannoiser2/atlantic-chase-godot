@@ -1,13 +1,76 @@
 # TODO della revisione
 
-Baseline: **3881 verifiche su 21 suite**, tutte verdi. Replay solitario:
+Baseline: **4024 verifiche su 22 suite**, tutte verdi. Replay solitario:
 **quindici `OK`** su quindici scenari, nessuno saltato. `audit_solo.gd`:
 **93 caselle azione, zero procedure segnaposto, ZERO buchi dichiarati, zero
-blocchi.**
+blocchi.** Prova di fumo nuova: `tools/smoke_trajectory.gd`.
 
 Questo e' il backlog autorevole. `STATO.md` contiene anche una lunga cronologia:
 utile per capire le decisioni, ma le sue vecchie sezioni "Cosa manca" non devono
 riaprire lavori gia' chiusi.
+
+## Revisione delle regole base (2026-11)
+
+Chiesta dall'utente: "parecchie cose sono state lasciate indietro e non
+completamente implementate secondo regole". Aveva ragione, e su regole che
+questo file dava per 🟢. Trovate confrontando il motore col regolamento, non
+coi test: i test erano verdi perche' difendevano il comportamento sbagliato.
+
+**Corretto:**
+
+- **Traiettoria: si tiene l'Iniziativa.** RB p.43 e Menu delle Azioni:
+  "Traiettoria - Porre segmenti Traiettoria - Tenete l'Iniziativa". Il gioco
+  offriva all'Inattivo il tentativo di Sottrarre dopo OGNI Traiettoria, e il bot
+  faceva anche uno Scorrere del Tempo. Tolti tutti e due, nella vista e in
+  `SoloSequence.steps_for`. La riga "Time Lapse: Remove segments farthest from
+  X" delle procedure dice da che parte togliere quando lo Scorrere arriva, non
+  ne ordina uno in piu'.
+  **Lo "stallo dichiarato" di BL1** (9 semi su 40: "la Traiettoria si allunga e
+  lo Scorrere del Tempo toglie lo stesso segmento") era figlio di questo
+  difetto, non una lacuna del fascicolo.
+- **La rotta a clic non si chiude a ogni esagono.** Ogni clic disarmava
+  l'azione e il successivo deselezionava la Task Force. Ora resta armata finche'
+  non si preme ESC o si dichiara altro. `tools/smoke_trajectory.gd`.
+- **I quattro Modificatori Comuni** (RB pp.45-47) non esistevano: Supporto Aereo
+  per distanza, Contatto per velocita', Manovre Evasive, Coordinamento. Ora
+  `core/rules/common_modifiers.gd`, con le tabelle lette dalle pagine
+  renderizzate. Chi subisce l'azione designa la propria Coordinatrice e il
+  proprio Supporto Aereo, cosa che prima non poteva fare. Le TF designate dal
+  Bersaglio fanno lo Scorrere del Tempo (pp.27, 31, 33).
+  Una base aerea puo' dare Supporto Aereo e una forza Furtiva puo' coordinare
+  (p.47). Il +2 dell'Attacco Furtivo tedesco a un Convoglio Disperso (p.41)
+  c'era nel dato e non lo leggeva nessuno.
+- **Manovre Evasive: tutti e quattro gli usi** (RB p.24). Funzionava solo
+  Rompere il Contatto. Ora: +1/+2 sui tiri d'Iniziativa, -1/-2 contro l'azione
+  avversaria, e la scelta dei segmenti su In Anticipo/In Ritardo e Seguire.
+- **L'avversario immaginario tira il dado di p.2** fra Sottrarre (1-4) e
+  Manovre Evasive (5-6), e spende il segnalino appena puo'. Prima tentava
+  sempre. N1 (p.17), N4 (p.28) e N5 (p.32) stampano "tenta sempre": sta nel dato
+  dello scenario, `seize_initiative`.
+- **Una TF identificata rimasta senza navi esce dal gioco** (solitario p.1).
+  `_remove_damaged_ships` toglieva le navi e lasciava la TF: in B3 il giocatore
+  la Ingaggiava all'infinito e la stessa nave veniva "rivelata" due volte.
+- **Il giocatore simulato dei replay Passava Cercando l'Iniziativa.** RB p.35:
+  dopo il Passare l'Iniziativa PASSA. Era una policy dell'harness, non una
+  regola dell'app, ma i replay raccontavano una partita che non esiste.
+
+**Le impronte dei replay sono state riscritte**: tutte e quindici le partite
+sono cambiate, ed e' voluto.
+
+**Trovato e NON ancora corretto:**
+
+- [ ] **Interruzione - Sfuggire**: `_handle_slip_away` chiede al giocatore la
+  scelta dell'Inattivo anche quando l'Inattivo e' l'avversario immaginario.
+- [ ] **Zona U-Boat** (+3 all'Attacco Furtivo, p.41) e **Linea Artica** (Supporto
+  Aereo vietato, +2 delle Manovre Evasive, pp.26 e 45): sono disegnate sulla
+  mappa e non sono un dato. Dichiarate nelle righe dei modificatori.
+- [ ] **Il resto del regolamento base non e' stato riletto.** Cinque errori su
+  un controllo a campione: Risultati Comuni, Scorrere del Tempo, Interruzione,
+  Riorganizzazione, Segnalazione, Completamento e la Battaglia base vanno
+  ricontrollati capitolo per capitolo contro le pagine, non contro i test.
+- [ ] **La policy del giocatore simulato** e' povera (in BL2 ventitre' "nessuna
+  rotta legale ... Passare"): i replay provano che il ciclo regge, non che la
+  partita somigli a una giocata bene.
 
 ## Come leggere lo stato
 
@@ -27,7 +90,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 |---|---|---|
 | Reticolo e grafo Mappa Operazionale | 🟢 | 129 esagoni, validati su 238 pedine VASSAL |
 | Reticolo e grafo mappe inserto | 🟢 | misurati, verificati sulle illustrazioni, caricati dal motore |
-| Regole operative base | 🟢 | Traiettorie, Iniziativa, Scorrere del Tempo, Completamento |
+| Regole operative base | 🟡 | cinque errori corretti nel 2026-11; il resto va riletto capitolo per capitolo |
 | Battaglia base | 🟢 | completa e testata |
 | Salvataggio, undo, ricarica | 🟢 | ogni stato persistente ha il suo test |
 | **Tabelle Azione solitarie** | 🟢 | **93 caselle su 93 trascritte e implementate; zero segnaposto** |
@@ -187,7 +250,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 3881 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 4024 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne
