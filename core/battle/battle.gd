@@ -701,8 +701,11 @@ func finish() -> Dictionary:
 				(out["survivors"] as Array[String]).append(s.display())
 			s.smoke = false
 		tf.recompute_speed()
-		# RB p.62: la Battaglia rimuove le Manovre Evasive da entrambe le TF.
-		tf.evasive = false
+		# RB p.62, REGOLA OPZIONALE: "al termine della Battaglia, rimuovete i
+		# segnalini Manovre Evasive dalle due Task Force". Qui si toglievano
+		# sempre, come se fosse la regola base.
+		if state.remove_evasive_on_exit:
+			tf.evasive = false
 		if not tf.is_eliminated():
 			tf.trajectory.become_station(state.hex, true)
 			tf.trajectory.station_contact = true

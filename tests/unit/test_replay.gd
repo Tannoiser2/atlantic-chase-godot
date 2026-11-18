@@ -23,6 +23,7 @@ const BL2 := "BL2 Contain and Destroy"
 
 ## Semi verificati a mano: entrambi arrivano a una condizione di fine stampata.
 const BL1_SEED := 20260803
+const N2_STEPS := "N2 Operazione Weser (nord)"
 const BL2_SEED := 20260803
 
 ## A2 e' l'unico scenario le cui fini stampate stanno DENTRO i risultati della
@@ -1020,11 +1021,13 @@ func test_a_different_answerer_changes_the_game() -> void:
 ## compile-time di chiamare una coroutine senza await.
 func test_the_cycle_can_be_driven_step_by_step() -> void:
 	_begin("il ciclo si guida a passi")
-	# BL1, non BL2: il primo turno di BL2 non pone piu' domande da quando la
-	# Traiettoria non e' seguita da uno Scorrere del Tempo (RB p.43), e un
-	# ciclo che non chiede niente passerebbe questo test senza provare nulla.
+	# N2, non BL2: il primo turno di BL2 non pone piu' domande da quando la
+	# Traiettoria non e' seguita da uno Scorrere del Tempo (RB p.43), e quello
+	# di BL1 nemmeno, da quando una Stazione in una Casella Porto non si puo'
+	# attaccare (RB p.8). Un ciclo che non chiede niente passerebbe questo test
+	# senza provare nulla; N2 chiede subito in quale porto Completare.
 	var runner := SoloRunner.new()
-	true_(runner.load_scenario(BL1, BL1_SEED), "scenario caricato: %s" % runner.load_error)
+	true_(runner.load_scenario(N2_STEPS, BL1_SEED), "scenario caricato: %s" % runner.load_error)
 
 	var questions := 0
 	var guard := 0

@@ -214,6 +214,16 @@ class Declaration extends RefCounted:
 	## L'Inattivo spende il segnalino Manovre Evasive della TF Bersaglio per
 	## imporre il modificatore avverso (RB p.46).
 	var target_spends_evasive: bool = false
+
+	## Benefici di Comandante invocati in questa Azione (RB p.10), per nome:
+	## "Walker" (Coordinamento +4), "Somerville" (+2 al tiro). Chi li mette qui
+	## ha gia' verificato che siano disponibili; `LeaderRules.spend_declared`
+	## li consuma quando l'azione si risolve.
+	var leader_benefits: Array[String] = []
+
+	## Krancke / Tovey: 2d6 col segno scelto, sommati al Totale Traiettoria.
+	var trajectory_total_shift: int = 0
+	var trajectory_total_shift_by: String = ""
 	## La forza Furtiva che esegue l'azione, quando a eseguirla NON e' una Task
 	## Force. RB p.41 la ammette come attaccante dell'Attacco Furtivo, ed e'
 	## l'unica azione in cui succede: qui l'Attiva puo' quindi restare `null`.
@@ -291,6 +301,12 @@ func legality_error(dec: Declaration, state: GameState) -> String:
 		return "un Attacco Aereo ha una base aerea OPPURE una TF Attiva, non entrambe"
 	if not by_stealth and not by_air_base and dec.active == null:
 		return "manca la Task Force Attiva"
+	var box_why := PortBox.declaration_error(dec)
+	if box_why != "":
+		return box_why
+	var optional_why := OptionalRules.declaration_error(dec, state)
+	if optional_why != "":
+		return optional_why
 	if not is_verified(dec.action_key):
 		return "tabella non ancora trascritta per '%s': %s" \
 			% [a.get("label", dec.action_key), a.get("verified_note", "")]
@@ -395,8 +411,16 @@ func resolve(dec: Declaration, state: GameState) -> Dictionary:
 	# 3. Totale Traiettoria
 	var desig := dec.to_designations()
 	var tt := TrajectoryTotal.compute(desig)
+	var explain := TrajectoryTotal.explain(desig)
+	# Krancke e Tovey (RB p.10): 2d6 aggiunti o sottratti al Totale
+	# Traiettoria. Il tiro lo fa chi dichiara, PRIMA di decidere se usarlo;
+	# qui arriva gia' col segno. Il Totale non scende sotto zero (p.17).
+	if dec.trajectory_total_shift != 0:
+		tt = maxi(0, tt + dec.trajectory_total_shift)
+		explain.append("%s: %+d al Totale Traiettoria" % [
+			dec.trajectory_total_shift_by, dec.trajectory_total_shift])
 	out["trajectory_total"] = tt
-	out["tt_explain"] = TrajectoryTotal.explain(desig)
+	out["tt_explain"] = explain
 	out["column"] = column_label(dec.action_key, column_for(dec.action_key, tt))
 
 	# 4. Interruzione (RB p.22) - sospende l'azione
@@ -423,8 +447,10 @@ func resolve(dec: Declaration, state: GameState) -> Dictionary:
 		return out
 	if dec.target_spends_evasive and dec.target != null and dec.target.evasive:
 		dec.target.evasive = false
+	LeaderRules.spend_declared(state, dec)
 	var dice := state.rng.d6x2("azione %s" % dec.action_key)
 	out["dice"] = dice
+	out["dice_pair"] = state.rng.last_pair()
 	var total := dice + int(out["modifier"])
 	out["sum"] = total
 
@@ -473,3 +499,36 @@ func describe(res: Dictionary) -> String:
 	if res["unverified"]:
 		parts.append("[cella da riverificare sulla mappa]")
 	return " | ".join(parts)
+
+
+## Forbes e Marschall (RB p.10): "Quando avete appena tirato uno o piu' dadi
+## durante una Azione... e la Task Force [del Comandante] e' la TF Attiva...
+## potete sostituire uno dei numeri ottenuti con un 6."
+##
+## Rilegge la tabella con il dado piu' basso portato a 6 e ritorna il nuovo
+## risultato, SENZA applicarlo: decide chi chiama, dopo aver visto che cosa
+## cambia. `res` e' il Dictionary di `resolve`. {} se non c'e' niente da
+## guadagnare (due 6) o l'azione non tira dadi.
+func reread_with_six(res: Dictionary, dec: Declaration) -> Dictionary:
+	var pair: Array = res.get("dice_pair", [])
+	if pair.size() != 2 or not is_table_driven(dec.action_key):
+		return {}
+	var low := mini(int(pair[0]), int(pair[1]))
+	var high := maxi(int(pair[0]), int(pair[1]))
+	if low == 6:
+		return {}
+	var out := res.duplicate(true)
+	var dice := high + 6
+	var total := dice + int(res["modifier"])
+	var tt := int(res["trajectory_total"])
+	var codes := lookup(dec.action_key, total, tt)
+	var labels: Array[String] = []
+	for c in codes:
+		labels.append(String(result_info(c).get("label", c)))
+	out["dice"] = dice
+	out["dice_pair"] = [high, 6]
+	out["sum"] = total
+	out["results"] = codes
+	out["result_labels"] = labels
+	out["unverified"] = is_cell_unverified(dec.action_key, total, tt)
+	return out

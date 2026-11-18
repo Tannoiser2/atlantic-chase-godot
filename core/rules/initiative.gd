@@ -129,6 +129,27 @@ static func steal(state: GameState, evasive_from: TaskForce = null) -> Dictionar
 		"log": lines}
 
 
+## Lutjens (RB p.10): il tentativo di Sottrarre riesce senza tirare, e la sua TF
+## riceve un segnalino Manovre Evasive se non ne ha gia' uno. Chi chiama ha gia'
+## verificato con `LeaderRules.lutjens_force` che il beneficio sia disponibile.
+static func steal_automatic(state: GameState, tf: TaskForce) -> Dictionary:
+	var inactive := 1 - state.initiative
+	var lines: Array[String] = [
+		"Lutjens: il tentativo di Sottrarre l'Iniziativa riesce automaticamente."]
+	if tf != null and not tf.evasive:
+		tf.evasive = true
+		lines.append("%s riceve Manovre Evasive." % tf.display_name())
+	LeaderRules.spend(state, "Lutjens")
+	state.initiative = inactive
+	state.initiative_count = 0
+	lines.append("L'Iniziativa passa a %s; il conteggio torna a zero."
+		% side_name(inactive))
+	var w := weather_check(state)
+	lines.append(String(w["log"]))
+	return {"changed": true, "success": true, "winner": inactive,
+		"roll": 0, "modifier": 0, "total": 0, "weather": w, "log": lines}
+
+
 ## L'Inattivo rinuncia al tiro e prende Manovre Evasive: il Conto non aumenta.
 static func decline_steal_for_evasive(state: GameState, tf: TaskForce) -> Dictionary:
 	if tf != null:

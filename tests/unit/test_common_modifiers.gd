@@ -41,6 +41,11 @@ func run() -> void:
 	test_imaginary_steal_choice()
 	test_scenarios_that_always_seize()
 	test_emptied_identified_tf_is_removed()
+	test_port_box_is_safe()
+	test_optional_rules()
+	test_leader_benefits()
+	test_slip_away_for_the_imaginary_opponent()
+	test_time_lapse_removes_what_it_can()
 
 
 ## Quattro esagoni in fila a distanza 0, 1, 2 e 3 dall'origine.
@@ -613,3 +618,241 @@ func test_emptied_identified_tf_is_removed() -> void:
 	true_(st.task_force(fine.id) != null, "quella con navi integre resta")
 	true_(st.task_force(ghost.id) != null,
 		"una TF NON identificata e' vuota per definizione e resta")
+
+
+func test_port_box_is_safe() -> void:
+	_begin("Casella Porto: sicura (RB p.8)")
+	var st := _state()
+	var dec := _engage(st)
+	eq(eng.legality_error(dec, st), "", "nell'esagono l'Ingaggio e' legale")
+	dec.target.trajectory.station_port = "Scapa Flow"
+	true_(PortBox.is_in_box(dec.target), "la Stazione e' nella Casella")
+	true_(eng.legality_error(dec, st).contains("Casella Porto"),
+		"una TF nella Casella Porto non si puo' Ingaggiare")
+	dec.action_key = "AIR_STRIKE"
+	dec.active.ships.append(ShipRoster.shared().make("Grzeppelin"))
+	dec.launch_hex = origin
+	true_(eng.legality_error(dec, st).contains("Casella Porto"),
+		"ne' attaccare dall'aria")
+	dec.action_key = "ENGAGE"
+	PortBox.leave(dec.target)
+	eq(eng.legality_error(dec, st), "", "uscita dalla Casella torna attaccabile")
+	PortBox.enter(dec.active, "Kiel")
+	true_(eng.legality_error(dec, st).contains("uscirne"),
+		"una TF nella Casella non puo' essere la TF Attiva di un Ingaggio")
+	PortBox.leave(dec.active)
+	var coord := _station(st, TaskForce.Side.ROYAL_NAVY, origin, "Rodney")
+	coord.trajectory.station_port = "Scapa Flow"
+	eq((CommonModifiers.options_for(dec, st, null, TaskForce.Side.ROYAL_NAVY)[
+		"coordinating_tfs"] as Array).size(), 0,
+		"e non si offre come Coordinatrice")
+	dec.target_coordinating = coord
+	true_(eng.legality_error(dec, st).contains("Coordinamento"),
+		"ne' puo' essere designata a forza")
+	# una Traiettoria non e' mai in una Casella
+	var line := _line(st, TaskForce.Side.ROYAL_NAVY, [origin, near])
+	false_(PortBox.is_in_box(line), "un segmento non sta in una Casella Porto")
+	# entrare: solo una Stazione in un esagono di porto AMICO
+	var port_hex := graph.port_hex("Scapa Flow")
+	var home := _station(st, TaskForce.Side.ROYAL_NAVY, port_hex)
+	var raider := _station(st, TaskForce.Side.KRIEGSMARINE, port_hex, "Bismarck")
+	eq(PortBox.enterable_port(home, graph, {}), "Scapa Flow",
+		"una Stazione britannica entra nella Casella di Scapa Flow")
+	eq(PortBox.enterable_port(raider, graph, {}), "",
+		"una tedesca no: il porto non e' amico")
+	eq(PortBox.enterable_port(dec.target, graph, {}), "",
+		"e in mare aperto non c'e' nessuna Casella")
+
+
+func test_optional_rules() -> void:
+	_begin("Regole Opzionali (RB p.62): spente se non accese")
+	var st := _state()
+	var dec := _engage(st)
+	dec.active.ships[0].damaged = true
+	eq(eng.legality_error(dec, st), "", "senza l'opzione una nave Danneggiata puo' Ingaggiare")
+	st.optional_rules["damaged_ship_limit"] = true
+	true_(eng.legality_error(dec, st).contains("Danneggiata"),
+		"con la Limitazione per Nave Danneggiata no")
+	st.optional_rules["damaged_ship_limit"] = false
+	var long: Array = []
+	var cur := far
+	# sette segmenti: oltre il Limite CV
+	var seen := {origin: true, near: true, far: true}
+	long.append(near)
+	long.append(far)
+	while long.size() < 7:
+		for c in graph.adjacent_hexes(cur):
+			if not seen.has(c):
+				seen[c] = true
+				long.append(c)
+				cur = c
+				break
+	var carrier := _line(st, TaskForce.Side.KRIEGSMARINE, long, "Grzeppelin")
+	dec.active.ships[0].damaged = false
+	eq((CommonModifiers.options_for(dec, st, null, TaskForce.Side.KRIEGSMARINE)[
+		"air_tfs"] as Array).size(), 1, "senza l'opzione la portaerei lunga da' Supporto Aereo")
+	st.optional_rules["cv_limit"] = true
+	eq((CommonModifiers.options_for(dec, st, null, TaskForce.Side.KRIEGSMARINE)[
+		"air_tfs"] as Array).size(), 0, "col Limite CV, oltre sei segmenti no")
+	dec.active_air_support = carrier
+	true_(eng.legality_error(dec, st).contains("Limite CV"), "ne' designata a forza")
+	# salvataggio
+	var copy := GameState.new(graph, 1)
+	copy.apply_dict(st.to_dict())
+	true_(OptionalRules.enabled(copy, "cv_limit"), "le opzioni accese restano nel salvataggio")
+	false_(OptionalRules.enabled(copy, "battle_removes_evasive"), "e quelle spente restano spente")
+
+
+func test_leader_benefits() -> void:
+	_begin("Comandanti: Walker, Somerville, Krancke/Tovey, Lutjens, Forbes/Marschall (RB p.10)")
+	# Walker: Coordinamento +4
+	var st := _state()
+	var dec := ActionEngine.Declaration.new()
+	dec.action_key = "ENGAGE"
+	dec.active = _station(st, TaskForce.Side.ROYAL_NAVY, origin, "Hood")
+	dec.target = _station(st, TaskForce.Side.KRIEGSMARINE, origin, "Bismarck")
+	dec.target_hex = origin
+	var coord := _station(st, TaskForce.Side.ROYAL_NAVY, origin, "Rodney")
+	coord.leader = "Walker"
+	dec.active_coordinating = coord
+	eq(LeaderRules.declarable(st, dec, TaskForce.Side.ROYAL_NAVY), ["Walker"] as Array[String],
+		"Walker e' utilizzabile quando la sua TF coordina")
+	eq(LeaderRules.declarable(st, dec, TaskForce.Side.KRIEGSMARINE).size(), 0,
+		"non dall'avversario")
+	eq(_total(dec, st), 2, "senza invocarlo il Coordinamento vale +2")
+	dec.leader_benefits.append("Walker")
+	eq(_total(dec, st), 4, "con Walker vale +4")
+	st.rng.push_forced([3, 3])
+	eng.resolve(dec, st)
+	eq(LeaderRules.uses_left(st, "Walker"), 0, "risolta l'azione il beneficio e' speso")
+	eq(LeaderRules.declarable(st, dec, TaskForce.Side.ROYAL_NAVY).size(), 0,
+		"e non si offre una seconda volta")
+
+	# Somerville: +2 al tiro
+	var st2 := _state()
+	var dec2 := _engage(st2)
+	dec2.active.side = TaskForce.Side.ROYAL_NAVY
+	dec2.target.side = TaskForce.Side.KRIEGSMARINE
+	dec2.active.leader = "Somerville"
+	eq(LeaderRules.declarable(st2, dec2, TaskForce.Side.ROYAL_NAVY), ["Somerville"] as Array[String],
+		"Somerville e' utilizzabile quando la sua TF e' designata")
+	dec2.leader_benefits.append("Somerville")
+	eq(_total(dec2, st2), 2, "+2 al tiro")
+
+	# Krancke / Tovey: 2d6 al Totale Traiettoria
+	var st3 := _state()
+	var dec3 := _engage(st3)
+	dec3.target.leader = "Tovey"
+	eq(LeaderRules.trajectory_total_roller(st3, dec3, TaskForce.Side.ROYAL_NAVY), "Tovey",
+		"Tovey vale anche quando la sua TF e' il Bersaglio")
+	eq(LeaderRules.trajectory_total_roller(st3, dec3, TaskForce.Side.KRIEGSMARINE), "",
+		"ma lo usa solo il suo giocatore")
+	dec3.trajectory_total_shift = 7
+	dec3.trajectory_total_shift_by = "Tovey"
+	st3.rng.push_forced([3, 3])
+	var res3 := eng.resolve(dec3, st3)
+	eq(int(res3["trajectory_total"]), 7, "due Stazioni: 0 + 7 di Tovey")
+	eq(LeaderRules.uses_left(st3, "Tovey"), 0, "speso")
+	var st3b := _state()
+	var dec3b := _engage(st3b)
+	dec3b.trajectory_total_shift = -9
+	dec3b.trajectory_total_shift_by = "Krancke"
+	st3b.rng.push_forced([3, 3])
+	eq(int(eng.resolve(dec3b, st3b)["trajectory_total"]), 0,
+		"il Totale Traiettoria non scende sotto zero")
+
+	# Lutjens: Sottrarre riesce senza tirare
+	var st4 := _state()
+	st4.initiative = TaskForce.Side.ROYAL_NAVY
+	var bis := _station(st4, TaskForce.Side.KRIEGSMARINE, origin, "Bismarck")
+	bis.leader = "Lutjens"
+	eq(LeaderRules.lutjens_force(st4, TaskForce.Side.KRIEGSMARINE), bis, "Lutjens disponibile")
+	var before := st4.rng.log.size()
+	st4.rng.push_forced([1])
+	var r := Initiative.steal_automatic(st4, bis)
+	true_(bool(r["success"]), "il tentativo riesce")
+	eq(st4.initiative, TaskForce.Side.KRIEGSMARINE, "l'Iniziativa passa al tedesco")
+	true_(bis.evasive, "e la sua TF riceve Manovre Evasive")
+	eq(st4.rng.log.size(), before + 1, "un solo dado: la Verifica Meteo")
+	eq(LeaderRules.lutjens_force(st4, TaskForce.Side.KRIEGSMARINE), null, "una volta sola")
+
+	# Forbes / Marschall: un dado diventa 6
+	var st5 := _state()
+	var dec5 := _engage(st5)
+	dec5.active.leader = "Marschall"
+	eq(LeaderRules.six_replacer(st5, dec5), "Marschall", "Marschall con la sua TF Attiva")
+	st5.rng.push_forced([2, 4])
+	var res5 := eng.resolve(dec5, st5)
+	eq(int(res5["sum"]), 6, "tiro 2 + 4")
+	var again := eng.reread_with_six(res5, dec5)
+	eq(int(again["sum"]), 10, "il dado piu' basso diventa 6: 4 + 6")
+	eq(again["results"], eng.lookup("ENGAGE", 10, 0), "e la tabella si rilegge")
+	st5.rng.push_forced([6, 6])
+	var res6 := eng.resolve(dec5, st5)
+	true_(eng.reread_with_six(res6, dec5).is_empty(), "con due 6 non c'e' niente da sostituire")
+	true_(LeaderRules.is_implemented("Walker") and not LeaderRules.is_implemented("Prien"),
+		"Prien resta dichiarato come non automatizzato")
+
+
+func test_slip_away_for_the_imaginary_opponent() -> void:
+	_begin("Sfuggire in solitario: 1-4 Segnalazione, 5-6 Manovre Evasive (RB p.22)")
+	for die in [1, 4]:
+		var st := _state()
+		var dec := ActionEngine.Declaration.new()
+		dec.action_key = "ENGAGE"
+		dec.active = _line(st, TaskForce.Side.ROYAL_NAVY, [near, origin], "Hood")
+		dec.active.trajectory.set_info(0, true)
+		dec.target = _station(st, TaskForce.Side.KRIEGSMARINE, origin, "Bismarck")
+		dec.target_hex = origin
+		st.rng.push_forced([die])
+		SoloOpponent.apply_slip_away(st, dec)
+		true_(dec.active.trajectory.is_station(),
+			"con %d la TF Attiva viene Segnalata e diventa Stazione" % die)
+		eq(dec.active.trajectory.station_hex, near, "nell'esagono del segnalino")
+		false_(dec.target.evasive, "senza Manovre Evasive")
+	for die in [5, 6]:
+		var st := _state()
+		var dec := ActionEngine.Declaration.new()
+		dec.action_key = "ENGAGE"
+		dec.active = _line(st, TaskForce.Side.ROYAL_NAVY, [near, origin], "Hood")
+		dec.active.trajectory.set_info(0, true)
+		dec.target = _station(st, TaskForce.Side.KRIEGSMARINE, origin, "Bismarck")
+		dec.target_hex = origin
+		st.rng.push_forced([die])
+		SoloOpponent.apply_slip_away(st, dec)
+		true_(dec.target.evasive, "con %d la TF Bersaglio riceve Manovre Evasive" % die)
+		false_(dec.active.trajectory.is_station(), "e la TF Attiva resta una Traiettoria")
+	# dado da Segnalazione ma nessun bersaglio legale: resta l'altra scelta
+	var st2 := _state()
+	var dec2 := _engage(st2)
+	st2.rng.push_forced([1])
+	SoloOpponent.apply_slip_away(st2, dec2)
+	true_(dec2.target.evasive, "senza segnalini da Segnalare si prendono le Manovre Evasive")
+
+
+func test_time_lapse_removes_what_it_can() -> void:
+	_begin("Scorrere del Tempo: se non bastano, tutti quelli rimovibili (RB p.19)")
+	var st := _state()
+	var tf := _line(st, TaskForce.Side.ROYAL_NAVY, [beyond, far, near])
+	# segnalino sulla testa: dei tre chiesti se ne possono togliere due
+	tf.trajectory.set_info(0, true)
+	var opts := TimeLapse.removal_options(tf.trajectory, TimeLapse.Speed.MEDIUM, 3)
+	var plain: Array = []
+	for o in opts:
+		if not bool(o["uses_intel_limit"]):
+			plain.append(o)
+	eq(plain.size(), 1, "una sola rimozione normale")
+	eq(int((plain[0] as Dictionary)["total"]), 2, "di due segmenti: tutti quelli senza segnalino")
+	eq((plain[0] as Dictionary)["ends"], [0, 2], "dalla coda")
+	# senza segnalini resta il comportamento di prima
+	var tf2 := _line(st, TaskForce.Side.ROYAL_NAVY, [beyond, far, near])
+	var all := TimeLapse.removal_options(tf2.trajectory, TimeLapse.Speed.MEDIUM, 3)
+	eq(all.size(), 4, "tre segmenti su tre: quattro modi di toglierli tutti")
+	# segnalino su tutti e due i capi: niente rimozione normale, solo il Limite
+	var tf3 := _line(st, TaskForce.Side.ROYAL_NAVY, [beyond, far, near])
+	tf3.trajectory.set_info(0, true)
+	tf3.trajectory.set_info(2, true)
+	var blocked := TimeLapse.removal_options(tf3.trajectory, TimeLapse.Speed.MEDIUM, 3)
+	for o in blocked:
+		true_(bool(o["uses_intel_limit"]) or int(o["total"]) == 0,
+			"con un segnalino su ogni capo resta solo il Limite di Informazioni")

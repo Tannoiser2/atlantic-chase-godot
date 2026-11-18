@@ -1,6 +1,6 @@
 # TODO della revisione
 
-Baseline: **4024 verifiche su 22 suite**, tutte verdi. Replay solitario:
+Baseline: **4088 verifiche su 22 suite**, tutte verdi. Replay solitario:
 **quindici `OK`** su quindici scenari, nessuno saltato. `audit_solo.gd`:
 **93 caselle azione, zero procedure segnaposto, ZERO buchi dichiarati, zero
 blocchi.** Prova di fumo nuova: `tools/smoke_trajectory.gd`.
@@ -57,10 +57,40 @@ coi test: i test erano verdi perche' difendevano il comportamento sbagliato.
 **Le impronte dei replay sono state riscritte**: tutte e quindici le partite
 sono cambiate, ed e' voluto.
 
+**Seconda passata, capitolo per capitolo (RB pp.4-62), corretto:**
+
+- **Casella Porto** (RB p.8): una Stazione nella Casella non si puo' attaccare
+  con Attacco Aereo, Ingaggio o Attacco Furtivo, non coordina, non da' Supporto
+  Aereo e non puo' essere la TF Attiva di Attacco Aereo, Ingaggio o Ricerca
+  Navale. `station_port` si scriveva e quasi nessuno lo leggeva.
+  `core/rules/port_box.gd`.
+- **"La Battaglia rimuove le Manovre Evasive" e' una REGOLA OPZIONALE** (RB
+  p.62) ed era applicata sempre. Ora le tre Regole Opzionali stanno in
+  `core/rules/optional_rules.gd`, spente se non accese, e nel salvataggio.
+- **Scorrere del Tempo** (RB p.19): "se non vi sono segmenti sufficienti,
+  rimuoveteli tutti (ma non quelli con Informazioni)". Una Traiettoria corta
+  con un segnalino a un capo non offriva nessuna rimozione normale.
+- **Sfuggire in solitario** (RB pp.22, 54): la scelta dell'avversario
+  immaginario la fa un dado, 1-4 Segnalazione e 5-6 Manovre Evasive. Prima era
+  chiesta al giocatore, e nel ciclo headless non si faceva.
+- **Comandanti** (RB p.10): oltre a Raeder, Pound e Gensoul ora ci sono Walker
+  (Coordinamento +4), Somerville (+2), Krancke e Tovey (2d6 al Totale
+  Traiettoria), Lutjens (Sottrarre automatico) e Forbes/Marschall sul tiro di
+  un'Azione. Solo per il giocatore: il fascicolo non dice quando li userebbe
+  l'avversario immaginario.
+
+**Verificato e trovato GIUSTO**, quindi da non rifare: Tabella
+dell'Interruzione e dello Scorrere del Tempo (lette sulla mappa: la traduzione
+italiana delle tabelle di aiuto stampa bande diverse, 5-6/7/8-9, ed e' la
+mappa che vale), Totale Traiettoria, Completamento, Passare e Passare Tutto,
+Riorganizzare, Segnalazione, Risultati Comuni, Battaglia base (Cannoni,
+Siluri, Manovra, Fuga, Uscita), Sorpresa.
+
 **Trovato e NON ancora corretto:**
 
-- [ ] **Interruzione - Sfuggire**: `_handle_slip_away` chiede al giocatore la
-  scelta dell'Inattivo anche quando l'Inattivo e' l'avversario immaginario.
+- [ ] **Forbes e Marschall** in Battaglia, sul Meteo e sull'Iniziativa; **Prien**.
+- [ ] **Somerville** quando la sua TF e' dalla parte del Bersaglio: il testo
+  dice "+2 a qualsiasi tiro", e non dice che diventi un -2.
 - [ ] **Zona U-Boat** (+3 all'Attacco Furtivo, p.41) e **Linea Artica** (Supporto
   Aereo vietato, +2 delle Manovre Evasive, pp.26 e 45): sono disegnate sulla
   mappa e non sono un dato. Dichiarate nelle righe dei modificatori.
@@ -250,7 +280,7 @@ Un 🟡 o un 🔴 non nascosto vale piu' di un 🟢 finto.
 ## P0 - Integrita' del progetto
 
 - [ ] Mantenere sempre verdi i comandi della baseline in `CLAUDE.md`.
-- [ ] Non consentire che il totale scenda sotto 4024 senza rimozione esplicita.
+- [ ] Non consentire che il totale scenda sotto 4088 senza rimozione esplicita.
 - [x] Replay deterministici completi di BL1 e BL2: `core/rules/solo_runner.gd`
   (ciclo headless), `tools/replay_solo.gd` (semi fissi, tre esiti distinti) e
   `tests/unit/test_replay.gd` (83 verifiche). `tools/simulate_flow.gd` ne

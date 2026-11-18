@@ -1112,6 +1112,14 @@ func _handle_interruption_cancel(res: Dictionary, dec: ActionEngine.Declaration)
 
 
 func _handle_slip_away(dec: ActionEngine.Declaration) -> void:
+	# RB p.22 e p.54: in solitario la scelta dell'avversario immaginario la fa
+	# un dado (1-4 Segnalazione, 5-6 Manovre Evasive). Prima veniva chiesta al
+	# giocatore, che decideva per il proprio avversario.
+	if solo != null and 1 - dec.acting_side() == _solo_imaginary_side():
+		for line_v: Variant in SoloOpponent.apply_slip_away(state, dec):
+			_msg("    %s" % String(line_v))
+		state.changed.emit()
+		return
 	var opts: Array = [
 		{"label": "Segnalazione", "detail": "contro la TF Attiva o una Coordinatrice"},
 		{"label": "Manovre Evasive", "detail": "alla TF Bersaglio"},
@@ -1537,6 +1545,8 @@ func _show_battle(bstate: BattleState, keep_advanced: bool = false) -> void:
 	# Checks", quindi la scelta fatta nella schermata iniziale non vale li'.
 	if not keep_advanced:
 		bstate.advanced = state.advanced_battle
+		bstate.remove_evasive_on_exit = OptionalRules.enabled(state,
+			"battle_removes_evasive")
 	var b := Battle.new(bstate, state.rng, vp_tracker)
 	b.start()
 

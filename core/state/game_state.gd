@@ -72,6 +72,9 @@ var convoys_completed_by_side: Dictionary = {}
 ## cambierebbe le tabelle sotto i piedi al giocatore.
 var advanced_battle: bool = false
 
+## Regole Opzionali di RB p.62 accese per questa partita: vedi `OptionalRules`.
+var optional_rules: Dictionary = {}
+
 ## Stato del modo solitario. Le tabelle dell'avversario immaginario passano da
 ## Presto a Tardi durante la partita, quindi la scelta deve sopravvivere a
 ## undo, salvataggi e ricariche come qualunque altro stato di gioco.
@@ -489,6 +492,7 @@ func to_dict() -> Dictionary:
 		"convoys_completed": convoys_completed,
 		"convoys_completed_by_side": convoys_completed_by_side.duplicate(),
 		"advanced_battle": advanced_battle,
+		"optional_rules": optional_rules.duplicate(),
 		"solo_phase": solo_phase,
 		"solo_phase_reason": solo_phase_reason,
 		"rendezvous_markers": rendezvous_markers.duplicate(true),
@@ -523,6 +527,7 @@ func apply_dict(d: Dictionary) -> void:
 	# le partite salvate prima che le Regole Avanzate esistessero sono
 	# tutte partite base: false e' il default giusto
 	advanced_battle = bool(d.get("advanced_battle", false))
+	optional_rules = (d.get("optional_rules", {}) as Dictionary).duplicate()
 	solo_phase = int(d.get("solo_phase", SoloOpponent.Phase.EARLY))
 	solo_phase_reason = String(d.get("solo_phase_reason", ""))
 	rendezvous_markers.clear()

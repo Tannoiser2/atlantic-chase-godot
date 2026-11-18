@@ -178,6 +178,11 @@ static func compute(dec: ActionEngine.Declaration, state: GameState) -> Dictiona
 	# --- Coordinamento
 	if dec.active_coordinating != null or not dec.active_coordinating_stealth.is_empty():
 		var ca := coordination_value(state.weather, true)
+		# Walker (RB p.10): "Quando la sua Task Force e' la Task Force
+		# Coordinatrice, il Modificatore Comune per il Coordinamento e' +4."
+		if dec.leader_benefits.has("Walker") and dec.active_coordinating != null \
+				and dec.active_coordinating.leader == "Walker":
+			ca = LeaderRules.WALKER_COORDINATION
 		total += ca
 		lines.append("Coordinamento dell'Attivo (%s): %+d"
 			% [_coordinator_name(dec.active_coordinating,
@@ -188,6 +193,13 @@ static func compute(dec: ActionEngine.Declaration, state: GameState) -> Dictiona
 		lines.append("Coordinamento del Bersaglio (%s): %+d"
 			% [_coordinator_name(dec.target_coordinating,
 				dec.target_coordinating_stealth), ct])
+
+	# --- Somerville (RB p.10): "+2 a qualsiasi tiro di dado o dadi che
+	# coinvolge la TF di questo Comandante. 'Coinvolge' significa che la Task
+	# Force e' designata in una azione."
+	if dec.leader_benefits.has("Somerville"):
+		total += LeaderRules.SOMERVILLE_BONUS
+		lines.append("Somerville: %+d" % LeaderRules.SOMERVILLE_BONUS)
 
 	# --- Tabella dell'Attacco Furtivo
 	if dec.action_key == "STEALTH_ATTACK":
@@ -248,7 +260,8 @@ static func options_for(dec: ActionEngine.Declaration, state: GameState,
 		return out
 	var is_active := side == dec.acting_side()
 	for tf in state.forces_of(side):
-		if tf.completed or tf == dec.active or tf == dec.target:
+		if tf.completed or tf == dec.active or tf == dec.target \
+				or PortBox.is_in_box(tf):
 			continue
 		if tf.trajectory.occupies(th):
 			out["coordinating_tfs"].append(tf)
@@ -261,7 +274,11 @@ static func options_for(dec: ActionEngine.Declaration, state: GameState,
 	var wants_air := not (is_active and dec.action_key == "AIR_STRIKE")
 	if wants_air and state.weather == TimeLapse.Weather.GOOD:
 		for tf in state.forces_of(side):
-			if tf.completed or tf == dec.active or tf == dec.target:
+			if tf.completed or tf == dec.active or tf == dec.target \
+					or PortBox.is_in_box(tf):
+				continue
+			if OptionalRules.enabled(state, "cv_limit") \
+					and tf.length() > OptionalRules.CV_MAX_SEGMENTS:
 				continue
 			var best_hex := Vector2i.MAX
 			var best_d := 99

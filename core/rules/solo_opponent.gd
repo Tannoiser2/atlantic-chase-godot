@@ -280,3 +280,57 @@ static func evasive_holder(state: GameState, side: int) -> TaskForce:
 		if best == null or tf.id < best.id:
 			best = tf
 	return best
+
+
+## Sfuggire (Interruzione) quando a scegliere e' l'avversario immaginario.
+## RB p.22 e p.54: "Quando il giocatore immaginario ottiene un risultato 'S'
+## Sfuggire, tirate un dado per definire la scelta del non giocatore: 1-4 =
+## azione Segnalazione, 5-6 = Manovre Evasive".
+##
+## Prima la scelta veniva chiesta al GIOCATORE anche quando l'Inattivo era il
+## bot, e nel ciclo headless non si faceva affatto.
+static func slip_away_choice(rng: DiceRNG) -> Dictionary:
+	var die := rng.d6("Sfuggire: scelta dell'avversario immaginario")
+	return {"die": die, "choice": "signal" if die <= 4 else "evasive"}
+
+
+## Applica Sfuggire per conto dell'avversario immaginario e ritorna le righe
+## per il registro.
+##
+## La Segnalazione "inaspettata" puo' colpire solo la TF Attiva o una
+## Coordinatrice (RB p.54), e solo dove hanno un segnalino Informazioni. Se il
+## dado dice Segnalazione ma l'unico segnalino sta sulla TF di Supporto Aereo,
+## non c'e' un bersaglio legale: resta l'altra meta' della scelta, le Manovre
+## Evasive alla TF Bersaglio.
+static func apply_slip_away(state: GameState,
+		dec: ActionEngine.Declaration) -> Array[String]:
+	var lines: Array[String] = []
+	var roll := slip_away_choice(state.rng)
+	var signal_target: TaskForce = null
+	for tf in [dec.active, dec.active_coordinating]:
+		if tf != null and not SignalAction.target_hexes(tf).is_empty():
+			signal_target = tf
+			break
+	if String(roll["choice"]) == "signal" and signal_target != null:
+		var at: Vector2i = SignalAction.target_hexes(signal_target)[0]
+		var r := SignalAction.resolve(signal_target, at)
+		lines.append("Sfuggire: 1d6 = %d -> Segnalazione contro %s in %s."
+			% [int(roll["die"]), signal_target.display_name(), str(at)])
+		for l_v: Variant in r.get("log", []):
+			lines.append(String(l_v))
+		return lines
+	if String(roll["choice"]) == "signal":
+		lines.append(("Sfuggire: 1d6 = %d -> Segnalazione, ma ne' la TF Attiva ne' "
+			+ "una Coordinatrice hanno un segnalino Informazioni: Manovre Evasive.")
+			% int(roll["die"]))
+	else:
+		lines.append("Sfuggire: 1d6 = %d -> Manovre Evasive." % int(roll["die"]))
+	if dec.target != null:
+		if dec.target.evasive:
+			lines.append("%s ha gia' un segnalino Manovre Evasive: resta uno."
+				% dec.target.display_name())
+		else:
+			dec.target.evasive = true
+			lines.append("Manovre Evasive assegnate a %s."
+				% dec.target.display_name())
+	return lines

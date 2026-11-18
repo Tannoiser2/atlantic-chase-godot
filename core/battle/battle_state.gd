@@ -52,6 +52,10 @@ func first_phase() -> int:
 ## sono un fascicolo a parte e si accendono di comune accordo fra i giocatori.
 var advanced: bool = false
 
+## Regola Opzionale di RB p.62: a fine Battaglia le due TF perdono il segnalino
+## Manovre Evasive. Spenta se chi apre la Battaglia non la accende.
+var remove_evasive_on_exit: bool = false
+
 ## I mini-scenari arrivano dal fascicolo gia' disposti nelle zone corrette.
 ## Una Battaglia nata sulla mappa operazionale, invece, deve ancora eseguire
 ## il piazzamento normale di `deploy()`.

@@ -1327,8 +1327,17 @@ func _apply_interruption_cancel(res: Dictionary,
 	_line("      %s" % String(ir.get("effect", "Azione annullata.")))
 	match int(ir.get("result", Interruption.Result.ALERT)):
 		Interruption.Result.SLIP_AWAY:
-			_line("      Sfuggire: l'effetto scelto dall'Inattivo non e' "
-				+ "automatizzato nel replay; si Cerca l'Iniziativa.")
+			if 1 - dec.acting_side() == imaginary_side:
+				for line_v: Variant in SoloOpponent.apply_slip_away(state, dec):
+					_line("      %s" % String(line_v))
+			else:
+				# POLICY DELL'HARNESS: il giocatore simulato prende sempre le
+				# Manovre Evasive. La Segnalazione e' una scelta tattica, e
+				# farla a caso renderebbe il replay meno leggibile.
+				if dec.target != null and not dec.target.evasive:
+					dec.target.evasive = true
+				_line("      Sfuggire: il giocatore simulato prende Manovre "
+					+ "Evasive sulla TF Bersaglio (policy harness).")
 			_seek_initiative("Interruzione")
 		Interruption.Result.VIE_FOR_INITIATIVE:
 			_seek_initiative("Interruzione")
@@ -1419,6 +1428,16 @@ func _time_lapse(tf: TaskForce, goal: Vector2i, protected_hex: Vector2i,
 	# `SoloSequence` perche' e' una regola, non un modo di mostrarla.
 	var preferred := SoloSequence.time_lapse_preference(opts, tf.trajectory,
 		goal, prefer_near)
+	# POLICY DELL'HARNESS: il giocatore simulato, se puo', toglie il segmento
+	# col segnalino Informazioni invocando il Limite. Un segnalino impedisce il
+	# Completamento (RB p.29), e una policy che non lo toglie mai gira in tondo
+	# davanti al porto - si vedeva in N4, dove le Mine britanniche mettono
+	# Informazioni proprio sull'esagono di destinazione.
+	if tf.side == player_side:
+		for i in opts.size():
+			if bool((opts[i] as Dictionary).get("removes_info", false)):
+				preferred = i
+				break
 	var labels: Array[String] = []
 	for option_v: Variant in opts:
 		var ends: Array = (option_v as Dictionary)["ends"]
@@ -1554,6 +1573,7 @@ func _run_battle(kind_result: int, active: TaskForce, target: TaskForce,
 		kind = BattleState.Kind.LIMITED
 	var bs := BattleState.new(kind, state.weather)
 	bs.advanced = state.advanced_battle
+	bs.remove_evasive_on_exit = OptionalRules.enabled(state, "battle_removes_evasive")
 	bs.active_tf = active
 	bs.target_tf = target
 	bs.hex = hex

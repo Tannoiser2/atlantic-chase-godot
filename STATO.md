@@ -1,7 +1,7 @@
 # Stato del lavoro
 
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
-Tutti i test passano: **4024 verifiche, 22 suite, headless.**
+Tutti i test passano: **4088 verifiche, 22 suite, headless.**
 
 **Revisione delle regole base, 2026-11**: cinque errori corretti (Traiettoria e
 Iniziativa, rotta a clic, Modificatori Comuni, Manovre Evasive, scelta del bot
