@@ -107,6 +107,16 @@ var _station_lanes: Dictionary = {}
 ## Puo' essere richiamato per cambiare superficie di gioco: i cinque scenari
 ## solitari su mappa inserto rimettono qui un altro grafo. La connessione al
 ## segnale va quindi rifatta con criterio, non aggiunta una seconda volta.
+## Lo zoom della camera, perche' le etichette restino leggibili.
+var view_zoom := 1.0
+
+
+func set_view_zoom(z: float) -> void:
+	if absf(z - view_zoom) > 0.004:
+		view_zoom = z
+		queue_redraw()
+
+
 func setup(p_graph: MapGraph, p_state: GameState) -> void:
 	if state != null and state.changed.is_connected(queue_redraw):
 		state.changed.disconnect(queue_redraw)
@@ -439,7 +449,27 @@ func _draw_station(c: Vector2, col: Color, selected: bool, tf: TaskForce) -> voi
 	# una Stazione con Contatto si riconosce a colpo d'occhio
 	if tf.trajectory.station_contact:
 		_draw_contact_marker(c, tf.side)
-	_draw_badge(c + Vector2(0, -r * 1.9), tf.short_name(), col, selected)
+	# Piu' Stazioni nello stesso esagono: i nomi si impilano invece di
+	# coprirsi. Prima se ne leggeva uno solo, e a pezzi.
+	var above := 0
+	if state != null:
+		for other in state.task_forces:
+			if other.id < tf.id and not other.completed \
+					and other.trajectory.is_station() \
+					and other.trajectory.station_hex == tf.trajectory.station_hex:
+				above += 1
+	_draw_badge(c + Vector2(0, -r * 1.9 - above * _badge_size() * 1.42),
+		tf.short_name(), col, selected)
+
+
+## Altezza del testo dei badge.
+##
+## Il nome deve restare leggibile a mappa intera: a misura fissa di mappa, con
+## la vista larga diventava alto cinque pixel. Cresce quando ci si allontana,
+## fino a un tetto oltre il quale coprirebbe le pedine vicine.
+func _badge_size() -> int:
+	return int(clampf(15.0 / maxf(view_zoom, 0.05),
+		maxf(graph.inradius * 0.25, 9.0), graph.inradius * 0.62))
 
 
 ## Il badge col nome della Task Force.
@@ -450,8 +480,8 @@ func _draw_badge(pos: Vector2, text: String, col: Color,
 		emphasised: bool = false) -> void:
 	if text == "":
 		return
-	var font := ThemeDB.fallback_font
-	var size := int(maxf(graph.inradius * 0.25, 9.0))
+	var font := UiTheme.stretto()
+	var size := _badge_size()
 	var tw := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
 	var pad := size * 0.38
 	var rect := Rect2(pos - Vector2(tw * 0.5 + pad, size * 0.62 + pad * 0.4),
@@ -533,7 +563,7 @@ func clear_air_action_markers() -> void:
 
 
 func _draw_label(pos: Vector2, text: String, col: Color, scale_f: float = 0.30) -> void:
-	var font := ThemeDB.fallback_font
+	var font := UiTheme.stretto()
 	var size := int(graph.inradius * scale_f)
 	var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
 	draw_string(font, pos - Vector2(w * 0.5, -size * 0.35), text,

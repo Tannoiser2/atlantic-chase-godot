@@ -21,6 +21,7 @@ signal chosen(index: int)
 
 var _list: VBoxContainer
 var _closed := false
+var _option_count := 0
 
 
 func build(title: String, description: String, options: Array,
@@ -39,7 +40,11 @@ func build(title: String, description: String, options: Array,
 
 	var t := Label.new()
 	t.text = title
-	t.add_theme_font_size_override("font_size", 22)
+	t.add_theme_font_override("font", UiTheme.stretto())
+	t.add_theme_color_override("font_color", UiTheme.OTTONE)
+	t.add_theme_font_size_override("font_size", 26)
+	t.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	t.custom_minimum_size.x = 590
 	v.add_child(t)
 
 	if description != "":
@@ -54,12 +59,15 @@ func build(title: String, description: String, options: Array,
 	_list.add_theme_constant_override("separation", 6)
 	v.add_child(_list)
 
+	_option_count = options.size()
 	for i in options.size():
 		var o: Dictionary = options[i]
-		var b := Button.new()
-		b.text = "  %s  " % String(o.get("label", "opzione %d" % (i + 1)))
+		var b := UiTheme.button(String(o.get("label", "opzione %d" % (i + 1))),
+			"primario", 46.0)
+		if i < 9:
+			b.text = "%d.  %s" % [i + 1, b.text]
 		b.tooltip_text = String(o.get("detail", ""))
-		b.custom_minimum_size = Vector2(0, 38)
+		b.clip_text = true
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		var idx := i
 		b.pressed.connect(func() -> void: _pick(idx))
@@ -67,15 +75,15 @@ func build(title: String, description: String, options: Array,
 		var det := String(o.get("detail", ""))
 		if det != "":
 			var l := Label.new()
-			l.text = "      " + det
-			l.add_theme_font_size_override("font_size", 13)
-			l.add_theme_color_override("font_color", Color(0.72, 0.78, 0.84))
+			l.text = det
+			l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			l.custom_minimum_size.x = 590
+			l.add_theme_font_size_override("font_size", 15)
+			l.add_theme_color_override("font_color", UiTheme.CARTA_SPENTA)
 			_list.add_child(l)
 
 	if allow_cancel:
-		var c := Button.new()
-		c.text = "  Annulla  "
-		c.custom_minimum_size = Vector2(0, 34)
+		var c := UiTheme.button("Annulla", "normale", 44.0)
 		c.pressed.connect(func() -> void: _pick(-1))
 		v.add_child(c)
 
@@ -95,19 +103,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 		elif k >= KEY_1 and k <= KEY_9:
 			var i: int = k - KEY_1
-			if i < _list.get_child_count():
+			if i < _option_count:
 				_pick(i)
 				get_viewport().set_input_as_handled()
 
 
 static func _style() -> StyleBoxFlat:
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.07, 0.10, 0.14, 0.98)
-	sb.border_color = Color(0.55, 0.70, 0.85)
-	sb.set_border_width_all(2)
-	sb.set_corner_radius_all(8)
-	sb.content_margin_left = 20
-	sb.content_margin_right = 20
-	sb.content_margin_top = 16
-	sb.content_margin_bottom = 16
-	return sb
+	return UiTheme.box(UiTheme.SCAFO, UiTheme.OTTONE, 2, 8, 20, 16)

@@ -3,6 +3,14 @@
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
 Tutti i test passano: **4088 verifiche, 22 suite, headless.**
 
+**Interfaccia nuova, 2026-11**: tema unico (`ui/theme/ui_theme.gd`), riga di
+guida, barra delle azioni, Menu, rotta evidenziata, trascinamento della mappa a
+un dito, schermata iniziale con le Regole Opzionali, salvataggio automatico, e
+nella vista le regole che il motore aveva gia' (Casella Porto, Ricognizione
+Furtiva, Schermaglia facoltativa, Comandanti). Dettaglio in testa a
+`TODO_REVISIONE.md`. Le sezioni storiche qui sotto che descrivono la barra con
+"Editor", "<", ">" o il tasto O per l'avversario descrivono l'interfaccia vecchia.
+
 **Revisione delle regole base, 2026-11**: cinque errori corretti (Traiettoria e
 Iniziativa, rotta a clic, Modificatori Comuni, Manovre Evasive, scelta del bot
 fra Sottrarre e Manovre Evasive). Il dettaglio, e quello che resta da

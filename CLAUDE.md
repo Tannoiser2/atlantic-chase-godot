@@ -41,7 +41,17 @@ godot --path . --script res://tools/smoke_solo_flow.gd -- BL1
 godot --path . --script res://tools/smoke_inset_map.gd
 godot --path . --script res://tools/smoke_ms12.gd
 godot --path . --script res://tools/smoke_trajectory.gd
+godot --path . --script res://tools/smoke_gui.gd
+python3 tools/controlla_glifi.py
 ```
+
+`smoke_gui.gd` difende l'interfaccia nuova: riga di guida, esagoni legali
+accesi, trascinamento della mappa, Menu, Casella Porto, salvataggio automatico,
+e nessuna etichetta schiacciata a una lettera per riga. `controlla_glifi.py`
+verifica che ogni carattere mostrato esista nei font di `assets/fonts/`: un
+glifo assente esce come un quadratino e nessun test lo vede. L'aspetto sta
+tutto in `ui/theme/ui_theme.gd`: un pannello o un pulsante nuovo prende colori
+e caratteri da li', non da uno `StyleBoxFlat` scritto sul posto.
 
 Per guardare la Battaglia invece che misurarla:
 

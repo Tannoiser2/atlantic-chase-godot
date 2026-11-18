@@ -3,11 +3,68 @@
 Baseline: **4088 verifiche su 22 suite**, tutte verdi. Replay solitario:
 **quindici `OK`** su quindici scenari, nessuno saltato. `audit_solo.gd`:
 **93 caselle azione, zero procedure segnaposto, ZERO buchi dichiarati, zero
-blocchi.** Prova di fumo nuova: `tools/smoke_trajectory.gd`.
+blocchi.** Prove di fumo nuove: `tools/smoke_trajectory.gd`, `tools/smoke_gui.gd`.
+Controllo dei caratteri: `tools/controlla_glifi.py`.
 
 Questo e' il backlog autorevole. `STATO.md` contiene anche una lunga cronologia:
 utile per capire le decisioni, ma le sue vecchie sezioni "Cosa manca" non devono
 riaprire lavori gia' chiusi.
+
+## Interfaccia nuova (2026-11)
+
+Rifatta dopo la critica "scomoda, brutta e non si capisce che cosa fare".
+Il motore non e' cambiato; `tests/run_tests.gd` resta a 4088.
+
+**Fatto:**
+
+- [x] **Tema unico** in `ui/theme/ui_theme.gd`: una tavolozza (blu notte,
+  acciaio, ottone), tre caratteri con licenza OFL in `assets/fonts/` (Barlow,
+  Barlow Condensed, Stardos Stencil). Si fonde nel tema predefinito del motore,
+  quindi vale anche dentro i `CanvasLayer`: mappa, Battaglia, finestre di scelta.
+- [x] **Riga di guida** in cima: una frase su che cosa aspetta il gioco e il
+  pulsante per farlo ("Traccia la rotta", "Rotta finita", "Prossima Task
+  Force", "Fai agire l'avversario", "Apri il punteggio").
+- [x] **Barra delle azioni**: nove pulsanti grandi con icona; fuori dallo
+  schermo `<`, `>` ed `Editor`, che sono strumenti di sviluppo (restano da
+  tastiera, e l'editor nel Menu).
+- [x] **Menu**: salva, carica, reticolo, registro, tabelle del solitario,
+  editor, ritorno alla scelta dello scenario CON conferma.
+- [x] **Rotta**: gli esagoni legali si accendono di verde mentre si traccia.
+- [x] **Mappa**: trascinare sul mare con un dito o col tasto sinistro sposta la
+  vista; pulsanti `+`, `-`, "Le forze", "Tutta la mappa". L'inquadratura
+  iniziale e' sulle forze in gioco e segue il riquadro finche' il giocatore non
+  sposta la vista (prima il fondo della mappa restava tagliato).
+- [x] **Nomi delle Task Force** leggibili a mappa intera, e impilati quando
+  piu' Stazioni condividono l'esagono.
+- [x] **Scheda della Task Force**: testo e pedine affiancati (le pedine
+  coprivano le ultime righe), con i suoi comandi: Centra, Entra/Esci dalla
+  Casella Porto, Disperdi il Convoglio.
+- [x] **Schermata iniziale**: titolo, primo solitario gia' selezionato, Regole
+  Avanzate e le tre Regole Opzionali (RB p.62) come caselle, "Riprendi una
+  partita".
+- [x] **Salvataggio automatico**, uno per scenario, quando il comando torna al
+  giocatore.
+- [x] **Aiuto** riscritto come "Come si gioca".
+- [x] **Regole gia' nel motore, ora raggiungibili dalla vista**: Casella Porto;
+  Passare designa una Traiettoria (RB p.35); Schermaglia facoltativa, con
+  Contatto se si rinuncia; Ricognizione Furtiva del giocatore (RB p.41);
+  Walker, Somerville, Krancke, Tovey, Forbes, Marschall e Lutjens (RB p.10)
+  chiesti al giocatore al momento giusto.
+- [x] **Difetto di dato corretto**: `Scenario.convoy_dispersal_allowed()` faceva
+  `bool()` su una stringa ("vedi raw_victory_text...") e in B2, B3, N2, N5
+  fermava lo script. Una stringa vuol dire "non trascritto": resta un no.
+
+**Non fatto, dichiarato:**
+
+- [ ] Il bot non usa i Comandanti (il fascicolo solitario non ne parla).
+- [ ] **Prien** nella Ricognizione: gli esagoni di porto e base aerea nemici
+  restano vietati anche con lui.
+- [ ] Ricognizione su una **Stazione**: il modello tiene le Informazioni sui
+  segmenti; resta la lacuna gia' dichiarata in `Stealth.recon`.
+- [ ] I nomi impilati valgono per le Stazioni; il capo di una rotta che arriva
+  nello stesso esagono puo' ancora coprirne uno.
+- [ ] Punteggio automatico, pedine Furtive e Basi Aeree disegnate sulla mappa,
+  scelte di schieramento, verifica dei due giocatori, IA e partita in rete.
 
 ## Revisione delle regole base (2026-11)
 

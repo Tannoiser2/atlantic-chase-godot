@@ -88,10 +88,10 @@ var _hex_choice_options: Dictionary = {}
 var _hex_choice_prompt: String = ""
 var _bl1_fueling_running: bool = false
 
-const MAP_TOP := 100.0
+const MAP_TOP := 132.0
 const MAP_LEFT := 310.0
 const MAP_RIGHT := 410.0
-const BOTTOM_H := 232.0
+const BOTTOM_H := 236.0
 const MARGIN := 12.0
 
 ## Larghezze minime, sotto le quali trascinare un bordo non ha piu' senso:
@@ -116,7 +116,7 @@ const MIN_PANELS_W := 380.0
 ## 0 = larghezza automatica (quella che fa riempire l'altezza alla mappa
 ## inserto); un valore positivo e' la scelta di chi ha trascinato il bordo.
 var _inset_w_manual := 0.0
-var _log_w := MAP_RIGHT
+var _log_w := 350.0
 var _bottom_h := BOTTOM_H
 
 var _map_container: SubViewportContainer = null
@@ -204,6 +204,8 @@ func _apply_layout() -> void:
 		# Task Force - che ne pretende 560 - schiacciava quello di stato a una
 		# colonna di caratteri, una lettera per riga.
 		_bottom_row.vertical = true
+		_tf_row.vertical = true
+		_tf_info.custom_minimum_size.y = 104.0
 		_tf_panel.custom_minimum_size.x = 0.0
 		_frame_map(MARGIN, full.x - MARGIN - w, MARGIN)
 		if _log_panel != null:
@@ -218,6 +220,8 @@ func _apply_layout() -> void:
 			_bottom_row.offset_top = MAP_TOP - full.y
 	else:
 		_bottom_row.vertical = false
+		_tf_row.vertical = false
+		_tf_info.custom_minimum_size.y = 48.0
 		_tf_panel.custom_minimum_size.x = 560.0
 		var bottom := _bottom_height() + 2.0 * MARGIN
 		_frame_map(MARGIN, right, bottom)
@@ -227,8 +231,25 @@ func _apply_layout() -> void:
 			_bottom_row.offset_left = MARGIN
 			_bottom_row.offset_right = -MARGIN
 			_bottom_row.offset_top = -(_bottom_height() + MARGIN)
+	_place_guide(full, right)
 	_place_grabbers()
 	_resize_map_viewport()
+
+
+## La striscia guida e gli strumenti della mappa stanno SOPRA la mappa, quindi
+## la seguono quando cambia posto o misura.
+func _place_guide(full: Vector2, right: float) -> void:
+	if _map_tools == null:
+		return
+	var map_left := MARGIN
+	var map_right := full.x - right
+	var map_bottom := full.y - (_bottom_height() + 2.0 * MARGIN)
+	if _inset_layout():
+		map_right = MARGIN + _inset_map_width(full)
+		map_bottom = full.y - MARGIN
+	_map_tools.visible = _battle_view == null
+	_map_tools.position = Vector2(map_left + 10.0,
+		map_bottom - _map_tools.get_combined_minimum_size().y - 10.0)
 
 
 func _frame_map(left: float, right: float, bottom: float) -> void:
@@ -307,6 +328,7 @@ func _place_grabbers() -> void:
 
 
 func _ready() -> void:
+	UiTheme.install()
 	graph = MapGraph.load_default()
 	if graph.load_error != "":
 		push_error(graph.load_error)
@@ -342,7 +364,12 @@ func _ready() -> void:
 	_load_scenario_at(_default_scenario_index())
 
 	log = CommandLog.new(state)
-	_msg("Pronto. F1 per l'elenco dei comandi.")
+	_msg("Pronto.")
+	if Session.resume_path != "":
+		var resume := Session.resume_path
+		Session.resume_path = ""
+		_load_save_path(resume)
+	_refresh()
 
 
 # ------------------------------------------------------------------ scenari --
@@ -378,6 +405,7 @@ func _load_scenario_at(idx: int, offer_setup_choices: bool = true) -> void:
 	# Regole Avanzate: la scelta va rimessa dopo, se no cambiare scenario la
 	# perde in silenzio.
 	state.advanced_battle = Session.advanced_battle
+	state.optional_rules = Session.optional_rules.duplicate()
 	_select_first_initiative_force()
 	log = CommandLog.new(state)
 	victory = Victory.from_scenario(scenario)
@@ -388,7 +416,7 @@ func _load_scenario_at(idx: int, offer_setup_choices: bool = true) -> void:
 	_msg("Scenario: %s  -  %d Task Force, %d navi"
 		% [scenario.title, state.task_forces.size(), scenario.ship_count()])
 	if solo != null:
-		_msg("Solitario: tabelle caricate (%s). Premi O per l'avversario immaginario."
+		_msg("Solitario: tabelle caricate (%s). L'avversario immaginario agisce da solo quando riceve l'Iniziativa."
 			% ("Tardi" if solo.phase == SoloOpponent.Phase.LATE else "Presto"))
 	if not scenario.map_info.is_empty() and state.task_forces.is_empty():
 		_msg("Scenario non ancora giocabile: %s. %s" % [
@@ -499,6 +527,18 @@ func _choose_bl2_home_fleet_station(home_fleet: TaskForce = null) -> void:
 
 
 func _process(delta: float) -> void:
+	# Finche' il giocatore non sposta la vista, la mappa resta inquadrata per
+	# intero anche se il suo riquadro cambia misura: all'avvio (il SubViewport
+	# riceve la misura definitiva dopo che i pannelli hanno deciso la loro - e
+	# con l'inquadratura presa troppo presto il fondo della mappa restava
+	# tagliato), quando si trascina un bordo, quando si ruota un iPad.
+	if cam != null and graph != null and not cam.user_moved:
+		var view_size := cam.get_viewport_rect().size
+		if view_size != _framed_size:
+			_framed_size = view_size
+			_frame_view()
+	if traj_layer != null and cam != null:
+		traj_layer.set_view_zoom(cam.zoom.x)
 	# tocco prolungato = clic destro
 	if _press_time > 0.0 and not _long_press_done:
 		_press_time += delta
@@ -543,8 +583,22 @@ func _handle_game_input(event: InputEvent) -> void:
 			drag_path.clear()
 			traj_layer.clear_preview()
 		_press_time = 0.0
+		_pan_candidate = false
+		_pan_active = false
 		return
 	if event is InputEventMouseMotion:
+		var motion := event as InputEventMouseMotion
+		# Trascinare sul mare sposta la mappa: con un dito su un iPad non c'e'
+		# un tasto centrale, e chiedere due dita per un gesto cosi' comune era
+		# il primo inciampo di chi apriva il gioco. Parte solo dopo qualche
+		# pixel, cosi' un tocco fermo resta un tocco.
+		if _pan_candidate and (motion.button_mask & MOUSE_BUTTON_MASK_LEFT) != 0:
+			if not _pan_active and motion.position.distance_to(_pan_start) > 9.0:
+				_pan_active = true
+				_press_time = 0.0
+			if _pan_active:
+				cam.pan_pixels(motion.relative)
+				return
 		var w := cam.world_from_screen((event as InputEventMouseMotion).position)
 		var h := graph.pixel_to_hex(w)
 		board.set_hover(h if graph.has_hex(h) else Vector2i.MAX)
@@ -568,8 +622,16 @@ func _handle_game_input(event: InputEvent) -> void:
 				_press_time = 0.0001
 				_long_press_done = false
 				_begin_drag(h)
+				_pan_candidate = not dragging
+				_pan_active = false
+				_pan_start = mb.position
 			else:
 				_press_time = 0.0
+				_pan_candidate = false
+				if _pan_active:
+					_pan_active = false
+					get_viewport().set_input_as_handled()
+					return
 				if _long_press_done:
 					_long_press_done = false
 					get_viewport().set_input_as_handled()
@@ -602,14 +664,14 @@ func _on_key(k: InputEventKey) -> void:
 			if option < _status_choice_option_count:
 				_complete_status_choice(option)
 		return
+	if k.keycode == KEY_ESCAPE and _menu_panel != null and _menu_panel.visible:
+		_close_menu()
+		return
 	if _hex_choice_active and k.keycode == KEY_ESCAPE:
-		_hex_choice_active = false
-		_hex_choice_options.clear()
-		_hex_choice_prompt = ""
-		board.set_highlight({})
-		_msg("Scelta esagono annullata.")
-		_hex_choice_made.emit(Vector2i.MAX)
-		_refresh()
+		_cancel_hex_choice()
+		return
+	if k.keycode == KEY_ESCAPE and _help != null and _help.visible:
+		_help.visible = false
 		return
 	if k.keycode == KEY_ESCAPE and _briefing_panel != null \
 			and _briefing_panel.visible:
@@ -751,6 +813,23 @@ func _declare_action(key: String) -> void:
 	# ha Traiettoria ZERO.
 	if key == "STEALTH_ATTACK":
 		var side := selected_tf.side if selected_tf != null else state.initiative
+		# RB p.41: l'azione Furtivo e' Ricognizione OPPURE Attacco. La
+		# Ricognizione qui non c'era: il giocatore non poteva mai muovere i
+		# suoi U-Boat ne' assegnare Informazioni con loro.
+		var scouts := _recon_forces(side)
+		if not scouts.is_empty():
+			var what: int = await Choice.ask(self, "Azione Furtiva",
+				"Ricognizione o Attacco: non entrambe nella stessa Azione (RB p.41).", [
+				{"label": "Attacco Furtivo", "detail": "una forza Furtiva attacca "
+					+ "una Task Force nemica nel proprio esagono"},
+				{"label": "Ricognizione", "detail": "muovi una forza di U-Boat o "
+					+ "Sottomarini; le Task Force nemiche nell'esagono di arrivo "
+					+ "ricevono un segnalino Informazioni"}], true)
+			if what < 0:
+				return
+			if what == 1:
+				await _do_stealth_recon(scouts)
+				return
 		stealth_source = await _pick_stealth_force(side)
 		if stealth_source.is_empty():
 			return
@@ -825,6 +904,7 @@ func _declare_action(key: String) -> void:
 	# l'Interruzione si tira sui segnalini Informazioni delle TF designate, e
 	# toglierne uno dopo non servirebbe a niente.
 	await _offer_gensoul(dec)
+	await _offer_declared_leaders(dec)
 
 	var res := engine.resolve(dec, state)
 	var label := String(engine.action(key).get("label", key))
@@ -834,6 +914,8 @@ func _declare_action(key: String) -> void:
 			traj_layer.clear_air_action_markers()
 		return
 	_msg("%s -> %s" % [label, engine.describe(res)])
+	if not _action_canceled_by_interruption(res):
+		res = await _offer_six_replacer(res, dec, label)
 	if _action_canceled_by_interruption(res):
 		await _handle_interruption_cancel(res, dec)
 		log.record("%s annullata da Interruzione (%s)"
@@ -848,6 +930,22 @@ func _declare_action(key: String) -> void:
 	var initiative_changed := false
 	for code_v: Variant in res["results"] as Array:
 		var code := String(code_v)
+		# Schermaglia (tabelle, e RB p.54): se la TF Attiva e' piu' veloce il
+		# giocatore Attivo PUO' iniziare una Battaglia Limitata; se rinuncia
+		# il risultato vale CONTATTO. Prima la Battaglia si apriva e basta.
+		if code == "SKIRMISH" and active != null and target != null \
+				and active.speed > target.speed and _can_control_tf(active):
+			var fight: int = await Choice.ask(self, "Schermaglia",
+				"%s e' piu' veloce di %s: puoi iniziare una Battaglia Limitata "
+				% [active.display_name(), target.display_name()]
+				+ "(un solo Round, dalle zone Lontane). Se rinunci, il "
+				+ "risultato vale Contatto.", [
+				{"label": "Inizia la Battaglia Limitata", "detail": ""},
+				{"label": "Rinuncia: vale Contatto", "detail": ""}], false)
+			if fight == 1:
+				_msg("    Schermaglia: %s rinuncia alla Battaglia Limitata."
+					% active.display_name())
+				code = "CONTACT"
 		var applied := Results.apply(code, active, target,
 			dec.target_hex, state, _ship_chooser, _designated_active_info_count(dec),
 			await _inactive_removal_choice(code, target, dec.target_hex))
@@ -1067,8 +1165,8 @@ func _enemy_action_unavailable_reason(key: String, active: TaskForce) -> String:
 	if state.forces_of(1 - active.side).is_empty():
 		if solo != null:
 			return ("nessuna TF avversaria e' ancora in mappa: nel solitario "
-				+ "usa O per la Tabella Solitario o crea una TF non identificata "
-				+ "quando lo scenario lo ordina")
+				+ "compaiono quando la Tabella dell'avversario immaginario "
+				+ "le fa entrare")
 		return "nessuna Task Force avversaria in gioco"
 	var dec := ActionEngine.Declaration.new()
 	dec.action_key = key
@@ -1421,9 +1519,24 @@ func _offer_steal_initiative(reason: String) -> bool:
 		{"label": "Tenta di Sottrarre", "detail": "2d6 + Conto; con 9+ prende l'Iniziativa"},
 		{"label": "Rinuncia: Manovre Evasive", "detail": "il Conto non aumenta"},
 	]
+	# Lutjens (RB p.10): una volta, il tentativo riesce senza tirare.
+	var lutjens := LeaderRules.lutjens_force(state, inactive)
+	if lutjens != null and _can_control_tf(lutjens):
+		opts.append({"label": "Lutjens: riesce automaticamente",
+			"detail": "una volta sola; %s riceve Manovre Evasive e deve poi "
+				% lutjens.display_name()
+				+ "essere la TF Attiva di Completamento, Ingaggio, Ricerca "
+				+ "Navale o Traiettoria"})
 	var i: int = await Choice.ask(self, "%s - Iniziativa" % reason,
 		"L'Inattivo (%s) puo' tentare di Sottrarre l'Iniziativa."
 			% Initiative.side_name(inactive), opts)
+	if i == 2 and lutjens != null:
+		var auto_r := Initiative.steal_automatic(state, lutjens)
+		_report_initiative(auto_r)
+		_msg("Lutjens: %s deve essere la TF Attiva della prossima azione "
+			% lutjens.display_name()
+			+ "(Completamento, Ingaggio, Ricerca Navale o Traiettoria).")
+		return bool(auto_r.get("changed", false))
 	if i == 0:
 		var spender := await _evasive_spender_for_initiative("Sottrarre l'Iniziativa")
 		var r := Initiative.steal(state, spender)
@@ -2028,7 +2141,7 @@ func _do_save() -> void:
 func _do_load() -> void:
 	var saves := SaveGame.list_saves()
 	if saves.is_empty():
-		_msg("Nessuna partita salvata. Ctrl+S per salvare.")
+		_msg("Nessuna partita salvata. Si salva dal Menu.")
 		return
 	var opts: Array = []
 	for sv in saves:
@@ -2041,7 +2154,12 @@ func _do_load() -> void:
 		+ "restituisce la stessa partita, non una simile.", opts)
 	if i < 0 or i >= saves.size():
 		return
-	var doc := SaveGame.read(String(saves[i]["path"]))
+	_load_save_path(String(saves[i]["path"]))
+
+
+## Applica un salvataggio: prima lo scenario giusto, poi lo stato sopra.
+func _load_save_path(path: String) -> void:
+	var doc := SaveGame.read(path)
 	if not bool(doc["ok"]):
 		_msg("Ricarica: %s" % String(doc["error"]))
 		return
@@ -3424,11 +3542,29 @@ func _do_pass() -> void:
 		_msg("%s usa Passare Tutto; utilizzi rimasti: %d."
 			% [pass_all_name, LeaderRules.uses_left(state, pass_all_name)])
 	else:
-		if not selected_tf.trajectory.is_station():
+		# RB p.35: chi passa "deve anche designare una delle sue Traiettorie
+		# perche' effettui lo Scorrere del Tempo". Con una Stazione
+		# selezionata si passava senza accorciare niente, anche avendo altre
+		# rotte in mare: un Passare gratuito che la regola non concede.
+		var mover := selected_tf
+		if mover.trajectory.is_station():
+			var routes: Array[TaskForce] = []
+			for tf in _controllable_forces(state.forces_of(state.initiative)):
+				if not tf.trajectory.is_station():
+					routes.append(tf)
+			if not routes.is_empty():
+				mover = await _pick_tf(routes, "Passare",
+					"Chi passa deve designare una delle proprie Traiettorie "
+					+ "per lo Scorrere del Tempo (RB p.35).", false)
+				if mover == null:
+					_msg("Passare annullato.")
+					return
+				selected_tf = mover
+				traj_layer.selected_tf_id = mover.id
+		if not mover.trajectory.is_station():
 			await _do_time_lapse(false)
 		else:
-			_msg("%s e' gia' una Stazione: nessuno Scorrere del Tempo."
-				% selected_tf.display_name())
+			_msg("Nessuna Traiettoria in gioco: Passare senza Scorrere del Tempo.")
 	if _report_initiative(Initiative.pass_to_inactive(state)):
 		await _maybe_run_solo_opponent_turn("Passare")
 	_refresh()
@@ -3658,6 +3794,21 @@ var _lbl_roster: RichTextLabel
 var _tf_panel: PanelContainer
 var _tf_info: RichTextLabel
 var _tf_ships: HFlowContainer
+var _tf_buttons: HFlowContainer
+var _tf_row: BoxContainer
+var _guide_label: Label
+var _guide_buttons: HBoxContainer
+var _guide_signature: String = ""
+var _map_tools: HBoxContainer
+var _menu_panel: PanelContainer
+var _menu_shade: Control
+var _hint_signature: String = ""
+var _pan_candidate := false
+var _pan_active := false
+var _pan_start := Vector2.ZERO
+var _framed_size := Vector2.ZERO
+var _autosave_seq: int = -1
+var _autosave_at: int = 0
 var _log_panel: PanelContainer
 var _log_toggle: Button
 var _log_scroll: ScrollContainer
@@ -3707,9 +3858,19 @@ func _build_hud() -> void:
 	_tf_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	_tf_panel.add_theme_stylebox_override("panel", _panel_style())
 	_tf_panel.visible = false
+	# Testo e comandi a sinistra, pedine a destra. Uno sopra l'altro, le
+	# pedine coprivano le ultime righe della scheda: restavano 80 px per
+	# cinque righe di testo.
+	var tf_row := BoxContainer.new()
+	_tf_row = tf_row
+	tf_row.add_theme_constant_override("separation", 12)
+	_tf_panel.add_child(tf_row)
 	var tf_col := VBoxContainer.new()
-	tf_col.add_theme_constant_override("separation", 7)
-	_tf_panel.add_child(tf_col)
+	tf_col.add_theme_constant_override("separation", 6)
+	tf_col.custom_minimum_size.x = 300
+	tf_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	tf_col.size_flags_stretch_ratio = 1.25
+	tf_row.add_child(tf_col)
 	_tf_info = RichTextLabel.new()
 	_tf_info.bbcode_enabled = true
 	# NON `fit_content`: cosi' la scheda pretendeva l'altezza del suo testo -
@@ -3720,16 +3881,21 @@ func _build_hud() -> void:
 	_tf_info.scroll_active = true
 	_tf_info.custom_minimum_size = Vector2(0, 48)
 	_tf_info.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_tf_info.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_tf_info.mouse_filter = Control.MOUSE_FILTER_PASS
+	UiTheme.style_rich(_tf_info, 16)
 	tf_col.add_child(_tf_info)
+	_tf_buttons = HFlowContainer.new()
+	_tf_buttons.add_theme_constant_override("h_separation", 6)
+	_tf_buttons.add_theme_constant_override("v_separation", 6)
+	tf_col.add_child(_tf_buttons)
 	var ship_scroll := ScrollContainer.new()
-	ship_scroll.custom_minimum_size = Vector2(0, 128)
+	ship_scroll.custom_minimum_size = Vector2(246, 120)
 	ship_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	ship_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	ship_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	ship_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	ship_scroll.mouse_filter = Control.MOUSE_FILTER_STOP
-	tf_col.add_child(ship_scroll)
+	tf_row.add_child(ship_scroll)
 	_tf_ships = HFlowContainer.new()
 	_tf_ships.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_tf_ships.add_theme_constant_override("h_separation", 7)
@@ -3751,14 +3917,14 @@ func _build_hud() -> void:
 	log_header.add_theme_constant_override("separation", 6)
 	log_col.add_child(log_header)
 	_log_toggle = Button.new()
-	_log_toggle.text = "Registro  >"
+	_log_toggle.text = "Registro: nascondi"
 	_log_toggle.tooltip_text = "Comprimi il registro degli eventi"
 	_log_toggle.focus_mode = Control.FOCUS_NONE
 	_log_toggle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_log_toggle.pressed.connect(_toggle_log_panel)
 	log_header.add_child(_log_toggle)
 	var copy_log := Button.new()
-	copy_log.text = "Copia tutto"
+	copy_log.text = "Copia"
 	copy_log.tooltip_text = "Copia l'intero registro negli appunti"
 	copy_log.focus_mode = Control.FOCUS_NONE
 	copy_log.pressed.connect(_copy_full_log)
@@ -3769,7 +3935,9 @@ func _build_hud() -> void:
 	_lbl_log = RichTextLabel.new()
 	_lbl_log.bbcode_enabled = true
 	_lbl_log.fit_content = true
-	_lbl_log.custom_minimum_size.x = 370
+	_lbl_log.custom_minimum_size.x = 250
+	_lbl_log.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	UiTheme.style_rich(_lbl_log, 15)
 	_lbl_log.selection_enabled = true
 	_lbl_log.context_menu_enabled = true
 	_lbl_log.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -3813,9 +3981,7 @@ func _build_hud() -> void:
 	_lbl_now.bbcode_enabled = true
 	# un punto piu' piccolo del resto: e' un pannello di servizio, non deve
 	# rubare l'occhio alla mappa
-	_lbl_now.add_theme_font_size_override("normal_font_size", 14)
-	_lbl_now.add_theme_font_size_override("bold_font_size", 14)
-	_lbl_now.add_theme_font_size_override("italics_font_size", 14)
+	UiTheme.style_rich(_lbl_now, 16)
 	_lbl_now.scroll_active = true
 	_lbl_now.selection_enabled = true
 	_lbl_now.context_menu_enabled = true
@@ -3828,7 +3994,9 @@ func _build_hud() -> void:
 	_status_choice_box.visible = false
 	now_col.add_child(_status_choice_box)
 	_status_choice_title = Label.new()
-	_status_choice_title.add_theme_font_size_override("font_size", 15)
+	_status_choice_title.add_theme_font_override("font", UiTheme.stretto())
+	_status_choice_title.add_theme_color_override("font_color", UiTheme.OTTONE)
+	_status_choice_title.add_theme_font_size_override("font_size", 22)
 	_status_choice_box.add_child(_status_choice_title)
 	_status_choice_detail = RichTextLabel.new()
 	_status_choice_detail.bbcode_enabled = true
@@ -3852,8 +4020,8 @@ func _build_hud() -> void:
 	_solo_event_panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	_solo_event_panel.offset_left = 12
 	_solo_event_panel.offset_right = -430
-	_solo_event_panel.offset_top = 108
-	_solo_event_panel.offset_bottom = 236
+	_solo_event_panel.offset_top = MAP_TOP + 8
+	_solo_event_panel.offset_bottom = MAP_TOP + 136
 	_solo_event_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_solo_event_panel.add_theme_stylebox_override("panel", _solo_event_style())
 	_solo_event_panel.visible = false
@@ -3862,14 +4030,18 @@ func _build_hud() -> void:
 	_lbl_solo_event.bbcode_enabled = true
 	_lbl_solo_event.fit_content = false
 	_lbl_solo_event.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_lbl_solo_event.add_theme_font_size_override("normal_font_size", 15)
-	_lbl_solo_event.add_theme_font_size_override("bold_font_size", 16)
+	UiTheme.style_rich(_lbl_solo_event, 16)
 	_solo_event_panel.add_child(_lbl_solo_event)
 
+	_build_map_tools(hud)
 	_build_action_bar(hud)
+	_build_guide()
+	now_col.add_child(_bar.make_status_row())
+	now_col.move_child(now_col.get_child(now_col.get_child_count() - 1), 0)
 	_build_grabbers(hud)
 	_build_briefing(hud)
 	_build_help(hud)
+	_build_menu(hud)
 	_apply_layout()
 
 
@@ -3984,14 +4156,14 @@ func _use_map_for(sc: Scenario) -> void:
 func _fit_camera_to_map() -> void:
 	if cam == null or graph == null:
 		return
-	cam.setup(Vector2(graph.map_size))
-	_focus_selected()
+	_frame_view()
+	_framed_size = cam.get_viewport_rect().size
 
 
 func _toggle_log_panel() -> void:
 	_log_expanded = not _log_expanded
 	_log_scroll.visible = _log_expanded
-	_log_toggle.text = "Registro  >" if _log_expanded else "<"
+	_log_toggle.text = "Registro: nascondi" if _log_expanded else "Reg."
 	_log_toggle.tooltip_text = "Comprimi il registro degli eventi" \
 		if _log_expanded else "Apri il registro degli eventi"
 	_apply_layout()
@@ -4044,8 +4216,11 @@ func _status_choose(title: String, description: String, options: Array,
 		var option: Dictionary = options[i]
 		var button := Button.new()
 		button.text = String(option.get("label", "Opzione %d" % (i + 1)))
+		# Il tasto 1-9 sceglie l'opzione: lo si dice sul pulsante, dove serve.
+		if i < 9:
+			button.text = "%d.  %s" % [i + 1, button.text]
 		button.tooltip_text = String(option.get("detail", ""))
-		button.custom_minimum_size = Vector2(150, 40)
+		button.custom_minimum_size = Vector2(150, 46)
 		_style_status_button(button, false)
 		var index := i
 		button.pressed.connect(func() -> void: _complete_status_choice(index))
@@ -4053,7 +4228,7 @@ func _status_choose(title: String, description: String, options: Array,
 	if allow_cancel:
 		var cancel := Button.new()
 		cancel.text = "Annulla"
-		cancel.custom_minimum_size = Vector2(110, 40)
+		cancel.custom_minimum_size = Vector2(110, 46)
 		_style_status_button(cancel, true)
 		cancel.pressed.connect(func() -> void: _complete_status_choice(-1))
 		_status_choice_buttons.add_child(cancel)
@@ -4076,30 +4251,12 @@ func _complete_status_choice(index: int) -> void:
 
 
 func _style_status_button(button: Button, secondary: bool) -> void:
-	var colors := [Color("253746"), Color("31546b"), Color("1b2934")]
-	if secondary:
-		colors = [Color("292f35"), Color("3b4650"), Color("20262b")]
-	for i in 3:
-		var style := StyleBoxFlat.new()
-		style.bg_color = colors[i]
-		style.border_color = Color("78a8c4") if not secondary else Color("697783")
-		style.set_border_width_all(1)
-		style.set_corner_radius_all(7)
-		style.content_margin_left = 14
-		style.content_margin_right = 14
-		style.content_margin_top = 8
-		style.content_margin_bottom = 8
-		button.add_theme_stylebox_override(["normal", "hover", "pressed"][i], style)
-	button.add_theme_color_override("font_color", Color("f3f6f8"))
-	button.add_theme_color_override("font_hover_color", Color.WHITE)
+	button.focus_mode = Control.FOCUS_NONE
+	UiTheme.style_button(button, "normale" if secondary else "primario")
 
 
 func _solo_event_style() -> StyleBoxFlat:
-	var sb := _panel_style()
-	sb.bg_color = Color(0.08, 0.12, 0.15, 0.96)
-	sb.border_color = Color(0.95, 0.68, 0.25, 0.95)
-	sb.set_border_width_all(2)
-	return sb
+	return UiTheme.panel_accent()
 
 
 ## Sfondo scuro semitrasparente: senza, il testo bianco sull'azzurro della
@@ -4162,6 +4319,10 @@ func _action_unavailable_reason(key: String) -> String:
 					AirBase.hex_of(b), {}, b).is_empty():
 				return ""
 		return "nessuna TF nemica e' entro due esagoni da una CV integra"
+	# La Ricognizione non ha bisogno di un bersaglio: basta una forza di
+	# U-Boat o Sottomarini da muovere.
+	if key == "STEALTH_ATTACK" and not _recon_forces(selected_tf.side).is_empty():
+		return ""
 	if ActionBar.needs_enemy(key) and _eligible_targets_for_action(key, selected_tf).is_empty():
 		return _enemy_action_unavailable_reason(key, selected_tf)
 	var dec := ActionEngine.Declaration.new()
@@ -4196,19 +4357,16 @@ func _refresh_now() -> void:
 	var out: Array[String] = []
 
 	if mode == Mode.EDITOR:
+		_refresh_guide()
+		_refresh_trajectory_hints()
 		_lbl_now.text = ("[b]EDITOR DEL GRAFO[/b]\nSi modifica la mappa, non si "
 			+ "gioca. Le coordinate sono al centro di ogni esagono; clic per "
 			+ "selezionarlo, Shift+clic su un vicino per modificare il lato. "
 			+ "E torna alla partita.")
 		return
 
-	var scenario_name := scenario.title if scenario != null else "Scenario"
-	var status := "[b]%s[/b]    Meteo: [b]%s[/b]    Iniziativa: [b]%s[/b]" % [
-		scenario_name, "cattivo" if state.weather == 1 else "buono",
-		Initiative.side_name(state.initiative)]
-	if solo != null:
-		status += "    Solitario: [b]%s[/b]" % _solo_phase_label()
-	out.append(status)
+	_refresh_guide()
+	_refresh_trajectory_hints()
 	if state.solo_ended:
 		out.append("[bgcolor=#4a241f][color=#ffd0a8][b]  FINE SCENARIO  [/b][/color]  "
 			+ "[color=#ffffff][b]%s[/b] Apri Punteggio per il Debriefing.[/color][/bgcolor]"
@@ -4225,8 +4383,8 @@ func _refresh_now() -> void:
 		out.append("[color=#ff9a3c]%s[/color]" % late)
 
 	if selected_tf == null:
-		out.append("[b]Ora tocca a...[/b]  [b]%s[/b]" % Initiative.side_name(state.initiative))
-		out.append("[color=#ffd27f]Clicca una Task Force sulla mappa.[/color] "
+		out.append("[b]Tocca a %s.[/b]" % Initiative.side_name(state.initiative))
+		out.append("[color=#ffd27f]Tocca una Task Force sulla mappa.[/color] "
 			+ "Finche' non ne scegli una, nessuna azione e' dichiarabile: "
 			+ "in Atlantic Chase si dichiara sempre PER una forza.")
 		_lbl_now.text = "\n".join(out)
@@ -4235,14 +4393,14 @@ func _refresh_now() -> void:
 	var side_name := "Kriegsmarine" if selected_tf.side \
 		== TaskForce.Side.KRIEGSMARINE else "Royal Navy"
 	var has_init := state.initiative == selected_tf.side
-	out.append("[b]Ora tocca a...[/b]  [b]%s[/b] - %s%s"
-		% [side_name, selected_tf.display_name(),
+	out.append("[b]%s[/b] - %s%s"
+		% [selected_tf.display_name(), side_name,
 		"   [color=#8fd0ff](ha l'Iniziativa)[/color]" if has_init else ""])
 	if not has_init:
 		if solo != null and state.forces_of(state.initiative).is_empty():
 			out.append("[color=#ff9a3c]L'Iniziativa e' dell'avversario immaginario: "
 				+ "la Tabella Solitario viene tirata automaticamente quando "
-				+ "riceve il turno; O la riapre/manuale.[/color]")
+				+ "riceve il turno.[/color]")
 		else:
 			out.append("[color=#ff9a3c]Questa TF non puo' agire: l'Iniziativa e' di "
 				+ "[b]%s[/b].[/color]" % Initiative.side_name(state.initiative))
@@ -4251,29 +4409,28 @@ func _refresh_now() -> void:
 	var t := selected_tf.trajectory
 	if t.is_station():
 		if _trajectory_action_armed:
-			out.append("[color=#8fd0ff][b]Azione Traiettoria attiva.[/b][/color] "
-				+ "Trascina dalla Stazione o clicca un esagono adiacente. "
-				+ "Dopo il primo tratto l'azione si chiude; ESC annulla.")
+			out.append("[color=#8fd0ff][b]Stai tracciando la rotta.[/b][/color] "
+				+ "Tocca uno degli esagoni verdi accanto alla Stazione, oppure "
+				+ "trascina dalla Stazione lungo la rotta. Quando hai finito "
+				+ "premi [b]Rotta finita[/b]: l'Iniziativa resta a te.")
 		else:
-			out.append("E' una [b]Stazione[/b]. Per tracciare una rotta dichiara "
-				+ "[b]Traiettoria (5)[/b]; altrimenti puoi solo selezionare e "
-				+ "dichiarare altre azioni.")
+			out.append("E' una [b]Stazione[/b]: ferma in un esagono. Per farla "
+				+ "muovere dichiara [b]Traiettoria[/b] e traccia la rotta.")
 	elif t.length() >= Trajectory.MAX_SEGMENTS:
 		out.append("Traiettoria al massimo (%d segmenti): non puo' essere allungata "
 			% Trajectory.MAX_SEGMENTS
 			+ "finche' un'Azione o un evento non innesca [b]Scorrere del Tempo[/b].")
 	else:
 		if _trajectory_action_armed:
-			out.append("[color=#8fd0ff][b]Azione Traiettoria attiva.[/b][/color] "
-				+ "La rotta ha [b]%d[/b] segmenti, capo attivo [b]%s[/b]: "
-				% [t.length(), "testa" if active_end == 0 else "coda"]
-				+ "trascina dal capo o clicca un esagono adiacente. F cambia capo; ESC annulla.")
+			out.append("[color=#8fd0ff][b]Stai tracciando la rotta.[/b][/color] "
+				+ "Ha [b]%d[/b] segmenti su %d. Tocca un esagono verde accanto "
+				% [t.length(), Trajectory.MAX_SEGMENTS]
+				+ "a uno dei due capi per allungarla, poi [b]Rotta finita[/b].")
 		else:
-			out.append("Traiettoria di [b]%d[/b] segmenti. Per modificarla dichiara "
+			out.append("Traiettoria di [b]%d[/b] segmenti. [b]Traiettoria[/b] la "
 				% t.length()
-				+ "[b]Traiettoria (5)[/b]. [b]7 Passare[/b] innesca lo Scorrere "
-				+ "del Tempo e passa l'Iniziativa. "
-				+ "F cambia il capo preparato.")
+				+ "allunga; [b]Passare[/b] la accorcia con lo Scorrere del "
+				+ "Tempo e cede l'Iniziativa.")
 
 	# I pulsanti in alto mostrano gia' le azioni disponibili. Qui restano solo
 	# i motivi dei divieti, raggruppati per non ripetere la stessa spiegazione.
@@ -4309,19 +4466,15 @@ func _refresh_action_bar() -> void:
 		reasons[a[0]] = _action_unavailable_reason(String(a[0]))
 	_bar.update_state(reasons, log != null and log.can_undo(),
 		log != null and log.can_redo(), mode == Mode.EDITOR)
+	var player := _solo_player_side()
+	_bar.set_status(scenario.title if scenario != null else "Scenario",
+		state.weather == 1, Initiative.side_name(state.initiative),
+		player < 0 or state.initiative == player,
+		"Solitario: %s" % _solo_phase_label() if solo != null else "")
 
 
 func _panel_style() -> StyleBoxFlat:
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.05, 0.07, 0.10, 0.88)
-	sb.border_color = Color(0.45, 0.60, 0.72, 0.75)
-	sb.set_border_width_all(1)
-	sb.set_corner_radius_all(6)
-	sb.content_margin_left = 12
-	sb.content_margin_right = 12
-	sb.content_margin_top = 8
-	sb.content_margin_bottom = 8
-	return sb
+	return UiTheme.panel(0.95)
 
 
 ## Pannello del briefing: iniziativa, meteo, fine partita e condizioni di
@@ -4352,13 +4505,7 @@ func _build_action_bar(root: Control) -> void:
 	_bar.briefing_toggled.connect(func() -> void:
 		_toggle_briefing())
 	_bar.help_toggled.connect(_toggle_help)
-	_bar.scenario_step.connect(func(d: int) -> void:
-		_load_scenario_at(scenario_index + d))
-	_bar.grid_cycled.connect(func() -> void:
-		board.set_grid_mode((board.grid_mode + 1) % 4))
-	_bar.editor_toggled.connect(_toggle_editor)
-	_bar.menu_requested.connect(func() -> void:
-		get_tree().change_scene_to_file("res://ui/splash/splash.tscn"))
+	_bar.menu_requested.connect(_toggle_menu)
 
 
 func _toggle_editor() -> void:
@@ -4383,8 +4530,7 @@ func _build_briefing(root: Control) -> void:
 	# mappa attraverso. Questo invece si LEGGE - adesso porta la condizione di
 	# fine, la Tabella dell'Esito e tutte le voci a punti - e leggere un
 	# regolamento con la mappa che traspare dietro e' faticoso. Fondo pieno.
-	var style := _panel_style()
-	style.bg_color = Color(0.05, 0.07, 0.10, 1.0)
+	var style := UiTheme.box(UiTheme.SCAFO, UiTheme.OTTONE, 2, 8, 18, 14)
 	_briefing_panel.add_theme_stylebox_override("panel", style)
 	root.add_child(_briefing_panel)
 	var col := VBoxContainer.new()
@@ -4394,14 +4540,17 @@ func _build_briefing(root: Control) -> void:
 	col.add_child(header)
 	_lbl_briefing_title = Label.new()
 	_lbl_briefing_title.text = "Scenario"
-	_lbl_briefing_title.add_theme_font_size_override("font_size", 19)
+	_lbl_briefing_title.add_theme_font_override("font", UiTheme.stretto())
+	_lbl_briefing_title.add_theme_color_override("font_color", UiTheme.OTTONE)
+	_lbl_briefing_title.add_theme_font_size_override("font_size", 26)
 	_lbl_briefing_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(_lbl_briefing_title)
 	var close := Button.new()
-	close.text = "X"
-	close.tooltip_text = "Chiudi"
-	close.custom_minimum_size = Vector2(36, 32)
+	close.text = "Chiudi"
+	close.tooltip_text = "Chiudi (ESC)"
+	close.custom_minimum_size = Vector2(110, 42)
 	close.focus_mode = Control.FOCUS_NONE
+	UiTheme.style_button(close, "primario")
 	close.pressed.connect(func() -> void: _briefing_panel.visible = false)
 	header.add_child(close)
 	var scroll := ScrollContainer.new()
@@ -4462,95 +4611,75 @@ func _update_briefing() -> void:
 
 func _build_help(root: Control) -> void:
 	_help = PanelContainer.new()
-	_help.set_anchors_preset(Control.PRESET_CENTER)
-	_help.position = Vector2(-360, -300)
+	_help.set_anchor(SIDE_LEFT, 0.16)
+	_help.set_anchor(SIDE_TOP, 0.07)
+	_help.set_anchor(SIDE_RIGHT, 0.84)
+	_help.set_anchor(SIDE_BOTTOM, 0.93)
+	_help.mouse_filter = Control.MOUSE_FILTER_STOP
 	_help.visible = false
-	_help.add_theme_stylebox_override("panel", _panel_style())
+	_help.add_theme_stylebox_override("panel",
+		UiTheme.box(UiTheme.SCAFO, UiTheme.OTTONE, 2, 8, 18, 14))
 	root.add_child(_help)
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 8)
+	_help.add_child(col)
+	var header := HBoxContainer.new()
+	col.add_child(header)
+	var title := UiTheme.heading("COME SI GIOCA", 26)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_child(title)
+	var close := UiTheme.button("Chiudi", "primario", 42.0)
+	close.custom_minimum_size.x = 110
+	close.pressed.connect(func() -> void: _help.visible = false)
+	header.add_child(close)
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	col.add_child(scroll)
 	var t := RichTextLabel.new()
 	t.bbcode_enabled = true
-	t.custom_minimum_size = Vector2(700, 600)
-	t.scroll_active = true
-	t.text = """[b]Atlantic Chase - comandi[/b]
+	t.fit_content = true
+	t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	t.custom_minimum_size.x = 400
+	t.mouse_filter = Control.MOUSE_FILTER_PASS
+	UiTheme.style_rich(t, 18)
+	scroll.add_child(t)
+	t.text = """[color=#e0aa4a][b]IL TURNO IN TRE PASSI[/b][/color]
+[b]1.[/b] Tocca una tua Task Force sulla mappa. La riga in alto, bordata d'ottone, dice sempre che cosa aspetta il gioco e offre il pulsante per farlo.
+[b]2.[/b] Scegli un'azione nella barra in alto. Quelle verdi si possono dichiarare; quelle spente no, e il riquadro in basso a sinistra spiega perche'.
+[b]3.[/b] Rispondi alle domande che compaiono in basso (bersaglio, supporti, dadi). Chi tiene l'Iniziativa continua; chi la perde o passa cede il turno.
 
-[b]Mappa[/b]
-  trascina col tasto centrale, oppure WASD    sposta la vista
-  rotella                                     zoom sul cursore
-  Home                                        centra sulla TF selezionata
+[color=#e0aa4a][b]LE NOVE AZIONI[/b][/color]
+[b]Traiettoria[/b] - allunga la rotta di una Task Force. Tocca gli esagoni verdi, poi [b]Rotta finita[/b]. Tieni l'Iniziativa.
+[b]Ricerca[/b] - cerca una Traiettoria nemica che attraversa il tuo esagono.
+[b]Ingaggia[/b] - attacca una Stazione nemica: puo' aprire una Battaglia.
+[b]Aereo[/b] - Attacco Aereo da una portaerei o da una base aerea.
+[b]Furtivo[/b] - attacco di sommergibili, o Ricognizione.
+[b]Completamento[/b] - porta a termine la missione di una Task Force arrivata.
+[b]Passare[/b] - accorcia una tua rotta (Scorrere del Tempo) e cede l'Iniziativa.
+[b]Riorganizza[/b] - dividi, unisci o rinforza le Task Force.
+[b]Segnali[/b] - trasforma un segnalino Informazioni nemico in una Stazione.
 
-[b]Traiettorie[/b]
-  clic su una Task Force                      seleziona
-  5 / Traiettoria                             arma il tracciamento della rotta
-  [b]trascina dalla TF sugli esagoni[/b]             disegna la rotta armata in un gesto solo
-  clic su un esagono adiacente                estende di un esagono, solo dopo 5
-  Scorrere del Tempo                          si apre solo quando una regola lo innesca
-  Tab / Shift+Tab                             TF successiva / precedente
-  F                                           cambia capo attivo (testa/coda)
-  ESC                                         annulla l'azione Traiettoria armata
+[color=#e0aa4a][b]LA MAPPA[/b][/color]
+[b]Spostare[/b] - trascina sul mare con un dito o col tasto sinistro. Anche WASD.
+[b]Ingrandire[/b] - pizzica con due dita, usa la rotella, oppure i pulsanti + e - in basso a sinistra. "Le forze" inquadra le Task Force, "Tutta la mappa" l'intero mare.
+[b]Scegliere[/b] - tocca una Task Force. Se nello stesso esagono ce ne sono piu' d'una, tocca ancora per passare alla successiva.
+[b]Bordi[/b] - i bordi fra mappa, registro e riquadri in basso si trascinano.
 
-[b]Azioni[/b]  (anche dai pulsanti in alto)
-  1  Ingaggiare      2  Ricerca Navale
-  3  Attacco Aereo   4  Attacco Furtivo
-  5  Traiettoria     6  Completamento
-  7  Passare         8  Riorganizzare
-  9  Segnalazione
-  O   avversario immaginario (modo solitario; riapre le tabelle)
-  Nel solitario, quando l'avversario immaginario riceve l'Iniziativa,
-     la sua Tabella delle Azioni viene tirata automaticamente.
-  0   apre una Battaglia di prova
-  Ctrl+W  alterna meteo buono/cattivo
-  Ctrl+Z / Ctrl+Shift+Z   annulla / ripristina
+[color=#e0aa4a][b]IL SOLITARIO[/b][/color]
+Quando l'Iniziativa passa all'avversario immaginario, il gioco tira da solo la sua Tabella delle Azioni e applica il risultato. Il registro a destra riassume ogni sua mossa: tocca "Mostra procedura" per vedere dadi e calcoli. Le tabelle si riaprono a mano dal Menu.
 
-[b]Punteggio e Debriefing[/b]
-  V         punteggio, esito corrente e condizioni da spuntare
-  Shift+V   spunta le condizioni che il motore non puo' valutare da solo
-	  (Mine posate, marcatore Base Aerea, zona di sicurezza USA...).
-	  Una riga spuntata entra nel punteggio e resta nel salvataggio;
-	  quante ne restano da guardare e' sempre scritto, cosi' un
-	  punteggio incompleto si vede invece di sembrare finito.
+[color=#e0aa4a][b]LA BATTAGLIA[/b][/color]
+La Mappa di Battaglia si apre da sola. I pulsanti in alto a destra fanno avanzare le fasi (quello d'ottone e' il passo successivo); le navi si muovono trascinandole di una zona. Con le Regole Avanzate ogni fase ha i suoi comandi, sempre elencati nei pulsanti.
 
-[b]Guida in tempo reale[/b]
-	  Il pannello in basso dice chi ha l'Iniziativa, cosa puoi fare ora e
-	  perche' un'azione e' bloccata. Le scelte compaiono li' come pulsanti.
-	  Il risultato del bot resta evidenziato; ogni procedura apre i propri calcoli.
-	  Registro e pannello di stato consentono di selezionare e copiare il testo.
+[color=#e0aa4a][b]PARTITE[/b][/color]
+Il gioco salva da solo quando il turno torna a te. Dal Menu si salva e si carica a mano; dalla schermata iniziale, "Riprendi una partita".
 
-[b]Comandanti[/b]
-	  La scheda TF mostra effetto e utilizzi residui. Raeder e Pound offrono
-	  Passare Tutto quando dichiari Passare; gli altri effetti sono indicati
-	  esplicitamente come automatizzati o ancora manuali.
-
-[b]In Battaglia[/b]
-  SPAZIO                     risolve la fase corrente
-  [b]trascina una nave[/b]          la muove di una zona
-  S                          crea o toglie il Fumo
-  F / G                      tenta la Fuga (Attivo / Bersaglio)
-  ESC                        torna alla mappa
-
-[b]In Battaglia, Regole Avanzate[/b]
-  A                          cambia attitudine (fase Attitudine)
-  P / M                      Plancia: rinuncia al Fuoco / resta Ferma
-  D                          divide il fuoco su due bersagli, poi cicla
-	  la ripartizione dei cannoni; Z conferma
-  K                          usa il segnalino Confusione: nel Fuoco sposta
-	  un danno su una nave TUA, nella Manovra e nell'Attitudine comanda
-	  una nave nemica
-  C                          dichiara il Controllo Danni (Effetti Duraturi)
-  I                          Inseguimento (fase Manovra)
-	  Col Timone Fuori Uso si tira a ogni Attitudine e Manovra: con un
-	  DISPARI quella nave la comanda l'avversario.
-
-[b]Touch (iPad)[/b]
-  due dita             sposta la mappa e zooma (pinch)
-  un dito              seleziona; dopo 5 disegna la Traiettoria
-  durante Scorrere     tocca i segmenti terminali evidenziati
-
-[b]Scenario e vista[/b]
-  [ e ]        scenario precedente / successivo
-  B            briefing        G   visibilita' del reticolo
-  E            editor del grafo (Ctrl+S salva)
-  F1           chiude questo pannello"""
-	_help.add_child(t)
+[color=#e0aa4a][b]TASTIERA[/b][/color]
+[b]1-9[/b] le nove azioni e le risposte numerate   [b]Tab[/b] prossima Task Force   [b]Home[/b] centra
+[b]Ctrl+Z[/b] annulla   [b]Ctrl+Shift+Z[/b] rifai   [b]B[/b] scenario   [b]V[/b] punteggio   [b]Shift+V[/b] condizioni da spuntare a mano
+[b]F[/b] cambia capo della rotta   [b]ESC[/b] annulla o chiude   [b]G[/b] reticolo   [b]F1[/b] questo aiuto
+In Battaglia: [b]SPAZIO[/b] fase successiva   [b]S[/b] Fumo   [b]F / G[/b] Fuga   [b]A[/b] attitudine   [b]D[/b] dividi il fuoco   [b]K[/b] Confusione   [b]C[/b] Controllo Danni   [b]I[/b] Inseguimento"""
 
 
 func _toggle_help() -> void:
@@ -4572,7 +4701,9 @@ const SERVICE_MARKERS := [
 	"selezionata ",
 	"Task Force deselezionata",
 	"Completa prima la scelta gia' aperta",
-	"Pronto. F1 per l'elenco dei comandi",
+	"Pronto.",
+	"Rotta chiusa",
+	"Reticolo:",
 ]
 
 
@@ -4593,32 +4724,94 @@ func _msg(s: String) -> void:
 
 func _tf_card_text(tf: TaskForce) -> String:
 	var t := tf.trajectory
-	var kind := "Stazione" if t.is_station() else "Traiettoria"
 	var lines: Array[String] = [
-		"[font_size=18][b]%s[/b][/font_size]  [color=#9eb5c2]%s[/color]" % [
+		"[font_size=22][b]%s[/b][/font_size]   [color=#9db0bf]%s[/color]" % [
 			tf.display_name(), "Kriegsmarine" if tf.side == TaskForce.Side.KRIEGSMARINE
 			else "Royal Navy"],
-		"%s, [b]%d[/b] segmenti    velocita': [b]%s[/b]" % [kind, t.length(),
-			TimeLapse.speed_label(tf.speed)],
 	]
 	if t.is_station():
-		lines.append("Esagono: [b]%s[/b]%s" % [_hex_text(t.station_hex),
-			"    porto: [b]%s[/b]" % t.station_port if t.station_port != "" else ""])
+		var where := "Stazione in %s" % _hex_text(t.station_hex)
+		if t.station_port != "":
+			where = "Nella Casella Porto di [b]%s[/b]" % t.station_port
+		lines.append("%s - velocita' [b]%s[/b]" % [where,
+			TimeLapse.speed_label(tf.speed)])
 	else:
-		lines.append("Testa [b]%s[/b]    Coda [b]%s[/b]    capo attivo: [b]%s[/b]" % [
-			_hex_text(t.end_hex(0)), _hex_text(t.end_hex(1)),
-			"testa" if active_end == 0 else "coda"])
-	lines.append("Informazioni: [b]%d[/b]    Contatto: [b]%d[/b]" % [
-		t.info_count(), t.contact_count()])
+		lines.append("Traiettoria di [b]%d[/b] segmenti su %d - velocita' [b]%s[/b]" % [
+			t.length(), Trajectory.MAX_SEGMENTS, TimeLapse.speed_label(tf.speed)])
+	var marks: Array[String] = ["Informazioni [b]%d[/b]" % t.info_count(),
+		"Contatto [b]%d[/b]" % t.contact_count()]
 	if tf.evasive:
-		lines.append("[color=#9ee8ff][b]Manovre Evasive[/b] assegnate[/color]")
+		marks.append("[color=#9ee8ff][b]Manovre Evasive[/b][/color]")
+	lines.append("   ".join(marks))
 	if tf.unidentified:
-		lines.append("[color=#ffd27f]TF non identificata: composizione nascosta[/color]")
+		lines.append("[color=#ffd27f]Non identificata: composizione nascosta[/color]")
 	elif not _can_control_tf(tf) and solo != null:
-		lines.append("[color=#ffd27f]Avversario immaginario: ispezionabile, non comandabile[/color]")
+		lines.append("[color=#ffd27f]Avversario immaginario: si guarda, non si comanda[/color]")
 	if t.info_count() > 0:
-		lines.append("[color=#ff9a3c]Completamento impedito; vulnerabile a Interruzione[/color]")
+		lines.append("[color=#ff9a3c]Il segnalino Informazioni impedisce il "
+			+ "Completamento e la espone all'Interruzione[/color]")
 	return "\n".join(lines)
+
+
+## I comandi che riguardano SOLO la Task Force selezionata, accanto alla sua
+## scheda: dove la si guarda, li' si trova cosa farne.
+func _refresh_tf_buttons(tf: TaskForce) -> void:
+	for child in _tf_buttons.get_children():
+		child.queue_free()
+	var centre := UiTheme.button("Centra sulla mappa", "normale", 38.0, 16)
+	centre.pressed.connect(func() -> void: _focus_selected())
+	_tf_buttons.add_child(centre)
+	if not _can_control_tf(tf) or tf.side != state.initiative \
+			or _solo_is_imaginary_turn():
+		return
+	# Casella Porto (RB p.8): entrare e uscire non e' un'Azione e non costa
+	# niente, ma lo fa solo il giocatore Attivo.
+	if PortBox.is_in_box(tf):
+		var leave := UiTheme.button("Esci dalla Casella Porto", "normale", 38.0, 16)
+		leave.tooltip_text = ("Torna nell'esagono del porto: di nuovo "
+			+ "attaccabile, di nuovo capace di attaccare. Non e' un'Azione.")
+		leave.pressed.connect(func() -> void: _port_box_move(tf, false))
+		_tf_buttons.add_child(leave)
+	else:
+		var port := PortBox.enterable_port(tf, graph, _port_control())
+		if port != "":
+			var enter := UiTheme.button("Entra nella Casella Porto", "normale", 38.0, 16)
+			enter.tooltip_text = ("%s: al sicuro da Ingaggiare, Attacco Aereo e "
+				+ "Attacco Furtivo, ma non puo' attaccare ne' dare supporto. "
+				+ "Non e' un'Azione (RB p.8).") % port
+			enter.pressed.connect(func() -> void: _port_box_move(tf, true))
+			_tf_buttons.add_child(enter)
+	var open_convoys := 0
+	for c in Convoy.convoys_in(tf):
+		if not c.dispersed:
+			open_convoys += 1
+	if open_convoys > 0 and scenario != null and scenario.convoy_dispersal_allowed():
+		var disperse := UiTheme.button("Disperdi il Convoglio", "normale", 38.0, 16)
+		disperse.tooltip_text = ("Un Convoglio disperso incassa un solo Colpo per "
+			+ "attacco, ma vale un punto in meno all'arrivo. Non si puo' disfare.")
+		disperse.pressed.connect(func() -> void: _do_disperse())
+		_tf_buttons.add_child(disperse)
+
+
+func _port_box_move(tf: TaskForce, entering: bool) -> void:
+	if tf == null or _status_choice_active:
+		return
+	if entering:
+		var port := PortBox.enterable_port(tf, graph, _port_control())
+		if port == "" or not PortBox.enter(tf, port):
+			_msg("%s non puo' entrare in una Casella Porto qui." % tf.display_name())
+			return
+		_msg("%s entra nella Casella Porto di %s." % [tf.display_name(), port])
+		log.record("Casella Porto: entra (%s)" % tf.display_name())
+	else:
+		var port := tf.trajectory.station_port
+		if not PortBox.leave(tf):
+			return
+		_msg("%s esce dalla Casella Porto di %s." % [tf.display_name(), port])
+		log.record("Casella Porto: esce (%s)" % tf.display_name())
+	state.changed.emit()
+	_tf_card_signature = ""
+	_refresh()
 
 
 func _refresh_tf_panel() -> void:
@@ -4637,11 +4830,13 @@ func _refresh_tf_panel() -> void:
 	if _tf_panel_tf_id != selected_tf.id:
 		_tf_panel_tf_id = selected_tf.id
 	_tf_panel.visible = true
-	var signature := JSON.stringify(selected_tf.to_dict()) + ":%d" % active_end
+	var signature := JSON.stringify(selected_tf.to_dict()) + ":%d:%d:%s" % [
+		active_end, state.initiative, _solo_is_imaginary_turn()]
 	if signature == _tf_card_signature:
 		return
 	_tf_card_signature = signature
 	_tf_info.text = _tf_card_text(selected_tf)
+	_refresh_tf_buttons(selected_tf)
 	for child in _tf_ships.get_children():
 		child.queue_free()
 	if selected_tf.unidentified:
@@ -4713,9 +4908,9 @@ func _refresh() -> void:
 	_refresh_action_bar()
 	_refresh_tf_panel()
 	_refresh_now()
+	_autosave()
 
 	var lg: Array[String] = []
-	lg.append("[b]Mosse:[/b] %d    (F1 = comandi)" % log.applied_count() if log else "")
 	var entries: Array[Dictionary] = []
 	var trace_entries := {}
 	for i in _messages.size():
@@ -4965,3 +5160,477 @@ func _append_rendezvous_markers(out: Array[String]) -> void:
 
 func _hex_text(h: Vector2i) -> String:
 	return "(%d,%d)" % [h.x, h.y]
+
+
+# ------------------------------------------------------- guida, menu, vista --
+
+## La striscia "che cosa devo fare adesso".
+##
+## Il pannello in basso spiegava gia' tutto, ma in sei righe e lontano dalla
+## mappa: chi apriva il gioco non sapeva da dove cominciare. Qui c'e' UNA
+## frase, sopra la mappa dove si sta guardando, e accanto il pulsante che fa la
+## cosa piu' probabile. Il resto - i motivi, i dettagli - resta in basso.
+func _build_guide() -> void:
+	var row: HBoxContainer = _bar.guide_box
+	_guide_label = Label.new()
+	_guide_label.add_theme_font_override("font", UiTheme.grassetto())
+	_guide_label.add_theme_font_size_override("font_size", 19)
+	_guide_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	# Larghezza minima e riempimento: un'etichetta che va a capo senza una
+	# larghezza garantita si riduce a una colonna di lettere.
+	_guide_label.custom_minimum_size = Vector2(240, 46)
+	_guide_label.max_lines_visible = 2
+	_guide_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_guide_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_guide_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(_guide_label)
+	_guide_buttons = HBoxContainer.new()
+	_guide_buttons.add_theme_constant_override("separation", 8)
+	row.add_child(_guide_buttons)
+
+
+## Che cosa dire e quali pulsanti offrire, secondo il momento.
+## Ritorna { text, buttons: [{ label, role, run: Callable }] }.
+func _guide_content() -> Dictionary:
+	var buttons: Array = []
+	if mode == Mode.EDITOR:
+		buttons.append({"label": "Esci dall'editor", "role": "primario",
+			"run": _toggle_editor})
+		return {"text": "Editor della mappa: qui si corregge il reticolo, non si gioca.",
+			"buttons": buttons}
+	if state.solo_ended:
+		buttons.append({"label": "Apri il punteggio", "role": "primario",
+			"run": _show_outcome})
+		return {"text": "Scenario concluso. %s" % state.solo_end_reason,
+			"buttons": buttons}
+	if _status_choice_active:
+		return {"text": "Decisione richiesta: %s. Rispondi nel riquadro in basso."
+			% _status_choice_title.text, "buttons": buttons}
+	if _hex_choice_active:
+		buttons.append({"label": "Annulla", "role": "normale",
+			"run": _cancel_hex_choice})
+		return {"text": _hex_choice_prompt if _hex_choice_prompt != ""
+			else "Tocca uno degli esagoni evidenziati.", "buttons": buttons}
+	var who := Initiative.side_name(state.initiative)
+	if _solo_is_imaginary_turn():
+		buttons.append({"label": "Fai agire l'avversario", "role": "primario",
+			"run": func() -> void:
+				_maybe_run_solo_opponent_turn("richiesto dal giocatore")})
+		return {"text": "Tocca all'avversario immaginario (%s)." % who,
+			"buttons": buttons}
+	var next := {"label": "Prossima Task Force", "role": "normale",
+		"run": func() -> void:
+			_cycle_tf(1)
+			_refresh()}
+	if selected_tf == null:
+		next["role"] = "primario"
+		buttons.append(next)
+		return {"text": "Tocca a %s: scegli una Task Force sulla mappa." % who,
+			"buttons": buttons}
+	if selected_tf.side != state.initiative or not _can_control_tf(selected_tf):
+		next["role"] = "primario"
+		buttons.append(next)
+		return {"text": "%s non puo' agire adesso: l'Iniziativa e' di %s."
+			% [selected_tf.display_name(), who], "buttons": buttons}
+	if _trajectory_action_armed:
+		if not selected_tf.trajectory.is_station():
+			buttons.append({"label": "Cambia capo", "role": "normale",
+				"run": func() -> void:
+					active_end = 1 - active_end
+					_refresh()})
+		buttons.append({"label": "Rotta finita", "role": "primario",
+			"run": func() -> void:
+				_cancel_trajectory_action(false)
+				_msg("Rotta chiusa: l'Iniziativa resta a %s." % who)
+				_refresh()})
+		var room := Trajectory.MAX_SEGMENTS - selected_tf.trajectory.length()
+		if room <= 0:
+			return {"text": "La rotta di %s e' al massimo: premi Rotta finita."
+				% selected_tf.display_name(), "buttons": buttons}
+		return {"text": "Traccia la rotta di %s: tocca un esagono verde."
+			% selected_tf.display_name(), "buttons": buttons}
+	if _action_unavailable_reason("TRAJECTORY") == "":
+		buttons.append({"label": "Traccia la rotta", "role": "primario",
+			"run": func() -> void: _declare_action("TRAJECTORY")})
+	buttons.append(next)
+	return {"text": "%s: scegli un'azione nella barra in alto."
+		% selected_tf.display_name(), "buttons": buttons}
+
+
+func _refresh_guide() -> void:
+	if _guide_label == null:
+		return
+	var g := _guide_content()
+	var labels: Array[String] = []
+	for b_v: Variant in g["buttons"]:
+		labels.append("%s/%s" % [String((b_v as Dictionary)["label"]),
+			String((b_v as Dictionary)["role"])])
+	var signature := String(g["text"]) + "|" + "|".join(labels)
+	# Si ricostruisce solo se cambia: `_refresh` gira a ogni movimento del
+	# mouse, e rifare i pulsanti ogni volta li distruggerebbe sotto il dito.
+	if signature == _guide_signature:
+		return
+	_guide_signature = signature
+	_guide_label.text = String(g["text"])
+	for child in _guide_buttons.get_children():
+		child.queue_free()
+	for b_v: Variant in g["buttons"]:
+		var spec: Dictionary = b_v
+		var b := UiTheme.button(String(spec["label"]), String(spec["role"]), 42.0)
+		var run: Callable = spec["run"]
+		b.pressed.connect(func() -> void:
+			# `await`: alcune di queste azioni aprono una domanda e finiscono
+			# dopo. Lo schermo si aggiorna quando hanno finito davvero.
+			await run.call()
+			_refresh())
+		_guide_buttons.add_child(b)
+
+
+func _cancel_hex_choice() -> void:
+	if not _hex_choice_active:
+		return
+	_hex_choice_active = false
+	_hex_choice_options.clear()
+	_hex_choice_prompt = ""
+	board.set_highlight({})
+	_msg("Scelta esagono annullata.")
+	_hex_choice_made.emit(Vector2i.MAX)
+	_refresh()
+
+
+## Mentre si traccia una rotta, gli esagoni in cui si puo' andare sono verdi.
+## Prima si scopriva che una mossa era illegale solo dopo averla tentata.
+func _refresh_trajectory_hints() -> void:
+	if board == null or _hex_choice_active:
+		return
+	var hints := {}
+	if mode == Mode.PLAY and _trajectory_action_armed and selected_tf != null \
+			and _can_control_tf(selected_tf) and _battle_view == null:
+		var traj := selected_tf.trajectory
+		var ports := state.port_hexes()
+		for e in 2:
+			var from := traj.end_hex(e)
+			for d in 6:
+				var n := Hex.neighbor(from, d)
+				if graph.has_hex(n) and traj.extend_error(n, e, graph, ports,
+						selected_tf.side) == "":
+					hints[n] = Color(0.37, 0.84, 0.64, 0.42)
+	var signature := str(hints.keys())
+	if signature == _hint_signature:
+		return
+	_hint_signature = signature
+	board.set_highlight(hints)
+
+
+## Pulsanti della vista, nell'angolo della mappa. Rotella e pizzico restano,
+## ma un comando che esiste solo come gesto non lo trova chi non lo conosce.
+func _build_map_tools(parent: Control) -> void:
+	_map_tools = HBoxContainer.new()
+	_map_tools.name = "MapTools"
+	_map_tools.add_theme_constant_override("separation", 6)
+	parent.add_child(_map_tools)
+	var specs := [
+		["+", "Ingrandisci", func() -> void: cam.zoom_by(1.35)],
+		["-", "Rimpicciolisci", func() -> void: cam.zoom_by(1.0 / 1.35)],
+		["Le forze", "Inquadra le Task Force in gioco", func() -> void:
+			_frame_view()],
+		["Tutta la mappa", "Inquadra tutti gli esagoni", func() -> void:
+			_frame_view(true)],
+	]
+	for spec_v: Variant in specs:
+		var spec: Array = spec_v
+		var b := UiTheme.button(String(spec[0]), "normale", 44.0, 20)
+		b.custom_minimum_size.x = 48
+		b.tooltip_text = String(spec[1])
+		var run: Callable = spec[2]
+		b.pressed.connect(func() -> void: run.call())
+		_map_tools.add_child(b)
+
+
+## Il menu: tutto cio' che non e' un'azione di gioco e non serve tenere sempre
+## davanti. Compare sotto il suo pulsante e si chiude toccando altrove.
+func _build_menu(parent: Control) -> void:
+	_menu_shade = Control.new()
+	_menu_shade.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_menu_shade.mouse_filter = Control.MOUSE_FILTER_STOP
+	_menu_shade.visible = false
+	_menu_shade.gui_input.connect(func(event: InputEvent) -> void:
+		if event is InputEventMouseButton and (event as InputEventMouseButton).pressed:
+			_close_menu())
+	parent.add_child(_menu_shade)
+	_menu_panel = PanelContainer.new()
+	_menu_panel.name = "MenuPanel"
+	_menu_panel.visible = false
+	_menu_panel.add_theme_stylebox_override("panel", UiTheme.panel_accent())
+	parent.add_child(_menu_panel)
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 6)
+	col.custom_minimum_size.x = 320
+	_menu_panel.add_child(col)
+	col.add_child(UiTheme.heading("MENU"))
+	_menu_item(col, "Salva la partita", "normale", func() -> void: _do_save())
+	_menu_item(col, "Carica una partita", "normale", func() -> void: _do_load())
+	col.add_child(HSeparator.new())
+	_menu_item(col, "Reticolo degli esagoni: cambia", "normale", func() -> void:
+		board.set_grid_mode((board.grid_mode + 1) % 3)
+		_msg("Reticolo: %s." % ["nascosto", "leggero", "pieno"][board.grid_mode]))
+	_menu_item(col, "Registro: apri o chiudi", "normale", _toggle_log_panel)
+	_menu_item(col, "Tabelle del solitario", "normale", func() -> void: _do_solo())
+	_menu_item(col, "Strumenti: editor della mappa", "normale", _toggle_editor)
+	col.add_child(HSeparator.new())
+	_menu_item(col, "Torna alla scelta dello scenario", "pericolo",
+		func() -> void: _leave_to_menu())
+
+
+func _menu_item(parent: Control, text: String, role: String, run: Callable) -> void:
+	var b := UiTheme.button(text, role, 46.0)
+	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	b.pressed.connect(func() -> void:
+		_close_menu()
+		run.call()
+		_refresh())
+	parent.add_child(b)
+
+
+func _toggle_menu() -> void:
+	if _menu_panel.visible:
+		_close_menu()
+		return
+	_menu_shade.visible = true
+	_menu_panel.visible = true
+	_menu_panel.reset_size()
+	var anchor := _bar.menu_anchor()
+	var size := _menu_panel.get_combined_minimum_size()
+	_menu_panel.position = Vector2(anchor.x - size.x, anchor.y + 8.0)
+
+
+func _close_menu() -> void:
+	if _menu_panel != null:
+		_menu_panel.visible = false
+		_menu_shade.visible = false
+
+
+## Tornare al menu butta via la partita in corso: si chiede, e si dice che il
+## salvataggio automatico la conserva.
+func _leave_to_menu() -> void:
+	var i: int = await Choice.ask(self, "Lasciare la partita?",
+		"La partita in corso resta nel salvataggio automatico: la ritrovi con "
+		+ "\"Riprendi una partita\" nella schermata iniziale.", [
+		{"label": "Si', torna alla scelta dello scenario", "detail": ""},
+		{"label": "No, continuo a giocare", "detail": ""}], false)
+	if i != 0:
+		return
+	_autosave(true)
+	get_tree().change_scene_to_file("res://ui/splash/splash.tscn")
+
+
+## Salvataggio automatico: uno per scenario, riscritto quando la partita
+## cambia e il comando e' tornato al giocatore. Mai a meta' del turno del bot
+## o con una decisione aperta: si ricaricherebbe una procedura monca.
+func _autosave(force: bool = false) -> void:
+	if scenario == null or state == null or log == null or mode == Mode.EDITOR:
+		return
+	if not force:
+		if _message_seq == _autosave_seq or _status_choice_active \
+				or _hex_choice_active or _battle_view != null \
+				or _solo_is_imaginary_turn() or _bl1_fueling_running:
+			return
+		if Time.get_ticks_msec() - _autosave_at < 4000:
+			return
+	if log.applied_count() == 0 and not force:
+		return
+	_autosave_seq = _message_seq
+	_autosave_at = Time.get_ticks_msec()
+	SaveGame.save(state, scenario.id, scenario.title,
+		"Automatico - %s" % scenario.id)
+
+
+## Il rettangolo che contiene tutti gli esagoni: il mare in cui si gioca.
+func _playable_rect() -> Rect2:
+	var r := Rect2()
+	var first := true
+	for h_v: Variant in graph.all_hexes():
+		var c := graph.center_of(h_v)
+		if first:
+			r = Rect2(c, Vector2.ZERO)
+			first = false
+		else:
+			r = r.expand(c)
+	if first:
+		return Rect2(Vector2.ZERO, Vector2(graph.map_size))
+	return r.grow(graph.inradius * 1.6)
+
+
+## Inquadratura di partenza. La Mappa Operazionale si inquadra sulle forze in
+## gioco; una mappa inserto e' gia' solo mare e riempie il suo riquadro.
+##
+## La mappa stampata e' molto piu' alta del riquadro in cui la si guarda, e
+## porta in basso e a destra le tabelle e la Mappa di Battaglia: inquadrata
+## tutta, il mare diventa un francobollo. Inquadrata sulle forze, si vede
+## subito dove si gioca; "Tutta la mappa" resta a un tocco.
+func _frame_view(whole: bool = false) -> void:
+	cam.setup(Vector2(graph.map_size))
+	if _inset_layout():
+		return
+	cam.frame_rect(_playable_rect() if whole else _forces_rect())
+
+
+## Il rettangolo che contiene le Stazioni e le rotte in gioco, con qualche
+## esagono d'aria intorno e una misura minima: con due sole navi nello stesso
+## porto non si deve finire a guardare un esagono solo.
+func _forces_rect() -> Rect2:
+	var r := Rect2()
+	var first := true
+	for tf in state.task_forces:
+		if tf.completed:
+			continue
+		var where: Array[Vector2i] = tf.trajectory.hexes()
+		if tf.trajectory.is_station():
+			where = [tf.trajectory.station_hex] as Array[Vector2i]
+		for h in where:
+			var c := graph.center_of(h)
+			if first:
+				r = Rect2(c, Vector2.ZERO)
+				first = false
+			else:
+				r = r.expand(c)
+	if first:
+		return _playable_rect()
+	r = r.grow(graph.inradius * 4.5)
+	var min_size := Vector2(graph.map_size) * 0.5
+	if r.size.x < min_size.x:
+		r = r.grow_individual((min_size.x - r.size.x) * 0.5, 0,
+			(min_size.x - r.size.x) * 0.5, 0)
+	if r.size.y < min_size.y:
+		r = r.grow_individual(0, (min_size.y - r.size.y) * 0.5, 0,
+			(min_size.y - r.size.y) * 0.5)
+	return r.intersection(Rect2(Vector2.ZERO, Vector2(graph.map_size)))
+
+
+# ------------------------------------------------ regole cablate nella vista --
+
+## Le forze Furtive di `side` che possono fare Ricognizione: U-Boat e
+## Sottomarini, non le Mine (RB p.41).
+func _recon_forces(side: int) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for f in Stealth.forces_of(state, side):
+		if Stealth.can_recon(int(f.get("kind", -1))):
+			out.append(f)
+	return out
+
+
+## Ricognizione Furtiva del giocatore (RB p.41): la forza designata va in un
+## esagono della mappa - non conta da dove parte - e ogni Task Force nemica con
+## una Stazione o un segmento li' riceve un segnalino Informazioni. Poi si
+## Cerca l'Iniziativa.
+##
+## Prien, che permette l'esagono di un porto o di una base aerea nemici, NON e'
+## gestito qui: resta una lacuna dichiarata, e quegli esagoni restano vietati.
+func _do_stealth_recon(scouts: Array[Dictionary]) -> void:
+	var force: Dictionary = scouts[0]
+	if scouts.size() > 1:
+		var options: Array = []
+		for f in scouts:
+			options.append({"label": "%s in %s" % [
+				Stealth.kind_name(int(f.get("kind", -1))),
+				_hex_text(Vector2i(int(f.get("q", 0)), int(f.get("r", 0))))],
+				"detail": ""})
+		var i: int = await Choice.ask(self, "Ricognizione - forza",
+			"Quale forza Furtiva muovi?", options, true)
+		if i < 0:
+			return
+		force = scouts[i]
+	var side := int(force.get("side", state.initiative))
+	var from := Vector2i(int(force.get("q", 0)), int(force.get("r", 0)))
+	var hexes: Array = []
+	for h_v: Variant in graph.all_hexes():
+		var h: Vector2i = h_v
+		if h != from and Stealth.can_place_at(state, graph, _port_control(), side, h):
+			hexes.append(h)
+	if hexes.is_empty():
+		_msg("Ricognizione: nessun esagono in cui la forza possa andare.")
+		return
+	var dest := await _pick_hex_on_map(hexes,
+		"Ricognizione: tocca l'esagono in cui mandare la forza Furtiva.")
+	if dest == Vector2i.MAX:
+		_msg("Ricognizione annullata.")
+		return
+	var r := Stealth.recon(state, graph, _port_control(), force, dest)
+	for line_v: Variant in r.get("log", []):
+		_msg(String(line_v))
+	if not bool(r.get("ok", false)):
+		_msg("Ricognizione rifiutata: %s" % String(r.get("reason", "")))
+		return
+	log.record("Ricognizione Furtiva in %s" % _hex_text(dest))
+	state.changed.emit()
+	if await _seek_initiative():
+		await _maybe_run_solo_opponent_turn("Cercare l'Iniziativa")
+	_refresh()
+
+
+## I benefici dei Comandanti che si scelgono mentre si dichiara (RB p.10):
+## Walker e Somerville entrano nei modificatori, Krancke e Tovey spostano il
+## Totale Traiettoria di 2d6. Si chiede solo a chi comanda davvero quella
+## parte: il bot non li usa (lacuna dichiarata nel fascicolo solitario, che non
+## ne parla).
+func _offer_declared_leaders(dec: ActionEngine.Declaration) -> void:
+	var side := dec.acting_side()
+	var player := _solo_player_side()
+	if player < 0 or side == player:
+		for name in LeaderRules.declarable(state, dec, side):
+			var i: int = await Choice.ask(self, "Comandante %s" % name,
+				"%s Utilizzi rimasti: %d." % [LeaderRules.effect_text(name),
+					LeaderRules.uses_left(state, name)], [
+				{"label": "Usa %s in questa azione" % name, "detail": ""},
+				{"label": "Non usarlo adesso", "detail": ""}], false)
+			if i == 0:
+				dec.leader_benefits.append(name)
+				_msg("Comandante %s dichiarato per questa azione." % name)
+	for s in [side, 1 - side]:
+		if player >= 0 and s != player:
+			continue
+		if dec.trajectory_total_shift != 0:
+			break
+		var roller := LeaderRules.trajectory_total_roller(state, dec, s)
+		if roller == "":
+			continue
+		# "Potete tirare prima di decidere se usarlo."
+		var roll := state.rng.d6x2("%s: 2d6 sul Totale Traiettoria" % roller)
+		var i: int = await Choice.ask(self, "Comandante %s: 2d6 = %d" % [roller, roll],
+			LeaderRules.effect_text(roller), [
+			{"label": "Aggiungi %d al Totale Traiettoria" % roll, "detail": ""},
+			{"label": "Sottrai %d dal Totale Traiettoria" % roll, "detail": ""},
+			{"label": "Non usarlo: resta disponibile", "detail": ""}], false)
+		if i == 0 or i == 1:
+			dec.trajectory_total_shift = roll if i == 0 else -roll
+			dec.trajectory_total_shift_by = roller
+			_msg("%s: 2d6 = %d, %s al Totale Traiettoria."
+				% [roller, roll, "aggiunti" if i == 0 else "sottratti"])
+		else:
+			_msg("%s: 2d6 = %d, non usato." % [roller, roll])
+
+
+## Forbes e Marschall (RB p.10): dopo il tiro, uno dei due dadi puo' diventare
+## un 6. Si mostra che cosa cambierebbe PRIMA di chiedere: il beneficio e' uno
+## solo, e sprecarlo su un risultato identico sarebbe una trappola.
+func _offer_six_replacer(res: Dictionary, dec: ActionEngine.Declaration,
+		label: String) -> Dictionary:
+	var name := LeaderRules.six_replacer(state, dec)
+	if name == "" or not _can_control_tf(dec.active):
+		return res
+	var alt := engine.reread_with_six(res, dec)
+	if alt.is_empty():
+		return res
+	var now_labels: Array = res.get("result_labels", [])
+	var alt_labels: Array = alt.get("result_labels", [])
+	var i: int = await Choice.ask(self, "Comandante %s" % name,
+		"%s\nAdesso: dadi %d, risultato %s.\nCol 6: dadi %d, risultato %s." % [
+			LeaderRules.effect_text(name), int(res.get("dice", 0)),
+			", ".join(now_labels), int(alt.get("dice", 0)), ", ".join(alt_labels)], [
+		{"label": "Sostituisci il dado piu' basso con un 6", "detail": ""},
+		{"label": "Tieni il tiro: %s resta disponibile" % name, "detail": ""}], false)
+	if i != 0:
+		return res
+	LeaderRules.spend(state, name)
+	_msg("%s: un dado diventa 6. %s -> %s" % [name, label, engine.describe(alt)])
+	return alt

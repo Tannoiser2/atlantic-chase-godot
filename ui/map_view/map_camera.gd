@@ -13,6 +13,11 @@ extends Camera2D
 
 var map_size := Vector2(4203, 2763)
 
+## Vero da quando il giocatore sposta o ingrandisce la vista di persona. Finche'
+## e' falso, chi usa la camera puo' reinquadrare la mappa senza togliergli
+## niente; dopo, la vista e' sua e non si tocca.
+var user_moved := false
+
 var _dragging := false
 var _drag_anchor := Vector2.ZERO
 var _target_zoom := 1.0
@@ -41,6 +46,7 @@ func multitouch_active() -> bool:
 
 
 func setup(p_map_size: Vector2) -> void:
+	user_moved = false
 	map_size = p_map_size
 	# parte inquadrando tutta la mappa
 	var vp := get_viewport_rect().size
@@ -87,6 +93,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 	elif event is InputEventMouseMotion and _dragging:
 		var mm := event as InputEventMouseMotion
+		user_moved = true
 		position -= mm.relative / zoom.x
 		_clamp_position()
 		get_viewport().set_input_as_handled()
@@ -97,6 +104,7 @@ func _process(delta: float) -> void:
 		Input.get_action_strength("pan_right") - Input.get_action_strength("pan_left"),
 		Input.get_action_strength("pan_down") - Input.get_action_strength("pan_up"))
 	if dir != Vector2.ZERO:
+		user_moved = true
 		position += dir.normalized() * keyboard_pan_speed * delta / zoom.x
 		_clamp_position()
 	# zoom morbido
@@ -121,6 +129,7 @@ func _handle_pinch(_last: InputEventScreenDrag) -> void:
 	_pinch_distance = dist
 	# lo spostamento del punto medio muove la mappa
 	if _pinch_mid_prev != Vector2.ZERO:
+		user_moved = true
 		position -= (mid - _pinch_mid_prev) / zoom.x
 		_clamp_position()
 	_pinch_mid_prev = mid
@@ -129,6 +138,7 @@ func _handle_pinch(_last: InputEventScreenDrag) -> void:
 ## Zoom mantenendo fermo il punto sotto il cursore: senza questo, zoomare su un
 ## dettaglio richiede di ricentrare a mano ogni volta.
 func _zoom_at(screen_pos: Vector2, factor: float) -> void:
+	user_moved = true
 	var before := get_canvas_transform().affine_inverse() * screen_pos
 	_target_zoom = clampf(_target_zoom * factor, min_zoom, max_zoom)
 	zoom = Vector2(_target_zoom, _target_zoom)
@@ -145,6 +155,33 @@ func _clamp_position() -> void:
 	var max_y: float = maxf(map_size.y - half.y, map_size.y * 0.5)
 	position.x = clampf(position.x, min_x, max_x)
 	position.y = clampf(position.y, min_y, max_y)
+
+
+## Inquadra un rettangolo della mappa, con un po' d'aria intorno.
+##
+## La mappa stampata porta a destra la Mappa di Battaglia e le tabelle: a
+## inquadrarla tutta, il mare in cui si gioca occupava meta' dello schermo.
+func frame_rect(r: Rect2) -> void:
+	var vp := get_viewport_rect().size
+	if r.size.x <= 0.0 or r.size.y <= 0.0 or vp.x <= 0.0:
+		return
+	var fit: float = minf(vp.x / r.size.x, vp.y / r.size.y) * 0.97
+	_target_zoom = clampf(fit, min_zoom, max_zoom)
+	zoom = Vector2(_target_zoom, _target_zoom)
+	position = r.get_center()
+	_clamp_position()
+
+
+## Sposta la vista di tanti pixel di schermo (trascinamento col dito).
+func pan_pixels(relative: Vector2) -> void:
+	user_moved = true
+	position -= relative / zoom.x
+	_clamp_position()
+
+
+## Zoom dal centro della vista, per i pulsanti + e -.
+func zoom_by(factor: float) -> void:
+	_zoom_at(get_viewport_rect().size * 0.5, factor)
 
 
 func world_from_screen(screen_pos: Vector2) -> Vector2:

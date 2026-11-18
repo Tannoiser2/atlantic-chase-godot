@@ -116,7 +116,7 @@ func _draw() -> void:
 			draw_polyline(pts, line_col, width, true)
 
 	if grid_mode == GridMode.EDITOR:
-		var font := ThemeDB.fallback_font
+		var font := UiTheme.stretto()
 		var font_size := int(maxf(graph.inradius * 0.23, 18.0))
 		for h_v: Variant in graph.all_hexes():
 			var h: Vector2i = h_v
