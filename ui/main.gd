@@ -406,15 +406,24 @@ func _load_scenario_at(idx: int, offer_setup_choices: bool = true) -> void:
 	# perde in silenzio.
 	state.advanced_battle = Session.advanced_battle
 	state.optional_rules = Session.optional_rules.duplicate()
-	_select_first_initiative_force()
-	log = CommandLog.new(state)
 	victory = Victory.from_scenario(scenario)
 	vp_tracker = VictoryTracker.new(victory, state)
 	solo = SoloOpponent.load_for(scenario.id)
+	# Il computer gioca solo dove non c'e' gia' un avversario stampato (i
+	# solitari hanno le loro tabelle) e dove c'e' una mappa da giocare.
+	state.computer_side = Session.computer_side \
+		if solo == null and _solo_player_side() < 0 \
+			and not scenario.is_battle_scenario() else -1
+	_select_first_initiative_force()
+	log = CommandLog.new(state)
 	if solo != null:
 		solo.set_phase(state.solo_phase, state.solo_phase_reason)
 	_msg("Scenario: %s  -  %d Task Force, %d navi"
 		% [scenario.title, state.task_forces.size(), scenario.ship_count()])
+	if state.computer_side >= 0:
+		_msg("Il computer gioca la %s. Le Battaglie che apre nel suo turno si "
+			% Initiative.side_name(state.computer_side)
+			+ "risolvono da sole.")
 	if solo != null:
 		_msg("Solitario: tabelle caricate (%s). L'avversario immaginario agisce da solo quando riceve l'Iniziativa."
 			% ("Tardi" if solo.phase == SoloOpponent.Phase.LATE else "Presto"))
@@ -1485,7 +1494,7 @@ func _evasive_spender_for_initiative(what: String) -> TaskForce:
 		"detail": "il segnalino resta alla sua Task Force"}]
 	for tf in holders:
 		opts.append({"label": "Spendi quello di %s" % tf.display_name(),
-			"detail": "%+d al tiro" % Initiative.evasive_bonus(state)})
+			"detail": "%+d al tiro" % Initiative.evasive_bonus(state, tf)})
 	var i: int = await Choice.ask(self, "%s - Manovre Evasive" % what,
 		"%s puo' spendere un segnalino Manovre Evasive per migliorare il tiro."
 			% Initiative.side_name(inactive), opts)
@@ -1515,6 +1524,12 @@ func _offer_steal_initiative(reason: String) -> bool:
 		var auto := Initiative.steal(state, choice["spend_from"])
 		_report_initiative(auto)
 		return bool(auto.get("changed", false))
+	if inactive == state.computer_side:
+		# Il computer tenta sempre: e' la sua policy, non una regola.
+		var cpu := Initiative.steal(state, null)
+		_msg("%s - il computer tenta di Sottrarre l'Iniziativa." % reason)
+		_report_initiative(cpu)
+		return bool(cpu.get("changed", false))
 	var opts: Array = [
 		{"label": "Tenta di Sottrarre", "detail": "2d6 + Conto; con 9+ prende l'Iniziativa"},
 		{"label": "Rinuncia: Manovre Evasive", "detail": "il Conto non aumenta"},
@@ -1565,7 +1580,7 @@ func _open_battle(kind_result: int, active: TaskForce, target: TaskForce,
 			+ "(lo scenario non ne elenca).")
 		return
 
-	var bstate := BattleState.new(kind, state.weather)
+	var bstate := BattleState.new(kind, state.weather_at(hex))
 	bstate.active_tf = active
 	bstate.target_tf = target
 	bstate.hex = hex
@@ -2089,7 +2104,7 @@ func _can_control_tf(tf: TaskForce) -> bool:
 		return false
 	var player := _solo_player_side()
 	if player < 0:
-		return true
+		return tf.side != state.computer_side
 	return tf.side == player
 
 
@@ -2856,7 +2871,9 @@ func _solo_time_lapse(tf: TaskForce, goal: Vector2i = Vector2i.MAX,
 		prefer_near: bool = false) -> void:
 	if tf == null or tf.trajectory.is_station():
 		return
-	var amount := TimeLapse.required_removal(tf.speed, state.weather, state.rng)
+	# Nel caso misto della Linea Artica il bot usa la Tabella: e' una policy
+	# (la regola lascia la scelta), la stessa del SoloRunner.
+	var amount := TimeLapse.required_removal_for(tf, state)
 	var opts := TimeLapse.removal_options(tf.trajectory, tf.speed, amount,
 		protected_hex)
 	if opts.is_empty():
@@ -3581,7 +3598,17 @@ func _do_time_lapse(allow_bl1_fueling: bool = true,
 	if traj.is_station():
 		_msg("%s e' gia' una Stazione" % selected_tf.display_name())
 		return
-	var amount := TimeLapse.required_removal(selected_tf.speed, state.weather, state.rng)
+	var prefer_die := false
+	if TimeLapse.arctic_choice(selected_tf, state):
+		var pick: int = await Choice.ask(self, "Scorrere del Tempo - Linea Artica",
+			"Alcuni segmenti di %s sono sulla Linea Artica: col Meteo Buono "
+			% selected_tf.display_name()
+			+ "puoi usare la Tabella oppure tirare un dado (RB p.20).", [
+			{"label": "Usa la Tabella: %d segmenti"
+				% TimeLapse.GOOD_REMOVAL[selected_tf.speed], "detail": ""},
+			{"label": "Tira 1d6", "detail": "come col Meteo Avverso"}], false)
+		prefer_die = pick == 1
+	var amount := TimeLapse.required_removal_for(selected_tf, state, prefer_die)
 	var opts := TimeLapse.removal_options(traj, selected_tf.speed, amount,
 		protected_hex)
 	if opts.is_empty():
@@ -4470,7 +4497,8 @@ func _refresh_action_bar() -> void:
 	_bar.set_status(scenario.title if scenario != null else "Scenario",
 		state.weather == 1, Initiative.side_name(state.initiative),
 		player < 0 or state.initiative == player,
-		"Solitario: %s" % _solo_phase_label() if solo != null else "")
+		"Solitario: %s" % _solo_phase_label() if solo != null else "",
+		_score_chip())
 
 
 func _panel_style() -> StyleBoxFlat:
@@ -4743,6 +4771,9 @@ func _tf_card_text(tf: TaskForce) -> String:
 	if tf.evasive:
 		marks.append("[color=#9ee8ff][b]Manovre Evasive[/b][/color]")
 	lines.append("   ".join(marks))
+	if state.arctic_share(tf) > 0:
+		lines.append("[color=#9ee8ff]Sulla Linea Artica: li' il meteo e' sempre "
+			+ "Avverso[/color]")
 	if tf.unidentified:
 		lines.append("[color=#ffd27f]Non identificata: composizione nascosta[/color]")
 	elif not _can_control_tf(tf) and solo != null:
@@ -5218,6 +5249,10 @@ func _guide_content() -> Dictionary:
 				_maybe_run_solo_opponent_turn("richiesto dal giocatore")})
 		return {"text": "Tocca all'avversario immaginario (%s)." % who,
 			"buttons": buttons}
+	if state.computer_side >= 0 and state.initiative == state.computer_side:
+		buttons.append({"label": "Fai giocare il computer", "role": "primario",
+			"run": _run_computer_turns})
+		return {"text": "Tocca al computer (%s)." % who, "buttons": buttons}
 	var next := {"label": "Prossima Task Force", "role": "normale",
 		"run": func() -> void:
 			_cycle_tf(1)
@@ -5524,8 +5559,8 @@ func _recon_forces(side: int) -> Array[Dictionary]:
 ## una Stazione o un segmento li' riceve un segnalino Informazioni. Poi si
 ## Cerca l'Iniziativa.
 ##
-## Prien, che permette l'esagono di un porto o di una base aerea nemici, NON e'
-## gestito qui: resta una lacuna dichiarata, e quegli esagoni restano vietati.
+## Prien (RB p.10), una volta: una forza di U-Boat puo' andare anche in un
+## esagono con un porto o una base aerea nemici.
 func _do_stealth_recon(scouts: Array[Dictionary]) -> void:
 	var force: Dictionary = scouts[0]
 	if scouts.size() > 1:
@@ -5542,10 +5577,22 @@ func _do_stealth_recon(scouts: Array[Dictionary]) -> void:
 		force = scouts[i]
 	var side := int(force.get("side", state.initiative))
 	var from := Vector2i(int(force.get("q", 0)), int(force.get("r", 0)))
+	var prien := false
+	# Solo se lo scenario lo mette in gioco: `uses_left` da solo direbbe di si'
+	# in ogni partita.
+	if int(force.get("kind", -1)) == Stealth.Kind.UBOAT \
+			and state.commanders.has("Prien") \
+			and LeaderRules.uses_left(state, "Prien") > 0:
+		var use: int = await Choice.ask(self, "Comandante Prien",
+			LeaderRules.effect_text("Prien"), [
+			{"label": "Usa Prien: anche porti e basi aeree nemici", "detail": ""},
+			{"label": "Non usarlo adesso", "detail": ""}], false)
+		prien = use == 0
 	var hexes: Array = []
 	for h_v: Variant in graph.all_hexes():
 		var h: Vector2i = h_v
-		if h != from and Stealth.can_place_at(state, graph, _port_control(), side, h):
+		if h != from and (prien
+				or Stealth.can_place_at(state, graph, _port_control(), side, h)):
 			hexes.append(h)
 	if hexes.is_empty():
 		_msg("Ricognizione: nessun esagono in cui la forza possa andare.")
@@ -5555,12 +5602,19 @@ func _do_stealth_recon(scouts: Array[Dictionary]) -> void:
 	if dest == Vector2i.MAX:
 		_msg("Ricognizione annullata.")
 		return
-	var r := Stealth.recon(state, graph, _port_control(), force, dest)
+	# Prien si spende solo se e' servito: in un esagono comunque permesso la
+	# Ricognizione e' quella di tutti.
+	var needs_prien := prien and not Stealth.can_place_at(state, graph,
+		_port_control(), side, dest)
+	var r := Stealth.recon(state, graph, _port_control(), force, dest, needs_prien)
 	for line_v: Variant in r.get("log", []):
 		_msg(String(line_v))
 	if not bool(r.get("ok", false)):
 		_msg("Ricognizione rifiutata: %s" % String(r.get("reason", "")))
 		return
+	if needs_prien:
+		LeaderRules.spend(state, "Prien")
+		_msg("Prien: la Ricognizione entra in un esagono di porto o base aerea nemici.")
 	log.record("Ricognizione Furtiva in %s" % _hex_text(dest))
 	state.changed.emit()
 	if await _seek_initiative():
@@ -5634,3 +5688,58 @@ func _offer_six_replacer(res: Dictionary, dec: ActionEngine.Declaration,
 	LeaderRules.spend(state, name)
 	_msg("%s: un dado diventa 6. %s -> %s" % [name, label, engine.describe(alt)])
 	return alt
+
+
+## Il punteggio in una riga, sempre in vista accanto a meteo e Iniziativa.
+## Prima si vedeva solo aprendo il pannello del Punteggio. Vuoto dove lo
+## scenario non conta punti (obiettivi, condizioni).
+func _score_chip() -> String:
+	if victory == null:
+		return ""
+	var o := victory.outcome(state)
+	# L'asterisco: restano condizioni da spuntare a mano nel pannello Punteggio.
+	var pending := "" if int(o.get("manual_pending", 0)) == 0 else " *"
+	match victory.mode:
+		Victory.Mode.DEBRIEFING:
+			return "Punti %s%s" % [GameState.vp_str(float(o.get("score", 0.0))), pending]
+		Victory.Mode.VP:
+			return "Punti KM %s - RN %s%s" % [GameState.vp_str(float(o["km"])),
+				GameState.vp_str(float(o["rn"])), pending]
+	return ""
+
+
+# ------------------------------------------------------ avversario computer --
+
+## Il computer gioca i suoi turni, finche' tiene l'Iniziativa.
+##
+## Usa `DuelRunner`, la stessa policy che gioca da sola gli scenari operativi in
+## `tools/replay_duel.gd`. Due cose da sapere, e sono limiti dichiarati:
+##
+##   - non e' un avversario del fascicolo: gli scenari a due giocatori non ne
+##     hanno uno stampato. E' una policy semplice, che porta a casa i Convogli,
+##     attacca quando conviene e altrimenti naviga verso l'obiettivo;
+##   - le Battaglie che il computer apre nel SUO turno si risolvono da sole,
+##     per tutte e due le parti, con le scelte del solitario (`SoloBattle`).
+##     Quelle che apre il giocatore passano dalla Mappa di Battaglia come sempre.
+func _run_computer_turns() -> void:
+	if state.computer_side < 0 or state.initiative != state.computer_side \
+			or _status_choice_active or _battle_view != null:
+		return
+	var runner := DuelRunner.new()
+	runner.attach(state, graph, engine, scenario, victory, vp_tracker)
+	var lines := runner.play_turns_for(state.computer_side)
+	_msg("--- Turno del computer (%s) ---"
+		% Initiative.side_name(state.computer_side))
+	for line in lines:
+		var text := String(line).strip_edges()
+		if text == "":
+			continue
+		_msg(text.replace("GIOCATORE (policy harness): ", "Computer: ")
+			.replace("GIOCATORE   ", "Computer: ")
+			.replace(" del giocatore:", " del computer:"))
+	log.record("Turno del computer")
+	selected_tf = null
+	_select_first_initiative_force()
+	state.changed.emit()
+	_tf_card_signature = ""
+	_refresh()

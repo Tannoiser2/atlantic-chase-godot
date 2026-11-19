@@ -1,0 +1,14 @@
+{
+  "_fonte": "Mappa Operazionale stampata (assets della mappa, risoluzione nativa 4203x2763), letta con i confini degli esagoni sovrapposti. Coordinate (q,r) del grafo di core/data/map_graph.json. Vale SOLO per la Mappa Operazionale: le mappe inserto non portano ne' la Linea Artica ne' la Zona U-Boat.",
+  "arctic_line": {
+    "_regola": "RB p.17: un esagono che contiene la Linea Artica ha sempre Condizioni Meteo Avverse. La Linea Artica e' la linea bianca punteggiata che corre dalla punta sud della Groenlandia al Mare di Barents.",
+    "hexes": [[8,-2],[9,-3],[11,-5],[12,-6],[13,-7],[14,-8],[15,-9],[16,-10],[17,-11],[18,-12],[19,-12],[20,-13],[21,-13],[22,-14]],
+    "dubbi": [[10,-4],[21,-14]],
+    "_dubbi": "In (10,-4) e (21,-14) la linea punteggiata passa sul vertice o sul bordo dell'esagono senza entrarci in modo leggibile. NON sono trattati come esagoni della Linea Artica: e' un buco dichiarato, non una scelta di regola."
+  },
+  "uboat_zone": {
+    "_regola": "RB p.41 e tabella Attacco Furtivo stampata sulla mappa: +3 se il bersaglio e' nella Zona U-Boat. La Zona e' racchiusa dal bordo bianco spesso con la scritta 'U-Boat Zone' sul lato interno: la fascia costiera da Narvik al Mare del Nord, e il Golfo di Biscaglia.",
+    "hexes": [[17,-9],[17,-8],[16,-7],[16,-6],[17,-6],[17,-5],[18,-6],[15,-2],[15,-1],[16,-2]],
+    "_nota": "(18,-6) Kiel e (16,-2) St. Nazaire non toccano il bordo spesso: stanno dalla parte interna, chiusi fra il bordo e la costa."
+  }
+}

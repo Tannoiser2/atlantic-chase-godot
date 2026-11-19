@@ -42,6 +42,7 @@ godot --path . --script res://tools/smoke_inset_map.gd
 godot --path . --script res://tools/smoke_ms12.gd
 godot --path . --script res://tools/smoke_trajectory.gd
 godot --path . --script res://tools/smoke_gui.gd
+godot --path . --script res://tools/smoke_computer.gd
 python3 tools/controlla_glifi.py
 ```
 
@@ -63,8 +64,9 @@ Percorre una Battaglia avanzata intera, salva un PNG per fase e stampa accanto
 a ogni scatto lo stato del motore. Non giudica: serve a mettere l'immagine e lo
 stato uno accanto all'altro. Cinque difetti visivi sono usciti cosi'.
 
-Baseline corrente: **4088 verifiche, 22 suite** (era 2570 su 17 prima della
-suite `test_replay.gd`, 3881 su 21 prima di `test_common_modifiers.gd`). Il totale non puo' scendere senza una rimozione
+Baseline corrente: **4344 verifiche, 24 suite** (era 2570 su 17 prima della
+suite `test_replay.gd`, 3881 su 21 prima di `test_common_modifiers.gd`, 4088 su
+22 prima di `test_map_zones.gd` e `test_duel.gd`). Il totale non puo' scendere senza una rimozione
 intenzionale di test spiegata nel commit.
 
 Per il solitario eseguire anche:
@@ -74,6 +76,22 @@ godot --headless --path . --script res://tools/audit_solo.gd
 godot --headless --path . --script res://tools/simulate_flow.gd
 godot --headless --path . --script res://tools/replay_solo.gd
 ```
+
+Per gli scenari a due giocatori:
+
+```bash
+godot --headless --path . --script res://tools/replay_duel.gd
+```
+
+Gioca da soli i nove scenari operativi con `DuelRunner`, una policy per parte.
+Non dice chi vince: dice se lo scenario regge una partita. Le condizioni di
+fine dei nove operativi sono stampate a parole e NON sono ancora un dato:
+il ciclo si ferma per ragioni sue (una parte svuotata, partita ferma, limite) e
+le chiama cosi'. `DuelRunner` e' anche l'avversario computer della vista
+(`GameState.computer_side`): e' policy, non una tabella del fascicolo.
+
+Linea Artica e Zona U-Boat stanno in `core/data/map_zones.json`, lette dalla
+mappa stampata; due esagoni dubbi sono tenuti fuori e scritti come dubbi.
 
 `replay_solo.gd` gioca tutti e quindici gli scenari solitari dall'inizio alla
 fine con `SoloRunner` e distingue tre esiti: `OK` (fine stampata), `STALLO`

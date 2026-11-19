@@ -575,7 +575,7 @@ func _player_turn() -> void:
 		if _aborted:
 			return
 	_line("GIOCATORE (policy harness): Passare.")
-	_player_time_lapse(_player_main_force())
+	_player_time_lapse(_pass_trajectory())
 	# RB p.35: "Dopo aver effettuato lo Scorrere del Tempo, il giocatore
 	# Inattivo diventa ora il giocatore Attivo". Non si Cerca: passa.
 	_give_initiative_to(imaginary_side)
@@ -1302,6 +1302,30 @@ func _player_may_declare(tf: TaskForce, key: String) -> bool:
 	return true
 
 
+## La Traiettoria che fa lo Scorrere del Tempo quando si Passa.
+##
+## RB p.35: chi passa "deve anche designare una delle sue Traiettorie". Prima
+## si designava la forza principale, che spesso e' una Stazione: il Passare
+## non accorciava niente, e una rotta di dodici segmenti ferma davanti al porto
+## restava di dodici segmenti per sempre (visto giocando Op2 a due parti).
+## Quale designare e' una scelta, quindi policy: la forza principale se ha una
+## rotta - cosi' il solitario gioca come prima dove gia' rispettava la regola -
+## e altrimenti la rotta piu' lunga, che e' quella con piu' bisogno di
+## accorciarsi. (Designare SEMPRE la piu' lunga porta A1 al seme fissato a uno
+## stallo dichiarato: il giocatore resta senza Task Force.)
+func _pass_trajectory() -> TaskForce:
+	var main := _player_main_force()
+	if main != null and not main.trajectory.is_station():
+		return main
+	var best: TaskForce = null
+	for tf in state.forces_of(player_side):
+		if tf.trajectory.is_station():
+			continue
+		if best == null or tf.trajectory.length() > best.trajectory.length():
+			best = tf
+	return best if best != null else main
+
+
 func _player_main_force() -> TaskForce:
 	var best: TaskForce = null
 	for tf in state.forces_of(player_side):
@@ -1416,7 +1440,7 @@ func _time_lapse(tf: TaskForce, goal: Vector2i, protected_hex: Vector2i,
 	# altro e la stessa partita darebbe risultati diversi.
 	var roll_key := "time_lapse:%d" % tf.id
 	var amount: int = int(_turn_rolls[roll_key]) if _turn_rolls.has(roll_key) \
-		else TimeLapse.required_removal(tf.speed, state.weather, state.rng)
+		else TimeLapse.required_removal_for(tf, state)
 	_turn_rolls[roll_key] = amount
 	var opts := TimeLapse.removal_options(tf.trajectory, tf.speed, amount,
 		protected_hex)
@@ -1571,7 +1595,7 @@ func _run_battle(kind_result: int, active: TaskForce, target: TaskForce,
 		kind = BattleState.Kind.SURPRISE
 	elif kind_result == Results.Battle.LIMITED:
 		kind = BattleState.Kind.LIMITED
-	var bs := BattleState.new(kind, state.weather)
+	var bs := BattleState.new(kind, state.weather_at(hex))
 	bs.advanced = state.advanced_battle
 	bs.remove_evasive_on_exit = OptionalRules.enabled(state, "battle_removes_evasive")
 	bs.active_tf = active

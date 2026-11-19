@@ -370,6 +370,9 @@ func to_state_dict() -> Dictionary:
 		"round": round_number,
 		"task_forces": task_forces,
 		"info_triggers": info_triggers,
+		# Linea Artica e Zona U-Boat esistono solo sulla Mappa Operazionale.
+		"arctic_line": MapZones.hexes("arctic_line") if inset_key() == "" else [],
+		"uboat_zone": MapZones.hexes("uboat_zone") if inset_key() == "" else [],
 		"rendezvous_markers": rendezvous_markers,
 		"commanders": commanders,
 		"end_conditions": end_conditions(),

@@ -10,6 +10,53 @@ Questo e' il backlog autorevole. `STATO.md` contiene anche una lunga cronologia:
 utile per capire le decisioni, ma le sue vecchie sezioni "Cosa manca" non devono
 riaprire lavori gia' chiusi.
 
+## Quello che restava (2026-11, terza passata)
+
+**Fatto:**
+
+- [x] **Linea Artica e Zona U-Boat come dato di mappa**
+  (`core/data/map_zones.json`, `MapZones`, 98 verifiche in
+  `test_map_zones.gd`). Chiudono sei lacune dichiarate: meteo sempre Avverso
+  nell'esagono (RB p.17, anche per la Battaglia), Scorrere del Tempo a scelta
+  nel caso misto (p.20), Manovre Evasive +2 sull'Iniziativa (p.26), Attacco
+  Aereo che non parte, non arriva e non attraversa (p.27), Supporto Aereo che
+  non si applica (p.45), +3 all'Attacco Furtivo nella Zona U-Boat (p.41 e
+  tabella stampata).
+- [x] **Forze Furtive e Basi Aeree piazzate** disegnate sulla mappa con la
+  loro pedina.
+- [x] **Nomi delle Task Force** che non si coprono mai, anche col capo di una
+  rotta nello stesso esagono.
+- [x] **Punteggio sempre in vista** nella riga di stato.
+- [x] **Prien** sulla Ricognizione Furtiva (RB p.10), solo dove lo scenario lo
+  mette in gioco.
+- [x] **Scenari a due giocatori verificati**: `DuelRunner` gioca i nove
+  operativi con due parti (`tools/replay_duel.gd`) e le dodici Battaglie dei
+  mini-scenari fino in fondo (`test_duel.gd`, 150 verifiche).
+- [x] **Avversario computer** negli scenari operativi, scelto nella schermata
+  iniziale (`tools/smoke_computer.gd`).
+- [x] **Passare del giocatore simulato** designa una Traiettoria (RB p.35):
+  la forza principale se ha una rotta, altrimenti la piu' lunga.
+
+**Non fatto, dichiarato:**
+
+- [ ] **Condizioni di fine dei nove scenari operativi**: stampate a parole nel
+  fascicolo a due giocatori, non trascritte. La partita a due non finisce da
+  sola: il punteggio c'e', la fine la decidono i giocatori.
+- [ ] **Due esagoni dubbi della Linea Artica**, (10,-4) e (21,-14): la linea
+  passa sul vertice. Tenuti fuori.
+- [ ] **Attacco Aereo a due esagoni non in linea**: fra i due esagoni in mezzo
+  il regolamento non dice quale si attraversa; si blocca solo se sono entrambi
+  sulla Linea Artica.
+- [ ] **Avversario computer**: policy semplice. Le Battaglie che apre nel suo
+  turno si risolvono da sole per tutte e due le parti, e quando il giocatore e'
+  Inattivo nel turno del computer il tentativo di Sottrarre e' automatico. In
+  Op7 e Op8 la policy allunga e accorcia la stessa rotta fino al limite dei
+  turni.
+- [ ] Il bot del solitario non usa i Comandanti.
+- [ ] Ricognizione su una Stazione: le Informazioni stanno sui segmenti.
+- [ ] **Partita in rete**: non iniziata. Serve un progetto Firebase su cui
+  provarla.
+
 ## Interfaccia nuova (2026-11)
 
 Rifatta dopo la critica "scomoda, brutta e non si capisce che cosa fare".

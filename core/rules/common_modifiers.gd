@@ -32,13 +32,12 @@ extends RefCounted
 ##   sempre. La forza Coordinatrice - una TF o una forza Furtiva - deve stare
 ##   nell'esagono Bersaglio.
 ##
-## LACUNE DICHIARATE, tutte per lo stesso motivo: la Linea Artica e la Zona
-## U-Boat sono disegnate sulla mappa ma non sono un dato di questo progetto.
+## Linea Artica e Zona U-Boat (dato in `core/data/map_zones.json`):
 ##   - p.45: un Punto di Lancio o un bersaglio sulla Linea Artica e' sempre in
-##     Meteo Avverso, quindi li' il Supporto Aereo non si applica;
-##   - p.41: +3 all'Attacco Furtivo se il bersaglio e' nella Zona U-Boat.
-## Nessuno dei due e' controllabile qui: il primo non viene negato, il secondo
-## non viene concesso, e `compute` lo scrive nelle righe quando potrebbe contare.
+##     Meteo Avverso, quindi li' il Supporto Aereo non si applica (ma puo'
+##     attraversarla);
+##   - p.41 e tabella stampata: +3 all'Attacco Furtivo se il bersaglio e' nella
+##     Zona U-Boat, per qualunque forza Furtiva.
 
 ## Le azioni a cui si applicano (RB p.23: "Attacco Aereo, Ingaggiare, Ricerca
 ## Navale ed Attacco Furtivo").
@@ -155,6 +154,12 @@ static func compute(dec: ActionEngine.Declaration, state: GameState) -> Dictiona
 		var d := Hex.distance(from, th)
 		if d > AIR_SUPPORT_RANGE:
 			continue
+		if state.is_arctic(th) or state.is_arctic(from):
+			lines.append("Supporto Aereo %s: non si applica, %s e' sulla Linea "
+				% [who, "l'esagono Bersaglio" if state.is_arctic(th)
+					else "il Punto di Lancio"]
+				+ "Artica (sempre Meteo Avverso).")
+			continue
 		var v := air_support_value(d, for_active)
 		total += v
 		lines.append("Supporto Aereo %s, %s: %+d" % [who,
@@ -208,9 +213,14 @@ static func compute(dec: ActionEngine.Declaration, state: GameState) -> Dictiona
 			total += DISPERSED_CONVOY_BONUS
 			lines.append("Attacco tedesco a un Convoglio Disperso: %+d"
 				% DISPERSED_CONVOY_BONUS)
-		lines.append("Zona U-Boat: non e' un dato di mappa, il +3 di RB p.41 "
-			+ "non viene applicato in automatico.")
+		if th != Vector2i.MAX and state.in_uboat_zone(th):
+			total += UBOAT_ZONE_BONUS
+			lines.append("Bersaglio nella Zona U-Boat: %+d" % UBOAT_ZONE_BONUS)
 	return {"total": total, "lines": lines}
+
+
+## Tabella Attacco Furtivo stampata sulla mappa: "+3 in U-Boat Zone".
+const UBOAT_ZONE_BONUS := 3
 
 
 static func _coordinator_name(tf: TaskForce, stealth: Dictionary) -> String:

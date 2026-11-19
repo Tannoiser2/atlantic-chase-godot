@@ -149,16 +149,23 @@ static func can_place_at(state: GameState, graph: MapGraph,
 ## Force nemica che ha una Stazione o un segmento nell'esagono di arrivo.
 ##
 ## Ritorna { "ok", "reason", "log", "informed", "declared_gap" }.
+##
+## `with_prien`: il beneficio di Prien (RB p.10) - "una forza di U-Boat puo'
+## effettuare la Ricognizione Furtiva in un esagono con base aerea o porto
+## nemici". Toglie solo quel divieto, e solo a una forza di U-Boat.
 static func recon(state: GameState, graph: MapGraph, port_control: Dictionary,
-		force: Dictionary, h: Vector2i) -> Dictionary:
+		force: Dictionary, h: Vector2i, with_prien: bool = false) -> Dictionary:
 	var out := {"ok": false, "reason": "", "log": [] as Array[String],
 		"informed": [] as Array[String], "declared_gap": false}
 	var side := int(force.get("side", -1))
 	if not can_recon(int(force.get("kind", Kind.UBOAT))):
 		out["reason"] = "le Mine non fanno Ricognizione: una volta posate restano dove sono"
 		return out
+	if with_prien and int(force.get("kind", Kind.UBOAT)) != Kind.UBOAT:
+		out["reason"] = "Prien si assegna solo a una forza di U-Boat"
+		return out
 	var err := placement_error(state, graph, port_control, side, h)
-	if err != "":
+	if err != "" and not (with_prien and graph.has_hex(h)):
 		out["reason"] = err
 		return out
 	var from := _hex_of(force)

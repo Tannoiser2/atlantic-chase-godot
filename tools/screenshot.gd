@@ -93,6 +93,17 @@ func _process(_delta: float) -> bool:
 		_root_node._show_outcome()
 	if _frames == 8 and _args.has("briefing"):
 		_root_node._toggle_briefing()
+	# Forze Furtive e una Base Aerea piazzate, per guardarne le pedine.
+	if _frames == 8 and _args.has("furtive"):
+		var st: GameState = _root_node.state
+		var tf0: TaskForce = _root_node.selected_tf
+		var here := tf0.trajectory.station_hex if tf0.trajectory.is_station() \
+			else tf0.trajectory.end_hex(0)
+		var around: Array = _root_node.graph.adjacent_hexes(here)
+		Stealth.place(st, TaskForce.Side.KRIEGSMARINE, Stealth.Kind.UBOAT, around[0])
+		Stealth.place(st, TaskForce.Side.ROYAL_NAVY, Stealth.Kind.SUBMARINE, here)
+		Stealth.place(st, TaskForce.Side.ROYAL_NAVY, Stealth.Kind.MINES, here)
+		AirBase.place(st, TaskForce.Side.KRIEGSMARINE, around[1])
 	# Le viste della nuova interfaccia: menu, aiuto, rotta in corso, scelta.
 	if _frames == 8 and _args.has("menu"):
 		_root_node._toggle_menu()

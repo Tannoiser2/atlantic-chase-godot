@@ -346,11 +346,14 @@ func legality_error(dec: Declaration, state: GameState) -> String:
 			return "l'esagono Bersaglio non appartiene alla TF bersaglio"
 		if Hex.distance(dec.launch_hex, dec.target_hex) > 2:
 			return "il bersaglio dell'Attacco Aereo e' oltre il raggio di due esagoni"
-		# LACUNA DICHIARATA, e vale anche per l'Attacco Aereo da una CV: RB p.27
-		# vieta al Punto di Lancio e al bersaglio di stare sulla Linea Artica, e
-		# vieta all'attacco di attraversarla. La Linea Artica non e' un dato di
-		# mappa in questo progetto - compare solo come testo negli scenari e
-		# nella Verifica Snafu - quindi quel vincolo non e' controllabile qui.
+		# RB p.27: ne' il Punto di Lancio ne' il bersaglio possono stare sulla
+		# Linea Artica, e l'attacco non puo' attraversarla.
+		if state.is_arctic(dec.launch_hex):
+			return "il Punto di Lancio non puo' essere sulla Linea Artica"
+		if state.is_arctic(dec.target_hex):
+			return "il bersaglio di un Attacco Aereo non puo' essere sulla Linea Artica"
+		if _air_path_blocked_by_arctic(dec.launch_hex, dec.target_hex, state):
+			return "l'Attacco Aereo non puo' attraversare la Linea Artica"
 	for coordinating in [dec.active_coordinating, dec.target_coordinating]:
 		if coordinating != null and (dec.target_hex == Vector2i.MAX \
 				or not coordinating.trajectory.occupies(dec.target_hex)):
@@ -532,3 +535,28 @@ func reread_with_six(res: Dictionary, dec: Declaration) -> Dictionary:
 	out["result_labels"] = labels
 	out["unverified"] = is_cell_unverified(dec.action_key, total, tt)
 	return out
+
+
+## Vero se fra Punto di Lancio e bersaglio, a due esagoni, non c'e' modo di
+## passare senza toccare la Linea Artica (RB p.27).
+##
+## A distanza 2 gli esagoni "in mezzo" sono quelli adiacenti a entrambi: uno
+## solo se i due sono in linea, due altrimenti. Il regolamento non dice quale
+## dei due percorre l'attacco, quindi lo si blocca solo se sono TUTTI sulla
+## Linea Artica: e' la lettura piu' permissiva, dichiarata come tale.
+static func _air_path_blocked_by_arctic(from: Vector2i, to: Vector2i,
+		state: GameState) -> bool:
+	if Hex.distance(from, to) != 2:
+		return false
+	var between := 0
+	var blocked := 0
+	for d in 6:
+		var n := Hex.neighbor(from, d)
+		# solo esagoni che esistono: una casella di terra non e' un passaggio
+		if state.graph != null and not state.graph.has_hex(n):
+			continue
+		if Hex.distance(n, to) == 1:
+			between += 1
+			if state.is_arctic(n):
+				blocked += 1
+	return between > 0 and blocked == between

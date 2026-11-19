@@ -31,6 +31,16 @@ var modifier_track_side: int = TaskForce.Side.KRIEGSMARINE
 ## Chiave Vector2i -> Array[String] di motivi.
 var info_triggers: Dictionary = {}
 
+## La parte giocata dal computer in uno scenario a due giocatori, o -1 se
+## giocano due persone. Sta nello stato perche' deve sopravvivere a un
+## salvataggio: una partita ripresa contro il computer resta contro il computer.
+var computer_side: int = -1
+
+## Esagoni della Linea Artica e della Zona U-Boat (Vector2i -> true), dalla
+## Mappa Operazionale. Vuoti sulle mappe inserto. Vedi `MapZones`.
+var arctic_hexes: Dictionary = {}
+var uboat_zone: Dictionary = {}
+
 ## Caselle Porto: nome -> Dictionary. I segmenti non possono starci (RB p.15).
 var port_boxes: Dictionary = {}
 
@@ -486,6 +496,9 @@ func to_dict() -> Dictionary:
 		"round": round_number,
 		"task_forces": tfs,
 		"info_triggers": trig,
+		"computer_side": computer_side,
+		"arctic_line": _zone_list(arctic_hexes),
+		"uboat_zone": _zone_list(uboat_zone),
 		"vp_km": vp_of(TaskForce.Side.KRIEGSMARINE),
 		"vp_rn": vp_of(TaskForce.Side.ROYAL_NAVY),
 		"vp_once": vp_once.duplicate(),
@@ -575,6 +588,63 @@ func apply_dict(d: Dictionary) -> void:
 	for t_v: Variant in d.get("info_triggers", []):
 		var t: Dictionary = t_v
 		info_triggers[Vector2i(int(t["q"]), int(t["r"]))] = t.get("reasons", [])
+	computer_side = int(d.get("computer_side", -1))
+	arctic_hexes = _zone_dict(d.get("arctic_line", []))
+	uboat_zone = _zone_dict(d.get("uboat_zone", []))
 	if d.has("rng"):
 		rng.restore(d["rng"])
 	changed.emit()
+
+
+# ------------------------------------------------- Linea Artica, Zona U-Boat --
+
+static func _zone_list(zone: Dictionary) -> Array:
+	var out: Array = []
+	for h_v: Variant in zone.keys():
+		var h: Vector2i = h_v
+		out.append([h.x, h.y])
+	return out
+
+
+static func _zone_dict(list: Variant) -> Dictionary:
+	var out := {}
+	if typeof(list) != TYPE_ARRAY:
+		return out
+	for item_v: Variant in list:
+		if typeof(item_v) == TYPE_ARRAY and (item_v as Array).size() >= 2:
+			out[Vector2i(int(item_v[0]), int(item_v[1]))] = true
+	return out
+
+
+## RB p.17: "Un esagono che contiene la Linea Artica ha sempre Condizioni Meteo
+## Avverse".
+func is_arctic(h: Vector2i) -> bool:
+	return arctic_hexes.has(h)
+
+
+func in_uboat_zone(h: Vector2i) -> bool:
+	return uboat_zone.has(h)
+
+
+## Il meteo che vale IN un esagono: quello della partita, o Avverso se
+## l'esagono e' sulla Linea Artica.
+func weather_at(h: Vector2i) -> int:
+	return 1 if is_arctic(h) else weather
+
+
+## Quanti esagoni di una Task Force stanno sulla Linea Artica:
+## 0 = nessuno, 1 = alcuni ma non tutti, 2 = tutti. Una Stazione ne ha uno
+## solo, quindi e' 0 oppure 2.
+func arctic_share(tf: TaskForce) -> int:
+	if tf == null or arctic_hexes.is_empty():
+		return 0
+	var where: Array[Vector2i] = tf.trajectory.hexes()
+	if tf.trajectory.is_station():
+		where = [tf.trajectory.station_hex] as Array[Vector2i]
+	var on := 0
+	for h in where:
+		if is_arctic(h):
+			on += 1
+	if on == 0:
+		return 0
+	return 2 if on == where.size() else 1

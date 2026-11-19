@@ -43,11 +43,14 @@ static func pass_to_inactive(state: GameState) -> Dictionary:
 ## Iniziativa. RB p.46: "Se le Condizioni Meteo sono Buone, il modificatore e'
 ## +1, se Avverse e' +2".
 ##
-## LACUNA DICHIARATA: RB p.26 concede il +2 anche col Meteo Buono se la TF e'
-## sulla Linea Artica. La Linea Artica non e' un dato di mappa in questo
-## progetto, quindi quel caso non e' riconoscibile e vale il +1.
-static func evasive_bonus(state: GameState) -> int:
-	return 2 if state.weather == TimeLapse.Weather.BAD else 1
+## RB p.26: "Se la Stazione Task Force, o uno dei suoi segmenti Traiettoria, si
+## trova in un esagono con la Linea Artica, il giocatore Inattivo puo' usare il
+## modificatore +2 Condizioni Meteo Avverse anche se le Condizioni Meteo sono
+## Buone." `tf` e' la Task Force che spende il segnalino.
+static func evasive_bonus(state: GameState, tf: TaskForce = null) -> int:
+	if state.weather == TimeLapse.Weather.BAD:
+		return 2
+	return 2 if tf != null and state.arctic_share(tf) > 0 else 1
 
 
 ## Spende il segnalino Manovre Evasive di `tf` per un tiro di Iniziativa e
@@ -60,10 +63,12 @@ static func _spend_evasive(state: GameState, tf: TaskForce,
 	if tf == null or not tf.evasive:
 		return 0
 	tf.evasive = false
-	var bonus := evasive_bonus(state)
+	var bonus := evasive_bonus(state, tf)
+	var why := "cattivo" if state.weather == TimeLapse.Weather.BAD else "buono"
+	if state.weather != TimeLapse.Weather.BAD and bonus == 2:
+		why = "buono, ma e' sulla Linea Artica"
 	lines.append("Manovre Evasive spese da %s: %+d al tiro (meteo %s)."
-		% [tf.display_name(), bonus,
-			"cattivo" if state.weather == TimeLapse.Weather.BAD else "buono"])
+		% [tf.display_name(), bonus, why])
 	return bonus
 
 
