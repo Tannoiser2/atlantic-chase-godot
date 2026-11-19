@@ -36,10 +36,12 @@ const EXPECTED := {
 	"res://tests/unit/test_lingering.gd": 63,
 	"res://tests/unit/test_snafu.gd": 98,
 	"res://tests/unit/test_replay.gd": 389,
-	"res://tests/unit/test_stealth.gd": 96,
+	"res://tests/unit/test_stealth.gd": 104,
 	"res://tests/unit/test_norway.gd": 100,
 	"res://tests/unit/test_ms12.gd": 58,
 	"res://tests/unit/test_common_modifiers.gd": 203,
+	"res://tests/unit/test_map_zones.gd": 98,
+	"res://tests/unit/test_duel.gd": 150,
 }
 
 const SUITES := [
@@ -65,6 +67,8 @@ const SUITES := [
 	"res://tests/unit/test_norway.gd",
 	"res://tests/unit/test_ms12.gd",
 	"res://tests/unit/test_common_modifiers.gd",
+	"res://tests/unit/test_map_zones.gd",
+	"res://tests/unit/test_duel.gd",
 ]
 
 

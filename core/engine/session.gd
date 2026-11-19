@@ -23,6 +23,10 @@ static var advanced_battle: bool = true
 ## Come per le Battaglie avanzate, la copia che conta e' quella di GameState.
 static var optional_rules: Dictionary = {}
 
+## La parte che gioca il computer negli scenari a due giocatori: -1 nessuna,
+## altrimenti TaskForce.Side. Scelta nella schermata iniziale.
+static var computer_side: int = -1
+
 ## Salvataggio da riprendere appena la scena di gioco e' pronta, o "".
 static var resume_path: String = ""
 

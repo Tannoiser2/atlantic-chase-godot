@@ -34,6 +34,7 @@ var _lbl_scenario: Label
 var _chip_weather: Label
 var _chip_initiative: Label
 var _chip_phase: Label
+var _chip_score: Label
 
 ## Tutte e nove le azioni del gioco, comprese quelle che non si possono ancora
 ## dichiarare. Restano visibili e disabilitate, con il motivo nel tooltip:
@@ -171,6 +172,7 @@ func make_status_row() -> HFlowContainer:
 	_chip_weather = _chip(row)
 	_chip_initiative = _chip(row)
 	_chip_phase = _chip(row)
+	_chip_score = _chip(row)
 	return row
 
 
@@ -188,7 +190,7 @@ func _chip(parent: Control) -> Label:
 
 ## Che scenario, che tempo fa, a chi tocca. `phase` vuoto = non solitario.
 func set_status(scenario_title: String, bad_weather: bool, initiative: String,
-		initiative_is_player: bool, phase: String) -> void:
+		initiative_is_player: bool, phase: String, score: String = "") -> void:
 	if _lbl_scenario == null:
 		return
 	_lbl_scenario.text = scenario_title
@@ -204,6 +206,13 @@ func set_status(scenario_title: String, bad_weather: bool, initiative: String,
 	_chip_phase.visible = phase != ""
 	_chip_phase.text = phase
 	_chip_phase.add_theme_color_override("font_color", UiTheme.CARTA_SPENTA)
+	_chip_score.visible = score != ""
+	_chip_score.text = score
+	_chip_score.mouse_filter = Control.MOUSE_FILTER_PASS
+	_chip_score.tooltip_text = ("L'asterisco: restano condizioni da spuntare a "
+		+ "mano. Apri Punteggio per vederle." if score.ends_with("*")
+		else "Il punteggio corrente. Apri Punteggio per il dettaglio.")
+	_chip_score.add_theme_color_override("font_color", UiTheme.OTTONE)
 
 
 ## Dove ancorare il menu a comparsa: sotto il suo pulsante.

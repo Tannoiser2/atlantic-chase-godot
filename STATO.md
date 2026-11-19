@@ -3,6 +3,11 @@
 Riferimento: `PIANO_GODOT.md` nella cartella superiore.
 Tutti i test passano: **4088 verifiche, 22 suite, headless.**
 
+**Terza passata, 2026-11**: Linea Artica e Zona U-Boat come dato di mappa e
+nelle sei regole che le usano; forze Furtive e Basi Aeree sulla mappa; Prien;
+scenari a due giocatori giocati da `DuelRunner`; avversario computer.
+Dettaglio in testa a `TODO_REVISIONE.md`.
+
 **Interfaccia nuova, 2026-11**: tema unico (`ui/theme/ui_theme.gd`), riga di
 guida, barra delle azioni, Menu, rotta evidenziata, trascinamento della mappa a
 un dito, schermata iniziale con le Regole Opzionali, salvataggio automatico, e

@@ -19,6 +19,7 @@ func run() -> void:
 	test_kinds()
 	test_placement_restrictions()
 	test_recon_moves_and_informs()
+	test_prien_recon()
 	test_attack_restriction()
 	test_enemy_force_triggers_info()
 	test_save_and_reload()
@@ -145,6 +146,31 @@ func test_recon_moves_and_informs() -> void:
 	true_(String(refused["reason"]).contains("Mine"), "e il motivo lo dice")
 	eq(Vector2i(int(mine["q"]), int(mine["r"])), Vector2i(9, 4),
 		"e infatti la Mina non si e' mossa")
+
+
+func test_prien_recon() -> void:
+	_begin("Prien (RB p.10): Ricognizione in un porto o base aerea nemici")
+	var st := _state()
+	var ge := TaskForce.Side.KRIEGSMARINE
+	var control := {"Scapa Flow": "ROYAL_NAVY"}
+	var scapa := graph.port_hex("Scapa Flow")
+	true_(graph.has_hex(scapa), "Scapa Flow e' sulla mappa")
+	var boat := Stealth.place(st, ge, Stealth.Kind.UBOAT, Vector2i(9, 3))
+	var plain := Stealth.recon(st, graph, control, boat, scapa)
+	false_(bool(plain["ok"]), "senza Prien un porto nemico e' vietato")
+	eq(Vector2i(int(boat["q"]), int(boat["r"])), Vector2i(9, 3),
+		"e la forza non si muove")
+	var prien := Stealth.recon(st, graph, control, boat, scapa, true)
+	true_(bool(prien["ok"]), "con Prien ci entra")
+	eq(Vector2i(int(boat["q"]), int(boat["r"])), scapa, "e la forza e' a Scapa Flow")
+	var sub := Stealth.place(st, TaskForce.Side.ROYAL_NAVY, Stealth.Kind.SUBMARINE,
+		Vector2i(9, 3))
+	var wrong := Stealth.recon(st, graph, {"Kiel": "KRIEGSMARINE"}, sub,
+		graph.port_hex("Kiel"), true)
+	false_(bool(wrong["ok"]), "Prien vale solo per una forza di U-Boat")
+	false_(bool(Stealth.recon(st, graph, control, boat, Vector2i(-99, -99), true)["ok"]),
+		"e non porta fuori dalla mappa")
+	true_(LeaderRules.is_implemented("Prien"), "Prien e' fra i benefici offerti")
 
 
 func test_attack_restriction() -> void:

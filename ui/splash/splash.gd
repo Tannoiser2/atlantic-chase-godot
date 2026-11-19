@@ -19,6 +19,9 @@ var _start_btn: Button
 var _adv: CheckBox
 var _optional: Dictionary = {}      ## chiave Regola Opzionale -> CheckBox
 var _resume_btn: Button
+var _opponent_row: HBoxContainer
+var _opponent_buttons: Dictionary = {}   ## parte (-1, 0, 1) -> Button
+var _opponent: int = -1
 var _ids: Array[String] = []
 
 
@@ -156,6 +159,29 @@ func _build() -> void:
 		flow.add_child(cb)
 		_optional[key] = cb
 
+	# --- avversario, per gli scenari a due giocatori ---
+	_opponent_row = HBoxContainer.new()
+	_opponent_row.add_theme_constant_override("separation", 8)
+	rules_col.add_child(_opponent_row)
+	var opp_label := Label.new()
+	opp_label.text = "Avversario:"
+	opp_label.add_theme_color_override("font_color", UiTheme.CARTA_SPENTA)
+	_opponent_row.add_child(opp_label)
+	for spec_v: Variant in [["Due giocatori", -1],
+			["Il computer gioca la Kriegsmarine", TaskForce.Side.KRIEGSMARINE],
+			["Il computer gioca la Royal Navy", TaskForce.Side.ROYAL_NAVY]]:
+		var spec: Array = spec_v
+		var b := UiTheme.button(String(spec[0]), "normale", 40.0, 17)
+		var side := int(spec[1])
+		b.tooltip_text = ("Il computer segue una policy semplice, non una "
+			+ "tabella del fascicolo: porta a casa i Convogli, attacca quando "
+			+ "conviene, altrimenti naviga verso l'obiettivo.") if side >= 0 \
+			else "Due persone allo stesso schermo, a turno."
+		b.pressed.connect(func() -> void: _set_opponent(side))
+		_opponent_row.add_child(b)
+		_opponent_buttons[side] = b
+	_set_opponent(Session.computer_side)
+
 	var buttons := HBoxContainer.new()
 	buttons.add_theme_constant_override("separation", 12)
 	right.add_child(buttons)
@@ -256,6 +282,11 @@ func _on_selected(index: int) -> void:
 	if index < 0 or index >= _ids.size() or _ids[index] == "":
 		return
 	var sc := Scenario.load_by_id(_ids[index])
+	# L'avversario si sceglie solo dove ha senso: uno scenario con una mappa
+	# da giocare e senza le tabelle di un avversario immaginario gia' sue.
+	if _opponent_row != null:
+		_opponent_row.visible = SoloOpponent.load_for(_ids[index]) == null \
+			and not sc.is_battle_scenario() and not sc.task_forces.is_empty()
 	_show_art(_ids[index])
 	var txt := sc.briefing_text()
 	txt += "\n\n[b]SCHIERAMENTO[/b]\n%d Task Force, %d navi" % [
@@ -300,7 +331,18 @@ func _start() -> void:
 	get_tree().change_scene_to_file(GAME_SCENE)
 
 
+## La scelta in corso e' il pulsante d'ottone. Non e' un pulsante a levetta
+## del tema: lo stile "premuto" e' quasi uguale a quello a riposo, e non si
+## capirebbe quale dei tre vale.
+func _set_opponent(side: int) -> void:
+	_opponent = side
+	for key_v: Variant in _opponent_buttons.keys():
+		UiTheme.style_button(_opponent_buttons[key_v],
+			"primario" if int(key_v) == side else "normale", 17)
+
+
 func _store_rules() -> void:
+	Session.computer_side = _opponent if _opponent_row.visible else -1
 	Session.advanced_battle = _adv.button_pressed
 	Session.optional_rules = {}
 	for key_v: Variant in _optional.keys():

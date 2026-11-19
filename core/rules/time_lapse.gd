@@ -53,6 +53,31 @@ static func required_removal(speed: int, weather: int, rng: DiceRNG) -> int:
 	return GOOD_REMOVAL[speed]
 
 
+## Lo Scorrere del Tempo di una Task Force, tenendo conto della Linea Artica.
+##
+## RB p.19-20: col Meteo Avverso si tira un dado. E "con Condizioni Meteo
+## Buone, se alcuni ma non tutti i segmenti di una Traiettoria sono sulla Linea
+## Artica, il giocatore puo' scegliere di tirare un dado o usare la Tabella".
+## Se TUTTI gli esagoni sono sulla Linea Artica il meteo li' e' sempre Avverso
+## (RB p.17) e il dado non e' una scelta.
+##
+## `prefer_die` e' la scelta del giocatore nel caso misto; non conta negli
+## altri.
+static func required_removal_for(tf: TaskForce, state: GameState,
+		prefer_die: bool = false) -> int:
+	var share := state.arctic_share(tf)
+	if state.weather == Weather.BAD or share == 2 or (share == 1 and prefer_die):
+		return state.rng.d6("scorrere del tempo (meteo cattivo)"
+			if state.weather == Weather.BAD
+			else "scorrere del tempo (Linea Artica)")
+	return GOOD_REMOVAL[tf.speed]
+
+
+## Vero se il giocatore ha la scelta fra dado e Tabella (RB p.20).
+static func arctic_choice(tf: TaskForce, state: GameState) -> bool:
+	return state.weather == Weather.GOOD and state.arctic_share(tf) == 1
+
+
 static func intel_limit(speed: int) -> int:
 	return INTEL_LIMIT[speed]
 

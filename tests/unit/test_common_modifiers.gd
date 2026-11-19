@@ -320,7 +320,11 @@ func test_dispersed_convoy_bonus() -> void:
 	for l_v: Variant in lines:
 		if String(l_v).contains("Zona U-Boat"):
 			declared = true
-	true_(declared, "la Zona U-Boat resta una lacuna DICHIARATA, non un +3 inventato")
+	# Fino al 2026-11 qui si verificava che la Zona U-Boat fosse una lacuna
+	# DICHIARATA. Adesso e' un dato (test_map_zones.gd): in uno stato senza
+	# zone - questo, o una mappa inserto - non deve comparire ne' il +3 ne'
+	# una riga che lo nomini.
+	false_(declared, "senza il dato di mappa la Zona U-Boat non compare affatto")
 
 
 func test_printed_modifier_adds_up() -> void:
@@ -790,8 +794,8 @@ func test_leader_benefits() -> void:
 	st5.rng.push_forced([6, 6])
 	var res6 := eng.resolve(dec5, st5)
 	true_(eng.reread_with_six(res6, dec5).is_empty(), "con due 6 non c'e' niente da sostituire")
-	true_(LeaderRules.is_implemented("Walker") and not LeaderRules.is_implemented("Prien"),
-		"Prien resta dichiarato come non automatizzato")
+	true_(LeaderRules.is_implemented("Prien"),
+		"Prien vale sulla Ricognizione Furtiva (test_stealth.gd)")
 
 
 func test_slip_away_for_the_imaginary_opponent() -> void:

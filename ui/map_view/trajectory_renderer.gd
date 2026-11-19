@@ -136,9 +136,11 @@ func _draw() -> void:
 		return
 
 	_compute_lanes()
+	_badge_rects.clear()
 	for tf in state.task_forces:
 		if not tf.completed:
 			_draw_task_force(tf)
+	_draw_stealth_and_bases()
 	_draw_air_action_markers()
 	_draw_rendezvous_markers()
 	_draw_map_tracks()
@@ -451,15 +453,72 @@ func _draw_station(c: Vector2, col: Color, selected: bool, tf: TaskForce) -> voi
 		_draw_contact_marker(c, tf.side)
 	# Piu' Stazioni nello stesso esagono: i nomi si impilano invece di
 	# coprirsi. Prima se ne leggeva uno solo, e a pezzi.
-	var above := 0
-	if state != null:
-		for other in state.task_forces:
-			if other.id < tf.id and not other.completed \
-					and other.trajectory.is_station() \
-					and other.trajectory.station_hex == tf.trajectory.station_hex:
-				above += 1
-	_draw_badge(c + Vector2(0, -r * 1.9 - above * _badge_size() * 1.42),
-		tf.short_name(), col, selected)
+	_draw_badge(c + Vector2(0, -r * 1.9), tf.short_name(), col, selected)
+
+
+var _badge_rects: Array[Rect2] = []
+
+
+func _badge_taken(rect: Rect2) -> bool:
+	for other in _badge_rects:
+		if other.intersects(rect):
+			return true
+	return false
+
+
+const STEALTH_COUNTERS := {
+	"0:0": preload("res://assets/counters/markers_ge_stealth_mines.png"),
+	"0:2": preload("res://assets/counters/markers_ge_stealth_u_boat.png"),
+	"1:0": preload("res://assets/counters/markers_uk_mines.png"),
+	"1:1": preload("res://assets/counters/markers_uk_submarine.png"),
+}
+const AIR_BASE_COUNTERS := {
+	0: preload("res://assets/counters/markers_ge_airbase.png"),
+	1: preload("res://assets/counters/markers_uk_airbase.png"),
+}
+
+
+## Forze Furtive e Basi Aeree piazzate in partita, con la loro pedina.
+##
+## Stavano nello stato e si leggevano solo nel registro: un U-Boat che fa
+## scattare un segnalino Informazioni, o da cui parte un Attacco Furtivo, sulla
+## mappa non c'era. La pedina sta nell'angolo in basso dell'esagono, cosi' una
+## Stazione nello stesso esagono resta visibile al centro; piu' pedine nello
+## stesso esagono si affiancano.
+func _draw_stealth_and_bases() -> void:
+	var count_in_hex: Dictionary = {}
+	# come i nomi: abbastanza grande da riconoscerla anche a mappa intera
+	var side_px := clampf(34.0 / maxf(view_zoom, 0.05),
+		graph.inradius * 0.62, graph.inradius * 1.05)
+	var items: Array = []
+	for sf in state.stealth_forces:
+		var key := "%d:%d" % [_counter_side(int(sf.get("side", 0))),
+			int(sf.get("kind", 2))]
+		if STEALTH_COUNTERS.has(key):
+			items.append([Vector2i(int(sf.get("q", 0)), int(sf.get("r", 0))),
+				STEALTH_COUNTERS[key]])
+	for ab in state.placed_air_bases:
+		var s := _counter_side(int(ab.get("side", 0)))
+		items.append([Vector2i(int(ab.get("q", 0)), int(ab.get("r", 0))),
+			AIR_BASE_COUNTERS[s]])
+	for it_v: Variant in items:
+		var it: Array = it_v
+		var h: Vector2i = it[0]
+		if not graph.has_hex(h):
+			continue
+		var n := int(count_in_hex.get(h, 0))
+		count_in_hex[h] = n + 1
+		var centre := graph.center_of(h) + Vector2(
+			(float(n) - 0.5) * side_px * 0.9, graph.inradius * 0.52)
+		var rect := Rect2(centre - Vector2(side_px, side_px) * 0.5,
+			Vector2(side_px, side_px))
+		draw_rect(rect.grow(2.0), Color(0, 0, 0, 0.45), true)
+		draw_texture_rect(it[1], rect, false)
+
+
+## 0 = pedina tedesca, 1 = pedina britannica.
+static func _counter_side(side: int) -> int:
+	return 0 if side == TaskForce.Side.KRIEGSMARINE else 1
 
 
 ## Altezza del testo dei badge.
@@ -486,6 +545,16 @@ func _draw_badge(pos: Vector2, text: String, col: Color,
 	var pad := size * 0.38
 	var rect := Rect2(pos - Vector2(tw * 0.5 + pad, size * 0.62 + pad * 0.4),
 		Vector2(tw + pad * 2, size + pad * 0.8))
+	# Due nomi non si coprono mai: se il posto e' preso - un'altra Stazione
+	# nello stesso esagono, il capo di una rotta che arriva li' - questo sale
+	# di una riga finche' non ne trova uno libero. Prima se ne leggeva uno
+	# solo, e a pezzi.
+	var tries := 0
+	while tries < 8 and _badge_taken(rect):
+		rect.position.y -= rect.size.y * 1.08
+		pos.y -= rect.size.y * 1.08
+		tries += 1
+	_badge_rects.append(rect)
 	var bg := col.darkened(0.12)
 	draw_rect(rect, Color(bg.r, bg.g, bg.b, 0.93), true)
 	draw_rect(rect, Color(1, 1, 1, 0.9 if emphasised else 0.55), false,

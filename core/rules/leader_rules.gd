@@ -39,11 +39,11 @@ static func effect_text(name: String) -> String:
 
 ## Quali benefici l'app offre al GIOCATORE. Forbes e Marschall valgono sul tiro
 ## di un'Azione; in Battaglia, sul Meteo e sull'Iniziativa non sono ancora
-## offerti. Prien non e' automatizzato. L'avversario immaginario non usa nessun
+## offerti. Prien vale sulla Ricognizione Furtiva. L'avversario immaginario non usa nessun
 ## Comandante: il fascicolo solitario non dice quando lo farebbe.
 static func is_implemented(name: String) -> bool:
 	return ["Raeder", "Pound", "Gensoul", "Walker", "Somerville", "Krancke",
-		"Tovey", "Lutjens", "Forbes", "Marschall"].has(name)
+		"Tovey", "Lutjens", "Forbes", "Marschall", "Prien"].has(name)
 
 
 const WALKER_COORDINATION := 4
